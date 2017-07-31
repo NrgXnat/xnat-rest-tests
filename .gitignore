@@ -1,0 +1,7 @@
+.idea
+*.iml
+*.log
+/out
+/target
+xnat_test.log*
+local.properties

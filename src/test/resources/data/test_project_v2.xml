@@ -1,0 +1,13 @@
+<xnat:Project ID="" secondary_ID="" xmlns:xnat="http://nrg.wustl.edu/xnat" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <xnat:name>TEST 1 v2</xnat:name>
+    <xnat:description>This is a project created via TestNG tests through the REST API.</xnat:description>
+    <xnat:keywords>test keywords</xnat:keywords>
+    <xnat:PI ID="2">
+        <xnat:title>Dr.</xnat:title>
+        <xnat:firstname>Daniel</xnat:firstname>
+        <xnat:lastname>Marcus</xnat:lastname>
+        <xnat:institution>Washington University</xnat:institution>
+        <xnat:department>Dept. of Psychology</xnat:department>
+        <xnat:email>example@example.com</xnat:email>
+    </xnat:PI>
+</xnat:Project>

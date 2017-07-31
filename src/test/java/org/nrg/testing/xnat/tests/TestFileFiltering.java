@@ -1,0 +1,76 @@
+package org.nrg.testing.xnat.tests;
+
+import org.hamcrest.Matchers;
+import org.nrg.testing.file.FileIO;
+import org.nrg.testing.util.TestNgUtils;
+import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.extensions.SimpleResourceFileExtension;
+import org.nrg.xnat.pojo.experiments.ImagingSession;
+import org.nrg.xnat.pojo.experiments.sessions.MRSession;
+import org.nrg.xnat.pojo.resources.Resource;
+import org.nrg.xnat.pojo.resources.ResourceFile;
+import org.nrg.xnat.pojo.resources.SubjectAssessorResource;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import java.io.File;
+import java.util.List;
+
+import static org.testng.AssertJUnit.assertEquals;
+
+public class TestFileFiltering extends BaseRestTest {
+
+    private final File louieFile = FileIO.getDataFile("louie.jpg");
+
+    @BeforeMethod
+    public void setupFileFilterTest() {
+        restDriver.createProject(mainAdminUser, testSpecificProject);
+    }
+
+    @AfterMethod(alwaysRun = true)
+    public void deleteTestProject() {
+        restDriver.deleteProjectSilently(mainAdminUser, testSpecificProject);
+    }
+
+    @Test
+    public void testFileFiltering() {
+        final String content1 = "TEST1";
+        final String content2 = "TEST2";
+        final String content3 = "TEST3";
+
+        final ImagingSession session = new MRSession("MR1");
+        final Resource resource = new SubjectAssessorResource(testSpecificProject, testSpecificSubject, session, "TEST");
+        resource.addResourceFile(resourceFile("Louie1.jpg", content1));
+        resource.addResourceFile(resourceFile("Louie2.jpg", content1));
+        resource.addResourceFile(resourceFile("Louie3.jpg", content2));
+        resource.addResourceFile(resourceFile("Louie4.jpg", content2));
+        resource.addResourceFile(resourceFile("Louie5.jpg", content3));
+
+        final String resourceFilesUrl = restDriver.formatXnatUrl(resource.resourceUrl(), "resources", resource.getFolder(), "files");
+
+        restDriver.createSubjectAssessor(mainAdminUser, testSpecificProject, testSpecificSubject, session);
+
+        // query all
+        mainAdminCredentials().given().queryParam("format", "json").get(resourceFilesUrl).then().assertThat().body("ResultSet.Result", Matchers.hasSize(5));
+
+        // query content2
+        mainAdminCredentials().given().queryParam("format", "json").queryParam("file_content", content2).get(resourceFilesUrl).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
+
+        // query content3
+        mainAdminCredentials().given().queryParam("format", "json").queryParam("file_content", content3).get(resourceFilesUrl).then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
+
+        // Should not be able to retrieve second file for content3
+        mainAdminCredentials().expect().statusCode(404).given().queryParam("file_content", content3).queryParam("index", 1).get(resourceFilesUrl);
+
+        TestNgUtils.assertBinaryFilesEqual(
+                louieFile,
+                restDriver.saveBinaryResponseToFile(mainAdminCredentials().given().queryParam("file_content", content2).queryParam("index", 1).get(resourceFilesUrl))
+        );
+    }
+
+    private ResourceFile resourceFile(String name, String content) {
+        return new ResourceFile().name(name).content(content).extension(new SimpleResourceFileExtension(louieFile));
+    }
+
+}

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration>
+	<appender name="stdout" class="org.apache.log4j.ConsoleAppender">
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{ABSOLUTE} %5p %c{1}:%L - %m%n" />
+		</layout>
+	</appender>
+
+	<appender name="fileAppender" class="org.apache.log4j.RollingFileAppender">
+		<param name="file" value="xnat_test.log" />
+		<param name="MaxFileSize" value="1MB" />
+		<param name="MaxBackupIndex" value="1" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{ABSOLUTE} %5p %c{1}:%L - %m%n" />
+		</layout>
+	</appender>
+
+	<logger name="org.nrg.testing">
+		<level value="debug" />
+	</logger>
+
+	<logger name="net.schmizz">
+		<level value="fatal" />
+	</logger>
+
+	<logger name="org.nrg.listeners.jira">
+		<level value="debug" />
+	</logger>
+
+	<root>
+		<level value="warn" />
+		<appender-ref ref="stdout" />
+		<appender-ref ref="fileAppender" />
+	</root>
+</log4j:configuration>

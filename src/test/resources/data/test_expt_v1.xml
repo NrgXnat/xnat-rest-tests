@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xnat:MRSession ID="" project="" label="TEST_E1" modality="MRI" xmlns:arc="http://nrg.wustl.edu/arc" xmlns:val="http://nrg.wustl.edu/val" xmlns:pipe="http://nrg.wustl.edu/pipe" xmlns:wmh="http://nrg.wustl.edu/wmh" xmlns:fs="http://nrg.wustl.edu/fs" xmlns:wrk="http://nrg.wustl.edu/workflow" xmlns:scr="http://nrg.wustl.edu/scr" xmlns:xdat="http://nrg.wustl.edu/security" xmlns:rad="http://nrg.wustl.edu/rad" xmlns:cat="http://nrg.wustl.edu/catalog" xmlns:prov="http://www.nbirn.net/prov" xmlns:xnat="http://nrg.wustl.edu/xnat" xmlns:xnat_a="http://nrg.wustl.edu/xnat_assessments" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://nrg.wustl.edu/fs http://xnat-dev03.nrg.mir//schemas/fs.xsd http://nrg.wustl.edu/workflow http://xnat-dev03.nrg.mir//schemas/workflow.xsd http://nrg.wustl.edu/catalog http://xnat-dev03.nrg.mir//schemas/catalog.xsd http://nrg.wustl.edu/pipe http://xnat-dev03.nrg.mir//schemas/repository.xsd http://nrg.wustl.edu/rad http://xnat-dev03.nrg.mir//schemas/radRead.xsd http://nrg.wustl.edu/scr http://xnat-dev03.nrg.mir//schemas/screeningAssessment.xsd http://nrg.wustl.edu/arc http://xnat-dev03.nrg.mir//schemas/project.xsd http://nrg.wustl.edu/val http://xnat-dev03.nrg.mir//schemas/protocolValidation.xsd http://nrg.wustl.edu/xnat http://xnat-dev03.nrg.mir//schemas/xnat.xsd http://nrg.wustl.edu/wmh http://xnat-dev03.nrg.mir//schemas/wmh.xsd http://nrg.wustl.edu/xnat_assessments http://xnat-dev03.nrg.mir//schemas/assessments.xsd http://www.nbirn.net/prov http://xnat-dev03.nrg.mir//schemas/birnprov.xsd http://nrg.wustl.edu/security http://xnat-dev03.nrg.mir//schemas/security.xsd">
+    <xnat:date>2001-01-01</xnat:date>
+    <xnat:subject_ID/>
+    <xnat:scanner>test</xnat:scanner>
+    <xnat:operator>test</xnat:operator>
+    <xnat:scans>
+        <xnat:scan ID="1" type="MPRAGE" xsi:type="xnat:mrScanData">
+            <xnat:quality>usable</xnat:quality>
+        </xnat:scan>
+        <xnat:scan ID="2" type="BOLD" xsi:type="xnat:mrScanData">
+            <xnat:quality>usable</xnat:quality>
+        </xnat:scan>
+    </xnat:scans>
+    <xnat:coil>test</xnat:coil>
+    <xnat:marker>test</xnat:marker>
+    <xnat:stabilization>test</xnat:stabilization>
+</xnat:MRSession>
