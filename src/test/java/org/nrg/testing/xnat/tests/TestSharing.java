@@ -174,7 +174,7 @@ public class TestSharing extends BaseRestTest {
 
     @Test
     public void testImageAssessorCreation() {
-        //in this test the userProject is the aggregator project and the adminProject is a site-project
+        // in this test the userProject is the aggregator project and the adminProject is a site-project
 
         // cross share users as collaborators
         restDriver.addUserToProject(mainAdminUser, mainUser, adminProject, UserGroups.COLLABORATOR);
