@@ -5,16 +5,16 @@ import org.nrg.testing.ChainedPutMap;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseRestTest;
-import org.nrg.testing.xnat.extensions.SessionAssessorXMLExtension;
-import org.nrg.testing.xnat.extensions.SubjectAssessorXMLExtension;
-import org.nrg.testing.xnat.extensions.SubjectXMLPutExtension;
 import org.nrg.xnat.enums.Accessibility;
-import org.nrg.xnat.pojo.Project;
-import org.nrg.xnat.pojo.Subject;
-import org.nrg.xnat.pojo.experiments.ImagingSession;
-import org.nrg.xnat.pojo.experiments.SessionAssessor;
-import org.nrg.xnat.pojo.experiments.assessors.ManualQC;
-import org.nrg.xnat.pojo.experiments.sessions.MRSession;
+import org.nrg.xnat.pogo.Project;
+import org.nrg.xnat.pogo.Subject;
+import org.nrg.xnat.pogo.experiments.ImagingSession;
+import org.nrg.xnat.pogo.experiments.SessionAssessor;
+import org.nrg.xnat.pogo.experiments.assessors.ManualQC;
+import org.nrg.xnat.pogo.experiments.sessions.MRSession;
+import org.nrg.xnat.pogo.extensions.session_assessor.SessionAssessorXMLExtension;
+import org.nrg.xnat.pogo.extensions.subject.SubjectXMLPutExtension;
+import org.nrg.xnat.pogo.extensions.subject_assessor.SubjectAssessorXMLExtension;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -31,9 +31,9 @@ public class TestInvalidUserAccess extends BaseRestTest {
     @BeforeMethod
     public void setupInvalidUserAccessTest() {
         testProject = new Project();
-        testSubject = new Subject(testProject).extension(new SubjectXMLPutExtension(restDriver, FileIO.getDataFile("test_subject_v1.xml")));
-        testSession = new MRSession(testProject, testSubject).extension(new SubjectAssessorXMLExtension(restDriver, FileIO.getDataFile("test_expt_v1.xml")));
-        testSessionAssessor = new ManualQC(testProject, testSubject, testSession).extension(new SessionAssessorXMLExtension(restDriver, FileIO.getDataFile("test_asst_v1.xml")));
+        testSubject = new Subject(testProject).extension(new SubjectXMLPutExtension(restDriver.interfaceFor(mainAdminUser), FileIO.getDataFile("test_subject_v1.xml")));
+        testSession = new MRSession(testProject, testSubject).extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainAdminUser), FileIO.getDataFile("test_expt_v1.xml")));
+        testSessionAssessor = new ManualQC(testProject, testSubject, testSession).extension(new SessionAssessorXMLExtension(restDriver.interfaceFor(mainAdminUser), FileIO.getDataFile("test_asst_v1.xml")));
 
         restDriver.createProject(mainAdminUser, testProject);
     }

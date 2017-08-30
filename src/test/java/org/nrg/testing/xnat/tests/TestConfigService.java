@@ -7,11 +7,11 @@ import org.hamcrest.Matchers;
 import org.nrg.testing.CommonUtils;
 import org.nrg.testing.annotations.HardDependency;
 import org.nrg.testing.annotations.SoftDependency;
-import org.nrg.testing.auth.Credentials;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.xnat.BaseRestTest;
-import org.nrg.xnat.pojo.Project;
-import org.nrg.xnat.pojo.users.User;
+import org.nrg.xnat.pogo.Project;
+import org.nrg.xnat.pogo.users.User;
+import org.nrg.xnat.rest.Credentials;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 

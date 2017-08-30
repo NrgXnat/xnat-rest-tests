@@ -2,13 +2,12 @@ package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.path.json.JsonPath;
 import org.nrg.testing.xnat.BaseRestTest;
-import org.nrg.xnat.pojo.DataType;
 import org.testng.annotations.Test;
 
 import java.util.Map;
 
-import static org.nrg.xnat.pojo.DataType.MR_SCAN;
-import static org.nrg.xnat.pojo.DataType.MR_SESSION;
+import static org.nrg.xnat.pogo.DataType.MR_SCAN;
+import static org.nrg.xnat.pogo.DataType.MR_SESSION;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertNull;

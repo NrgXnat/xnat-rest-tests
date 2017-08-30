@@ -5,14 +5,14 @@ import org.joda.time.LocalDate;
 import org.nrg.testing.LegacyComparison;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.xnat.BaseRestTest;
-import org.nrg.testing.xnat.extensions.SubjectXMLPutExtension;
-import org.nrg.testing.xnat.rest.SerializationUtils;
 import org.nrg.xdat.bean.XnatSubjectdataBean;
 import org.nrg.xnat.enums.Gender;
 import org.nrg.xnat.enums.Handedness;
-import org.nrg.xnat.pojo.Investigator;
-import org.nrg.xnat.pojo.Project;
-import org.nrg.xnat.pojo.Subject;
+import org.nrg.xnat.pogo.Investigator;
+import org.nrg.xnat.pogo.Project;
+import org.nrg.xnat.pogo.Subject;
+import org.nrg.xnat.pogo.extensions.subject.SubjectXMLPutExtension;
+import org.nrg.xnat.rest.SerializationUtils;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -71,7 +71,7 @@ public class TestSubjectResources extends BaseRestTest {
         // listing should work even if no subjects
         mainCredentials().given().queryParam("format", "html").get(formatRestUrl("projects", project.getId(), "subjects")).then().assertThat().statusCode(200);
 
-        final Subject subject = new Subject(project).extension(new SubjectXMLPutExtension(restDriver, subjectXML1));
+        final Subject subject = new Subject(project).extension(new SubjectXMLPutExtension(restDriver.interfaceFor(mainUser), subjectXML1));
         restDriver.createSubject(mainUser, subject);
 
         compareBeanXML(subjectXML1, subject, ignoredFields);

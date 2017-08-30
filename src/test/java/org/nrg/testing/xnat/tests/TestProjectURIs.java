@@ -1,10 +1,10 @@
 package org.nrg.testing.xnat.tests;
 
 import org.nrg.testing.xnat.BaseRestTest;
-import org.nrg.xnat.pojo.Project;
-import org.nrg.xnat.pojo.resources.ProjectResource;
-import org.nrg.xnat.pojo.resources.Resource;
-import org.nrg.xnat.pojo.resources.ResourceFile;
+import org.nrg.xnat.pogo.Project;
+import org.nrg.xnat.pogo.resources.ProjectResource;
+import org.nrg.xnat.pogo.resources.Resource;
+import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.testng.annotations.Test;
 
 public class TestProjectURIs extends BaseRestTest {

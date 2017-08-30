@@ -3,9 +3,9 @@ package org.nrg.testing.xnat.tests;
 import org.nrg.testing.LegacyComparison;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.xnat.BaseRestTest;
-import org.nrg.testing.xnat.extensions.ProjectXMLPutExtension;
 import org.nrg.xdat.bean.XnatProjectdataBean;
-import org.nrg.xnat.pojo.Project;
+import org.nrg.xnat.pogo.Project;
+import org.nrg.xnat.pogo.extensions.project.ProjectXMLPutExtension;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
@@ -47,11 +47,11 @@ public class TestProjectResources extends BaseRestTest {
         final File original = FileIO.getDataFile("test_project_v1.xml");
         final File updated  = FileIO.getDataFile("test_project_v2.xml");
 
-        final Project project = registerProject().extension(new ProjectXMLPutExtension(restDriver, original));
+        final Project project = registerProject().extension(new ProjectXMLPutExtension(restDriver.interfaceFor(mainUser), original));
 
         restDriver.createProject(mainUser, project);
         compare(project, original);
-        restDriver.createProject(mainUser, project.extension(new ProjectXMLPutExtension(restDriver, updated))); // update project
+        restDriver.createProject(mainUser, project.extension(new ProjectXMLPutExtension(restDriver.interfaceFor(mainUser), updated))); // update project
         compare(project, updated);
         restDriver.createProject(mainUser, project); // resubmit (no change)
         compare(project, updated);

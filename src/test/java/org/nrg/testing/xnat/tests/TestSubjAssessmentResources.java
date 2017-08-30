@@ -1,16 +1,15 @@
 package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.http.ContentType;
-import org.nrg.testing.CommonUtils;
 import org.nrg.testing.LegacyComparison;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.xnat.BaseRestTest;
-import org.nrg.testing.xnat.extensions.SubjectAssessorXMLExtension;
 import org.nrg.xdat.bean.XnatMrsessiondataBean;
-import org.nrg.xnat.pojo.Project;
-import org.nrg.xnat.pojo.Subject;
-import org.nrg.xnat.pojo.experiments.ImagingSession;
-import org.nrg.xnat.pojo.experiments.sessions.MRSession;
+import org.nrg.xnat.pogo.Project;
+import org.nrg.xnat.pogo.Subject;
+import org.nrg.xnat.pogo.experiments.ImagingSession;
+import org.nrg.xnat.pogo.experiments.sessions.MRSession;
+import org.nrg.xnat.pogo.extensions.subject_assessor.SubjectAssessorXMLExtension;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -61,8 +60,8 @@ public class TestSubjAssessmentResources extends BaseRestTest {
         mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIO.readDataFile("test_expt_bad_URI2.xml")).
                 post(experimentsUrl()).then().assertThat().statusCode(400); // contains path outside project => invalid
 
-        final MRSession uriWithRelativePath = new MRSession(currentProject, subject1).extension(new SubjectAssessorXMLExtension(restDriver, FileIO.getDataFile("test_expt_bad_URI3.xml")));
-        final MRSession uriWithWindowsSlash = new MRSession(currentProject, subject1).extension(new SubjectAssessorXMLExtension(restDriver, FileIO.getDataFile("test_expt_bad_URI4.xml")));
+        final MRSession uriWithRelativePath = new MRSession(currentProject, subject1).extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainUser), FileIO.getDataFile("test_expt_bad_URI3.xml")));
+        final MRSession uriWithWindowsSlash = new MRSession(currentProject, subject1).extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainUser), FileIO.getDataFile("test_expt_bad_URI4.xml")));
 
         restDriver.createSubjectAssessor(mainUser, uriWithRelativePath); // allowed
         restDriver.createSubjectAssessor(mainUser, uriWithWindowsSlash); // allowed
@@ -87,7 +86,7 @@ public class TestSubjAssessmentResources extends BaseRestTest {
     public void testSubjectAssessmentXMLCRUD() throws IOException, SAXException {
         final File experimentV1 = FileIO.getDataFile("test_expt_v1.xml");
         final File experimentV2 = FileIO.getDataFile("test_expt_v2.xml");
-        final ImagingSession session = new MRSession(currentProject, subject1).extension(new SubjectAssessorXMLExtension(restDriver, experimentV1));
+        final ImagingSession session = new MRSession(currentProject, subject1).extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainUser), experimentV1));
 
         mainCredentials().given().queryParam("format", "html").get(experimentsUrl()).then().assertThat().statusCode(200);
         restDriver.createSubjectAssessor(mainUser, session);

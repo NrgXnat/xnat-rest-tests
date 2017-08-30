@@ -4,20 +4,17 @@ import org.hamcrest.Matchers;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.util.TestNgUtils;
 import org.nrg.testing.xnat.BaseRestTest;
-import org.nrg.testing.xnat.extensions.SimpleResourceFileExtension;
-import org.nrg.xnat.pojo.experiments.ImagingSession;
-import org.nrg.xnat.pojo.experiments.sessions.MRSession;
-import org.nrg.xnat.pojo.resources.Resource;
-import org.nrg.xnat.pojo.resources.ResourceFile;
-import org.nrg.xnat.pojo.resources.SubjectAssessorResource;
+import org.nrg.xnat.pogo.experiments.ImagingSession;
+import org.nrg.xnat.pogo.experiments.sessions.MRSession;
+import org.nrg.xnat.pogo.extensions.SimpleResourceFileExtension;
+import org.nrg.xnat.pogo.resources.Resource;
+import org.nrg.xnat.pogo.resources.ResourceFile;
+import org.nrg.xnat.pogo.resources.SubjectAssessorResource;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.File;
-import java.util.List;
-
-import static org.testng.AssertJUnit.assertEquals;
 
 public class TestFileFiltering extends BaseRestTest {
 
