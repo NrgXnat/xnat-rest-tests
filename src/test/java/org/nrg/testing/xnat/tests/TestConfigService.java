@@ -9,6 +9,8 @@ import org.nrg.testing.annotations.HardDependency;
 import org.nrg.testing.annotations.SoftDependency;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.Users;
+import org.nrg.xnat.enums.Accessibility;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.users.User;
 import org.nrg.xnat.rest.Credentials;
@@ -231,7 +233,7 @@ public class TestConfigService extends BaseRestTest {
     }
 
     @Test
-    public void testConfigServiceProjectLevelSecurity() {
+    public void testConfigServiceProjectLevelSecurityLegacy() {
         final Project project = registerProject();
         final String path = UUID.randomUUID().toString() + "/" + UUID.randomUUID().toString();
         final String urlToTest = formatRestUrl("projects", project.getId(), "config", path);
@@ -246,6 +248,33 @@ public class TestConfigService extends BaseRestTest {
         assertEquals(contents, mainAdminCredentials().queryParam("contents", true).get(urlToTest).then().assertThat().statusCode(200).and().extract().response().asString());
 
         mainCredentials().queryParam("contents", true).get(urlToTest).then().assertThat().statusCode(404); // user can't see project, so 404 instead of 403
+    }
+
+    @Test // TODO: QA-504 requires 2 users
+    public void testConfigServiceProjectLevelEditSecurity() {
+        final String path = "tracers/tracers";
+        final String tracers = "PIB FDG";
+        final String tracerUrl = formatRestUrl("config", path);
+
+        final Project project = registerProject().accessibility(Accessibility.PRIVATE);
+        final User member = mainUser;
+        final User collaborator = Users.genericAccount(restDriver);
+        final User unauthorizedUser = Users.genericAccount(restDriver);
+        restDriver.createUser(mainAdminUser, collaborator);
+        restDriver.createUser(mainAdminUser, unauthorizedUser);
+        project.addMember(mainUser);
+        project.addCollaborator(collaborator);
+
+        mainAdminCredentials().contentType(ContentType.TEXT).body(tracers).put(tracerUrl).then().assertThat().statusCode(isOk);
+
+        for (User user : new User[]{member, collaborator, unauthorizedUser}) {
+            Credentials.build(user).contentType(ContentType.TEXT).body("junk string").put(tracerUrl).then().assertThat().statusCode(403);
+        }
+
+        final JsonPath configResponse = getConfigJsonPath(tracerUrl);
+
+        assertEquals(1, configResponse.getList("").size());
+        assertEquals(tracers, configResponse.getString("get(0).contents"));
     }
 
     private Project registerProject() {
