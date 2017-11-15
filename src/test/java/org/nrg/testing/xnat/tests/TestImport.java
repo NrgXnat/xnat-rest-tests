@@ -7,7 +7,7 @@ import org.joda.time.LocalDate;
 import org.nrg.testing.CommonUtils;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.util.TestNgUtils;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.PrearchiveCode;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -27,7 +27,7 @@ import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertFalse;
 import static org.testng.AssertJUnit.assertTrue;
 
-public class TestImport extends BaseRestTest {
+public class TestImport extends BaseXnatRestTest {
 
     private final Project project = new Project().prearchiveCode(PrearchiveCode.MANUAL);
     private final File testZip = FileIO.getDataFile("mr_1.zip");

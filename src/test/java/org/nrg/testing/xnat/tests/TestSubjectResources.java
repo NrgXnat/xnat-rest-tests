@@ -4,7 +4,7 @@ import com.jayway.restassured.http.ContentType;
 import org.joda.time.LocalDate;
 import org.nrg.testing.LegacyComparison;
 import org.nrg.testing.file.FileIO;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xdat.bean.XnatSubjectdataBean;
 import org.nrg.xnat.enums.Gender;
 import org.nrg.xnat.enums.Handedness;
@@ -24,7 +24,7 @@ import java.util.*;
 
 import static org.testng.AssertJUnit.assertEquals;
 
-public class TestSubjectResources extends BaseRestTest {
+public class TestSubjectResources extends BaseXnatRestTest {
 
     @BeforeMethod
     public void addSubjectResourceTestProject() {

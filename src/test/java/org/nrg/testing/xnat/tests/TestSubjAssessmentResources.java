@@ -3,7 +3,7 @@ package org.nrg.testing.xnat.tests;
 import com.jayway.restassured.http.ContentType;
 import org.nrg.testing.LegacyComparison;
 import org.nrg.testing.file.FileIO;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xdat.bean.XnatMrsessiondataBean;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -23,7 +23,7 @@ import java.util.List;
 
 import static org.testng.AssertJUnit.assertEquals;
 
-public class TestSubjAssessmentResources extends BaseRestTest {
+public class TestSubjAssessmentResources extends BaseXnatRestTest {
 
     private Project currentProject;
     private Subject subject1;

@@ -1,7 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
 import org.nrg.testing.file.FileIO;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Share;
@@ -21,11 +21,11 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 
-public class TestRename extends BaseRestTest {
+public class TestRename extends BaseXnatRestTest {
 
     private final Project renameProject1 = new Project();
     private final Project renameProject2 = new Project();
-    private final String louie = "louie.jpg";
+    private final File louieFile = FileIO.getDataFile("louie.jpg");
     private final File dicomFile = FileIO.getDataFile("mr_1/1.dcm");
 
 
@@ -46,7 +46,7 @@ public class TestRename extends BaseRestTest {
         final Subject subject = new Subject(renameProject1);
 
         final ImagingSession session = new MRSession(renameProject1, subject);
-        final ResourceFile sessionResourceFile = new ResourceFile().name(louie);
+        final ResourceFile sessionResourceFile = new ResourceFile().extension(new SimpleResourceFileExtension(louieFile));
         final Resource sessionResource = new SubjectAssessorResource(renameProject1, subject, session, "TESTRESOURCE").addResourceFile(sessionResourceFile);
 
         final Scan scan = new MRScan(session, "1").seriesDescription("FLAIR").type("FLAIR");
@@ -70,7 +70,7 @@ public class TestRename extends BaseRestTest {
         final Resource subjectResource = new SubjectResource(subject.getProject(), subject, "TESTRESOURCE2").addResourceFile(subjectResourceFile);
 
         final ImagingSession session = new MRSession(renameProject1, subject);
-        final ResourceFile sessionResourceFile = new ResourceFile().name(louie);
+        final ResourceFile sessionResourceFile = new ResourceFile().extension(new SimpleResourceFileExtension(louieFile));
         final Resource sessionResource = new SubjectAssessorResource(renameProject1, subject, session, "TESTRESOURCE").addResourceFile(sessionResourceFile);
 
         new Scan(session, "1").xsiType(DataType.MR_SCAN.getXsiType()).seriesDescription("FLAIR").type("FLAIR");
@@ -100,15 +100,17 @@ public class TestRename extends BaseRestTest {
         restDriver.createSessionAssessor(mainAdminUser, renameProject2, subject, session, assessor);
 
         final Resource sessionResource = new SubjectAssessorResource(renameProject1, subject, session, "TEST").addResourceFile(
-                new ResourceFile().name(dicomFile.getName()).extension(new SimpleResourceFileExtension(dicomFile))
+                new ResourceFile().extension(new SimpleResourceFileExtension(dicomFile))
         );
-        final Resource assessorResource = new SessionAssessorResource(renameProject2, subject, session, assessor).addResourceFile(new ResourceFile().name(louie));
+        final Resource assessorResource = new SessionAssessorResource(renameProject2, subject, session, assessor).folder("ASSESSOR_RESOURCE").addResourceFile(new ResourceFile().extension(new SimpleResourceFileExtension(louieFile)));
 
         restDriver.uploadResource(mainAdminUser, sessionResource);
         restDriver.uploadResource(mainAdminUser, assessorResource);
 
         // user with no access to source project should not be able to relabel
-        mainCredentials().given().queryParam("label", newLabel).put(restDriver.subjectAssessorUrl(renameProject1, subject, session)).then().assertThat().statusCode(404);
+        mainCredentials().given().queryParam("label", newLabel).
+                put(restDriver.subjectAssessorUrl(renameProject1, subject, session)).
+                then().assertThat().statusCode(404);
 
         restDriver.addUserToProject(mainAdminUser, mainUser, renameProject1, UserGroups.COLLABORATOR);
 

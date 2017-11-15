@@ -1,12 +1,12 @@
 package org.nrg.testing.xnat.tests;
 
 import org.nrg.testing.util.RandomHelper;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.Project;
 import org.testng.annotations.*;
 
 // Adapted from tests originally written by James on 2014-02-24
-public class TestProjectValidation extends BaseRestTest {
+public class TestProjectValidation extends BaseXnatRestTest {
 
     private Project project;
 

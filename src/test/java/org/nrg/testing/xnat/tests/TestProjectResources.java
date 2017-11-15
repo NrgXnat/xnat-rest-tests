@@ -2,7 +2,7 @@ package org.nrg.testing.xnat.tests;
 
 import org.nrg.testing.LegacyComparison;
 import org.nrg.testing.file.FileIO;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xdat.bean.XnatProjectdataBean;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.extensions.project.ProjectXMLPutExtension;
@@ -12,7 +12,7 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.util.*;
 
-public class TestProjectResources extends BaseRestTest {
+public class TestProjectResources extends BaseXnatRestTest {
 
     private final List<Project> testProjects = new ArrayList<>();
 

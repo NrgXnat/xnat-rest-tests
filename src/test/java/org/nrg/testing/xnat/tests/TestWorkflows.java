@@ -2,7 +2,7 @@ package org.nrg.testing.xnat.tests;
 
 import org.joda.time.LocalDate;
 import org.nrg.testing.ChainedPutMap;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
@@ -14,7 +14,7 @@ import java.util.Map;
 
 import static org.testng.AssertJUnit.assertEquals;
 
-public class TestWorkflows extends BaseRestTest {
+public class TestWorkflows extends BaseXnatRestTest {
 
     private Project adminProject;
     private Subject adminSubject;

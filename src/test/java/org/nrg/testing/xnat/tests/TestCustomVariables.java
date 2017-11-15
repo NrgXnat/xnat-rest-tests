@@ -4,7 +4,7 @@ import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.response.Response;
 import org.hamcrest.Matchers;
 import org.joda.time.LocalDate;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.Gender;
 import org.nrg.xnat.enums.Handedness;
 import org.nrg.xnat.pogo.Project;
@@ -15,7 +15,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-public class TestCustomVariables extends BaseRestTest {
+public class TestCustomVariables extends BaseXnatRestTest {
 
     @BeforeMethod
     public void createTestProject() {

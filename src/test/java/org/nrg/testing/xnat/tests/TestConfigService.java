@@ -8,7 +8,7 @@ import org.nrg.testing.CommonUtils;
 import org.nrg.testing.annotations.HardDependency;
 import org.nrg.testing.annotations.SoftDependency;
 import org.nrg.testing.file.FileIO;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.Users;
 import org.nrg.xnat.enums.Accessibility;
 import org.nrg.xnat.pogo.Project;
@@ -25,7 +25,7 @@ import java.util.UUID;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertNotNull;
 
-public class TestConfigService extends BaseRestTest {
+public class TestConfigService extends BaseXnatRestTest {
 
     private final List<Project> projects = new ArrayList<>();
     private final Matcher<Integer> isOk = Matchers.isOneOf(200, 201);
@@ -250,20 +250,23 @@ public class TestConfigService extends BaseRestTest {
         mainCredentials().queryParam("contents", true).get(urlToTest).then().assertThat().statusCode(404); // user can't see project, so 404 instead of 403
     }
 
-    @Test // TODO: QA-504 requires 2 users
+    @Test // TODO: QA-504 requires 3 users
     public void testConfigServiceProjectLevelEditSecurity() {
-        final String path = "tracers/tracers";
-        final String tracers = "PIB FDG";
-        final String tracerUrl = formatRestUrl("config", path);
-
         final Project project = registerProject().accessibility(Accessibility.PRIVATE);
-        final User member = mainUser;
+        final User member = Users.genericAccount(restDriver);
         final User collaborator = Users.genericAccount(restDriver);
         final User unauthorizedUser = Users.genericAccount(restDriver);
+        restDriver.createUser(mainAdminUser, member);
         restDriver.createUser(mainAdminUser, collaborator);
         restDriver.createUser(mainAdminUser, unauthorizedUser);
-        project.addMember(mainUser);
+        project.addOwner(mainUser);
+        project.addMember(member);
         project.addCollaborator(collaborator);
+        restDriver.createProject(mainAdminUser, project);
+
+        final String path = "tracers/tracers";
+        final String tracers = "PIB FDG";
+        final String tracerUrl = formatRestUrl("projects", project.getId(), "config", path);
 
         mainAdminCredentials().contentType(ContentType.TEXT).body(tracers).put(tracerUrl).then().assertThat().statusCode(isOk);
 

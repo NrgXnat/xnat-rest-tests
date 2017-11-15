@@ -8,7 +8,7 @@ import org.joda.time.LocalDate;
 import org.nrg.testing.CommonUtils;
 import org.nrg.testing.UIDList;
 import org.nrg.testing.file.FileIO;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.XnatObjectUtils;
 import org.nrg.xnat.enums.Gender;
 import org.nrg.xnat.enums.PrearchiveCode;
@@ -26,6 +26,7 @@ import org.nrg.xnat.pogo.resources.ScanResource;
 import org.nrg.xnat.pogo.users.User;
 import org.nrg.xnat.rest.Credentials;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -35,7 +36,7 @@ import java.io.IOException;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertNull;
 
-public class TestAnonymizer extends BaseRestTest {
+public class TestAnonymizerLegacy extends BaseXnatRestTest {
     private final File anonScript1File = FileIO.getDataFile("anon1.das");
     private final AnonScript anonScript1 = XnatObjectUtils.anonScriptFromFile(null, anonScript1File);
     private final File anonScript2File = FileIO.getDataFile("anon2.das");
@@ -51,6 +52,11 @@ public class TestAnonymizer extends BaseRestTest {
     private Subject subject;
     private ImagingSession session;
     private Project otherProject;
+
+    @BeforeClass
+    public void setSiteScript() {
+        restDriver.setSiteAnonScript(mainAdminUser, restDriver.getDefaultXnatAnonScript());
+    }
 
     @BeforeMethod
     public void enableSiteScript() {

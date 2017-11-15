@@ -3,7 +3,7 @@ package org.nrg.testing.xnat.tests;
 import org.hamcrest.Matchers;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.util.TestNgUtils;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.extensions.SimpleResourceFileExtension;
@@ -16,7 +16,7 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 
-public class TestFileFiltering extends BaseRestTest {
+public class TestFileFiltering extends BaseXnatRestTest {
 
     private final File louieFile = FileIO.getDataFile("louie.jpg");
 

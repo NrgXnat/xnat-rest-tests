@@ -2,7 +2,7 @@ package org.nrg.testing.xnat.tests;
 
 import org.joda.time.LocalDate;
 import org.nrg.testing.file.FileIO;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
@@ -19,7 +19,7 @@ import java.io.File;
 
 import static org.testng.AssertJUnit.assertEquals;
 
-public class TestArchive extends BaseRestTest {
+public class TestArchive extends BaseXnatRestTest {
 
     private Project project;
     private final File sessionZip = FileIO.getDataFile("mr_1.zip");

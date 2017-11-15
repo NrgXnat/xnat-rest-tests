@@ -5,7 +5,7 @@ import org.hamcrest.Matchers;
 import org.nrg.testing.CommonUtils;
 import org.nrg.testing.UIDList;
 import org.nrg.testing.file.FileIO;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.PrearchiveCode;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -18,7 +18,7 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 
-public class TestPrearchiveMgmt extends BaseRestTest {
+public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
     private final File sessionZip = FileIO.getDataFile("mr_1.zip");
     private final String subjectName = "SPP_0x220790";

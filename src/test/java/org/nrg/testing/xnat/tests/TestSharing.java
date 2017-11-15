@@ -2,7 +2,7 @@ package org.nrg.testing.xnat.tests;
 
 import org.joda.time.LocalDate;
 import org.nrg.testing.CommonUtils;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.Accessibility;
 import org.nrg.xnat.enums.Gender;
 import org.nrg.xnat.enums.Handedness;
@@ -18,7 +18,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-public class TestSharing extends BaseRestTest {
+public class TestSharing extends BaseXnatRestTest {
 
     private Project userProject;
     private Project adminProject;
@@ -94,6 +94,8 @@ public class TestSharing extends BaseRestTest {
         mainCredentials().get(restDriver.subjectUrl(subject)).then().assertThat().statusCode(200);
         mainCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
 
+        restDriver.interfaceFor(mainUser).logout();
+        restDriver.interfaceFor(mainUser).reauthenticate();
         restDriver.shareSubject(mainUser, adminProject, subject, subjectShare);
         restDriver.shareSubjectAssessor(mainUser, adminProject, subject, session, sessionShare);
 
@@ -178,6 +180,8 @@ public class TestSharing extends BaseRestTest {
 
         // cross share users as collaborators
         restDriver.addUserToProject(mainAdminUser, mainUser, adminProject, UserGroups.COLLABORATOR);
+        restDriver.interfaceFor(mainUser).logout();
+        restDriver.interfaceFor(mainUser).reauthenticate();
         restDriver.addUserToProject(mainUser, mainAdminUser, userProject, UserGroups.COLLABORATOR);
 
         // create subject in user project and share to admin project

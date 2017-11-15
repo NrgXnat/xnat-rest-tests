@@ -1,7 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.path.json.JsonPath;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.testng.annotations.Test;
 
 import java.util.Map;
@@ -12,7 +12,7 @@ import static org.testng.Assert.assertNotEquals;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertNull;
 
-public class TestSearch extends BaseRestTest {
+public class TestSearch extends BaseXnatRestTest {
 
     @Test
     public void testElements() {

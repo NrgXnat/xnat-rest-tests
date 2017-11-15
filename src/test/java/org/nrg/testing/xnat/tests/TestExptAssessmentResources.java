@@ -5,7 +5,7 @@ import org.hamcrest.Matchers;
 import org.nrg.testing.CommonUtils;
 import org.nrg.testing.LegacyComparison;
 import org.nrg.testing.file.FileIO;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xdat.bean.XnatQcmanualassessordataBean;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -18,6 +18,7 @@ import org.nrg.xnat.pogo.extensions.session_assessor.SessionAssessorXMLExtension
 import org.nrg.xnat.pogo.extensions.subject.SubjectXMLPutExtension;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SubjectAssessorXMLExtension;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -25,12 +26,19 @@ import java.io.File;
 import java.util.Collections;
 import java.util.List;
 
-public class TestExptAssessmentResources extends BaseRestTest {
+public class TestExptAssessmentResources extends BaseXnatRestTest {
 
     final Project project1 = new Project();
-    final Project project2 = new Project().extension(new ProjectXMLPutExtension(restDriver.interfaceFor(mainUser), FileIO.getDataFile("test_project_v1.xml")));
-    final Subject subject = new Subject(project2).extension(new SubjectXMLPutExtension(restDriver.interfaceFor(mainUser), FileIO.getDataFile("test_subject_v1.xml")));
-    final ImagingSession session = new MRSession(project2, subject).extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainUser), FileIO.getDataFile("test_expt_v1.xml")));
+    final Project project2 = new Project();
+    final Subject subject = new Subject(project2);
+    final ImagingSession session = new MRSession(project2, subject);
+
+    @BeforeClass
+    public void setExtensions() {
+        project2.extension(new ProjectXMLPutExtension(restDriver.interfaceFor(mainUser), FileIO.getDataFile("test_project_v1.xml")));
+        subject.extension(new SubjectXMLPutExtension(restDriver.interfaceFor(mainUser), FileIO.getDataFile("test_subject_v1.xml")));
+        session.extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainUser), FileIO.getDataFile("test_expt_v1.xml")));
+    }
 
     @BeforeMethod
     public void setupExperimentAssessmentResourcesTest() {

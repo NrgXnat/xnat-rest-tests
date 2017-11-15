@@ -1,13 +1,15 @@
 package org.nrg.testing.xnat.tests;
 
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.file.FileIO;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.Project;
+import org.nrg.xnat.pogo.extensions.SimpleResourceFileExtension;
 import org.nrg.xnat.pogo.resources.ProjectResource;
 import org.nrg.xnat.pogo.resources.Resource;
 import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.testng.annotations.Test;
 
-public class TestProjectURIs extends BaseRestTest {
+public class TestProjectURIs extends BaseXnatRestTest {
 
     @Test
     public void testPrearchiveConfig() {
@@ -25,8 +27,8 @@ public class TestProjectURIs extends BaseRestTest {
 
     @Test
     public void testProjectDeleteCrossover() {
-        final Resource resource1 = new ProjectResource().folder("TESTING").addResourceFile(new ResourceFile().name("louie.jpg"));
-        final Resource resource2 = new ProjectResource().folder("TESTING2").addResourceFile(new ResourceFile().name("louie.jpg"));
+        final Resource resource1 = new ProjectResource().folder("TESTING").addResourceFile(new ResourceFile().extension(new SimpleResourceFileExtension(FileIO.getDataFile("louie.jpg"))));
+        final Resource resource2 = new ProjectResource().folder("TESTING2").addResourceFile(new ResourceFile().extension(new SimpleResourceFileExtension(FileIO.getDataFile("louie.jpg"))));
         Project projDelCross1 = new Project().addResource(resource1);
         Project projDelCross2 = new Project().addResource(resource2);
 

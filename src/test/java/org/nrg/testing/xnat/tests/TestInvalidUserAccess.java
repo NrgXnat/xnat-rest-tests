@@ -4,7 +4,7 @@ import org.hamcrest.Matchers;
 import org.nrg.testing.ChainedPutMap;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.util.RandomHelper;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.Accessibility;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -21,7 +21,7 @@ import org.testng.annotations.Test;
 
 import java.util.Map;
 
-public class TestInvalidUserAccess extends BaseRestTest {
+public class TestInvalidUserAccess extends BaseXnatRestTest {
 
     Project testProject;
     Subject testSubject;

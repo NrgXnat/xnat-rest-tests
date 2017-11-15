@@ -2,11 +2,11 @@ package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.response.Response;
 import org.nrg.testing.util.TestNgUtils;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
 import org.testng.annotations.Test;
 
-public class TestUserAccess extends BaseRestTest {
+public class TestUserAccess extends BaseXnatRestTest {
 
     @Test
     public void testValidAccess() {

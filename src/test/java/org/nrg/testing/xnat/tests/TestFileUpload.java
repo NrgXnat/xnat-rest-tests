@@ -6,7 +6,7 @@ import org.nrg.testing.CommonUtils;
 import org.nrg.testing.LegacyComparison;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.util.TestNgUtils;
-import org.nrg.testing.xnat.BaseRestTest;
+import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.xdat.bean.XnatMrsessiondataBean;
 import org.nrg.xnat.enums.Gender;
@@ -32,7 +32,7 @@ import java.util.zip.ZipFile;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.fail;
 
-public class TestFileUpload extends BaseRestTest {
+public class TestFileUpload extends BaseXnatRestTest {
 
     private final SimpleDateFormat americanDate = new SimpleDateFormat("MM/dd/yyyy");
     private final File testZip = FileIO.getDataFile("mr_1.zip");
