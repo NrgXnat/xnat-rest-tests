@@ -1,6 +1,5 @@
 package org.nrg.testing.xnat.tests;
 
-import org.joda.time.LocalDate;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.Project;
@@ -16,6 +15,7 @@ import org.nrg.xnat.pogo.resources.ScanResource;
 import org.testng.annotations.*;
 
 import java.io.File;
+import java.time.LocalDate;
 
 import static org.testng.AssertJUnit.assertEquals;
 
@@ -49,7 +49,7 @@ public class TestArchive extends BaseXnatRestTest {
     @Test
     public void testWebQCGeneration() {
         final Subject subject = new Subject(project);
-        final ImagingSession session = new MRSession(project, subject).date(new LocalDate("2001-01-01"));
+        final ImagingSession session = new MRSession(project, subject).date(LocalDate.parse("2001-01-01"));
         final Scan scan1 = new MRScan(session, "1").seriesDescription("localizer").quality("usable");
         final Scan scan2 = new MRScan(session, "2").seriesDescription("localizer").quality("questionable");
         final Resource scan1Resource = new ScanResource(project, subject, session, scan1).folder("DICOM").format("DICOM");
@@ -78,13 +78,13 @@ public class TestArchive extends BaseXnatRestTest {
         final String scanType = "MAPPED";
 
         final Subject subject = new Subject(project);
-        final ImagingSession mr1 = new MRSession(project, subject, "MR1").date(new LocalDate("2001-01-01"));
+        final ImagingSession mr1 = new MRSession(project, subject, "MR1").date(LocalDate.parse("2001-01-01"));
         final Scan mr1Scan1 = new MRScan(mr1, "1").seriesDescription(commonSeriesDescription).quality("usable"); // unmapped type
         final Scan mr1Scan2 = new MRScan(mr1, "2").seriesDescription(commonSeriesDescription).quality("questionable"); // unmapped type
         new ScanResource(project, subject, mr1, mr1Scan1).folder("DICOM").format("DICOM");
         new ScanResource(project, subject, mr1, mr1Scan2).folder("DICOM").format("DICOM");
 
-        final ImagingSession mr2 = new MRSession(project, subject, "MR2").date(new LocalDate("2001-01-02"));
+        final ImagingSession mr2 = new MRSession(project, subject, "MR2").date(LocalDate.parse("2001-01-02"));
         new MRScan(mr2, "1").seriesDescription(commonSeriesDescription).type(scanType).quality("usable"); // mapped type!
 
         restDriver.createSubject(mainUser, subject);
@@ -177,7 +177,7 @@ public class TestArchive extends BaseXnatRestTest {
         final Resource scanDicom = new ScanResource(project, subject, session, scan).folder("DICOM");
         for (int i = 1; i <= 6; i++) {
             final File dicomFile = FileIO.getDataFile(String.format("mr_1/%d.dcm", i));
-            scanDicom.addResourceFile(new ResourceFile(scanDicom, dicomFile.getName()).extension(new SimpleResourceFileExtension(dicomFile)));
+            new ResourceFile(scanDicom, dicomFile.getName()).extension(new SimpleResourceFileExtension(dicomFile));
         }
         return session;
     }

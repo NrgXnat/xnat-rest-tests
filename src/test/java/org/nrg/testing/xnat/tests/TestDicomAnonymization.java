@@ -16,6 +16,7 @@ import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
 import org.nrg.xnat.pogo.resources.Resource;
 import org.nrg.xnat.pogo.resources.ResourceFile;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -50,6 +51,11 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     public void clean() {
         restDriver.clearPrearchiveSessions(mainUser, anonProject);
         restDriver.clearProject(mainUser, anonProject);
+    }
+
+    @AfterClass(alwaysRun = true)
+    public void disableAnon() {
+        restDriver.interfaceFor(mainAdminUser).disableSiteAnonScript();
     }
 
     @Test

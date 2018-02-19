@@ -4,7 +4,6 @@ import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
 import org.dcm4che2.io.DicomInputStream;
 import org.dcm4che2.iod.module.macro.Code;
-import org.joda.time.LocalDate;
 import org.nrg.testing.CommonUtils;
 import org.nrg.testing.UIDList;
 import org.nrg.testing.file.FileIO;
@@ -32,6 +31,7 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
 
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertNull;
@@ -67,7 +67,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     public void setUpAnonProject() {
         currentProject = new Project().prearchiveCode(PrearchiveCode.MANUAL);
         subject = new Subject(currentProject, "ANON_SUBJ_1").gender(Gender.MALE);
-        session = new MRSession(currentProject, subject, "MR1").date(new LocalDate("2000-01-01"));
+        session = new MRSession(currentProject, subject, "MR1").date(LocalDate.parse("2000-01-01"));
         // only currentProject is used by all projects, so no reason to re create all of them each time
 
         restDriver.createProject(mainUser, currentProject);
@@ -450,7 +450,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     public void testProjectChange() throws IOException {
         otherProject = new Project();
         final Subject otherSubject = new Subject(otherProject, "filler");
-        new MRSession(otherProject, otherSubject, "filler_MR1").date(new LocalDate("2000-01-01"));
+        new MRSession(otherProject, otherSubject, "filler_MR1").date(LocalDate.parse("2000-01-01"));
         restDriver.createProject(mainUser, otherProject);
 
         restDriver.setProjectAnonScript(mainUser, currentProject, anonScript1);

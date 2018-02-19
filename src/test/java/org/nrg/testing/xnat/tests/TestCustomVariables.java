@@ -3,7 +3,6 @@ package org.nrg.testing.xnat.tests;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.response.Response;
 import org.hamcrest.Matchers;
-import org.joda.time.LocalDate;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.Gender;
 import org.nrg.xnat.enums.Handedness;
@@ -14,6 +13,8 @@ import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import java.time.LocalDate;
 
 public class TestCustomVariables extends BaseXnatRestTest {
 
@@ -34,8 +35,8 @@ public class TestCustomVariables extends BaseXnatRestTest {
         final String originalFieldValue = "12";
 
         final Project project = testSpecificProject;
-        final Subject subject = testSpecificSubject.project(project).group("control").src("12").dob(new LocalDate("2001-01-01")).gender(Gender.MALE).handedness(Handedness.LEFT);
-        final SubjectAssessor subjectAssessor = new MRSession(project, subject).date(new LocalDate("1999-12-31"));
+        final Subject subject = testSpecificSubject.project(project).group("control").src("12").dob(LocalDate.parse("2001-01-01")).gender(Gender.MALE).handedness(Handedness.LEFT);
+        final SubjectAssessor subjectAssessor = new MRSession(project, subject).date(LocalDate.parse("1999-12-31"));
         restDriver.createProject(mainUser, project);
 
         mainCredentials().given().queryParam(testField, originalFieldValue).put(restDriver.subjectAssessorUrl(subjectAssessor)).then().statusCode(200);

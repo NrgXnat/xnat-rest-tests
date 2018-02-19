@@ -1,6 +1,5 @@
 package org.nrg.testing.xnat.tests;
 
-import org.joda.time.LocalDate;
 import org.nrg.testing.CommonUtils;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.Accessibility;
@@ -17,6 +16,8 @@ import org.nrg.xnat.pogo.users.UserGroups;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import java.time.LocalDate;
 
 public class TestSharing extends BaseXnatRestTest {
 
@@ -43,11 +44,11 @@ public class TestSharing extends BaseXnatRestTest {
                 group("control").
                 src("12").
                 pi(new Investigator().firstname("Tim").lastname("Olsen")).
-                dob(new LocalDate("2001-01-01")).
+                dob(LocalDate.parse("2001-01-01")).
                 gender(Gender.MALE).
                 handedness(Handedness.LEFT);
 
-        final ImagingSession session = new MRSession(adminProject, subject, "MR1").date(new LocalDate("2000-01-01"));
+        final ImagingSession session = new MRSession(adminProject, subject, "MR1").date(LocalDate.parse("2000-01-01"));
 
         restDriver.createSubject(mainAdminUser, subject);
 
@@ -134,13 +135,13 @@ public class TestSharing extends BaseXnatRestTest {
         restDriver.createSubject(mainAdminUser, subject2);
 
         mainCredentials().get(restDriver.subjectUrl(sharedSubject2)).then().assertThat().statusCode(200);
-        final ImagingSession session2 = new MRSession(userProject, sharedSubject2, "MR2").date(new LocalDate("2000-01-01"));
+        final ImagingSession session2 = new MRSession(userProject, sharedSubject2, "MR2").date(LocalDate.parse("2000-01-01"));
         restDriver.createSubjectAssessor(mainUser, session2);
 
         mainAdminCredentials().get(restDriver.subjectAssessorUrl(adminProject, subject2, session2)).then().assertThat().statusCode(404); // mr2 is not available in source project
 
         final Subject subject5 = new Subject(adminProject, "5");
-        final ImagingSession mr5 = new MRSession(adminProject, subject5, "MR5_5").date(new LocalDate("2000-01-01"));
+        final ImagingSession mr5 = new MRSession(adminProject, subject5, "MR5_5").date(LocalDate.parse("2000-01-01"));
         final Scan mr5Scan = new MRScan(mr5, "SCAN5");
         final String recon = "RECON5";
 
@@ -194,7 +195,7 @@ public class TestSharing extends BaseXnatRestTest {
         restDriver.shareSubject(mainAdminUser, userProject, subject, subjectShare);
 
         // create session in admin project and share to user project
-        final ImagingSession session = new MRSession(adminProject, sharedSubject, "MR6_6").date(new LocalDate("2000-01-01"));
+        final ImagingSession session = new MRSession(adminProject, sharedSubject, "MR6_6").date(LocalDate.parse("2000-01-01"));
         restDriver.createSubjectAssessor(mainAdminUser, session);
 
         final Share sessionShare = new Share(userProject, "SHARE_E6");

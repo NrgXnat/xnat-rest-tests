@@ -1,6 +1,5 @@
 package org.nrg.testing.xnat.tests;
 
-import org.joda.time.LocalDate;
 import org.nrg.testing.ChainedPutMap;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.Project;
@@ -10,6 +9,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.time.LocalDate;
 import java.util.Map;
 
 import static org.testng.AssertJUnit.assertEquals;
@@ -22,7 +22,7 @@ public class TestWorkflows extends BaseXnatRestTest {
 
     @BeforeMethod(alwaysRun = true)
     public void setupWorkflowTest() {
-        adminExp     = new MRSession().date(new LocalDate("1999-12-12"));
+        adminExp     = new MRSession().date(LocalDate.parse("1999-12-12"));
         adminSubject = new Subject().label("workflow_subj_1").addExperiment(adminExp);
         adminProject = new Project().addSubject(adminSubject);
 

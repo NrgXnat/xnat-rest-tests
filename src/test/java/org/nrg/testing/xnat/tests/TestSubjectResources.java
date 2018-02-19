@@ -1,7 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.http.ContentType;
-import org.joda.time.LocalDate;
 import org.nrg.testing.LegacyComparison;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.xnat.BaseXnatRestTest;
@@ -20,6 +19,7 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.*;
 
 import static org.testng.AssertJUnit.assertEquals;
@@ -44,7 +44,7 @@ public class TestSubjectResources extends BaseXnatRestTest {
                 group("control").
                 src("12").
                 pi(new Investigator().firstname("Tim").lastname("Olsen")).
-                dob(new LocalDate("2000-01-01")).
+                dob(LocalDate.parse("2000-01-01")).
                 gender(Gender.MALE).
                 handedness(Handedness.LEFT);
 

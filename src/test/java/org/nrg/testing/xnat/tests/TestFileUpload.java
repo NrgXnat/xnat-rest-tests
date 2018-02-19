@@ -1,7 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.response.Response;
-import org.joda.time.LocalDate;
 import org.nrg.testing.CommonUtils;
 import org.nrg.testing.LegacyComparison;
 import org.nrg.testing.file.FileIO;
@@ -20,6 +19,7 @@ import org.nrg.xnat.pogo.experiments.scans.MRScan;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.extensions.SimpleResourceFileExtension;
 import org.nrg.xnat.pogo.resources.*;
+import org.nrg.xnat.util.TimeUtils;
 import org.testng.annotations.*;
 
 import java.io.File;
@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.zip.ZipFile;
 
 import static org.testng.AssertJUnit.assertEquals;
@@ -53,7 +54,7 @@ public class TestFileUpload extends BaseXnatRestTest {
     public void setupFileUploadProject() {
         project = testSpecificProject;
         subject = new Subject(project, "1").gender(Gender.MALE);
-        session = new MRSession(project, subject, "MR1").date(new LocalDate("2000-01-01"));
+        session = new MRSession(project, subject, "MR1").date(LocalDate.parse("2000-01-01"));
         restDriver.createProject(mainUser, project);
     }
 
@@ -97,7 +98,7 @@ public class TestFileUpload extends BaseXnatRestTest {
 
     @Test
     public void testResourcesUpload() throws IOException {
-        assertEquals(session.getDate().toString("MM/dd/yyyy"), americanDate.format(readMrBean().getDate()));
+        assertEquals(TimeUtils.MM_DD_YYYY.format(session.getDate()), americanDate.format(readMrBean().getDate()));
 
         final ResourceFile sessionResourceFile = new ResourceFile().name(dicomFile1.getName()).extension(new SimpleResourceFileExtension(dicomFile1));
         final Resource     sessionResource     = new SubjectAssessorResource(project, subject, session, "TEST").addResourceFile(sessionResourceFile);
@@ -129,7 +130,7 @@ public class TestFileUpload extends BaseXnatRestTest {
                 unzippedFolder.resolve(String.format("%s/resources/%s/files/%s", session.getLabel(), sessionResource.getFolder(), dicomFile1.getName())).toFile()
         );
 
-        assertEquals(session.getDate().toString("MM/dd/yyyy"), americanDate.format(readMrBean().getDate()));
+        assertEquals(TimeUtils.MM_DD_YYYY.format(session.getDate()), americanDate.format(readMrBean().getDate()));
 
         // test sub directory access
 

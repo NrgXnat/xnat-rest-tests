@@ -3,7 +3,6 @@ package org.nrg.testing.xnat.tests;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.path.json.JsonPath;
 import org.hamcrest.Matchers;
-import org.joda.time.LocalDate;
 import org.nrg.testing.CommonUtils;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.util.TestNgUtils;
@@ -18,9 +17,12 @@ import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.experiments.sessions.PETSession;
 import org.nrg.xnat.pogo.resources.Resource;
 import org.nrg.xnat.pogo.resources.ScanResource;
+import org.nrg.xnat.util.TimeUtils;
 import org.testng.annotations.*;
 
 import java.io.File;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static org.testng.AssertJUnit.assertEquals;
@@ -132,7 +134,7 @@ public class TestImport extends BaseXnatRestTest {
         // services/import?dest=/archive/projects/{PROJECT}/subjects/SUBJECT/experiments/EXPERIMENT POST
 
         final Subject subject = new Subject(project, "SUBJ_0002");
-        final MRSession session = new MRSession(project, subject, newLabel()).date(new LocalDate("2000-01-01"));
+        final MRSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
         final String resourceUrl = CommonUtils.formatUrl(restDriver.subjectAssessorUrl(session), "/resources/TEST/files/files.zip");
 
         // create subject & session with custom date
@@ -155,7 +157,7 @@ public class TestImport extends BaseXnatRestTest {
 
         // test session date, should *not* be overwritten
         assertEquals(
-                session.getDate().toString("yyyy-MM-dd"),
+                DateTimeFormatter.ISO_DATE.format(session.getDate()),
                 mainCredentials().queryParam("format", "json").get(CommonUtils.formatUrl(restDriver.subjectUrl(subject), "experiments")).
                         jsonPath().getString(String.format("ResultSet.Result.find { it.label == '%s' }.date", session.getLabel()))
         );
@@ -170,7 +172,7 @@ public class TestImport extends BaseXnatRestTest {
     @Test
     public void testDataProjectExperimentNewExptXSIOverwriteFDeleteF() {
         final Subject subject = new Subject(project, "SUBJ3");
-        final ImagingSession session = new PETSession(project, subject).date(new LocalDate("2000-01-01"));
+        final ImagingSession session = new PETSession(project, subject).date(LocalDate.parse("2000-01-01"));
 
         restDriver.createSubject(mainUser, subject);
 
@@ -190,7 +192,7 @@ public class TestImport extends BaseXnatRestTest {
     @Test
     public void testDataProjectExperimentNewExptXSIOverwriteTDeleteF() {
         final Subject subject = new Subject(project, "SUBJ_03");
-        final ImagingSession session = new PETSession(project, subject).date(new LocalDate("2000-01-01"));
+        final ImagingSession session = new PETSession(project, subject).date(LocalDate.parse("2000-01-01"));
 
         restDriver.createSubject(mainUser, subject);
 
@@ -209,7 +211,7 @@ public class TestImport extends BaseXnatRestTest {
     @Test
     public void testDataDuplicateScanFilesOverwriteFDeleteF() {
         final Subject subject = new Subject(project, "SUBJ5");
-        final ImagingSession session = new MRSession(project, subject, newLabel()).date(new LocalDate("2000-01-01"));
+        final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
 
         for (int i = 0; i < 2; i++) {
             mainCredentials().
@@ -226,7 +228,7 @@ public class TestImport extends BaseXnatRestTest {
     @Test
     public void testDataDuplicateScanFilesOverwriteTDeleteF() {
         final Subject subject = new Subject(project, "SUBJ_5");
-        final ImagingSession session = new MRSession(project, subject, newLabel()).date(new LocalDate("2000-01-01"));
+        final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
 
         for (int i = 0; i < 2; i++) {
             final Map<String, Object> params = new HashMap<>();
@@ -250,7 +252,7 @@ public class TestImport extends BaseXnatRestTest {
     @Test
     public void testDataDuplicateScanFilesOverwriteTDeleteFWithFileFlag() {
         final Subject subject = new Subject(project, "SUBJ_05");
-        final ImagingSession session = new MRSession(project, subject, newLabel()).date(new LocalDate("2000-01-01"));
+        final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
 
         for (int i = 0; i < 2; i++) {
             final Map<String, Object> params = new HashMap<>();
@@ -274,7 +276,7 @@ public class TestImport extends BaseXnatRestTest {
     @Test
     public void testDataDuplicateScanFilesOverwriteTDeleteT() {
         final Subject subject = new Subject(project, "SUBJ_005");
-        final ImagingSession session = new MRSession(project, subject, newLabel()).date(new LocalDate("2000-01-01"));
+        final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
 
         for (int i = 0; i < 2; i++) {
             final Map<String, Object> params = new HashMap<>();
@@ -532,7 +534,7 @@ public class TestImport extends BaseXnatRestTest {
     public void testDataProjectExperimentNewScan() {
         final Subject subject = new Subject(project, "SUBJ_0009");
         restDriver.createSubject(mainUser, subject);
-        final ImagingSession session = new MRSession(project, subject, newLabel()).date(new LocalDate("2000-01-01"));
+        final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
 
         mainCredentials().
                 queryParam("triggerPipelines", false).
@@ -589,7 +591,7 @@ public class TestImport extends BaseXnatRestTest {
         // the third file will match the second file, and should be added to 1-MR1.
         // the fourth and fifth files will be uploaded together and should go into scan 1.
         final Subject subject = new Subject(project, "SUB5");
-        final ImagingSession session = new MRSession(project, subject, newLabel()).date(new LocalDate("2000-01-01"));
+        final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
         final Scan scan1 = new MRScan(session, "1");
         final Scan scan1MR1 = new MRScan(session, "1-MR1");
         final String archiveUrl = String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel());
