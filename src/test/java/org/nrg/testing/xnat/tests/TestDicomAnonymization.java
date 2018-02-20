@@ -54,8 +54,9 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @AfterClass(alwaysRun = true)
-    public void disableAnon() {
-        restDriver.interfaceFor(mainAdminUser).disableSiteAnonScript();
+    public void resetAnon() {
+        restDriver.enableSiteAnonScript(mainAdminUser);
+        restDriver.setSiteAnonScript(mainAdminUser, restDriver.getDefaultXnatAnonScript());
     }
 
     @Test
