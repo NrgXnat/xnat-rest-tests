@@ -9,7 +9,7 @@
   "parameters/voxelRes/y": 1.71875,
   "scanner": "CONSOLE01",
   "startTime": "00:00:12",
-  "parameters/imageType": "ORIGINAL\\\\PRIMARY\\\\DIFFUSION\\\\NONE",
+  "parameters/imageType": "ORIGINAL\\PRIMARY\\DIFFUSION\\NONE",
   "ID": "1",
   "coil": "HEAD",
   "parameters/pixelBandwidth": 32000,
