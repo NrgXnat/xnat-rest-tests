@@ -11,7 +11,9 @@ import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.Scan;
+import org.nrg.xnat.pogo.experiments.scans.CTScan;
 import org.nrg.xnat.pogo.experiments.scans.MRScan;
+import org.nrg.xnat.pogo.experiments.sessions.CTSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
 import org.nrg.xnat.rest.SerializationUtils;
@@ -36,7 +38,8 @@ import static org.testng.AssertJUnit.assertTrue;
  */
 @TestRequires(data = {
         TestData.EXTRACTION_DIFFUSION,
-        TestData.EXTRACTION_MR
+        TestData.EXTRACTION_MR,
+        TestData.EXTRACTION_CT
 })
 public class TestDicomDataExtraction extends BaseXnatRestTest {
 
@@ -46,12 +49,14 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
     private final Subject testSubject = new Subject(testProject);
     private final MRSession standardMRSession = new MRSession(testProject, testSubject);
     private final MRSession diffusionMR = new MRSession(testProject, testSubject);
+    private final CTSession standardCTSession = new CTSession(testProject, testSubject);
 
     @BeforeClass
     public void disableAnonAndSetupProject() {
         restDriver.disableSiteAnonScript(mainAdminUser);
         new SessionImportExtension(restDriver.interfaceFor(mainUser), standardMRSession, TestData.EXTRACTION_MR.toFile());
         new SessionImportExtension(restDriver.interfaceFor(mainUser), diffusionMR, TestData.EXTRACTION_DIFFUSION.toFile());
+        new SessionImportExtension(restDriver.interfaceFor(mainUser), standardCTSession, TestData.EXTRACTION_CT.toFile());
         restDriver.createProject(mainUser, testProject);
     }
 
@@ -72,6 +77,11 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
     @Test
     public void testEnhancedMRDiffusionExtraction() throws IOException {
         checkSeriesMatchesAttributes(new MRScan(diffusionMR, "1"), "diffusionScanAttributes.json");
+    }
+
+    @Test
+    public void testCTDicomExtraction() throws IOException {
+        checkSeriesMatchesAttributes(new CTScan(standardCTSession, "3000534"), "ctSeriesAttributes.json");
     }
 
     private void checkStudyMatchesAttributes(ImagingSession session, String attributesFile) throws IOException {
