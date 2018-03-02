@@ -50,6 +50,7 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
     private final MRSession standardMRSession = new MRSession(testProject, testSubject);
     private final MRSession diffusionMR = new MRSession(testProject, testSubject);
     private final CTSession standardCTSession = new CTSession(testProject, testSubject);
+    private final ImagingSession optSession = new ImagingSession(testProject, testSubject);
 
     @BeforeClass
     public void disableAnonAndSetupProject() {
@@ -57,6 +58,7 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
         new SessionImportExtension(restDriver.interfaceFor(mainUser), standardMRSession, TestData.EXTRACTION_MR.toFile());
         new SessionImportExtension(restDriver.interfaceFor(mainUser), diffusionMR, TestData.EXTRACTION_DIFFUSION.toFile());
         new SessionImportExtension(restDriver.interfaceFor(mainUser), standardCTSession, TestData.EXTRACTION_CT.toFile());
+        new SessionImportExtension(restDriver.interfaceFor(mainUser), optSession, TestData.EXTRACTION_OPT.toFile());
         restDriver.createProject(mainUser, testProject);
     }
 
@@ -82,6 +84,11 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
     @Test
     public void testCTDicomExtraction() throws IOException {
         checkSeriesMatchesAttributes(new CTScan(standardCTSession, "3000534"), "ctSeriesAttributes.json");
+    }
+
+    @Test
+    public void testOPTDicomExtraction() throws IOException {
+        checkSeriesMatchesAttributes(new Scan(optSession, "2429001"), "optSeriesAttributes.json");
     }
 
     private void checkStudyMatchesAttributes(ImagingSession session, String attributesFile) throws IOException {

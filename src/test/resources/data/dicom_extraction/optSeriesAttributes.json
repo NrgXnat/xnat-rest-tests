@@ -1,0 +1,19 @@
+{
+  "parameters/illumination_power": "1200.0",
+  "modality": "OPT",
+  "frames": 7,
+  "parameters/fov/y": 496,
+  "scanner/model": "Spectralis",
+  "parameters/illumination_wavelength": "880.0",
+  "series_description": "Volume IR",
+  "scanner/manufacturer": "Heidelberg Engineering",
+  "parameters/fov/x": 1536,
+  "type": "Macular Cube Scan",
+  "quality": "usable",
+  "parameters/voxelRes/z": 0.252057,
+  "UID": "1.3.6.1.4.1.33437.11.3.5604041.12963093945.145.3.1",
+  "parameters/voxelRes/x": 0.003867,
+  "parameters/voxelRes/y": 0.005911,
+  "parameters/imageType": "ORIGINAL\\PRIMARY",
+  "ID": "2429001"
+}
