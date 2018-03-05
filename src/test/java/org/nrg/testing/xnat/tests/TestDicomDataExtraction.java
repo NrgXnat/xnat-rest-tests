@@ -39,7 +39,8 @@ import static org.testng.AssertJUnit.assertTrue;
 @TestRequires(data = {
         TestData.EXTRACTION_DIFFUSION,
         TestData.EXTRACTION_MR,
-        TestData.EXTRACTION_CT
+        TestData.EXTRACTION_CT,
+        TestData.EXTRACTION_OPT
 })
 public class TestDicomDataExtraction extends BaseXnatRestTest {
 
