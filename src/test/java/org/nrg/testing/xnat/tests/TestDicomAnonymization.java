@@ -40,7 +40,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     @BeforeClass
     public void createProject() {
         restDriver.createProject(mainUser, anonProject);
-        restDriver.interfaceFor(mainUser).invalidateCachedUserSession(); // hack for XNAT-5187
+        restDriver.interfaceFor(mainUser).regenerateUserSession(); // hack for XNAT-5187
         scriptValidationMap.put(projectAnonDE4, new ProjectDE4Script());
         scriptValidationMap.put(projectAnonDE6, new ProjectDE6Script());
         scriptValidationMap.put(siteAnonDE4, new SiteDE4Script());
