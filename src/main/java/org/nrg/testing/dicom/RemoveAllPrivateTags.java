@@ -10,19 +10,18 @@ import java.util.Map;
 
 import static org.testng.AssertJUnit.assertEquals;
 
-public final class RemoveAllPrivateTags extends ScriptValidation { // don't extend (already DE6)
+public class RemoveAllPrivateTags extends ScriptValidation {
 
     @Override
     public void validateScriptRan(List<File> dicomFiles) {
         final Map<File, DicomObject> dicomMap = fixedChecks(dicomFiles);
         final DicomObject root = dicomMap.values().iterator().next();
 
-        root.putWildcardedNonexistenceCheck("(2001,XXXX)");
-        root.putWildcardedNonexistenceCheck("(2005,XXXX)");
+        addSimpleRanChecks(root);
         addSharedFuncGroupsSequenceChecks(root, true);
         addPerFrameFunctionalGroupsSequenceChecks(root, true);
 
-        validate(dicomMap, new ArrayList<InterfileDicomValidation>());
+        validate(dicomMap, new ArrayList<>());
     }
 
     @Override
@@ -32,8 +31,12 @@ public final class RemoveAllPrivateTags extends ScriptValidation { // don't exte
 
         addSharedFuncGroupsSequenceChecks(root, false);
         addPerFrameFunctionalGroupsSequenceChecks(root, false);
+        root.putValueEqualCheck("(2001,100c)", "N");
+        root.putValueEqualCheck("(2001,100e)", "N");
+        root.putValueEqualCheck("(2001,100f)", "0");
+        root.putValueEqualCheck("(2001,1010)", "NO");
 
-        validate(dicomMap, new ArrayList<InterfileDicomValidation>());
+        validate(dicomMap, new ArrayList<>());
     }
 
     @Override
@@ -45,6 +48,11 @@ public final class RemoveAllPrivateTags extends ScriptValidation { // don't exte
     @Override
     protected List<InterfileDicomValidation> interfileChecksWhen(boolean scriptRan) {
         return new ArrayList<>();
+    }
+
+    protected void addSimpleRanChecks(DicomObject root) {
+        root.putWildcardedNonexistenceCheck("(2001,XXXX)");
+        root.putWildcardedNonexistenceCheck("(2005,XXXX)");
     }
 
     private Map<File, DicomObject> fixedChecks(List<File> dicomFiles) {

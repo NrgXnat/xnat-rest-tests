@@ -12,7 +12,6 @@ import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.Scan;
-import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
 import org.nrg.xnat.pogo.resources.Resource;
 import org.nrg.xnat.pogo.resources.ResourceFile;
@@ -26,7 +25,7 @@ import java.util.*;
 
 import static org.nrg.xnat.enums.DicomEditVersion.*;
 
-@TestRequires(admin = true, data = TestData.ANON_2)
+@TestRequires(admin = true, data = {TestData.ANON_2, TestData.ANON_DUPLICATE_PRIVATE_TAG})
 public class TestDicomAnonymization extends BaseXnatRestTest {
 
     private final Project anonProject = new Project();
@@ -35,6 +34,9 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     private final AnonScript projectAnonDE6 = XnatObjectUtils.anonScriptFromFile(DE_6, "projectAnon.das");
     private final AnonScript siteAnonDE4 = XnatObjectUtils.anonScriptFromFile(DE_4, "siteAnon.das");
     private final AnonScript siteAnonDE6 = XnatObjectUtils.anonScriptFromFile(DE_6, "siteAnon.das");
+    private final AnonScript removeAllPrivateTags = XnatObjectUtils.anonScriptFromFile(DE_6, "removeAllPrivateTags.das");
+    private final AnonScript privateTagWhitelist = XnatObjectUtils.anonScriptFromFile(DE_6, "privateTagWhitelist.das");
+    private final AnonScript duplicatedPrivateTagRemoval = XnatObjectUtils.anonScriptFromFile(DE_6, "de21.das");
     private final Map<AnonScript, ScriptValidation> scriptValidationMap = new HashMap<>();
 
     @BeforeClass
@@ -45,6 +47,9 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         scriptValidationMap.put(projectAnonDE6, new ProjectDE6Script());
         scriptValidationMap.put(siteAnonDE4, new SiteDE4Script());
         scriptValidationMap.put(siteAnonDE6, new SiteDE6Script());
+        scriptValidationMap.put(removeAllPrivateTags, new RemoveAllPrivateTags());
+        scriptValidationMap.put(privateTagWhitelist, new PrivateTagWhitelist());
+        scriptValidationMap.put(duplicatedPrivateTagRemoval, new DuplicatedInvalidPrivateTagRemoval());
     }
 
     @AfterMethod(alwaysRun = true)
@@ -99,6 +104,21 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         performSessionRelabelAnonTest(projectAnonDE6, siteAnonDE6);
     }
 
+    @Test(enabled = false)
+    public void testRemoveAllPrivateTagsDE6() {
+        performBasicScriptTest(anonData, removeAllPrivateTags);
+    }
+
+    @Test(enabled = false)
+    public void testPrivateTagWhitelistDE6() {
+        performBasicScriptTest(anonData, privateTagWhitelist);
+    }
+
+    @Test(enabled = false) // Tests DE-21
+    public void testInvalidDuplicatedPrivateTagRemovalDE6() {
+        performBasicScriptTest(TestData.ANON_DUPLICATE_PRIVATE_TAG.toFile(), duplicatedPrivateTagRemoval);
+    }
+
     private void performSubjectRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
         restDriver.setSiteAnonScript(mainAdminUser, siteScript);
         restDriver.setProjectAnonScript(mainUser, anonProject, projectScript);
@@ -131,10 +151,22 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         validateAnon(session, Collections.singletonList(projectScript), Collections.singletonList(siteScript));
     }
 
+    private void performBasicScriptTest(File testData, AnonScript script) {
+        restDriver.setProjectAnonScript(mainUser, anonProject, script);
+        restDriver.disableSiteAnonScript(mainAdminUser);
+
+        final ImagingSession session = importSession(testData);
+        validateAnon(session, Collections.singletonList(script), null);
+    }
+
     private ImagingSession importAnonSession() {
+        return importSession(anonData);
+    }
+
+    private ImagingSession importSession(File testData) {
         final Subject subject = new Subject(anonProject);
-        final ImagingSession session = new MRSession(anonProject, subject);
-        session.extension(new SessionImportExtension(restDriver.interfaceFor(mainUser), session, anonData));
+        final ImagingSession session = new ImagingSession(anonProject, subject);
+        session.extension(new SessionImportExtension(restDriver.interfaceFor(mainUser), session, testData));
         restDriver.createSubject(mainUser, subject);
         return session;
     }
