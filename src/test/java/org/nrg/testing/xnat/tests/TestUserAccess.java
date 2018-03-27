@@ -1,17 +1,28 @@
 package org.nrg.testing.xnat.tests;
 
+import com.google.common.collect.Sets;
+import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.response.Response;
+import org.hamcrest.Matchers;
+import org.nrg.testing.CommonUtils;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.util.TestNgUtils;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
+import org.nrg.xnat.enums.Accessibility;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.extensions.SimpleResourceFileExtension;
 import org.nrg.xnat.pogo.resources.ProjectResource;
 import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.nrg.xnat.pogo.users.User;
+import org.nrg.xnat.rest.Credentials;
 import org.testng.annotations.Test;
+
+import java.util.Collections;
+import java.util.Set;
+
+import static org.testng.AssertJUnit.*;
 
 public class TestUserAccess extends BaseXnatRestTest {
 
@@ -32,6 +43,48 @@ public class TestUserAccess extends BaseXnatRestTest {
         final User nonExpiringUser = getGenericUser();
         restDriver.assignUserToRoles(mainAdminUser, nonExpiringUser, "non_expiring");
         restDriver.createProject(nonExpiringUser, new Project().addResource(new ProjectResource().folder("test-resource").addResourceFile(new ResourceFile().extension(new SimpleResourceFileExtension(FileIO.getDataFile("louie.jpg"))))));
+    }
+
+    @Test
+    @TestRequires(users = 1)
+    public void testUserSessionInvalidation() {
+        final User testUser = getGenericUser();
+        final Project project = new Project().accessibility(Accessibility.PRIVATE);
+        restDriver.createProject(testUser, project);
+        final String singleLoginJsession = restDriver.interfaceFor(testUser).jsessionId();
+
+        invalidateJsessions(testUser, Collections.singleton(singleLoginJsession));
+        assertJsessionInvalidated(project, singleLoginJsession);
+
+        final Set<String> additionalJsessions = Sets.newHashSet(generateJsession(testUser), generateJsession(testUser));
+        invalidateJsessions(testUser, additionalJsessions);
+        for (String jsession : additionalJsessions) {
+            assertJsessionInvalidated(project, jsession);
+        }
+    }
+
+    private void invalidateJsessions(User testUser, Set<String> expectedJsessions) {
+        assertEquals(expectedJsessions, restDriver.interfaceFor(mainAdminUser).queryBase().delete(restDriver.formatXapiUrl("users/active", testUser.getUsername())).then().assertThat().statusCode(200).and().extract().response().as(Set.class));
+    }
+
+    private void assertJsessionInvalidated(Project project, String jsession) {
+        final Response invalidatedJsessionResponse = RestAssured.given().sessionId(jsession).get(formatRestUrl("projects", project.getId()));
+        switch (invalidatedJsessionResponse.statusCode()) {
+            case 200:
+                assertTrue(invalidatedJsessionResponse.asString().contains("<!-- BEGIN xnat-templates/screens/Login.vm -->")); // redirected to login page
+                break;
+            case 401:
+                assertFalse(invalidatedJsessionResponse.asString().contains(project.getId()));
+                break;
+            default:
+                fail("Improper status code for REST call with invalidated JSESSION: " + invalidatedJsessionResponse.statusCode());
+        }
+    }
+
+    private String generateJsession(User user) {
+        final Response response = Credentials.build(user).get(restDriver.formatRestUrl("auth"));
+        if (response.statusCode() != 200) fail("Login attempt failed.");
+        return response.getSessionId();
     }
 
 }
