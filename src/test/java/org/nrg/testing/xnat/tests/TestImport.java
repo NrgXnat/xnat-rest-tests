@@ -4,10 +4,15 @@ import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.path.json.JsonPath;
 import org.hamcrest.Matchers;
 import org.nrg.testing.CommonUtils;
+import org.nrg.testing.annotations.TestRequires;
+import org.nrg.testing.enums.TestData;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.util.TestNgUtils;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.conf.Settings;
+import org.nrg.xnat.dicom.CStore;
 import org.nrg.xnat.enums.PrearchiveCode;
+import org.nrg.xnat.interfaces.XnatInterface;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
@@ -15,6 +20,7 @@ import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.pogo.experiments.scans.MRScan;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.experiments.sessions.PETSession;
+import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
 import org.nrg.xnat.pogo.resources.Resource;
 import org.nrg.xnat.pogo.resources.ScanResource;
 import org.nrg.xnat.util.TimeUtils;
@@ -661,6 +667,34 @@ public class TestImport extends BaseXnatRestTest {
 
         assertEquals("Should have 1 catalog (DICOM).", 1, scan1JsonPath.getInt("size()"));
         assertEquals("Should have 3 files.", 3, scan1JsonPath.getInt("get(0).file_count"));
+    }
+
+    @Test
+    @TestRequires(data = {
+            TestData.SAMPLE_1_SCAN_4,
+            TestData.SAMPLE_1_SCAN_5,
+            TestData.SAMPLE_1_SCAN_6
+    })
+    public void simpleAutoarchiveMerge() {
+        restDriver.interfaceFor(mainAdminUser).setSessionXmlRebuilderTimes(1, 10000);
+        final Project project = new Project().prearchiveCode(PrearchiveCode.AUTO_ARCHIVE);
+        final Subject subject = new Subject(project, "Sample_Patient");
+        final MRSession session = new MRSession(project, subject, "Sample_ID");
+        new SessionImportExtension(restDriver.interfaceFor(mainUser), session, TestData.SAMPLE_1_SCAN_4.toFile());
+        restDriver.createProject(mainUser, project);
+        FileIO.sendDICOMToProject(TestData.SAMPLE_1_SCAN_5, project);
+        FileIO.sendDICOMToProject(TestData.SAMPLE_1_SCAN_6, project);
+        CommonUtils.sleep(60000);
+        restDriver.waitForPrearchiveEmpty(mainUser, project, 120);
+        restDriver.waitForAutoRun(session);
+        final List<Scan> allScans = restDriver.readScans(mainUser, project, subject, session);
+        assertEquals(3, allScans.size());
+        for (Scan scan : allScans) {
+            final List<Resource> scanResources = scan.getScanResources();
+            assertEquals(2, scanResources.size());
+            assertEquals(176, restDriver.interfaceFor(mainUser).findResource(scanResources, "DICOM").getFileCount());
+        }
+        restDriver.deleteProject(mainUser, project);
     }
 
     private String newLabel() {

@@ -2,6 +2,7 @@ package org.nrg.testing.xnat.tests;
 
 import org.hamcrest.Matchers;
 import org.nrg.testing.ChainedPutMap;
+import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseXnatRestTest;
@@ -44,6 +45,7 @@ public class TestInvalidUserAccess extends BaseXnatRestTest {
     }
 
     @Test
+    @TestRequires(closedXnat = true)
     public void testProtectedXMLCRUD() {
         restDriver.updateAccessibility(mainAdminUser, testProject, Accessibility.PROTECTED);
         restDriver.assertProjectAccessibility(mainAdminUser, testProject, Accessibility.PROTECTED);
