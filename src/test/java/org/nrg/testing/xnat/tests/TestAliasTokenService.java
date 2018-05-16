@@ -4,6 +4,8 @@ import com.jayway.restassured.response.Response;
 import org.hamcrest.Matchers;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.versions.XnatVersionLineage;
+import org.nrg.testing.xnat.versions.Xnat_1_7_4;
 import org.nrg.xnat.enums.Accessibility;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.users.User;
@@ -121,7 +123,7 @@ public class TestAliasTokenService extends BaseXnatRestTest {
         checkAliasToken(bogusToken, 401, 401);
 
         Credentials.build(aliasToken).get(formatRestUrl("/services/tokens/invalidate", aliasToken.getAlias(), aliasToken.getSecret())).then().assertThat().statusCode(200);
-        checkAliasToken(aliasToken, 403, 403);
+        checkAliasToken(aliasToken, invalidatedTokenCode(), invalidatedTokenCode());
     }
 
     private Response responseForValidate(XnatAliasToken aliasToken) {
@@ -130,6 +132,10 @@ public class TestAliasTokenService extends BaseXnatRestTest {
 
     private int projectCodeBadToken(boolean openXnat) {
         return openXnat ? 403 : 401;
+    }
+
+    private int invalidatedTokenCode() {
+        return XnatVersionLineage.testedVersionFollows(Xnat_1_7_4.class) ? 401 : 403;
     }
 
 }
