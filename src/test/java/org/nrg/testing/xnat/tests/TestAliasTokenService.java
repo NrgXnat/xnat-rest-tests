@@ -1,6 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.response.Response;
+import com.jayway.restassured.response.ValidatableResponse;
 import org.hamcrest.Matchers;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
@@ -108,7 +109,7 @@ public class TestAliasTokenService extends BaseXnatRestTest {
         checkAliasTokenForAdmin(selfProxyToken);
 
         proxyAliasTokenCall(null, mainUser).then().assertThat().statusCode(projectCodeBadToken(openXnat));
-        proxyAliasTokenCall(otherUser, mainUser).then().assertThat().statusCode(403).and().body(Matchers.containsString("Only admins can create proxy tokens."));
+        proxyAliasTokenCall(otherUser, mainUser).then().assertThat().statusCode(403).and().body(Matchers.containsString("Only admins can"));
 
         final XnatAliasToken proxyToken = readTokenFromResponse(proxyAliasTokenCall(mainAdminUser, mainUser));
         checkAliasTokenForMainUser(proxyToken);
@@ -119,7 +120,12 @@ public class TestAliasTokenService extends BaseXnatRestTest {
         assertEquals(mainUser.getUsername(), responseForValidate(aliasToken).then().assertThat().statusCode(200).and().extract().jsonPath().getString("valid"));
 
         final XnatAliasToken bogusToken = new XnatAliasToken("1-2-3-4-5-6-7-8", "hidden secret number");
-        responseForValidate(bogusToken).then().assertThat().statusCode(200).and().assertThat().body(Matchers.equalTo("{}"));
+        final ValidatableResponse response = responseForValidate(bogusToken).then().assertThat();
+        if (XnatVersionLineage.testedVersionFollows(Xnat_1_7_4.class)) {
+            response.statusCode(404);
+        } else {
+            response.statusCode(200).and().assertThat().body(Matchers.equalTo("{}"));
+        }
         checkAliasToken(bogusToken, 401, 401);
 
         Credentials.build(aliasToken).get(formatRestUrl("/services/tokens/invalidate", aliasToken.getAlias(), aliasToken.getSecret())).then().assertThat().statusCode(200);
