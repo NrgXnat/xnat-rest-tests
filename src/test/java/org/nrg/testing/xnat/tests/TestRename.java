@@ -1,5 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
+import org.nrg.testing.CommonUtils;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.DataType;
@@ -118,6 +119,7 @@ public class TestRename extends BaseXnatRestTest {
         mainCredentials().given().queryParam("label", newLabel).put(restDriver.subjectAssessorUrl(renameProject1, subject, session)).then().assertThat().statusCode(403);
 
         restDriver.addUserToProject(mainAdminUser, mainUser, renameProject1, UserGroups.MEMBER);
+        CommonUtils.sleep(1000); // let cache update
 
         mainCredentials().given().queryParam("label", newLabel).put(restDriver.subjectAssessorUrl(renameProject1, subject, session)).then().assertThat().statusCode(200);
         session.setLabel(newLabel);

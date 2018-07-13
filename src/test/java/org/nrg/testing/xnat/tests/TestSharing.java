@@ -1,5 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
+import org.hamcrest.Matchers;
 import org.nrg.testing.CommonUtils;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.Accessibility;
@@ -76,9 +77,8 @@ public class TestSharing extends BaseXnatRestTest {
         mainAdminCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
         mainCredentials().get(restDriver.subjectAssessorUrl(sharedSession)).then().assertThat().statusCode(200);
 
-        // deletes (status code 403 is now instead of 404 since the user can read the data after sharing)
-        mainCredentials().delete(restDriver.subjectUrl(subject)).then().assertThat().statusCode(403);
-        mainCredentials().delete(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(403);
+        mainCredentials().delete(restDriver.subjectUrl(subject)).then().assertThat().statusCode(Matchers.isOneOf(403, 404));
+        mainCredentials().delete(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(Matchers.isOneOf(403, 404));
 
         // unshares
         restDriver.deleteSubject(mainUser, sharedSubject);
@@ -91,7 +91,7 @@ public class TestSharing extends BaseXnatRestTest {
         mainCredentials().delete(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(404);
 
         restDriver.addUserToProject(mainAdminUser, mainUser, adminProject, UserGroups.MEMBER);
-
+        CommonUtils.sleep(1000); // let cache update
         mainCredentials().get(restDriver.subjectUrl(subject)).then().assertThat().statusCode(200);
         mainCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
 
@@ -164,6 +164,7 @@ public class TestSharing extends BaseXnatRestTest {
 
         // remove user from shared project
         mainAdminCredentials().delete(restDriver.formatRestUrl("projects", adminProject.getId(), "users/member", mainUser.getUsername())).then().assertThat().statusCode(200);
+        CommonUtils.sleep(1000); // let cache update
 
         // recheck that this user cannot access the project resources
         mainCredentials().queryParam("format", "xml").get(restDriver.subjectAssessorUrl(mr5)).then().assertThat().statusCode(404);
