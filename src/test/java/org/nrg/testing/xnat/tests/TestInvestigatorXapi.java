@@ -2,6 +2,7 @@ package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.http.ContentType;
 import org.hamcrest.Matchers;
+import org.nrg.testing.CommonUtils;
 import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
@@ -58,6 +59,7 @@ public class TestInvestigatorXapi extends BaseXnatRestTest {
         assertEquals(investigatorsBeforeDelete.size() - 1, investigatorsAfterDelete.size());
         assertNull(find(investigatorsAfterDelete, investigator));
         restDriver.interfaceFor(mainUser).queryBase().get(investigatorUrl(investigator.getXnatInvestigatordataId())).then().assertThat().statusCode(Matchers.isOneOf(404, 500)); // should really be 404, but eh, whatever
+        CommonUtils.sleep(1000); // let cache recover
         assertEquals(null, restDriver.readProject(mainUser, project.getId()).getPi());
     }
 
