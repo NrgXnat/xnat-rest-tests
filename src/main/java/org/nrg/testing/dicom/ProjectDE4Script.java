@@ -23,9 +23,6 @@ public class ProjectDE4Script extends ScriptValidation {
         root.putValueEqualCheck("(0010,0021)", "mr_V2_text_from_URL_01204567_0%3D1_b");
         root.putValueNotEqualCheck("(0020,000D)", "1.3.46.670589.11.5730.5.0.1744.2010043012343685002");
         root.putWildcardedNonexistenceCheck("(0018,900X)");
-        for (int i = 2; i < 9; i += 2) {
-            root.putValueEqualCheck(String.format("(0018,901%d)", i), "NO");
-        }
         root.putWildcardedNonexistenceCheck("(0018,903#)");
         root.putWildcardedNonexistenceCheck("(0018,980@)");
         root.putNonexistenceChecks("(0028,0301)");
@@ -55,10 +52,6 @@ public class ProjectDE4Script extends ScriptValidation {
         root.putValueEqualCheck("(0018,9004)", "RESEARCH");
         root.putValueEqualCheck("(0018,9005)", "TSE");
         root.putValueEqualCheck("(0018,9008)", "SPIN");
-        root.putValueEqualCheck("(0018,9012)", "NO");
-        root.putValueEqualCheck("(0018,9014)", "NO");
-        root.putValueEqualCheck("(0018,9016)", "NONE");
-        root.putValueEqualCheck("(0018,9018)", "NO");
         root.putValueEqualCheck("(0018,9033)", "PARTIAL");
         root.putValueEqualCheck("(0018,9035)", "0");
         root.putValueEqualCheck("(0018,9037)", "NONE");
@@ -106,7 +99,6 @@ public class ProjectDE4Script extends ScriptValidation {
         root.putWildcardedNonexistenceCheck("(0018,93XX)");
         root.putValueEqualCheck("(0018,9805)", "10");
         root.putValueEqualCheck("(0018,980b)", "YES");
-        root.putWildcardedNonexistenceCheck("(0018,94XX)");
         root.putValueEqualCheck("(0028,9001)", "1");
         root.putNonexistenceChecks("(0012,0021)", "(0012,0031)", "(0012,0042)", "(0008,2111)", "(0008,2111)", "(0008,2120)");
         root.putNonexistenceChecks("(0029,0010)", "(0029,1018)");

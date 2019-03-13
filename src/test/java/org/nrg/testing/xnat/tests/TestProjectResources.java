@@ -1,5 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
+import org.nrg.testing.CommonUtils;
 import org.nrg.testing.LegacyComparison;
 import org.nrg.testing.file.FileIO;
 import org.nrg.testing.xnat.BaseXnatRestTest;
@@ -56,6 +57,7 @@ public class TestProjectResources extends BaseXnatRestTest {
         restDriver.createProject(mainUser, project); // resubmit (no change)
         compare(project, updated);
         restDriver.deleteProject(mainUser, project);
+        CommonUtils.sleep(1000); // cache update
         mainCredentials().given().queryParam("format", "xml").get(restDriver.projectUrl(project)).then().statusCode(404); // confirm deleted
     }
 

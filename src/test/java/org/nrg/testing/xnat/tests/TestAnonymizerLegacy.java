@@ -71,7 +71,6 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
         // only currentProject is used by all projects, so no reason to re create all of them each time
 
         restDriver.createProject(mainUser, currentProject);
-
     }
 
     @AfterMethod(alwaysRun = true)

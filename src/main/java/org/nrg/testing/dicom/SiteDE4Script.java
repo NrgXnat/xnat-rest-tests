@@ -21,8 +21,6 @@ public class SiteDE4Script extends ScriptValidation {
         root.putValueEqualCheck("(0018,7026)", "2.55\\4.99");
         root.putValueEqualCheck("(0010,1000)", "mr_PDW_TSE_text_from_URL_01204567_0%3D1_b");
         root.putValueNotEqualCheck("(0008,1150)", null);
-        root.putValueEqualCheck("(0018,9090)", "0");
-        root.putValueEqualCheck("(0018,9093)", "0");
 
         for (String wildcardCheck : new String[]{"(0018,901#)", "(0018,905@)", "(0044,000#)"}) {
             root.putWildcardedNonexistenceCheck(wildcardCheck);
@@ -54,8 +52,6 @@ public class SiteDE4Script extends ScriptValidation {
         root.putNonexistenceChecks("(0018,7026)");
         root.putValueEqualCheck("(0010,1000)", null);
         root.putNonexistenceChecks("(0008,1150)");
-        root.putValueEqualCheck("(0018,9090)", "0\\0\\0");
-        root.putValueEqualCheck("(0018,9093)", "85");
         root.putValueEqualCheck("(0018,9011)", "YES");
         root.putValueEqualCheck("(0018,9015)", "NO");
         root.putValueEqualCheck("(0018,9017)", "NONE");

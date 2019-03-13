@@ -11,12 +11,10 @@ my_var_2 := (0008,103E)
 (0010,1000) := format["{0}_{1}_{2}_{3}_{4}_{5}", lowercase[my_var_1], uppercase[my_var_2], getURL["http://www.mocky.io/v2/577eb33e100000c217f261ce"], replace[substring["0123456789", 0, 8], "3", "0"], urlEncode["0=1"], match["aba", "(a(b)?)+", 2]]
 (0008,1150) := hashUID[(0020,000D)]
 //(0010,2110) := makeSessionLabel[format["{0}_v##_{1}", subject, lowercase[modalityLabel]]]
-(0018,909X) := "0"
 -(0018,901#)
 -(0018,905@)
 -(0018,93XX)
 -(0044,000#)
-(0018,94XX) := "NONO"
 (0008,0005) = "ISO_IR 100" : -(0028,3003)
 (0008,0005) = "ISO_IR 1000" : -(0028,9002)
 (0028,0010) ~ "10\\d{2}" : (0012,0020) := "Hello"
