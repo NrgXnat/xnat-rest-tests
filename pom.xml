@@ -11,7 +11,7 @@
     </parent>
 
     <artifactId>xnat_rest_tests</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.1</version>
 
     <name>REST-based XNAT Tests</name>
     <description>Runs a suite of REST tests on an XNAT server.</description>
@@ -38,7 +38,7 @@
     </scm>
 
     <properties>
-        <nrg_test.version>1.5-SNAPSHOT</nrg_test.version>
+        <nrg_test.version>1.5</nrg_test.version>
     </properties>
 
     <build>

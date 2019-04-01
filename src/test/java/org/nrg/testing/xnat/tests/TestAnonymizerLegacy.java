@@ -4,6 +4,7 @@ import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
 import org.dcm4che2.io.DicomInputStream;
 import org.dcm4che2.iod.module.macro.Code;
+import org.hamcrest.Matchers;
 import org.nrg.testing.CommonUtils;
 import org.nrg.testing.UIDList;
 import org.nrg.testing.file.FileIO;
@@ -353,7 +354,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
 
         // commit it
         final String uri2 = mainCredentials().queryParam("action", "commit").queryParam("auto-archive", true).post(restDriver.formatXnatUrl(uri)).
-                then().assertThat().statusCode(301).and().extract().response().asString();
+                then().assertThat().statusCode(Matchers.isOneOf(200, 301)).and().extract().response().asString();
 
         final File downloadedDicom = saveDicomFile(mainUser, restDriver.formatXnatUrl(uri2));
 
