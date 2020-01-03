@@ -4,7 +4,6 @@ import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.*;
 import org.nrg.testing.dicom.ScriptValidation;
 import org.nrg.testing.enums.TestData;
-import org.nrg.testing.file.FileIO;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.XnatObjectUtils;
 import org.nrg.xnat.pogo.AnonScript;
@@ -29,7 +28,7 @@ import static org.nrg.xnat.enums.DicomEditVersion.*;
 public class TestDicomAnonymization extends BaseXnatRestTest {
 
     private final Project anonProject = new Project();
-    private final File anonData = FileIO.getDataFile(TestData.ANON_2.getZipName());
+    private final File anonData = getDataFile(TestData.ANON_2.getZipName());
     private final AnonScript projectAnonDE4 = XnatObjectUtils.anonScriptFromFile(DE_4, "projectAnon.das");
     private final AnonScript projectAnonDE6 = XnatObjectUtils.anonScriptFromFile(DE_6, "projectAnon.das");
     private final AnonScript siteAnonDE4 = XnatObjectUtils.anonScriptFromFile(DE_4, "siteAnon.das");

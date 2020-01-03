@@ -1,8 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
-import org.nrg.testing.CommonUtils;
 import org.nrg.testing.LegacyComparison;
-import org.nrg.testing.file.FileIO;
+import org.nrg.testing.TimeUtils;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xdat.bean.XnatProjectdataBean;
 import org.nrg.xnat.pogo.Project;
@@ -45,19 +44,21 @@ public class TestProjectResources extends BaseXnatRestTest {
 
     @Test
     public void testProjectXmlCRUD() {
-        final File original = FileIO.getDataFile("test_project_v1.xml");
-        final File updated  = FileIO.getDataFile("test_project_v2.xml");
+        final File original = getDataFile("test_project_v1.xml");
+        final File updated  = getDataFile("test_project_v2.xml");
 
         final Project project = registerProject().extension(new ProjectXMLPutExtension(restDriver.interfaceFor(mainUser), original));
 
         restDriver.createProject(mainUser, project);
         compare(project, original);
         restDriver.createProject(mainUser, project.extension(new ProjectXMLPutExtension(restDriver.interfaceFor(mainUser), updated))); // update project
+        TimeUtils.sleep(1000); // cache update
         compare(project, updated);
         restDriver.createProject(mainUser, project); // resubmit (no change)
+        TimeUtils.sleep(1000); // cache update
         compare(project, updated);
         restDriver.deleteProject(mainUser, project);
-        CommonUtils.sleep(1000); // cache update
+        TimeUtils.sleep(1000); // cache update
         mainCredentials().given().queryParam("format", "xml").get(restDriver.projectUrl(project)).then().statusCode(404); // confirm deleted
     }
 
@@ -71,7 +72,7 @@ public class TestProjectResources extends BaseXnatRestTest {
         final File actualXml = restDriver.saveBinaryResponseToFile(mainCredentials().given().queryParam("format", "xml").get(restDriver.projectUrl(project)));
 
         LegacyComparison.compareBeanXML(actualXml, expectedProjectXml,
-                Collections.<Class, List<String>>singletonMap(XnatProjectdataBean.class, Arrays.asList("ID", "studyProtocol", "secondary_ID")));
+                Collections.singletonMap(XnatProjectdataBean.class, Arrays.asList("ID", "studyProtocol", "secondary_ID", "active")));
     }
 
 }

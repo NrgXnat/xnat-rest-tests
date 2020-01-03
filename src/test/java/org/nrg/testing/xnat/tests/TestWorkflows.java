@@ -1,6 +1,5 @@
 package org.nrg.testing.xnat.tests;
 
-import org.nrg.testing.ChainedPutMap;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -10,6 +9,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.testng.AssertJUnit.assertEquals;
@@ -59,21 +59,24 @@ public class TestWorkflows extends BaseXnatRestTest {
     }
 
     private Map<String, Object> workflowQueryParams(String status, boolean includeDataType) {
-        final ChainedPutMap<String, Object> params = new ChainedPutMap<>();
-        if (includeDataType) params.put("wrk:workflowData/data_type", adminExp.getDataType().getXsiType());
-        return params.
-                chainedPut("wrk:workflowData/status", status).
-                chainedPut("wrk:workflowData/pipeline_name", "WORKFLOW_TEST").
-                chainedPut("wrk:workflowData/launch_time", "2013-05-20%2013:51:25.089").
-                chainedPut("wrk:workflowData/id", adminExp.getAccessionNumber());
+        final Map<String, Object> params = new HashMap<>();
+        if (includeDataType) {
+            params.put("wrk:workflowData/data_type", adminExp.getDataType().getXsiType());
+        }
+        params.put("wrk:workflowData/status", status);
+        params.put("wrk:workflowData/pipeline_name", "WORKFLOW_TEST");
+        params.put("wrk:workflowData/launch_time", "2013-05-20%2013:51:25.089");
+        params.put("wrk:workflowData/id", adminExp.getAccessionNumber());
+        return params;
     }
 
     private Map<String, Object> workflowGetParams() {
-        return new ChainedPutMap<String, Object>().
-                chainedPut("format", "json").
-                chainedPut("wrk:workflowData/pipeline_name", "WORKFLOW_TEST").
-                chainedPut("wrk:workflowData/launch_time", "2013-05-20%2013:51:25.089").
-                chainedPut("wrk:workflowData/id", adminExp.getAccessionNumber());
+        final Map<String, Object> params = new HashMap<>();
+        params.put("format", "json");
+        params.put("wrk:workflowData/pipeline_name", "WORKFLOW_TEST");
+        params.put("wrk:workflowData/launch_time", "2013-05-20%2013:51:25.089");
+        params.put("wrk:workflowData/id", adminExp.getAccessionNumber());
+        return params;
     }
 
 }

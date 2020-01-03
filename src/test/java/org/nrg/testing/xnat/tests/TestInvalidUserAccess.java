@@ -1,9 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
 import org.hamcrest.Matchers;
-import org.nrg.testing.ChainedPutMap;
 import org.nrg.testing.annotations.TestRequires;
-import org.nrg.testing.file.FileIO;
 import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.Accessibility;
@@ -20,6 +18,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class TestInvalidUserAccess extends BaseXnatRestTest {
@@ -32,9 +31,9 @@ public class TestInvalidUserAccess extends BaseXnatRestTest {
     @BeforeMethod
     public void setupInvalidUserAccessTest() {
         testProject = new Project();
-        testSubject = new Subject(testProject).extension(new SubjectXMLPutExtension(restDriver.interfaceFor(mainAdminUser), FileIO.getDataFile("test_subject_v1.xml")));
-        testSession = new MRSession(testProject, testSubject).extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainAdminUser), FileIO.getDataFile("test_expt_v1.xml")));
-        testSessionAssessor = new ManualQC(testProject, testSubject, testSession).extension(new SessionAssessorXMLExtension(restDriver.interfaceFor(mainAdminUser), FileIO.getDataFile("test_asst_v1.xml")));
+        testSubject = new Subject(testProject).extension(new SubjectXMLPutExtension(restDriver.interfaceFor(mainAdminUser), getDataFile("test_subject_v1.xml")));
+        testSession = new MRSession(testProject, testSubject).extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainAdminUser), getDataFile("test_expt_v1.xml")));
+        testSessionAssessor = new ManualQC(testProject, testSubject, testSession).extension(new SessionAssessorXMLExtension(restDriver.interfaceFor(mainAdminUser), getDataFile("test_asst_v1.xml")));
 
         restDriver.createProject(mainAdminUser, testProject);
     }
@@ -70,7 +69,7 @@ public class TestInvalidUserAccess extends BaseXnatRestTest {
         mainCredentials().given().queryParam("format", "xml").queryParam("alias", alias).expect().statusCode(403).
                 put(formatRestUrl("projects", testProject.getId()));
 
-        final String subjectXml = FileIO.readDataFile("iu_subject_v1.xml");
+        final String subjectXml = readDataFile("iu_subject_v1.xml");
         restDriver.invalidCredentials().given().queryParam("format", "xml").body(subjectXml).expect().statusCode(401).
                 post(formatRestUrl("projects", testProject.getId(), "subjects"));
         restDriver.invalidCredentials().given().queryParam("format", "xml").body(subjectXml).expect().statusCode(401).
@@ -80,7 +79,10 @@ public class TestInvalidUserAccess extends BaseXnatRestTest {
         mainCredentials().given().queryParam("format", "xml").body(subjectXml).expect().statusCode(403).
                 put(formatRestUrl("projects", testProject.getId(), "subjects", "2"));
 
-        final Map<String, String> queryParams = new ChainedPutMap<String, String>().chainedPut("format", "xml").chainedPut("req_format", "qs").chainedPut("gender", "female");
+        final Map<String, String> queryParams = new HashMap<>();
+        queryParams.put("format", "xml");
+        queryParams.put("req_format", "qs");
+        queryParams.put("gender", "female");
         restDriver.invalidCredentials().given().queryParams(queryParams).expect().statusCode(401).put(formatRestUrl("projects", testProject.getId(), "subjects", "1"));
         mainCredentials().given().queryParams(queryParams).expect().statusCode(403).put(formatRestUrl("projects", testProject.getId(), "subjects", "1"));
     }

@@ -5,7 +5,7 @@ import com.jayway.restassured.response.ValidatableResponse;
 import org.hamcrest.Matchers;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
-import org.nrg.testing.xnat.versions.XnatVersionLineage;
+import org.nrg.testing.xnat.versions.XnatVersionList;
 import org.nrg.testing.xnat.versions.Xnat_1_7_4;
 import org.nrg.xnat.enums.Accessibility;
 import org.nrg.xnat.pogo.Project;
@@ -78,7 +78,7 @@ public class TestAliasTokenService extends BaseXnatRestTest {
     }
 
     private Response proxyAliasTokenCall(User authUser, User targetUser) {
-        return (authUser == null ? given() : Credentials.build(authUser)).get(formatRestUrl("/services/tokens/issue/user/", targetUser.getUsername()));
+        return (authUser == null ? given() : build(authUser)).get(formatRestUrl("/services/tokens/issue/user/", targetUser.getUsername()));
     }
 
     private XnatAliasToken readTokenFromResponse(Response response) {
@@ -121,7 +121,7 @@ public class TestAliasTokenService extends BaseXnatRestTest {
 
         final XnatAliasToken bogusToken = new XnatAliasToken("1-2-3-4-5-6-7-8", "hidden secret number");
         final ValidatableResponse response = responseForValidate(bogusToken).then().assertThat();
-        if (XnatVersionLineage.testedVersionFollows(Xnat_1_7_4.class)) {
+        if (XnatVersionList.testedVersionFollows(Xnat_1_7_4.class)) {
             response.statusCode(404);
         } else {
             response.statusCode(200).and().assertThat().body(Matchers.equalTo("{}"));
@@ -141,7 +141,7 @@ public class TestAliasTokenService extends BaseXnatRestTest {
     }
 
     private int invalidatedTokenCode() {
-        return XnatVersionLineage.testedVersionFollows(Xnat_1_7_4.class) ? 401 : 403;
+        return XnatVersionList.testedVersionFollows(Xnat_1_7_4.class) ? 401 : 403;
     }
 
 }

@@ -1,8 +1,10 @@
 package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.http.ContentType;
+import com.jayway.restassured.internal.http.Method;
 import org.hamcrest.Matchers;
-import org.nrg.testing.CommonUtils;
+import org.nrg.testing.TimeUtils;
+import org.nrg.testing.annotations.TestedApiSpec;
 import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
@@ -16,11 +18,12 @@ import java.util.List;
 
 import static org.testng.AssertJUnit.*;
 
-public class TestInvestigatorXapi extends BaseXnatRestTest {
+public class TestXapiInvestigator extends BaseXnatRestTest {
 
     @Test
-    public void testGetAndCreateInvestigators() {
-        final List<Investigator> extantInvestigators = restDriver.readInvestigators(mainUser);
+    @TestedApiSpec(method = {Method.GET, Method.POST}, url = "/xapi/investigators")
+    public void testInvestigators() {
+        final List<Investigator> extantInvestigators = restDriver.readInvestigators(mainUser); // GET to /xapi/investigators
 
         final Investigator pi = randomInvestigator().title("Dr.").department("DEPT").institution("INST").email(Settings.EMAIL).phone("314-867-5309");
         final Investigator investigator = randomInvestigator();
@@ -28,39 +31,33 @@ public class TestInvestigatorXapi extends BaseXnatRestTest {
         pi.primaryProjects(Collections.singletonList(project.getId()));
         investigator.investigatorProjects(Collections.singletonList(project.getId()));
 
-        restDriver.createProject(mainUser, project);
+        restDriver.createProject(mainUser, project); // POST to /xapi/investigators
         final List<Investigator> allInvestigators = restDriver.readInvestigators(mainUser);
         assertEquals(extantInvestigators.size() + 2, allInvestigators.size());
         findAndCheck(allInvestigators, pi);
-        assertInvestigatorData(pi, readInvestigator(pi.getXnatInvestigatordataId()));
         findAndCheck(allInvestigators, investigator);
-        assertInvestigatorData(investigator, readInvestigator(investigator.getXnatInvestigatordataId()));
     }
 
     @Test
-    public void testUpdateInvestigators() {
+    @TestedApiSpec(method = {Method.GET, Method.PUT, Method.DELETE}, url = "/xapi/investigators/{investigatorId}")
+    public void testInvestigatorsInvestigatorId() {
         final Investigator investigator = randomInvestigator().title("Dr.").department("DEPT").email(Settings.EMAIL).phone("314-867-5309");
-        restDriver.createInvestigator(mainUser, investigator);
+        final Project project = new Project().pi(investigator);
+        investigator.setPrimaryProjects(Collections.singletonList(project.getId()));
+        restDriver.createProject(mainUser, project);
         final int numSystemInvestigators = restDriver.readInvestigators(mainUser).size();
         restDriver.mainInterface().queryBase().contentType(ContentType.JSON).body(investigator.firstname(RandomHelper.randomLetters(8)).phone("1-800-867-5309").institution("INST")).
                 put(investigatorUrl(investigator.getXnatInvestigatordataId())).then().assertThat().statusCode(200);
-        assertEquals(numSystemInvestigators, restDriver.readInvestigators(mainUser).size());
-        assertInvestigatorData(investigator, readInvestigator(investigator.getXnatInvestigatordataId()));
-    }
+        assertEquals(numSystemInvestigators, restDriver.readInvestigators(mainUser).size()); // update should not create additional investigator
+        assertInvestigatorData(investigator, restDriver.mainInterface().queryBase().get(investigatorUrl(investigator.getXnatInvestigatordataId())).then().assertThat().statusCode(200).and().extract().as(Investigator.class));
 
-    @Test
-    public void testDeleteInvestigators() {
-        final Investigator investigator = randomInvestigator().title("Dr.");
-        final Project project = new Project().pi(investigator);
-        restDriver.createProject(mainUser, project);
-        final List<Investigator> investigatorsBeforeDelete = restDriver.readInvestigators(mainUser);
-        deleteInvestigator(investigator.getXnatInvestigatordataId());
+        restDriver.interfaceFor(mainAdminUser).queryBase().delete(investigatorUrl(investigator.getXnatInvestigatordataId())).then().assertThat().statusCode(200);
         final List<Investigator> investigatorsAfterDelete = restDriver.readInvestigators(mainUser);
-        assertEquals(investigatorsBeforeDelete.size() - 1, investigatorsAfterDelete.size());
+        assertEquals(numSystemInvestigators - 1, investigatorsAfterDelete.size());
         assertNull(find(investigatorsAfterDelete, investigator));
         restDriver.interfaceFor(mainUser).queryBase().get(investigatorUrl(investigator.getXnatInvestigatordataId())).then().assertThat().statusCode(Matchers.isOneOf(404, 500)); // should really be 404, but eh, whatever
-        CommonUtils.sleep(1000); // let cache recover
-        assertEquals(null, restDriver.readProject(mainUser, project.getId()).getPi());
+        TimeUtils.sleep(1000); // let cache recover
+        assertNull(restDriver.readProject(mainUser, project.getId()).getPi());
     }
 
     private Investigator randomInvestigator() {
@@ -68,7 +65,7 @@ public class TestInvestigatorXapi extends BaseXnatRestTest {
     }
 
     private Investigator find(List<Investigator> investigators, Investigator searchFor) {
-        return investigators.contains(searchFor) ?  investigators.get(investigators.indexOf(searchFor)) : null;
+        return investigators.contains(searchFor) ? investigators.get(investigators.indexOf(searchFor)) : null;
     }
 
     private void assertInvestigatorData(Investigator expected, Investigator actual) {
@@ -94,14 +91,6 @@ public class TestInvestigatorXapi extends BaseXnatRestTest {
 
     private String investigatorUrl(int investigatorId) {
         return restDriver.formatXapiUrl("investigators", String.valueOf(investigatorId));
-    }
-
-    private Investigator readInvestigator(int id) {
-        return restDriver.mainInterface().queryBase().get(investigatorUrl(id)).then().assertThat().statusCode(200).and().extract().as(Investigator.class);
-    }
-
-    private void deleteInvestigator(int id) {
-        restDriver.interfaceFor(mainAdminUser).queryBase().delete(investigatorUrl(id)).then().assertThat().statusCode(200);
     }
 
 }

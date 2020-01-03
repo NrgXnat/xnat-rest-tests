@@ -1,8 +1,8 @@
 package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.http.ContentType;
+import org.nrg.testing.FileIOUtils;
 import org.nrg.testing.LegacyComparison;
-import org.nrg.testing.file.FileIO;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xdat.bean.XnatSubjectdataBean;
 import org.nrg.xnat.enums.Gender;
@@ -53,18 +53,18 @@ public class TestSubjectResources extends BaseXnatRestTest {
 
         LegacyComparison.compareBeanXML(
                 restDriver.saveBinaryResponseToFile(mainCredentials().given().queryParam("format", "xml").get(restDriver.subjectUrl(subject))),
-                FileIO.getDataFile("qs_subject_v1.xml"),
-                Collections.<Class, List<String>>singletonMap(XnatSubjectdataBean.class, Collections.singletonList("project"))
+                getDataFile("qs_subject_v1.xml"),
+                Collections.singletonMap(XnatSubjectdataBean.class, Collections.singletonList("project"))
         );
     }
 
     @Test
     public void testSubjectResourceXMLCrud() throws IOException, SAXException {
         final Project project = testSpecificProject;
-        final File subjectXML1 = FileIO.getDataFile("test_subject_v1.xml");
-        final File subjectXML2 = FileIO.getDataFile("test_subject_v2.xml"); // same as v1, except doesn't have education field
-        final File subjectXML3 = FileIO.getDataFile("test_subject_v3.xml"); // same as v3, except contains additional weight and height fields
-        final Map<Class, List<String>> ignoredFields = Collections.<Class, List<String>>singletonMap(XnatSubjectdataBean.class, Collections.singletonList("project"));
+        final File subjectXML1 = getDataFile("test_subject_v1.xml");
+        final File subjectXML2 = getDataFile("test_subject_v2.xml"); // same as v1, except doesn't have education field
+        final File subjectXML3 = getDataFile("test_subject_v3.xml"); // same as v3, except contains additional weight and height fields
+        final Map<Class, List<String>> ignoredFields = Collections.singletonMap(XnatSubjectdataBean.class, Collections.singletonList("project"));
 
         restDriver.createProject(mainUser, project);
 
@@ -80,7 +80,7 @@ public class TestSubjectResources extends BaseXnatRestTest {
         mainCredentials().given().queryParam("format", "html").get(formatRestUrl("projects", project.getId(), "subjects")).then().assertThat().statusCode(200);
 
         // resave with v2 XML but allowDataDeletion=false
-        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIO.readFile(subjectXML2)).
+        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIOUtils.readFile(subjectXML2)).
                 put(restDriver.subjectUrl(subject)).then().assertThat().statusCode(200);
 
         final LegacyComparison comparison = LegacyComparison.compareObjectsFromFile(
@@ -95,7 +95,7 @@ public class TestSubjectResources extends BaseXnatRestTest {
         compareBeanXML(subjectXML1, subject, ignoredFields);
 
         // resave with v2 XML and allowDataDeletion=true
-        mainCredentials().given().queryParam("format", "xml").queryParam("allowDataDeletion", true).contentType(ContentType.XML).body(FileIO.readFile(subjectXML2)).
+        mainCredentials().given().queryParam("format", "xml").queryParam("allowDataDeletion", true).contentType(ContentType.XML).body(FileIOUtils.readFile(subjectXML2)).
                 put(restDriver.subjectUrl(subject)).then().assertThat().statusCode(200);
 
         // should no longer match original
@@ -111,7 +111,7 @@ public class TestSubjectResources extends BaseXnatRestTest {
         compareBeanXML(subjectXML2, subject, ignoredFields);
 
         // resave with v3 XML
-        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIO.readFile(subjectXML3)).
+        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIOUtils.readFile(subjectXML3)).
                 put(restDriver.subjectUrl(subject)).then().assertThat().statusCode(200);
 
         final LegacyComparison comparison3 = LegacyComparison.compareObjectsFromFile(

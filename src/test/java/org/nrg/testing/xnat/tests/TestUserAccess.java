@@ -3,11 +3,8 @@ package org.nrg.testing.xnat.tests;
 import com.google.common.collect.Sets;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.response.Response;
-import org.hamcrest.Matchers;
-import org.nrg.testing.CommonUtils;
+import org.nrg.testing.TestNgUtils;
 import org.nrg.testing.annotations.TestRequires;
-import org.nrg.testing.file.FileIO;
-import org.nrg.testing.util.TestNgUtils;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.xnat.enums.Accessibility;
@@ -42,7 +39,7 @@ public class TestUserAccess extends BaseXnatRestTest {
     public void testNonExpiringUserRestCalls() {
         final User nonExpiringUser = getGenericUser();
         restDriver.assignUserToRoles(mainAdminUser, nonExpiringUser, "non_expiring");
-        restDriver.createProject(nonExpiringUser, new Project().addResource(new ProjectResource().folder("test-resource").addResourceFile(new ResourceFile().extension(new SimpleResourceFileExtension(FileIO.getDataFile("louie.jpg"))))));
+        restDriver.createProject(nonExpiringUser, new Project().addResource(new ProjectResource().folder("test-resource").addResourceFile(new ResourceFile().extension(new SimpleResourceFileExtension(getDataFile("louie.jpg"))))));
     }
 
     @Test

@@ -1,8 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
 import org.hamcrest.Matchers;
-import org.nrg.testing.file.FileIO;
-import org.nrg.testing.util.TestNgUtils;
+import org.nrg.testing.TestNgUtils;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
@@ -18,7 +17,7 @@ import java.io.File;
 
 public class TestFileFiltering extends BaseXnatRestTest {
 
-    private final File louieFile = FileIO.getDataFile("louie.jpg");
+    private final File louieFile = getDataFile("louie.jpg");
 
     @BeforeMethod
     public void setupFileFilterTest() {

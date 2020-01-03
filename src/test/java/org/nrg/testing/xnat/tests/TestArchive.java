@@ -1,6 +1,5 @@
 package org.nrg.testing.xnat.tests;
 
-import org.nrg.testing.file.FileIO;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -22,7 +21,7 @@ import static org.testng.AssertJUnit.assertEquals;
 public class TestArchive extends BaseXnatRestTest {
 
     private Project project;
-    private final File sessionZip = FileIO.getDataFile("mr_1.zip");
+    private final File sessionZip = getDataFile("mr_1.zip");
 
     @BeforeClass
     public void disableSiteAnonScript() {
@@ -42,7 +41,6 @@ public class TestArchive extends BaseXnatRestTest {
 
     @AfterMethod(alwaysRun = true)
     public void deleteTestProject() {
-        project = new Project();
         restDriver.deleteProjectSilently(mainUser, project);
     }
 
@@ -56,7 +54,7 @@ public class TestArchive extends BaseXnatRestTest {
         final Resource scan2Resource = new ScanResource(project, subject, session, scan2).folder("DICOM").format("DICOM");
 
         for (int i = 1; i < 6; i++) {
-            final File dicomFile = FileIO.getDataFile(String.format("mr_1/%d.dcm", i));
+            final File dicomFile = getDataFile(String.format("mr_1/%d.dcm", i));
             scan1Resource.addResourceFile(new ResourceFile().name(dicomFile.getName()).extension(new SimpleResourceFileExtension(dicomFile)));
             scan2Resource.addResourceFile(new ResourceFile().name(dicomFile.getName()).extension(new SimpleResourceFileExtension(dicomFile)));
         }
@@ -176,7 +174,7 @@ public class TestArchive extends BaseXnatRestTest {
         final Scan scan = new MRScan(session, "1");
         final Resource scanDicom = new ScanResource(project, subject, session, scan).folder("DICOM");
         for (int i = 1; i <= 6; i++) {
-            final File dicomFile = FileIO.getDataFile(String.format("mr_1/%d.dcm", i));
+            final File dicomFile = getDataFile(String.format("mr_1/%d.dcm", i));
             new ResourceFile(scanDicom, dicomFile.getName()).extension(new SimpleResourceFileExtension(dicomFile));
         }
         return session;

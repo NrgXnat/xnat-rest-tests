@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.restassured.path.json.JsonPath;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.enums.TestData;
-import org.nrg.testing.file.FileIO;
 import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.Project;
@@ -117,7 +116,7 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
     }
 
     private Map<String, Object> readAttributes(String attributesFile) throws IOException {
-        return objectMapper.readValue(FileIO.getDataFile(String.format("dicom_extraction/%s", attributesFile)), SerializationUtils.MAP_TYPE_REF);
+        return objectMapper.readValue(getDataFile(String.format("dicom_extraction/%s", attributesFile)), SerializationUtils.MAP_TYPE_REF);
     }
 
 }

@@ -2,9 +2,9 @@ package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.http.ContentType;
 import org.hamcrest.Matchers;
-import org.nrg.testing.CommonUtils;
+import org.nrg.testing.CommonStringUtils;
+import org.nrg.testing.FileIOUtils;
 import org.nrg.testing.LegacyComparison;
-import org.nrg.testing.file.FileIO;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xdat.bean.XnatQcmanualassessordataBean;
 import org.nrg.xnat.pogo.Project;
@@ -24,7 +24,6 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.List;
 
 public class TestExptAssessmentResources extends BaseXnatRestTest {
 
@@ -35,9 +34,9 @@ public class TestExptAssessmentResources extends BaseXnatRestTest {
 
     @BeforeClass
     public void setExtensions() {
-        project2.extension(new ProjectXMLPutExtension(restDriver.interfaceFor(mainUser), FileIO.getDataFile("test_project_v1.xml")));
-        subject.extension(new SubjectXMLPutExtension(restDriver.interfaceFor(mainUser), FileIO.getDataFile("test_subject_v1.xml")));
-        session.extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainUser), FileIO.getDataFile("test_expt_v1.xml")));
+        project2.extension(new ProjectXMLPutExtension(restDriver.interfaceFor(mainUser), getDataFile("test_project_v1.xml")));
+        subject.extension(new SubjectXMLPutExtension(restDriver.interfaceFor(mainUser), getDataFile("test_subject_v1.xml")));
+        session.extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainUser), getDataFile("test_expt_v1.xml")));
     }
 
     @BeforeMethod
@@ -54,8 +53,8 @@ public class TestExptAssessmentResources extends BaseXnatRestTest {
 
     @Test
     public void testExptAssessmentXmlCrud() {
-        final File assessorV1 = FileIO.getDataFile("test_asst_v1.xml");
-        final File assessorV2 = FileIO.getDataFile("test_asst_v2.xml");
+        final File assessorV1 = getDataFile("test_asst_v1.xml");
+        final File assessorV2 = getDataFile("test_asst_v2.xml");
 
         final SessionAssessor assessor = new ManualQC(project2, subject, session).extension(new SessionAssessorXMLExtension(restDriver.interfaceFor(mainUser), assessorV1));
         restDriver.createSessionAssessor(mainUser, assessor);
@@ -63,13 +62,13 @@ public class TestExptAssessmentResources extends BaseXnatRestTest {
         LegacyComparison.compareBeanXML(
                 assessorV1,
                 restDriver.saveBinaryResponseToFile(mainAdminCredentials().given().queryParam("format", "xml").get(restDriver.sessionAssessorUrl(assessor))),
-                Collections.<Class, List<String>>singletonMap(XnatQcmanualassessordataBean.class, Collections.singletonList("project"))
+                Collections.singletonMap(XnatQcmanualassessordataBean.class, Collections.singletonList("project"))
         );
 
         mainCredentials().given().queryParam("format", "html").get(restDriver.assessorsUrl(project2, subject, session)).then().assertThat().statusCode(200);
 
         // modify assessment
-        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIO.readFile(assessorV2)).
+        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIOUtils.readFile(assessorV2)).
                 put(restDriver.sessionAssessorUrl(assessor)).then().assertThat().statusCode(200);
 
         // confirm listing still works
@@ -78,10 +77,10 @@ public class TestExptAssessmentResources extends BaseXnatRestTest {
         LegacyComparison.compareBeanXML(
                 assessorV2,
                 restDriver.saveBinaryResponseToFile(mainAdminCredentials().given().queryParam("format", "xml").get(restDriver.sessionAssessorUrl(assessor))),
-                Collections.<Class, List<String>>singletonMap(XnatQcmanualassessordataBean.class, Collections.singletonList("project"))
+                Collections.singletonMap(XnatQcmanualassessordataBean.class, Collections.singletonList("project"))
         );
 
-        mainCredentials().given().queryParam("format", "json").get(CommonUtils.formatUrl(restDriver.sessionAssessorUrl(assessor), "projects")).
+        mainCredentials().given().queryParam("format", "json").get(CommonStringUtils.formatUrl(restDriver.sessionAssessorUrl(assessor), "projects")).
                 then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
 
         restDriver.deleteSessionAssessor(mainUser, assessor);

@@ -1,8 +1,8 @@
 package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.http.ContentType;
+import org.nrg.testing.FileIOUtils;
 import org.nrg.testing.LegacyComparison;
-import org.nrg.testing.file.FileIO;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xdat.bean.XnatMrsessiondataBean;
 import org.nrg.xnat.pogo.Project;
@@ -42,50 +42,50 @@ public class TestSubjAssessmentResources extends BaseXnatRestTest {
 
     @Test
     public void testDateFormatValidation() {
-        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIO.readDataFile("test_expt_bad_date.xml")).
+        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(readDataFile("test_expt_bad_date.xml")).
                 post(experimentsUrl()).then().assertThat().statusCode(400);
     }
 
     @Test
     public void testIntegerFormatValidation() {
-        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIO.readDataFile("test_expt_bad_int.xml")).
+        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(readDataFile("test_expt_bad_int.xml")).
                 post(experimentsUrl()).then().assertThat().statusCode(400);
     }
 
     // @Test Not supported yet
     public void testURIFormatValidation() {
-        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIO.readDataFile("test_expt_bad_URI.xml")).
+        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(readDataFile("test_expt_bad_URI.xml")).
                 post(experimentsUrl()).then().assertThat().statusCode(400); // contains space in URI => invalid
 
-        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIO.readDataFile("test_expt_bad_URI2.xml")).
+        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(readDataFile("test_expt_bad_URI2.xml")).
                 post(experimentsUrl()).then().assertThat().statusCode(400); // contains path outside project => invalid
 
-        final MRSession uriWithRelativePath = new MRSession(currentProject, subject1).extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainUser), FileIO.getDataFile("test_expt_bad_URI3.xml")));
-        final MRSession uriWithWindowsSlash = new MRSession(currentProject, subject1).extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainUser), FileIO.getDataFile("test_expt_bad_URI4.xml")));
+        final MRSession uriWithRelativePath = new MRSession(currentProject, subject1).extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainUser), getDataFile("test_expt_bad_URI3.xml")));
+        final MRSession uriWithWindowsSlash = new MRSession(currentProject, subject1).extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainUser), getDataFile("test_expt_bad_URI4.xml")));
 
         restDriver.createSubjectAssessor(mainUser, uriWithRelativePath); // allowed
         restDriver.createSubjectAssessor(mainUser, uriWithWindowsSlash); // allowed
 
-        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIO.readDataFile("test_expt_bad_URI5.xml")).
+        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(readDataFile("test_expt_bad_URI5.xml")).
                 post(experimentsUrl()).then().assertThat().statusCode(400); // contains parent directory syntax => invalid
     }
 
     @Test
     public void testLengthValidation() {
-        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIO.readDataFile("test_expt_bad_length.xml")).
+        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(readDataFile("test_expt_bad_length.xml")).
                 post(experimentsUrl()).then().assertThat().statusCode(400);
     }
 
     @Test
     public void testInvalidSubjectValidation() {
-        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIO.readDataFile("test_expt_v1.xml")).
+        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(readDataFile("test_expt_v1.xml")).
                 post(formatRestUrl("projects", currentProject.getId(), "subjects", "INVALIDSUBJECT", "experiments")).then().assertThat().statusCode(404);
     }
 
     @Test
     public void testSubjectAssessmentXMLCRUD() throws IOException, SAXException {
-        final File experimentV1 = FileIO.getDataFile("test_expt_v1.xml");
-        final File experimentV2 = FileIO.getDataFile("test_expt_v2.xml");
+        final File experimentV1 = getDataFile("test_expt_v1.xml");
+        final File experimentV2 = getDataFile("test_expt_v2.xml");
         final ImagingSession session = new MRSession(currentProject, subject1).extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainUser), experimentV1));
 
         mainCredentials().given().queryParam("format", "html").get(experimentsUrl()).then().assertThat().statusCode(200);
@@ -97,7 +97,7 @@ public class TestSubjAssessmentResources extends BaseXnatRestTest {
                 Collections.<Class, List<String>>singletonMap(XnatMrsessiondataBean.class, Collections.singletonList("project"))
         );
 
-        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIO.readFile(experimentV2)).
+        mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIOUtils.readFile(experimentV2)).
                 put(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
 
         mainCredentials().given().queryParam("format", "html").get(experimentsUrl()).then().assertThat().statusCode(200);
@@ -105,7 +105,7 @@ public class TestSubjAssessmentResources extends BaseXnatRestTest {
         LegacyComparison.compareBeanXML(
                 experimentV2,
                 restDriver.saveBinaryResponseToFile(mainCredentials().queryParam("format", "xml").get(restDriver.subjectAssessorUrl(session))),
-                Collections.<Class, List<String>>singletonMap(XnatMrsessiondataBean.class, Collections.singletonList("project"))
+                Collections.singletonMap(XnatMrsessiondataBean.class, Collections.singletonList("project"))
         );
 
         final LegacyComparison comparison = LegacyComparison.compareObjectsFromFile(

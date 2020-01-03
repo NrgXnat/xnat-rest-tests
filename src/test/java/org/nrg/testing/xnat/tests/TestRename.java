@@ -1,7 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
-import org.nrg.testing.CommonUtils;
-import org.nrg.testing.file.FileIO;
+import org.hamcrest.Matchers;
+import org.nrg.testing.TimeUtils;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
@@ -26,8 +26,8 @@ public class TestRename extends BaseXnatRestTest {
 
     private final Project renameProject1 = new Project();
     private final Project renameProject2 = new Project();
-    private final File louieFile = FileIO.getDataFile("louie.jpg");
-    private final File dicomFile = FileIO.getDataFile("mr_1/1.dcm");
+    private final File louieFile = getDataFile("louie.jpg");
+    private final File dicomFile = getDataFile("mr_1/1.dcm");
 
 
     @BeforeClass
@@ -116,10 +116,11 @@ public class TestRename extends BaseXnatRestTest {
         restDriver.addUserToProject(mainAdminUser, mainUser, renameProject1, UserGroups.COLLABORATOR);
 
         // user with collaborator to source project should not be able to relabel
-        mainCredentials().given().queryParam("label", newLabel).put(restDriver.subjectAssessorUrl(renameProject1, subject, session)).then().assertThat().statusCode(403);
+        mainCredentials().given().queryParam("label", newLabel).put(restDriver.subjectAssessorUrl(renameProject1, subject, session)).then().assertThat().statusCode(Matchers.isOneOf(403, 417));
+        restDriver.validateResource(mainUser, sessionResource);
 
         restDriver.addUserToProject(mainAdminUser, mainUser, renameProject1, UserGroups.MEMBER);
-        CommonUtils.sleep(1000); // let cache update
+        TimeUtils.sleep(1000); // let cache update
 
         mainCredentials().given().queryParam("label", newLabel).put(restDriver.subjectAssessorUrl(renameProject1, subject, session)).then().assertThat().statusCode(200);
         session.setLabel(newLabel);

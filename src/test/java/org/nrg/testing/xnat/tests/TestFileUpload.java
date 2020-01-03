@@ -1,10 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.response.Response;
-import org.nrg.testing.CommonUtils;
-import org.nrg.testing.LegacyComparison;
-import org.nrg.testing.file.FileIO;
-import org.nrg.testing.util.TestNgUtils;
+import org.nrg.testing.*;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.xdat.bean.XnatMrsessiondataBean;
@@ -19,7 +16,6 @@ import org.nrg.xnat.pogo.experiments.scans.MRScan;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.extensions.SimpleResourceFileExtension;
 import org.nrg.xnat.pogo.resources.*;
-import org.nrg.xnat.util.TimeUtils;
 import org.testng.annotations.*;
 
 import java.io.File;
@@ -36,11 +32,11 @@ import static org.testng.AssertJUnit.fail;
 public class TestFileUpload extends BaseXnatRestTest {
 
     private final SimpleDateFormat americanDate = new SimpleDateFormat("MM/dd/yyyy");
-    private final File testZip = FileIO.getDataFile("mr_1.zip");
-    private final File dicomFile1 = FileIO.getDataFile("mr_1/1.dcm");
-    private final File dicomFile2 = FileIO.getDataFile("mr_1/2.dcm");
-    private final File dicomFile3 = FileIO.getDataFile("mr_1/3.dcm");
-    private final File dummyFile = FileIO.getDataFile("dummy.txt");
+    private final File testZip = getDataFile("mr_1.zip");
+    private final File dicomFile1 = getDataFile("mr_1/1.dcm");
+    private final File dicomFile2 = getDataFile("mr_1/2.dcm");
+    private final File dicomFile3 = getDataFile("mr_1/3.dcm");
+    private final File dummyFile = getDataFile("dummy.txt");
     private Project project;
     private Subject subject;
     private ImagingSession session;
@@ -123,7 +119,7 @@ public class TestFileUpload extends BaseXnatRestTest {
 
         final Path unzippedFolder = Paths.get(Settings.TEMP_SUBDIR, "resourcesUpload");
 
-        FileIO.unzip(unzippedFolder, downloadedZip);
+        FileIOUtils.unzip(unzippedFolder.toFile(), downloadedZip);
 
         TestNgUtils.assertBinaryFilesEqual(
                 dicomFile1,
@@ -141,27 +137,27 @@ public class TestFileUpload extends BaseXnatRestTest {
         final String subdirFilesUrl = restDriver.resourceFilesUrl(subdirResource);
 
         for (String path : new String[]{noSubdir, oneSubdir, twoSubdirs}) {
-            mainCredentials().multiPart(dicomFile3).put(CommonUtils.formatUrl(subdirFilesUrl, path)).then().assertThat().statusCode(200);
+            mainCredentials().multiPart(dicomFile3).put(CommonStringUtils.formatUrl(subdirFilesUrl, path)).then().assertThat().statusCode(200);
         }
 
-        assertEquals(2, getJsonTableSize(mainCredentials().queryParam("format", "json").get(CommonUtils.formatUrl(subdirFilesUrl, "sub") + "/")));
-        assertEquals(1, getJsonTableSize(mainCredentials().queryParam("format", "json").queryParam("recursive", false).get(CommonUtils.formatUrl(subdirFilesUrl, "sub") + "/")));
+        assertEquals(2, getJsonTableSize(mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(subdirFilesUrl, "sub") + "/")));
+        assertEquals(1, getJsonTableSize(mainCredentials().queryParam("format", "json").queryParam("recursive", false).get(CommonStringUtils.formatUrl(subdirFilesUrl, "sub") + "/")));
 
-        final File downloadedZip2 = restDriver.saveBinaryResponseToFile(mainCredentials().queryParam("format", "zip").get(CommonUtils.formatUrl(subdirFilesUrl, "sub") + "/"));
+        final File downloadedZip2 = restDriver.saveBinaryResponseToFile(mainCredentials().queryParam("format", "zip").get(CommonStringUtils.formatUrl(subdirFilesUrl, "sub") + "/"));
         assertEquals(2, new ZipFile(downloadedZip2).size());
 
-        mainCredentials().delete(CommonUtils.formatUrl(subdirFilesUrl, "sub/folder") + "/").then().assertThat().statusCode(200);
-        assertEquals(1, getJsonTableSize(mainCredentials().queryParam("format", "json").get(CommonUtils.formatUrl(subdirFilesUrl, "sub") + "/")));
+        mainCredentials().delete(CommonStringUtils.formatUrl(subdirFilesUrl, "sub/folder") + "/").then().assertThat().statusCode(200);
+        assertEquals(1, getJsonTableSize(mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(subdirFilesUrl, "sub") + "/")));
     }
 
     @Test
     public void testReconstructionUpload() {
-        final String reconUrl = CommonUtils.formatUrl(restDriver.subjectAssessorUrl(session), "reconstructions/1_MR1_2");
+        final String reconUrl = CommonStringUtils.formatUrl(restDriver.subjectAssessorUrl(session), "reconstructions/1_MR1_2");
         mainCredentials().queryParam("format", "xml").queryParam("req_format", "qs").queryParam("type", "LOCALIZER").put(reconUrl).then().assertThat().statusCode(200);
-        mainCredentials().multiPart(dicomFile3).put(CommonUtils.formatUrl(reconUrl, "resources/TEST/files/3.dcm")).then().assertThat().statusCode(200);
+        mainCredentials().multiPart(dicomFile3).put(CommonStringUtils.formatUrl(reconUrl, "resources/TEST/files/3.dcm")).then().assertThat().statusCode(200);
 
-        restDriver.validateUpload(mainUser, CommonUtils.formatUrl(reconUrl, "resources/TEST/files/3.dcm"), dicomFile3);
-        restDriver.validateUpload(mainUser, CommonUtils.formatUrl(reconUrl, "files/3.dcm"), dicomFile3);
+        restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(reconUrl, "resources/TEST/files/3.dcm"), dicomFile3);
+        restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(reconUrl, "files/3.dcm"), dicomFile3);
     }
 
     @Test
@@ -172,9 +168,9 @@ public class TestFileUpload extends BaseXnatRestTest {
         restDriver.createScan(mainUser, project, subject, session, scan2);
         final String scanUrl = restDriver.scanUrl(scan1);
 
-        mainCredentials().multiPart(dicomFile2).put(CommonUtils.formatUrl(scanUrl, "resources/TEST/files/3.dcm")).then().assertThat().statusCode(200);
-        restDriver.validateUpload(mainUser, CommonUtils.formatUrl(scanUrl, "resources/TEST/files/3.dcm"), dicomFile2);
-        restDriver.validateUpload(mainUser, CommonUtils.formatUrl(scanUrl, "files/3.dcm"), dicomFile2);
+        mainCredentials().multiPart(dicomFile2).put(CommonStringUtils.formatUrl(scanUrl, "resources/TEST/files/3.dcm")).then().assertThat().statusCode(200);
+        restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(scanUrl, "resources/TEST/files/3.dcm"), dicomFile2);
+        restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(scanUrl, "files/3.dcm"), dicomFile2);
     }
 
 
@@ -182,10 +178,10 @@ public class TestFileUpload extends BaseXnatRestTest {
     public void testManQCUpload() {
         final String assessorUrl = restDriver.sessionAssessorUrl(new ManualQC(project, subject, session, "MR1_ManualQC"));
         mainCredentials().queryParam("xsiType", DataType.MANUAL_QC.getXsiType()).queryParam("xnat:qcManualAssessorData/pass", true).put(assessorUrl).then().assertThat().statusCode(201);
-        mainCredentials().multiPart(dicomFile1).put(CommonUtils.formatUrl(assessorUrl, "out/resources/DICOM/files/1.dcm")).then().assertThat().statusCode(200);
+        mainCredentials().multiPart(dicomFile1).put(CommonStringUtils.formatUrl(assessorUrl, "out/resources/DICOM/files/1.dcm")).then().assertThat().statusCode(200);
 
-        restDriver.validateUpload(mainUser, CommonUtils.formatUrl(assessorUrl, "out/resources/DICOM/files/1.dcm"), dicomFile1);
-        restDriver.validateUpload(mainUser, CommonUtils.formatUrl(assessorUrl, "out/files/1.dcm"), dicomFile1);
+        restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(assessorUrl, "out/resources/DICOM/files/1.dcm"), dicomFile1);
+        restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(assessorUrl, "out/files/1.dcm"), dicomFile1);
     }
 
     @Test
@@ -194,47 +190,47 @@ public class TestFileUpload extends BaseXnatRestTest {
         restDriver.createScan(mainUser, project, subject, session, scan);
         final String scanUrl = restDriver.scanUrl(scan);
 
-        mainCredentials().multiPart(dicomFile1).put(CommonUtils.formatUrl(scanUrl, "resources/DICOM/files/1.dcm")).then().assertThat().statusCode(200);
+        mainCredentials().multiPart(dicomFile1).put(CommonStringUtils.formatUrl(scanUrl, "resources/DICOM/files/1.dcm")).then().assertThat().statusCode(200);
 
-        restDriver.validateUpload(mainUser, CommonUtils.formatUrl(scanUrl, "resources/DICOM/files/1.dcm"), dicomFile1);
-        restDriver.validateUpload(mainUser, CommonUtils.formatUrl(scanUrl, "files/1.dcm"), dicomFile1);
+        restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(scanUrl, "resources/DICOM/files/1.dcm"), dicomFile1);
+        restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(scanUrl, "files/1.dcm"), dicomFile1);
     }
 
     @Test
     public void testReconUpload() {
-        final String reconUrl = CommonUtils.formatUrl(restDriver.subjectAssessorUrl(session), "reconstructions/MR1_recon1");
+        final String reconUrl = CommonStringUtils.formatUrl(restDriver.subjectAssessorUrl(session), "reconstructions/MR1_recon1");
         mainCredentials().put(reconUrl).then().assertThat().statusCode(200);
-        mainCredentials().multiPart(dicomFile1).put(CommonUtils.formatUrl(reconUrl, "resources/DICOM/files/1.dcm")).then().assertThat().statusCode(200);
+        mainCredentials().multiPart(dicomFile1).put(CommonStringUtils.formatUrl(reconUrl, "resources/DICOM/files/1.dcm")).then().assertThat().statusCode(200);
 
-        restDriver.validateUpload(mainUser, CommonUtils.formatUrl(reconUrl, "resources/DICOM/files/1.dcm"), dicomFile1);
-        restDriver.validateUpload(mainUser, CommonUtils.formatUrl(reconUrl, "files/1.dcm"), dicomFile1);
+        restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(reconUrl, "resources/DICOM/files/1.dcm"), dicomFile1);
+        restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(reconUrl, "files/1.dcm"), dicomFile1);
     }
 
     @Test
     public void testMRResourceUpload() {
         final String sessionUrl = restDriver.subjectAssessorUrl(session);
-        mainCredentials().multiPart(dicomFile2).put(CommonUtils.formatUrl(sessionUrl, "resources/DICOM/files/1.dcm"));
+        mainCredentials().multiPart(dicomFile2).put(CommonStringUtils.formatUrl(sessionUrl, "resources/DICOM/files/1.dcm"));
 
-        restDriver.validateUpload(mainUser, CommonUtils.formatUrl(sessionUrl, "resources/DICOM/files/1.dcm"), dicomFile2);
-        restDriver.validateUpload(mainUser, CommonUtils.formatUrl(sessionUrl, "files/1.dcm"), dicomFile2);
+        restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(sessionUrl, "resources/DICOM/files/1.dcm"), dicomFile2);
+        restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(sessionUrl, "files/1.dcm"), dicomFile2);
     }
 
     @Test
     public void testSubjectResourceUpload() {
         final String subjectUrl = restDriver.subjectUrl(subject);
-        mainCredentials().multiPart(dicomFile3).put(CommonUtils.formatUrl(subjectUrl, "resources/TEST1/files/1.dcm"));
+        mainCredentials().multiPart(dicomFile3).put(CommonStringUtils.formatUrl(subjectUrl, "resources/TEST1/files/1.dcm"));
 
-        restDriver.validateUpload(mainUser, CommonUtils.formatUrl(subjectUrl, "resources/TEST1/files/1.dcm"), dicomFile3);
-        restDriver.validateUpload(mainUser, CommonUtils.formatUrl(subjectUrl, "files/1.dcm"), dicomFile3);
+        restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(subjectUrl, "resources/TEST1/files/1.dcm"), dicomFile3);
+        restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(subjectUrl, "files/1.dcm"), dicomFile3);
     }
 
     @Test
     public void testProjectResourceUpload() {
         final String projectUrl = restDriver.projectUrl(project);
-        mainCredentials().multiPart(dicomFile3).put(CommonUtils.formatUrl(projectUrl, "resources/TEST1/files/1.dcm"));
+        mainCredentials().multiPart(dicomFile3).put(CommonStringUtils.formatUrl(projectUrl, "resources/TEST1/files/1.dcm"));
 
-        restDriver.validateUpload(mainUser, CommonUtils.formatUrl(projectUrl, "resources/TEST1/files/1.dcm"), dicomFile3);
-        restDriver.validateUpload(mainUser, CommonUtils.formatUrl(projectUrl, "files/1.dcm"), dicomFile3);
+        restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(projectUrl, "resources/TEST1/files/1.dcm"), dicomFile3);
+        restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(projectUrl, "files/1.dcm"), dicomFile3);
     }
 
 
@@ -248,29 +244,29 @@ public class TestFileUpload extends BaseXnatRestTest {
         final String sessionUrl = restDriver.subjectAssessorUrl(session);
 
         // Test Records Count with ?file_stats=true
-        assertEquals(0, getTotalRecords(mainCredentials().queryParam("format", "json").queryParam("file_stats", true).get(CommonUtils.formatUrl(sessionUrl, "resources"))));
+        assertEquals(0, getTotalRecords(mainCredentials().queryParam("format", "json").queryParam("file_stats", true).get(CommonStringUtils.formatUrl(sessionUrl, "resources"))));
 
         // Test Records Count
-        assertEquals(0, getTotalRecords(mainCredentials().queryParam("format", "json").get(CommonUtils.formatUrl(sessionUrl, "resources"))));
+        assertEquals(0, getTotalRecords(mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(sessionUrl, "resources"))));
 
         // Test Records Count with ?file_stats=true
-        assertEquals(0, getTotalRecords(mainCredentials().queryParam("format", "json").queryParam("file_stats", false).get(CommonUtils.formatUrl(sessionUrl, "resources"))));
+        assertEquals(0, getTotalRecords(mainCredentials().queryParam("format", "json").queryParam("file_stats", false).get(CommonStringUtils.formatUrl(sessionUrl, "resources"))));
 
         // Upload three new resources to the MR1 experiment
         for (File dicomFile : new File[]{dicomFile1, dicomFile2, dicomFile3}) {
             final char fileNum = dicomFile.getName().charAt(0);
             mainCredentials().multiPart(dicomFile).
-                    put(CommonUtils.formatUrl(sessionUrl, "resources/TEST" + fileNum, "files", fileNum + ".dcm")).then().assertThat().statusCode(200);
+                    put(CommonStringUtils.formatUrl(sessionUrl, "resources/TEST" + fileNum, "files", fileNum + ".dcm")).then().assertThat().statusCode(200);
         }
 
         // Test Records Count with ?file_stats=true
-        assertEquals(3, getTotalRecords(mainCredentials().queryParam("format", "json").queryParam("file_stats", true).get(CommonUtils.formatUrl(sessionUrl, "resources"))));
+        assertEquals(3, getTotalRecords(mainCredentials().queryParam("format", "json").queryParam("file_stats", true).get(CommonStringUtils.formatUrl(sessionUrl, "resources"))));
 
         // Test Records Count
-        assertEquals(3, getTotalRecords(mainCredentials().queryParam("format", "json").get(CommonUtils.formatUrl(sessionUrl, "resources"))));
+        assertEquals(3, getTotalRecords(mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(sessionUrl, "resources"))));
 
         // Test Records Count with ?file_stats=true
-        assertEquals(3, getTotalRecords(mainCredentials().queryParam("format", "json").queryParam("file_stats", false).get(CommonUtils.formatUrl(sessionUrl, "resources"))));
+        assertEquals(3, getTotalRecords(mainCredentials().queryParam("format", "json").queryParam("file_stats", false).get(CommonStringUtils.formatUrl(sessionUrl, "resources"))));
     }
 
     private XnatMrsessiondataBean readMrBean() {

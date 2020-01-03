@@ -2,9 +2,8 @@ package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.path.json.JsonPath;
 import org.hamcrest.Matchers;
-import org.nrg.testing.CommonUtils;
+import org.nrg.testing.TimeUtils;
 import org.nrg.testing.UIDList;
-import org.nrg.testing.file.FileIO;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.PrearchiveCode;
 import org.nrg.xnat.pogo.Project;
@@ -20,7 +19,7 @@ import java.io.File;
 
 public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
-    private final File sessionZip = FileIO.getDataFile("mr_1.zip");
+    private final File sessionZip = getDataFile("mr_1.zip");
     private final String subjectName = "SPP_0x220790";
     private final String sessionName = "SPP_0x220790_MR2";
     private final Project project1 = new Project().prearchiveCode(PrearchiveCode.MANUAL);
@@ -72,7 +71,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
                 queryParam("import-handler", "gradual-DICOM").
                 queryParam("triggerPipelines", false).
                 queryParam("dest", "/prearchive").
-                multiPart(FileIO.getDataFile("mr_1/1.dcm")).
+                multiPart(getDataFile("mr_1/1.dcm")).
                 post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200).
                 and().extract().response().asString().trim();
@@ -90,7 +89,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
                 post(formatRestUrl("services/prearchive/move")).
                 then().assertThat().statusCode(200);
 
-        CommonUtils.sleep(3000);
+        TimeUtils.sleep(3000);
 
         final String newUri = getSessionPrearcUri(project3, subjectName, sessionName);
 
@@ -101,7 +100,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
                 post(formatRestUrl("services/prearchive/move")).
                 then().assertThat().statusCode(200);
 
-        CommonUtils.sleep(3000);
+        TimeUtils.sleep(3000);
 
         final String finalUri = getSessionPrearcUri(project2, subjectName, sessionName);
 
@@ -202,7 +201,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
                 post(formatRestUrl("services/prearchive/move")).
                 then().assertThat().statusCode(200);
 
-        CommonUtils.sleep(3000);
+        TimeUtils.sleep(3000);
 
         assertSessionsInProjectPrearc(project3, 1);
 
@@ -214,7 +213,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
                 post(formatRestUrl("services/prearchive/move")).
                 then().assertThat().statusCode(200);
 
-        CommonUtils.sleep(3000);
+        TimeUtils.sleep(3000);
 
         assertSessionsInProjectPrearc(project3, 0);
         assertSessionsInProjectPrearc(project2, 1);

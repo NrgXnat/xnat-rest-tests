@@ -4,10 +4,11 @@ import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.path.json.JsonPath;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
-import org.nrg.testing.CommonUtils;
+import org.nrg.testing.CommonStringUtils;
+import org.nrg.testing.FileIOUtils;
+import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.HardDependency;
 import org.nrg.testing.annotations.SoftDependency;
-import org.nrg.testing.file.FileIO;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.Users;
 import org.nrg.xnat.enums.Accessibility;
@@ -30,8 +31,8 @@ public class TestConfigService extends BaseXnatRestTest {
     private final List<Project> projects = new ArrayList<>();
     private final Matcher<Integer> isOk = Matchers.isOneOf(200, 201);
     private final String testConfigUrl = formatRestUrl("config/test/newPath/goes/here");
-    private final File dummy = FileIO.getDataFile("dummy.txt");
-    private final String dummyContents = FileIO.readFile(dummy);
+    private final File dummy = getDataFile("dummy.txt");
+    private final String dummyContents = FileIOUtils.readFile(dummy);
 
     @AfterClass(alwaysRun = true)
     public void removeConfigServiceProjects() {
@@ -68,7 +69,7 @@ public class TestConfigService extends BaseXnatRestTest {
     public void testConfigServiceReplace() {
         // do another put to the same URL as the first test and check for updated contents
 
-        final String newContents = FileIO.readDataFile("test_asst_v1.xml");
+        final String newContents = readDataFile("test_asst_v1.xml");
 
         mainAdminCredentials().contentType(ContentType.TEXT).body(newContents).put(testConfigUrl).then().assertThat().statusCode(isOk);
 
@@ -96,7 +97,7 @@ public class TestConfigService extends BaseXnatRestTest {
         final String toolName = UUID.randomUUID().toString();
         final String path = UUID.randomUUID().toString() + "/" + UUID.randomUUID().toString();
         final Project project = registerProject();
-        final String contents = FileIO.readDataFile("test_asst_v1.xml");
+        final String contents = readDataFile("test_asst_v1.xml");
 
         restDriver.createProject(mainUser, project);
 
@@ -150,9 +151,9 @@ public class TestConfigService extends BaseXnatRestTest {
         final String toolName = UUID.randomUUID().toString();
         final String path = UUID.randomUUID().toString() + "/" + UUID.randomUUID().toString();
         final Project project = registerProject();
-        final String v1 = FileIO.readDataFile("test_subject_v1.xml");
-        final String v2 = FileIO.readDataFile("test_subject_v2.xml");
-        final String v3 = FileIO.readDataFile("test_subject_v3.xml");
+        final String v1 = readDataFile("test_subject_v1.xml");
+        final String v2 = readDataFile("test_subject_v2.xml");
+        final String v3 = readDataFile("test_subject_v3.xml");
 
         restDriver.createProject(mainUser, project);
 
@@ -205,7 +206,7 @@ public class TestConfigService extends BaseXnatRestTest {
         final String toolNameToAdd = UUID.randomUUID().toString();
         final String path = UUID.randomUUID().toString() + "/" + UUID.randomUUID().toString();
         final Project project = registerProject();
-        final String contents = FileIO.readDataFile("test_subject_v1.xml");
+        final String contents = readDataFile("test_subject_v1.xml");
 
         restDriver.createProject(mainUser, project);
 
@@ -218,12 +219,12 @@ public class TestConfigService extends BaseXnatRestTest {
             // If this is a project URL, then the standard user should be able to put. Otherwise, the admin has to put.
             final User putUser = (url.contains("/projects/") ? mainUser : mainAdminUser);
             Credentials.build(putUser).contentType(ContentType.TEXT).body(contents).
-                    put(CommonUtils.formatUrl(url, "baselineTool", path)).then().assertThat().statusCode(isOk); // add a baseline tool
+                    put(CommonStringUtils.formatUrl(url, "baselineTool", path)).then().assertThat().statusCode(isOk); // add a baseline tool
 
             final int baselineSize = mainCredentials().queryParam("format", "json").get(url).jsonPath().getList("ResultSet.Result").size(); // GET baseline tools
 
             Credentials.build(putUser).contentType(ContentType.TEXT).body(contents).
-                    put(CommonUtils.formatUrl(url, toolNameToAdd, path)).then().assertThat().statusCode(isOk); // add new random tool
+                    put(CommonStringUtils.formatUrl(url, toolNameToAdd, path)).then().assertThat().statusCode(isOk); // add new random tool
 
             final JsonPath updatedTools = mainCredentials().queryParam("format", "json").get(url).jsonPath().setRoot("ResultSet.Result"); // GET updated tools
 
@@ -253,9 +254,9 @@ public class TestConfigService extends BaseXnatRestTest {
     @Test // TODO: QA-504 requires 3 users
     public void testConfigServiceProjectLevelEditSecurity() {
         final Project project = registerProject().accessibility(Accessibility.PRIVATE);
-        final User member = Users.genericAccount(restDriver);
-        final User collaborator = Users.genericAccount(restDriver);
-        final User unauthorizedUser = Users.genericAccount(restDriver);
+        final User member = Users.genericAccount();
+        final User collaborator = Users.genericAccount();
+        final User unauthorizedUser = Users.genericAccount();
         restDriver.createUser(mainAdminUser, member);
         restDriver.createUser(mainAdminUser, collaborator);
         restDriver.createUser(mainAdminUser, unauthorizedUser);
@@ -269,6 +270,8 @@ public class TestConfigService extends BaseXnatRestTest {
         final String tracerUrl = formatRestUrl("projects", project.getId(), "config", path);
 
         mainAdminCredentials().contentType(ContentType.TEXT).body(tracers).put(tracerUrl).then().assertThat().statusCode(isOk);
+
+        TimeUtils.sleep(1000); // let cache update
 
         for (User user : new User[]{member, collaborator, unauthorizedUser}) {
             Credentials.build(user).contentType(ContentType.TEXT).body("junk string").put(tracerUrl).then().assertThat().statusCode(403);

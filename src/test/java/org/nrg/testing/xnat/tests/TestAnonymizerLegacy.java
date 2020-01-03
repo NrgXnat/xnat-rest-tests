@@ -5,9 +5,9 @@ import org.dcm4che2.data.Tag;
 import org.dcm4che2.io.DicomInputStream;
 import org.dcm4che2.iod.module.macro.Code;
 import org.hamcrest.Matchers;
-import org.nrg.testing.CommonUtils;
+import org.nrg.testing.CommonStringUtils;
+import org.nrg.testing.FileIOUtils;
 import org.nrg.testing.UIDList;
-import org.nrg.testing.file.FileIO;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.XnatObjectUtils;
 import org.nrg.xnat.enums.Gender;
@@ -38,14 +38,14 @@ import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertNull;
 
 public class TestAnonymizerLegacy extends BaseXnatRestTest {
-    private final File anonScript1File = FileIO.getDataFile("anon1.das");
+    private final File anonScript1File = getDataFile("anon1.das");
     private final AnonScript anonScript1 = XnatObjectUtils.anonScriptFromFile(null, anonScript1File);
-    private final File anonScript2File = FileIO.getDataFile("anon2.das");
+    private final File anonScript2File = getDataFile("anon2.das");
     private final AnonScript anonScript2 = XnatObjectUtils.anonScriptFromFile(null, anonScript2File);
-    private final File anonScript3File = FileIO.getDataFile("projectsubjectsession.das");
+    private final File anonScript3File = getDataFile("projectsubjectsession.das");
     private final AnonScript anonScript3 = XnatObjectUtils.anonScriptFromFile(null, anonScript3File);
-    private final File testZip = FileIO.getDataFile("mr_1.zip");
-    private final File dicomFile = FileIO.getDataFile("mr_1/1.dcm");
+    private final File testZip = getDataFile("mr_1.zip");
+    private final File dicomFile = getDataFile("mr_1/1.dcm");
     private final String dicomPatName = "SPP_0x220790";
     private final String dicomPatId = "SPP_0x220790_MR2";
 
@@ -86,10 +86,10 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     @Test
     public void testUploadScriptToProject() {
         restDriver.setProjectAnonScript(mainUser, currentProject, anonScript1);
-        assertEquals(FileIO.readFile(anonScript1File), restDriver.getProjectAnonScript(mainUser, currentProject).getContents().trim());
+        assertEquals(FileIOUtils.readFile(anonScript1File), restDriver.getProjectAnonScript(mainUser, currentProject).getContents().trim());
 
         restDriver.setProjectAnonScript(mainUser, currentProject, anonScript2);
-        assertEquals(FileIO.readFile(anonScript2File), restDriver.getProjectAnonScript(mainUser, currentProject).getContents().trim());
+        assertEquals(FileIOUtils.readFile(anonScript2File), restDriver.getProjectAnonScript(mainUser, currentProject).getContents().trim());
     }
 
     /**
@@ -462,11 +462,11 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
         restDriver.uploadToSessionZipImporter(testZip, testSession);
 
         // move the subject to the new project
-        mainCredentials().queryParam("primary", true).put(CommonUtils.formatUrl(restDriver.subjectUrl(testSubject), "projects", otherProject.getId())).
+        mainCredentials().queryParam("primary", true).put(CommonStringUtils.formatUrl(restDriver.subjectUrl(testSubject), "projects", otherProject.getId())).
                 then().assertThat().statusCode(200);
 
         // move the session too
-        mainCredentials().queryParam("primary", true).put(CommonUtils.formatUrl(restDriver.subjectAssessorUrl(testSession), "projects", otherProject.getId())).
+        mainCredentials().queryParam("primary", true).put(CommonStringUtils.formatUrl(restDriver.subjectAssessorUrl(testSession), "projects", otherProject.getId())).
                 then().assertThat().statusCode(200);
 
         testSubject.setProject(otherProject);
@@ -483,7 +483,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
 
     private File saveDicomFile(User authUser, String partialUrl) {
         return restDriver.saveBinaryResponseToFile(
-                Credentials.build(authUser).get(CommonUtils.formatUrl(partialUrl, "scans/1/resources/DICOM/files/1.dcm")).
+                Credentials.build(authUser).get(CommonStringUtils.formatUrl(partialUrl, "scans/1/resources/DICOM/files/1.dcm")).
                         then().assertThat().statusCode(200).and().extract().response()
         );
     }
