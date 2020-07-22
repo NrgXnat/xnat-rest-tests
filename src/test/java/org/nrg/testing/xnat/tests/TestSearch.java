@@ -26,8 +26,6 @@ public class TestSearch extends BaseXnatRestTest {
         assertEquals(MR_SESSION.getSingularName(), mrSession.get("SINGULAR"));
         assertEquals(MR_SESSION.getPluralName(), mrSession.get("PLURAL"));
 
-        assertNull(lookupElement(MR_SCAN.getXsiType(), elements));
-
         // Again, a site administrator can mess with this, but xnat:investigatorData is the only default unsecured
         assertEquals("false", lookupElement("xnat:investigatorData", elements).get("SECURED"));
         assertEquals(1, elements.getList("findAll { it.SECURED == 'false' }").size());
