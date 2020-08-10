@@ -2,6 +2,7 @@ package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.path.json.JsonPath;
+import com.jayway.restassured.specification.RequestSpecification;
 import org.apache.log4j.Logger;
 import org.hamcrest.Matchers;
 import org.nrg.testing.CommonStringUtils;
@@ -27,6 +28,7 @@ import org.nrg.xnat.pogo.experiments.sessions.PETSession;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
 import org.nrg.xnat.pogo.resources.Resource;
 import org.nrg.xnat.pogo.resources.ScanResource;
+import org.nrg.xnat.pogo.users.User;
 import org.testng.annotations.*;
 
 import java.io.File;
@@ -732,32 +734,20 @@ public class TestImport extends BaseXnatRestTest {
 
     @Test // Test content donated by Kate at Radiologics
     @DisallowXnatVersion(disallowedVersions = { Xnat_1_6dev.class, Xnat_1_7_2.class, Xnat_1_7_3.class, Xnat_1_7_4.class, Xnat_1_7_5.class, Xnat_1_7_5_2.class, Xnat_1_7_6.class })
-    public void testUserCacheUploadAndImport() {
-        final String listener = Long.toString(System.currentTimeMillis());
-
-        final Project testProject = new Project("project" + listener).prearchiveCode(PrearchiveCode.MANUAL);
-        restDriver.createProject(mainUser, testProject);
-        final Subject subject = new Subject(testProject, "subject" + listener);
-        final MRSession session = new MRSession(testProject, subject, "session" + listener);
-        final String archiveUrl = String.format("/archive/projects/%s/subjects/%s/experiments/%s", testProject.getId(), subject.getLabel(), session.getLabel());
-
-        // Upload to user cache
-        final String cacheUrl = String.format("/user/cache/resources/%s/files/%s", listener, testZip.getName());
-        mainCredentials().multiPart(testZip).put(restDriver.formatRestUrl(cacheUrl)).then().assertThat().statusCode(200);
-
-        // Upload from user cache to project
+    public void testUserCacheUploadAndImportLegacy() {
         final String jsessionId = mainCredentials().get(formatRestUrl("JSESSION")).then()
                 .assertThat().statusCode(200).and().extract().response().asString();
-        RestAssured.given().sessionId(jsessionId).contentType("multipart/form-data")
-                .multiPart("src", cacheUrl)
-                .multiPart("http-session-listener", listener)
-                .multiPart("dest", archiveUrl)
-                .post(restDriver.formatRestUrl("services", "import")).then().assertThat().statusCode(200);
+
+        final Object[] testObjects = setupForUserCacheUpload(RestAssured.given().sessionId(jsessionId));
+        final String    listener = (String) testObjects[0];
+        final Project   project  = (Project) testObjects[1];
+        final Subject   subject  = (Subject) testObjects[2];
+        final MRSession session  = (MRSession) testObjects[3];
+        final String archiveUrl  = (String) testObjects[4];
 
         final long start = System.currentTimeMillis();
         boolean completed = false;
-
-        while (System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(20)) {
+        do {
             final JsonPath json = RestAssured.given().sessionId(jsessionId)
                     .queryParam("format", "json")
                     .get(restDriver.formatRestUrl("status", listener))
@@ -774,11 +764,82 @@ public class TestImport extends BaseXnatRestTest {
                 }
             }
             TimeUtils.sleep(5000);
-        }
+        } while (System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(20));
 
         assertTrue(completed);
         restDriver.waitForAutoRun(session);
-        restDriver.deleteProject(mainUser, testProject);
+        restDriver.deleteProject(mainUser, project);
+    }
+
+    @Test // Test content donated by Kate at Radiologics
+    @TestRequires(users = 1)
+    @DisallowXnatVersion(disallowedVersions = { Xnat_1_6dev.class, Xnat_1_7_2.class, Xnat_1_7_3.class, Xnat_1_7_4.class, Xnat_1_7_5.class, Xnat_1_7_5_2.class, Xnat_1_7_6.class })
+    public void testUserCacheUploadAndImport() {
+        final Object[] testObjects = setupForUserCacheUpload(mainQueryBase());
+        final String    listener = (String) testObjects[0];
+        final Project   project  = (Project) testObjects[1];
+        final Subject   subject  = (Subject) testObjects[2];
+        final MRSession session  = (MRSession) testObjects[3];
+        final String archiveUrl  = (String) testObjects[4];
+
+        final long start = System.currentTimeMillis();
+        boolean succeeded = false;
+        String finalMsg = null;
+        do {
+            final JsonPath json = mainQueryBase()
+                    .queryParam("format", "json")
+                    .get(restDriver.formatXapiUrl("event_tracking", listener))
+                    .then().assertThat().statusCode(200).and().extract().jsonPath();
+
+            try {
+                succeeded = json.getBoolean("succeeded");
+            } catch (NullPointerException e) {
+                // succeeded is null while processing is running, so sleep and keep polling
+                TimeUtils.sleep(5000);
+                continue;
+            }
+
+            // succeeded is T or F: either way, we can break out of this loop once we collect the final message
+            finalMsg = json.getString("finalMessage");
+            break;
+        } while (System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(20));
+
+        assertTrue(succeeded);
+        assertEquals("Archive:" + archiveUrl, finalMsg);
+
+        // Validate that other users cannot poll the progress of this event
+        User genericUser = getGenericUser();
+        restDriver.queryBaseFor(genericUser)
+                .queryParam("format", "json")
+                .get(restDriver.formatXapiUrl("event_tracking", listener))
+                .then().assertThat().statusCode(404);
+
+        restDriver.waitForAutoRun(session);
+        restDriver.deleteProject(mainUser, project);
+    }
+
+    private Object[] setupForUserCacheUpload(RequestSpecification reqSpec) {
+        final String listener = Long.toString(System.currentTimeMillis());
+
+        final Project project = new Project("project" + listener).prearchiveCode(PrearchiveCode.MANUAL);
+        restDriver.createProject(mainUser, project);
+        final Subject   subject = new Subject(project, "subject" + listener);
+        final MRSession session = new MRSession(project, subject, "session" + listener);
+
+        final String archiveUrl = String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel());
+
+        // Upload to user cache
+        final String cacheUrl = String.format("/user/cache/resources/%s/files/%s", listener, testZip.getName());
+        mainCredentials().multiPart(testZip).put(restDriver.formatRestUrl(cacheUrl)).then().assertThat().statusCode(200);
+
+        // Upload from user cache to project
+        reqSpec.contentType("multipart/form-data")
+                .multiPart("src", cacheUrl)
+                .multiPart("http-session-listener", listener)
+                .multiPart("dest", archiveUrl)
+                .post(restDriver.formatRestUrl("services", "import")).then().assertThat().statusCode(200);
+
+        return new Object[]{listener, project, subject, session, archiveUrl};
     }
 
     private String newLabel() {
