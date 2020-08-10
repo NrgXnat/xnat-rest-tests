@@ -12,7 +12,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +27,7 @@ public class LegacyComparison {
         return new XDATXMLReader().parse(response);
     }
 
-    public static LegacyComparison compareObjectsFromFile(File f1, File f2, Map<Class, List<String>> ignoreMap) throws IOException, SAXException {
+    public static LegacyComparison compareObjectsFromFile(File f1, File f2, Map<Class<? extends BaseElement>, List<String>> ignoreMap) throws IOException, SAXException {
         FileInputStream fis = new FileInputStream(f1);
         XDATXMLReader reader = new XDATXMLReader();
         BaseElement base1 = reader.parse(fis);
@@ -40,16 +39,14 @@ public class LegacyComparison {
         return compareObjects(base1, base2, new LegacyComparison(), ignoreMap);
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    public static LegacyComparison compareObjects(BaseElement base1, BaseElement base2, LegacyComparison msgs, Map<Class, List<String>> ignoreMap) {
+    @SuppressWarnings("unchecked") // Can't do anything about BaseElement#getDataFieldValue returning either a BaseElement or ArrayList<BaseElement>
+    public static LegacyComparison compareObjects(BaseElement base1, BaseElement base2, LegacyComparison msgs, Map<Class<? extends BaseElement>, List<String>> ignoreMap) {
         if (!base1.getSchemaElementName().equals(base2.getSchemaElementName())) {
             msgs.critical.add("Different XSI Types: " + base1.getSchemaElementName() + " - " + base2.getSchemaElementName());
         } else {
             List<String> ignoreFields = new ArrayList<>();
-            for (Map.Entry<Class, List<String>> entry : ignoreMap.entrySet()) {
-                Class c = entry.getKey();
-
-                if (c.isInstance(base1)) {
+            for (Map.Entry<Class<? extends BaseElement>, List<String>> entry : ignoreMap.entrySet()) {
+                if (entry.getKey().isInstance(base1)) {
                     ignoreFields.addAll(entry.getValue());
                     break;
                 }
@@ -64,11 +61,11 @@ public class LegacyComparison {
                             if (path.equals("ID") || path.equals("image_session_ID") || path.equals("subject_ID") || path.equals("imageSession_ID")) {
                                 Object v1 = base1.getDataFieldValue(path);
                                 Object v2 = base2.getDataFieldValue(path);
-                                if (!isEmpty(v1) && !isEmpty(v2)) {
+                                if (isNonEmpty(v1) && isNonEmpty(v2)) {
                                     if (!v1.equals(v2)) {
                                         msgs.critical.add(base1.getSchemaElementName() + "/" + path + " Mismatch: " + v1 + " " + v2);
                                     }
-                                } else if (!isEmpty(v1) || !isEmpty(v1)) {
+                                } else if (isNonEmpty(v1) || isNonEmpty(v1)) {
                                     msgs.warnings.add(base1.getSchemaElementName() + " Null ID: " + v1 + " " + v2);
                                 }
                             } else {
@@ -141,8 +138,8 @@ public class LegacyComparison {
                                             }
 
                                             if (field != null) {
-                                                Collections.sort(children1, new LegacyBaseElementComparator(field));
-                                                Collections.sort(children2, new LegacyBaseElementComparator(field));
+                                                children1.sort(new LegacyBaseElementComparator(field));
+                                                children2.sort(new LegacyBaseElementComparator(field));
                                             }
 
                                             for (int j = 0; j < children1.size(); j++) {
@@ -171,7 +168,7 @@ public class LegacyComparison {
         return msgs;
     }
 
-    public static void compareBeanXML(File f1, File f2, Map<Class, List<String>> fieldsToIgnore) {
+    public static void compareBeanXML(File f1, File f2, Map<Class<? extends BaseElement>, List<String>> fieldsToIgnore) {
         try {
             final LegacyComparison comparison = compareObjectsFromFile(f1, f2, fieldsToIgnore);
             if (comparison.critical.size() == 0) {
@@ -186,8 +183,8 @@ public class LegacyComparison {
         }
     }
 
-    private static boolean isEmpty(Object o) {
-        return o == null || o.toString().equals("");
+    private static boolean isNonEmpty(Object o) {
+        return o != null && !o.toString().equals("");
     }
 
 }

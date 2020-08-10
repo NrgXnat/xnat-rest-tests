@@ -381,6 +381,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
         restDriver.setProjectAnonScript(mainUser, currentProject, anonScript1);
 
         restDriver.uploadToSessionZipImporter(testZip, testSession);
+        restDriver.waitForAutoRun(testSession);
 
         final String newLabel = "subj_mod";
         mainCredentials().queryParam("subject_ID", newLabel).put(restDriver.subjectAssessorUrl(testSession)).then().assertThat().statusCode(200);
@@ -460,6 +461,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
         final ImagingSession testSession = new MRSession(currentProject, testSubject, "case01");
 
         restDriver.uploadToSessionZipImporter(testZip, testSession);
+        restDriver.waitForAutoRun(testSession);
 
         // move the subject to the new project
         mainCredentials().queryParam("primary", true).put(CommonStringUtils.formatUrl(restDriver.subjectUrl(testSubject), "projects", otherProject.getId())).

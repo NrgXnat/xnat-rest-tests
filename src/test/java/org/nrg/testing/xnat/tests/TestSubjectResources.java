@@ -5,6 +5,7 @@ import org.nrg.testing.FileIOUtils;
 import org.nrg.testing.LegacyComparison;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xdat.bean.XnatSubjectdataBean;
+import org.nrg.xdat.bean.base.BaseElement;
 import org.nrg.xnat.enums.Gender;
 import org.nrg.xnat.enums.Handedness;
 import org.nrg.xnat.pogo.Investigator;
@@ -64,7 +65,7 @@ public class TestSubjectResources extends BaseXnatRestTest {
         final File subjectXML1 = getDataFile("test_subject_v1.xml");
         final File subjectXML2 = getDataFile("test_subject_v2.xml"); // same as v1, except doesn't have education field
         final File subjectXML3 = getDataFile("test_subject_v3.xml"); // same as v3, except contains additional weight and height fields
-        final Map<Class, List<String>> ignoredFields = Collections.singletonMap(XnatSubjectdataBean.class, Collections.singletonList("project"));
+        final Map<Class<? extends BaseElement>, List<String>> ignoredFields = Collections.singletonMap(XnatSubjectdataBean.class, Collections.singletonList("project"));
 
         restDriver.createProject(mainUser, project);
 
@@ -138,7 +139,7 @@ public class TestSubjectResources extends BaseXnatRestTest {
         return restDriver.saveBinaryResponseToFile(mainCredentials().given().queryParam("format", "xml").get(restDriver.subjectUrl(subject)));
     }
 
-    private void compareBeanXML(File subjectXML, Subject subject, Map<Class, List<String>> ignoredFields) {
+    private void compareBeanXML(File subjectXML, Subject subject, Map<Class<? extends BaseElement>, List<String>> ignoredFields) {
         LegacyComparison.compareBeanXML(
                 subjectXML,
                 getSubjectXML(subject),

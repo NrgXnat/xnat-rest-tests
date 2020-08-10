@@ -7,15 +7,20 @@ import org.hamcrest.Matchers;
 import org.nrg.testing.CommonStringUtils;
 import org.nrg.testing.TestNgUtils;
 import org.nrg.testing.TimeUtils;
+import org.nrg.testing.annotations.DisallowXnatVersion;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.versions.*;
 import org.nrg.xnat.enums.PrearchiveCode;
+import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
+import org.nrg.xnat.pogo.SiteConfig;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.Scan;
+import org.nrg.xnat.pogo.experiments.SubjectAssessor;
 import org.nrg.xnat.pogo.experiments.scans.MRScan;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.experiments.sessions.PETSession;
@@ -28,10 +33,9 @@ import java.io.File;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
-import static org.testng.AssertJUnit.assertEquals;
-import static org.testng.AssertJUnit.assertFalse;
-import static org.testng.AssertJUnit.assertTrue;
+import static org.testng.AssertJUnit.*;
 
 public class TestImport extends BaseXnatRestTest {
 
@@ -64,6 +68,7 @@ public class TestImport extends BaseXnatRestTest {
         }
         try {
             restDriver.clearProject(mainUser, project);
+            TimeUtils.sleep(1000);
         } catch (Throwable throwable) {
             LOGGER.warn(throwable);
         }
@@ -73,6 +78,7 @@ public class TestImport extends BaseXnatRestTest {
     public void tearDownImportTests() {
         restDriver.deleteProjectSilently(mainAdminUser, project);
         restDriver.enableSiteAnonScript(mainAdminUser);
+        setCrossModalityMergePrevention(true);
     }
 
     @Test
@@ -176,6 +182,8 @@ public class TestImport extends BaseXnatRestTest {
      */
     @Test
     public void testDataProjectExperimentNewExptXSIOverwriteFDeleteF() {
+        setCrossModalityMergePrevention(false);
+
         final Subject subject = new Subject(project, "SUBJ3");
         final ImagingSession session = new PETSession(project, subject).date(LocalDate.parse("2000-01-01"));
 
@@ -192,10 +200,12 @@ public class TestImport extends BaseXnatRestTest {
     }
 
     /**
-     * Tests merging MR scans into an existing PET session with overwrite=delete... this should fail
+     * Tests merging MR scans into an existing PET session with overwrite=delete... this should fail unconditionally prior to 1.7.7 and conditionally afterward
      */
     @Test
     public void testDataProjectExperimentNewExptXSIOverwriteTDeleteF() {
+        setCrossModalityMergePrevention(true);
+
         final Subject subject = new Subject(project, "SUBJ_03");
         final ImagingSession session = new PETSession(project, subject).date(LocalDate.parse("2000-01-01"));
 
@@ -208,6 +218,25 @@ public class TestImport extends BaseXnatRestTest {
                 multiPart(testZip).
                 post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(409);
+
+        if (XnatVersionList.testedVersionFollows(Xnat_1_7_6.class)) {
+            setCrossModalityMergePrevention(false);
+            mainCredentials().
+                    queryParam("triggerPipelines", false).
+                    queryParam("overwrite", "delete").
+                    queryParam("dest", String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel())).
+                    multiPart(testZip).
+                    post(formatRestUrl("services/import")).
+                    then().assertThat().statusCode(200);
+
+            final List<SubjectAssessor> subjectAssessors = restDriver.readSubjectAssesssors(mainUser, project, subject);
+            assertEquals(1, subjectAssessors.size());
+
+            final ImagingSession retrievedSessionRepresentation = (ImagingSession) subjectAssessors.get(0);
+            assertEquals(DataType.PET_SESSION, retrievedSessionRepresentation.getDataType());
+
+            assertEquals(DataType.MR_SCAN.getXsiType(), retrievedSessionRepresentation.findScan("1").getXsiType());
+        }
 
         restDriver.deleteSubjectAssessor(mainUser, session);
     }
@@ -489,6 +518,8 @@ public class TestImport extends BaseXnatRestTest {
         assertFalse(unassignedUrl.equals(archiveUrl));
         assertTrue(archiveUrl.startsWith("/data/archive"));
 
+        restDriver.waitForAutoRun(restDriver.readProject(mainUser, project.getId()).getSubjects().get(0).getSessions().get(0));
+
         for (int i = 1; i < 3; i++) {
             TestNgUtils.assertBinaryFilesEqual(
                     getDataFile(String.format("scan%d/000000.dcm", i)),
@@ -614,6 +645,7 @@ public class TestImport extends BaseXnatRestTest {
         mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(restDriver.scanUrl(scan1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
 
         // upload frame 2, should create scan 1-MR1
+        TimeUtils.sleep(1000); // wait for 1s so cache backup dir is distinct
         mainCredentials().
                 queryParam("triggerPipelines", false).
                 queryParam("dest", archiveUrl).
@@ -627,6 +659,7 @@ public class TestImport extends BaseXnatRestTest {
         mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(restDriver.scanUrl(scan1MR1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
 
         // upload frame 3, should be added to scan 1-MR1
+        TimeUtils.sleep(1000); // wait for 1s so cache backup dir is distinct
         mainCredentials().
                 queryParam("triggerPipelines", false).
                 queryParam("dest", archiveUrl).
@@ -640,6 +673,7 @@ public class TestImport extends BaseXnatRestTest {
         mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(restDriver.scanUrl(scan1MR1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
 
         // upload frame 4 & 5, should be added to scan 1
+        TimeUtils.sleep(1000); // wait for 1s so cache backup dir is distinct
         mainCredentials().
                 queryParam("triggerPipelines", false).
                 queryParam("dest", archiveUrl).
@@ -696,8 +730,65 @@ public class TestImport extends BaseXnatRestTest {
         restDriver.deleteProject(mainUser, project);
     }
 
+    @Test // Test content donated by Kate at Radiologics
+    @DisallowXnatVersion(disallowedVersions = { Xnat_1_6dev.class, Xnat_1_7_2.class, Xnat_1_7_3.class, Xnat_1_7_4.class, Xnat_1_7_5.class, Xnat_1_7_5_2.class, Xnat_1_7_6.class })
+    public void testUserCacheUploadAndImport() {
+        final String listener = Long.toString(System.currentTimeMillis());
+
+        final Project testProject = new Project("project" + listener).prearchiveCode(PrearchiveCode.MANUAL);
+        restDriver.createProject(mainUser, testProject);
+        final Subject subject = new Subject(testProject, "subject" + listener);
+        final MRSession session = new MRSession(testProject, subject, "session" + listener);
+        final String archiveUrl = String.format("/archive/projects/%s/subjects/%s/experiments/%s", testProject.getId(), subject.getLabel(), session.getLabel());
+
+        // Upload to user cache
+        final String cacheUrl = String.format("/user/cache/resources/%s/files/%s", listener, testZip.getName());
+        mainCredentials().multiPart(testZip).put(restDriver.formatRestUrl(cacheUrl)).then().assertThat().statusCode(200);
+
+        // Upload from user cache to project
+        final String jsessionId = mainCredentials().get(formatRestUrl("JSESSION")).then()
+                .assertThat().statusCode(200).and().extract().response().asString();
+        RestAssured.given().sessionId(jsessionId).contentType("multipart/form-data")
+                .multiPart("src", cacheUrl)
+                .multiPart("http-session-listener", listener)
+                .multiPart("dest", archiveUrl)
+                .post(restDriver.formatRestUrl("services", "import")).then().assertThat().statusCode(200);
+
+        final long start = System.currentTimeMillis();
+        boolean completed = false;
+
+        while (System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(20)) {
+            final JsonPath json = RestAssured.given().sessionId(jsessionId)
+                    .queryParam("format", "json")
+                    .get(restDriver.formatRestUrl("status", listener))
+                    .then().assertThat().statusCode(200).and().extract().jsonPath().setRoot("msgs.get(0)");
+            final int len = json.getInt("size()") - 1;
+            if (len >= 0) {
+                final String msg = json.get("get(" + len + ").msg");
+                final boolean terminal = json.getBoolean("get(" + len + ").terminal");
+                if (terminal) {
+                    assertEquals("COMPLETED", json.get("get(" + len + ").status"));
+                    assertEquals("Archive:" + archiveUrl, msg);
+                    completed = true;
+                    break;
+                }
+            }
+            TimeUtils.sleep(5000);
+        }
+
+        assertTrue(completed);
+        restDriver.waitForAutoRun(session);
+        restDriver.deleteProject(mainUser, testProject);
+    }
+
     private String newLabel() {
         return "MR" + (mrCount++);
+    }
+
+    private void setCrossModalityMergePrevention(boolean state) {
+        if (XnatVersionList.testedVersionFollows(Xnat_1_7_6.class)) {
+            restDriver.postToSiteConfig(mainAdminUser, Collections.singletonMap(SiteConfig.PREVENT_CROSS_MODALITY_MERGE, state));
+        }
     }
 
 }

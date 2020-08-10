@@ -3,8 +3,11 @@ package org.nrg.testing.xnat.tests;
 import com.jayway.restassured.http.ContentType;
 import org.nrg.testing.FileIOUtils;
 import org.nrg.testing.LegacyComparison;
+import org.nrg.testing.TimeUtils;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.xdat.bean.XnatMrscandataBean;
 import org.nrg.xdat.bean.XnatMrsessiondataBean;
+import org.nrg.xdat.bean.base.BaseElement;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
@@ -17,9 +20,7 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.testng.AssertJUnit.assertEquals;
 
@@ -91,10 +92,14 @@ public class TestSubjAssessmentResources extends BaseXnatRestTest {
         mainCredentials().given().queryParam("format", "html").get(experimentsUrl()).then().assertThat().statusCode(200);
         restDriver.createSubjectAssessor(mainUser, session);
 
+        final Map<Class<? extends BaseElement>, List<String>> fieldsToIgnore = new HashMap<>();
+        fieldsToIgnore.put(XnatMrsessiondataBean.class, Collections.singletonList("project"));
+        fieldsToIgnore.put(XnatMrscandataBean.class, Collections.singletonList("project"));
+
         LegacyComparison.compareBeanXML(
                 experimentV1,
                 restDriver.saveBinaryResponseToFile(mainCredentials().queryParam("format", "xml").get(restDriver.subjectAssessorUrl(session))),
-                Collections.<Class, List<String>>singletonMap(XnatMrsessiondataBean.class, Collections.singletonList("project"))
+                fieldsToIgnore
         );
 
         mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIOUtils.readFile(experimentV2)).
@@ -105,18 +110,19 @@ public class TestSubjAssessmentResources extends BaseXnatRestTest {
         LegacyComparison.compareBeanXML(
                 experimentV2,
                 restDriver.saveBinaryResponseToFile(mainCredentials().queryParam("format", "xml").get(restDriver.subjectAssessorUrl(session))),
-                Collections.singletonMap(XnatMrsessiondataBean.class, Collections.singletonList("project"))
+                fieldsToIgnore
         );
 
         final LegacyComparison comparison = LegacyComparison.compareObjectsFromFile(
                 experimentV1,
                 restDriver.saveBinaryResponseToFile(mainCredentials().queryParam("format", "xml").get(restDriver.subjectAssessorUrl(session))),
-                Collections.<Class, List<String>>singletonMap(XnatMrsessiondataBean.class, Collections.singletonList("project"))
+                fieldsToIgnore
         );
 
         assertEquals(new ArrayList<String>(), comparison.warnings);
         assertEquals(Collections.singletonList("mrSessionData/coil Mismatch: test test2"), comparison.critical);
 
+        TimeUtils.sleep(1000); // cache update
         restDriver.deleteSubjectAssessor(mainUser, session);
 
         mainCredentials().given().queryParam("format", "html").get(experimentsUrl()).then().assertThat().statusCode(200);
