@@ -68,17 +68,17 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         performSubjectRelabelAnonTest(projectAnonDE4, siteAnonDE4);
     }
 
-    @Test
+    @Test(enabled = false)
     public void testSubjectRelabel_4P_6S() {
         performSubjectRelabelAnonTest(projectAnonDE4, siteAnonDE6);
     }
 
-    @Test
+    @Test(enabled = false)
     public void testSubjectRelabel_6P_4S() {
         performSubjectRelabelAnonTest(projectAnonDE6, siteAnonDE4);
     }
 
-    @Test
+    @Test(enabled = false)
     public void testSubjectRelabel_6P_6S() {
         performSubjectRelabelAnonTest(projectAnonDE6, siteAnonDE6);
     }
@@ -88,17 +88,17 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         performSessionRelabelAnonTest(projectAnonDE4, siteAnonDE4);
     }
 
-    @Test
+    @Test(enabled = false)
     public void testSessionRelabel_4P_6S() {
         performSessionRelabelAnonTest(projectAnonDE4, siteAnonDE6);
     }
 
-    @Test
+    @Test(enabled = false)
     public void testSessionRelabel_6P_4S() {
         performSessionRelabelAnonTest(projectAnonDE6, siteAnonDE4);
     }
 
-    @Test
+    @Test(enabled = false)
     public void testSessionRelabel_6P_6S() {
         performSessionRelabelAnonTest(projectAnonDE6, siteAnonDE6);
     }
