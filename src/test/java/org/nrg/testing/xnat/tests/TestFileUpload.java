@@ -52,6 +52,7 @@ public class TestFileUpload extends BaseXnatRestTest {
         subject = new Subject(project, "1").gender(Gender.MALE);
         session = new MRSession(project, subject, "MR1").date(LocalDate.parse("2000-01-01"));
         restDriver.createProject(mainUser, project);
+        TimeUtils.sleep(1000); // cache update
     }
 
     @AfterMethod(alwaysRun = true)
