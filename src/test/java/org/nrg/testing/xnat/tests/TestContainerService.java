@@ -92,7 +92,29 @@ public class TestContainerService extends BaseXnatRestTest {
     }
 
     @Test
+    public void testDeleteAllImages() {
+        final List<String> imageIds = mainAdminCredentials()
+                .get(restDriver.formatXapiUrl("docker", "images"))
+                .then().assertThat().statusCode(200).and().extract().jsonPath().getList("image-id");
+
+        for (String id : imageIds) {
+            mainAdminCredentials()
+                    .delete(restDriver.formatXapiUrl("docker", "images", id))
+                    .then().assertThat().statusCode(204);
+        }
+
+        final JsonPath commands = mainAdminCredentials()
+                .queryParam("image", DEBUG_IMG)
+                .get(restDriver.formatXapiUrl("commands"))
+                .then().assertThat().statusCode(200).and().extract().jsonPath();
+
+        assertEquals(0, commands.getList("$").size());
+    }
+
+    @Test
+    @HardDependency("testDeleteAllImages")
     public void testPullImageWithCommand() {
+        // Add new image with commands
         mainAdminCredentials().queryParam("image", DEBUG_IMG)
                 .post(restDriver.formatXapiUrl("docker", "pull"))
                 .then().assertThat().statusCode(200);
@@ -106,8 +128,8 @@ public class TestContainerService extends BaseXnatRestTest {
     }
 
     @Test
-    @SoftDependency({"testContainerProject","testContainerSubject","testContainerSubjectAltUri","testContainerSession","testContainerSessionAltUri","testContainerAssessor","testContainerAssessorAltUri","testContainerAssessorAltUri2","testContainerScan","testContainerScanAltUri"})
-    public void deleteImageWithCommand() {
+    @SoftDependency({"testDisableSwarmMode", "testContainerProject","testContainerSubject","testContainerSubjectAltUri","testContainerSession","testContainerSessionAltUri","testContainerAssessor","testContainerAssessorAltUri","testContainerAssessorAltUri2","testContainerScan","testContainerScanAltUri"})
+    public void testDeleteImage() {
         final JsonPath images = mainAdminCredentials()
                 .get(restDriver.formatXapiUrl("docker", "images"))
                 .then().assertThat().statusCode(200).and().extract().jsonPath();
@@ -129,35 +151,35 @@ public class TestContainerService extends BaseXnatRestTest {
     }
 
     @Test
-    @HardDependency("testPullImageWithCommand")
+    @SoftDependency("testDisableSwarmMode")
     public void testContainerProject() {
         enableAndRunContainerThenCheckOutputs(XnatProjectdata.SCHEMA_ELEMENT_NAME,
                 String.format("/archive/projects/%s", project.getId()));
     }
 
     @Test
-    @HardDependency("testPullImageWithCommand")
+    @SoftDependency("testDisableSwarmMode")
     public void testContainerSubject() {
         enableAndRunContainerThenCheckOutputs(XnatSubjectdata.SCHEMA_ELEMENT_NAME,
                 String.format("/archive/subjects/%s", subject.getAccessionNumber()));
     }
 
     @Test(enabled = false)
-    @HardDependency("testPullImageWithCommand")
+    @SoftDependency("testDisableSwarmMode")
     public void testContainerSubjectAltUri() {
         enableAndRunContainerThenCheckOutputs(XnatSubjectdata.SCHEMA_ELEMENT_NAME,
                 String.format("/archive/projects/%s/subjects/%s", project.getId(), subject.getLabel()));
     }
 
     @Test
-    @HardDependency("testPullImageWithCommand")
+    @SoftDependency("testDisableSwarmMode")
     public void testContainerSession() {
         enableAndRunContainerThenCheckOutputs(XnatMrsessiondata.SCHEMA_ELEMENT_NAME,
                 String.format("/archive/experiments/%s", session.getAccessionNumber()));
     }
 
     @Test
-    @HardDependency("testPullImageWithCommand")
+    @SoftDependency("testDisableSwarmMode")
     public void testContainerSessionAltUri() {
         enableAndRunContainerThenCheckOutputs(XnatMrsessiondata.SCHEMA_ELEMENT_NAME,
                 String.format("/archive/projects/%s/subjects/%s/experiments/%s",
@@ -165,7 +187,7 @@ public class TestContainerService extends BaseXnatRestTest {
     }
 
     @Test
-    @HardDependency("testPullImageWithCommand")
+    @SoftDependency("testDisableSwarmMode")
     public void testContainerAssessor() {
         enableAndRunContainerThenCheckOutputs(XnatQcassessmentdata.SCHEMA_ELEMENT_NAME,
                 String.format("/archive/experiments/%s/assessors/%s",
@@ -173,7 +195,7 @@ public class TestContainerService extends BaseXnatRestTest {
     }
 
     @Test(enabled = false)
-    @HardDependency("testPullImageWithCommand")
+    @SoftDependency("testDisableSwarmMode")
     public void testContainerAssessorAltUri() {
         enableAndRunContainerThenCheckOutputs(XnatQcassessmentdata.SCHEMA_ELEMENT_NAME,
                 String.format("/archive/projects/%s/subjects/%s/experiments/%s/assessors/%s",
@@ -181,7 +203,7 @@ public class TestContainerService extends BaseXnatRestTest {
     }
 
     @Test(enabled = false)
-    @HardDependency("testPullImageWithCommand")
+    @SoftDependency("testDisableSwarmMode")
     public void testContainerAssessorAltUri2() {
         enableAndRunContainerThenCheckOutputs(XnatQcassessmentdata.SCHEMA_ELEMENT_NAME,
                 String.format("/archive/experiments/%s/assessors/%s",
@@ -189,25 +211,49 @@ public class TestContainerService extends BaseXnatRestTest {
     }
 
     @Test(enabled = false)
-    @HardDependency("testPullImageWithCommand")
+    @SoftDependency("testDisableSwarmMode")
     public void testContainerAssessorAltUri3() {
         enableAndRunContainerThenCheckOutputs(XnatQcassessmentdata.SCHEMA_ELEMENT_NAME,
                 String.format("/archive/experiments/%s", assessor.getAccessionNumber()));
     }
 
     @Test
-    @HardDependency("testPullImageWithCommand")
+    @SoftDependency("testDisableSwarmMode")
     public void testContainerScan() {
         enableAndRunContainerThenCheckOutputs(XnatMrscandata.SCHEMA_ELEMENT_NAME,
                 String.format("/archive/experiments/%s/scans/%s", session.getAccessionNumber(), scan.getId()));
     }
 
     @Test
-    @HardDependency("testPullImageWithCommand")
+    @SoftDependency("testDisableSwarmMode")
     public void testContainerScanAltUri() {
         enableAndRunContainerThenCheckOutputs(XnatMrscandata.SCHEMA_ELEMENT_NAME,
                 String.format("/archive/projects/%s/subjects/%s/experiments/%s/scans/%s",
                         project.getId(), subject.getLabel(), session.getLabel(), scan.getId()));
+    }
+
+    @Test
+    @TestRequires(csSwarmCanEnable = true)
+    @HardDependency("testPullImageWithCommand")
+    public void testEnableSwarmMode() {
+        JsonPath server = toggleSwarmMode(true);
+        assertTrue(server.getBoolean("swarm-mode"));
+    }
+
+    @Test
+    @TestRequires(csSwarmCanEnable = true)
+    @HardDependency("testEnableSwarmMode")
+    public void testContainerSessionSwarm() {
+        enableAndRunContainerThenCheckOutputs(XnatMrsessiondata.SCHEMA_ELEMENT_NAME,
+                String.format("/archive/experiments/%s", session.getAccessionNumber()));
+    }
+
+    @Test
+    @TestRequires(csSwarmCanEnable = true)
+    @SoftDependency("testContainerSessionSwarm")
+    public void testDisableSwarmMode() {
+        JsonPath server = toggleSwarmMode(false);
+        assertFalse(server.getBoolean("swarm-mode"));
     }
 
     private void enableAndRunContainerThenCheckOutputs(String xsiType, String uri) {
@@ -275,5 +321,19 @@ public class TestContainerService extends BaseXnatRestTest {
             fail("Exception thrown trying to unzip and read resource " + OUTPUT_RESOURCE +
                     " of " + uri + ": " + e.getMessage());
         }
+    }
+
+    private JsonPath toggleSwarmMode(boolean enable) {
+        String serverJson = mainAdminCredentials().get(restDriver.formatXapiUrl("docker", "server"))
+                .then().assertThat().statusCode(200).and().extract().asString();
+
+        //TODO this is a hack, we should deserialize as POJO but then we add a CS dep
+        String serverJsonSwarm = serverJson.replace("\"swarm-mode\":" + !enable,
+                "\"swarm-mode\":" + enable)
+                .replaceAll("\"id\":[0-9]*,", "");
+
+        return mainAdminCredentials().content(serverJsonSwarm).contentType(ContentType.JSON)
+                .post(restDriver.formatXapiUrl("docker", "server"))
+                .then().assertThat().statusCode(201).and().extract().jsonPath();
     }
 }
