@@ -1,5 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
+import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.*;
 import org.nrg.testing.dicom.ScriptValidation;
@@ -37,10 +38,12 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     private final AnonScript privateTagWhitelist = XnatObjectUtils.anonScriptFromFile(DE_6, "privateTagWhitelist.das");
     private final AnonScript duplicatedPrivateTagRemoval = XnatObjectUtils.anonScriptFromFile(DE_6, "de21.das");
     private final Map<AnonScript, ScriptValidation> scriptValidationMap = new HashMap<>();
+    boolean projectCreated = false;
 
     @BeforeClass
     public void createProject() {
         restDriver.createProject(mainUser, anonProject);
+        projectCreated = true;
         restDriver.interfaceFor(mainUser).regenerateUserSession(); // hack for XNAT-5187
         scriptValidationMap.put(projectAnonDE4, new ProjectDE4Script());
         scriptValidationMap.put(projectAnonDE6, new ProjectDE6Script());
@@ -54,7 +57,9 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     @AfterMethod(alwaysRun = true)
     public void clean() {
         restDriver.clearPrearchiveSessions(mainUser, anonProject);
-        restDriver.clearProject(mainUser, anonProject);
+        if (projectCreated) {
+            restDriver.clearProject(mainUser, anonProject);
+        }
     }
 
     @AfterClass(alwaysRun = true)
@@ -68,17 +73,19 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         performSubjectRelabelAnonTest(projectAnonDE4, siteAnonDE4);
     }
 
-    @Test(enabled = false)
+    @Test
     public void testSubjectRelabel_4P_6S() {
         performSubjectRelabelAnonTest(projectAnonDE4, siteAnonDE6);
     }
 
-    @Test(enabled = false)
+    @Test
+    @ExpectedFailure(jiraIssue = "DE-9")
     public void testSubjectRelabel_6P_4S() {
         performSubjectRelabelAnonTest(projectAnonDE6, siteAnonDE4);
     }
 
-    @Test(enabled = false)
+    @Test
+    @ExpectedFailure(jiraIssue = "DE-9")
     public void testSubjectRelabel_6P_6S() {
         performSubjectRelabelAnonTest(projectAnonDE6, siteAnonDE6);
     }
@@ -88,17 +95,19 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         performSessionRelabelAnonTest(projectAnonDE4, siteAnonDE4);
     }
 
-    @Test(enabled = false)
+    @Test
     public void testSessionRelabel_4P_6S() {
         performSessionRelabelAnonTest(projectAnonDE4, siteAnonDE6);
     }
 
-    @Test(enabled = false)
+    @Test
+    @ExpectedFailure(jiraIssue = "DE-9")
     public void testSessionRelabel_6P_4S() {
         performSessionRelabelAnonTest(projectAnonDE6, siteAnonDE4);
     }
 
-    @Test(enabled = false)
+    @Test
+    @ExpectedFailure(jiraIssue = "DE-9")
     public void testSessionRelabel_6P_6S() {
         performSessionRelabelAnonTest(projectAnonDE6, siteAnonDE6);
     }
@@ -195,6 +204,5 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
             }
         }
     }
-
 
 }

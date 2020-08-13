@@ -56,10 +56,10 @@ my_var_2 := (0008,103E)
 (0008,1072)[0]/(0008,0080) := "WUSTL"
 -+/(0010,0020)
 -*/(0010,2160)
--*/(0018,9035)
+// -*/(0018,9035)    conflicted with -(0018,903#) from the project script, so we'll just depend on the corresponding sequence check from the project DE6 test for now
 -*/(0020,9056)
--?/(0018,9177)
--?/(0018,9180)
+// -?/(0018,9177)    removed see https://issues.xnat.org/browse/DE-12
+// -?/(0018,9180)    removed see https://issues.xnat.org/browse/DE-12
 -(5200,9230)[%]/(0018,9152)
 -(5200,9230)[%]/(0008,1030)
 (5200,9229)[1]/(0008,0100) := "NICE"

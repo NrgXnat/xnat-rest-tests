@@ -170,6 +170,7 @@ public class ProjectDE6Script extends ProjectDE4Script {
         sharedFunctionalGroupsSeqItem.putSequenceCheck("(0018,9006)", new DicomSequence(mrImagingModSeqItem));
         sharedFunctionalGroupsSeqItem.putSequenceCheck("(2005,140e)", new DicomSequence(privateTagSeqItem));
         sharedFunctionalGroupsSeqItem.putSequenceCheck("(0018,9112)", new DicomSequence(embeddedMrTimingSeqItem));
+        sharedFunctionalGroupsSeqItem.putValueStartsWithCheck("(0018,9182)", "25.44334443");
         root.putSequenceCheck("(5200,9229)", new DicomSequence(sharedFunctionalGroupsSeqItem));
 
         final DicomSequence otherOperatingModeSequence = new DicomSequence();
@@ -192,7 +193,6 @@ public class ProjectDE6Script extends ProjectDE4Script {
         if (scriptRan) {
             mrImagingModSeqItem.putNonexistenceChecks("(0018,0095)", "(0018,9098)");
             privateTagSeqItem.putNonexistenceChecks("(0018,9098)");
-            sharedFunctionalGroupsSeqItem.putNonexistenceChecks("(0018,9182)");
             for (int i = 0; i < 3; i++) {
                 final DicomObject perFrameFunctionalGroupsSeqItem = new DicomObject();
                 perFrameFunctionalGroupsSeqItem.putNonexistenceChecks("(0018,9114)");
@@ -210,7 +210,6 @@ public class ProjectDE6Script extends ProjectDE4Script {
             mrImagingModSeqItem.putValueStartsWithCheck("(0018,0095)", "225.514739990");
             mrImagingModSeqItem.putValueStartsWithCheck("(0018,9098)", "127.78717");
             privateTagSeqItem.putValueStartsWithCheck("(0018,9098)", "127.78717");
-            sharedFunctionalGroupsSeqItem.putValueStartsWithCheck("(0018,9182)", "25.44334443");
             for (int i = 0; i < 3; i++) {
                 final DicomObject perFrameFunctionalGroupsSeqItem = new DicomObject();
                 final DicomObject mrEchoSeqItem = new DicomObject();

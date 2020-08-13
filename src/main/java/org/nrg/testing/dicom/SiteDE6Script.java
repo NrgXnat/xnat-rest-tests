@@ -37,11 +37,9 @@ public class SiteDE6Script extends SiteDE4Script {
         opIdSeqItem.putValueEqualCheck("(0008,0080)", "WUSTL");
         dicomObject.putSequenceCheck("(0008,1072)", new DicomSequence(opIdSeqItem));
 
-        dicomObject.putNonexistenceChecks("(0018,9035)");
         checkSharedFuncGroupsSeq(dicomObject, true);
         checkPerFrameFunctionalGroupsSequence(dicomObject, true);
 
-        dicomObject.putNonexistenceChecks("(0018,9180)");
         checkInterventionDrugInfoSequence(dicomObject, true);
 
         dicomObject.putValueEqualCheck("(0040,1002)", "(0020,9056)");
@@ -72,11 +70,9 @@ public class SiteDE6Script extends SiteDE4Script {
         dicomObject.putSequenceCheck("(0008,1110)", new DicomSequence(referencedStudySeqItem));
 
         dicomObject.putNonexistenceChecks("(0008,1072)");
-        dicomObject.putValueEqualCheck("(0018,9035)", "0");
         checkSharedFuncGroupsSeq(dicomObject, false);
         checkPerFrameFunctionalGroupsSequence(dicomObject, false);
 
-        dicomObject.putValueEqualCheck("(0018,9180)", "DB_DT");
         checkInterventionDrugInfoSequence(dicomObject, false);
 
         dicomObject.putNonexistenceChecks("(0040,1002)");
@@ -96,6 +92,7 @@ public class SiteDE6Script extends SiteDE4Script {
         root.putValueEqualCheck("(2005,0014)", "Philips MR Imaging DD 005");
         root.putValueEqualCheck("(0008,0080)", "BU SCHOOL OF MEDICINE");
         root.putNonexistenceChecks("(0010,2160)");
+        root.putValueEqualCheck("(0018,9180)", "DB_DT");
 
         final DicomObject mrTimingAndParamsSeqItem = new DicomObject();
         final DicomObject operatingModeSeqItem0 = new DicomObject();
@@ -152,14 +149,11 @@ public class SiteDE6Script extends SiteDE4Script {
         }
         mrTimingAndParamsSeqItem.putValueEqualCheck("(0018,9180)", "DB_DT");
         functionalGroupsSeqItem.putSequenceCheck("(0018,9112)", new DicomSequence(mrTimingAndParamsSeqItem));
+        functionalGroupsSeqItem.putValueEqualCheck("(0018,9180)", "ELECTRIC_FIELD");
         if (scriptRan) {
-            privateSeqItem.putNonexistenceChecks("(0018,9035)", "(0018,9180)");
             final DicomObject injectedFunctionalGroupsSeqItem = new DicomObject();
             injectedFunctionalGroupsSeqItem.putValueEqualCheck("(0008,0100)", "NICE");
             sharedFunctionalGroupsSequence.addItem(injectedFunctionalGroupsSeqItem);
-        } else {
-            functionalGroupsSeqItem.putValueEqualCheck("(0018,9180)", "ELECTRIC_FIELD");
-            privateSeqItem.putValueEqualCheck("(0018,9035)", "0");
         }
         functionalGroupsSeqItem.putSequenceCheck("(2005,140e)", new DicomSequence(privateSeqItem));
     }
