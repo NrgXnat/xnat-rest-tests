@@ -23,6 +23,11 @@
             <email>moore.c@wustl.edu</email>
         </developer>
         <developer>
+            <id>kate</id>
+            <name>Kate Alpert</name>
+            <organization>Radiologics, Inc.</organization>
+        </developer>
+        <developer>
             <id>rick</id>
             <name>Rick Herrick</name>
         </developer>

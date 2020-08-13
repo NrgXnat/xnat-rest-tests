@@ -8,6 +8,7 @@ import org.hamcrest.Matchers;
 import org.nrg.testing.CommonStringUtils;
 import org.nrg.testing.TestNgUtils;
 import org.nrg.testing.TimeUtils;
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.DisallowXnatVersion;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.XnatCStore;
@@ -733,7 +734,7 @@ public class TestImport extends BaseXnatRestTest {
     }
 
     @Test // Test content donated by Kate at Radiologics
-    @DisallowXnatVersion(disallowedVersions = { Xnat_1_6dev.class, Xnat_1_7_2.class, Xnat_1_7_3.class, Xnat_1_7_4.class, Xnat_1_7_5.class, Xnat_1_7_5_2.class, Xnat_1_7_6.class })
+    @AddedIn(Xnat_1_7_7.class)
     public void testUserCacheUploadAndImportLegacy() {
         final String jsessionId = mainCredentials().get(formatRestUrl("JSESSION")).then()
                 .assertThat().statusCode(200).and().extract().response().asString();
@@ -773,7 +774,7 @@ public class TestImport extends BaseXnatRestTest {
 
     @Test // Test content donated by Kate at Radiologics
     @TestRequires(users = 1)
-    @DisallowXnatVersion(disallowedVersions = { Xnat_1_6dev.class, Xnat_1_7_2.class, Xnat_1_7_3.class, Xnat_1_7_4.class, Xnat_1_7_5.class, Xnat_1_7_5_2.class, Xnat_1_7_6.class })
+    @AddedIn(Xnat_1_7_7.class)
     public void testUserCacheUploadAndImport() {
         final Object[] testObjects = setupForUserCacheUpload(mainQueryBase());
         final String    listener = (String) testObjects[0];
