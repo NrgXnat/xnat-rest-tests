@@ -4,10 +4,13 @@ import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.path.json.JsonPath;
 import org.apache.commons.io.IOUtils;
 import org.nrg.testing.TimeUtils;
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.HardDependency;
 import org.nrg.testing.annotations.SoftDependency;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.conf.Settings;
+import org.nrg.testing.xnat.versions.Xnat_1_7_7;
 import org.nrg.xdat.om.*;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xnat.enums.Gender;
@@ -36,6 +39,7 @@ import java.util.zip.ZipInputStream;
 import static org.testng.AssertJUnit.*;
 
 @TestRequires(plugins = "containers")
+@AddedIn(Xnat_1_7_7.class) // Pending CS-600
 public class TestContainerService extends BaseXnatRestTest {
     private static final String OUTPUT_CONTENT = "hello world";
     private static final String OUTPUT_FILENAME = "out.txt";
@@ -258,7 +262,7 @@ public class TestContainerService extends BaseXnatRestTest {
     @HardDependency("testEnableSwarmMode")
     public void testContainerSessionSwarm() {
         enableAndRunContainerThenCheckOutputs(XnatMrsessiondata.SCHEMA_ELEMENT_NAME,
-                String.format("/archive/experiments/%s", session.getAccessionNumber()));
+                String.format("/archive/experiments/%s", session.getAccessionNumber()), true);
     }
 
     @Test
@@ -270,73 +274,102 @@ public class TestContainerService extends BaseXnatRestTest {
     }
 
     private void enableAndRunContainerThenCheckOutputs(String xsiType, String uri) {
-        WrapperInfo wi = getWrapperInfo(xsiType);
+        enableAndRunContainerThenCheckOutputs(xsiType, uri, false);
+    }
 
-        enableOnProject(wi.wrapperId);
+    private void enableAndRunContainerThenCheckOutputs(String xsiType, String uri, boolean swarm) {
+        WrapperMetadata wd = getWrapperMetadata(xsiType);
 
-        Map<String, String> queryParams = new HashMap<>();
-        queryParams.put(wi.csType, uri);
-        queryParams.put("command", "echo " + OUTPUT_CONTENT);
-        queryParams.put("output-file", OUTPUT_FILENAME);
+        enableOnProject(wd.wrapperId);
 
-        String workflowId = mainQueryBase().body(queryParams)
-                .contentType(ContentType.JSON)
-                .post(restDriver.formatXapiUrl("projects", project.getId(), "wrappers",
-                        wi.wrapperId, "root", wi.csType, "launch"))
-                .then().assertThat().statusCode(200).and().extract().jsonPath().getString("workflow-id");
+        Map<String, String> queryParams = makeContainerLaunchReqBody(wd.csType, uri);
 
-        waitForWorkflowComplete(workflowId);
+        JsonPath result = requestContainerLaunch(queryParams, wd, "launch");
+        String workflowId = result.getString("workflow-id");
+
+        waitForWorkflowComplete(workflowId, swarm);
 
         verifyOutputs(uri);
     }
 
     private void enableAndRunContainerThenCheckOutputs(String xsiType, Map<String, String> urisAndIds) {
-        WrapperInfo wi = getWrapperInfo(xsiType);
+        enableAndRunContainerThenCheckOutputs(xsiType, urisAndIds, false);
+    }
 
-        enableOnProject(wi.wrapperId);
+    private void enableAndRunContainerThenCheckOutputs(String xsiType, Map<String, String> urisAndIds, boolean swarm) {
+        WrapperMetadata wd = getWrapperMetadata(xsiType);
 
-        Map<String, String> queryParams = new HashMap<>();
-        queryParams.put(wi.csType,  "[\"" + String.join("\",\"", urisAndIds.keySet()) + "\"]");
-        queryParams.put("command", "echo " + OUTPUT_CONTENT);
-        queryParams.put("output-file", OUTPUT_FILENAME);
+        enableOnProject(wd.wrapperId);
 
-        JsonPath result = mainQueryBase().body(queryParams)
-                .contentType(ContentType.JSON)
-                .post(restDriver.formatXapiUrl("projects", project.getId(), "wrappers",
-                        wi.wrapperId, "root", wi.csType, "bulklaunch"))
-                .then().assertThat().statusCode(200).and().extract().jsonPath();
+        Map<String, String> queryParams = makeContainerLaunchReqBody(wd.csType,
+                "[\"" + String.join("\",\"", urisAndIds.keySet()) + "\"]");
 
-        // assert that these were successfully queued
-        assertEquals(result.getList("successes").size(), urisAndIds.size());
+        JsonPath result = requestContainerLaunch(queryParams, wd, "bulklaunch");
+        assertEquals(result.getList("successes").size(), urisAndIds.size()); //successfully queued to be launched
 
+        // Determine workflow ID, wait for complete, verify outputs
         for (String uri : urisAndIds.keySet()) {
             String id = urisAndIds.get(uri);
-            Map<String, Object> params = new HashMap<>();
-            params.put("data_type", xsiType);
-            params.put("id", id);
-            params.put("sort_col", "launchTime");
-            params.put("sort_dir", "desc");
-            params.put("page", "1");
-            params.put("filters", makeFilterMap(wi.wrapperName));
-
-            final long start = System.currentTimeMillis();
-            String workflowId;
-            do {
-                TimeUtils.sleep(1000); // give the thread time to submit these
-                workflowId = mainQueryBase().body(params)
-                        .contentType(ContentType.JSON)
-                        .post(restDriver.formatXapiUrl("workflows"))
-                        .then().assertThat().statusCode(200).and().extract().jsonPath().getString("wfid.get(0)");
-            } while (workflowId == null && System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(5));
-
-            assertNotNull(workflowId);
-            waitForWorkflowComplete(workflowId);
-        }
-
-        // check output
-        for (String uri : urisAndIds.keySet()) {
+            String workflowId = determineWorkflowId(xsiType, id, wd.wrapperName);
+            waitForWorkflowComplete(workflowId, swarm);
             verifyOutputs(uri);
         }
+    }
+
+    private WrapperMetadata getWrapperMetadata(String xsiType) {
+        JsonPath json = mainQueryBase().queryParam("project", project.getId())
+                .queryParam("xsiType", xsiType)
+                .get(restDriver.formatXapiUrl("commands", "available"))
+                .then().assertThat().statusCode(200).and().extract().jsonPath();
+
+        String wrapperId = json.getString("wrapper-id.get(0)");
+        String wrapperName = json.getString("wrapper-name.get(0)");
+        String csType = json.getString("root-element-name.get(0)");
+        return new WrapperMetadata(wrapperId, wrapperName, csType);
+    }
+
+    private void enableOnProject(String wrapperId) {
+        mainQueryBase().put(restDriver.formatXapiUrl("projects", project.getId(), "wrappers", wrapperId, "enabled"))
+                .then().assertThat().statusCode(200);
+    }
+
+    private Map<String, String> makeContainerLaunchReqBody(String csType, String uriParam) {
+        Map<String, String> queryParams = new HashMap<>();
+        queryParams.put(csType, uriParam);
+        queryParams.put("command", "echo " + OUTPUT_CONTENT);
+        queryParams.put("output-file", OUTPUT_FILENAME);
+        return queryParams;
+    }
+
+    private JsonPath requestContainerLaunch(Map<String, String> queryParams, WrapperMetadata wd, String launchType) {
+        return mainQueryBase().body(queryParams)
+                .contentType(ContentType.JSON)
+                .post(restDriver.formatXapiUrl("projects", project.getId(), "wrappers",
+                        wd.wrapperId, "root", wd.csType, launchType))
+                .then().assertThat().statusCode(200).and().extract().jsonPath();
+    }
+
+    private String determineWorkflowId(String xsiType, String id, String wrapperName) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("data_type", xsiType);
+        params.put("id", id);
+        params.put("sort_col", "launchTime");
+        params.put("sort_dir", "desc");
+        params.put("page", "1");
+        params.put("filters", makeFilterMap(wrapperName));
+
+        final long start = System.currentTimeMillis();
+        String workflowId;
+        do {
+            TimeUtils.sleep(1000); // give the thread time to submit these
+            workflowId = mainQueryBase().body(params)
+                    .contentType(ContentType.JSON)
+                    .post(restDriver.formatXapiUrl("workflows"))
+                    .then().assertThat().statusCode(200).and().extract().jsonPath().getString("wfid.get(0)");
+        } while (workflowId == null && System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(5));
+
+        assertNotNull(workflowId);
+        return workflowId;
     }
 
     private Map<String, Object> makeFilterMap(String wrapperName) {
@@ -348,24 +381,8 @@ public class TestContainerService extends BaseXnatRestTest {
         return filters;
     }
 
-    private WrapperInfo getWrapperInfo(String xsiType) {
-        JsonPath json = mainQueryBase().queryParam("project", project.getId())
-                .queryParam("xsiType", xsiType)
-                .get(restDriver.formatXapiUrl("commands", "available"))
-                .then().assertThat().statusCode(200).and().extract().jsonPath();
-
-        String wrapperId = json.getString("wrapper-id.get(0)");
-        String wrapperName = json.getString("wrapper-name.get(0)");
-        String csType = json.getString("root-element-name.get(0)");
-        return new WrapperInfo(wrapperId, wrapperName, csType);
-    }
-
-    private void enableOnProject(String wrapperId) {
-        mainQueryBase().put(restDriver.formatXapiUrl("projects", project.getId(), "wrappers", wrapperId, "enabled"))
-                .then().assertThat().statusCode(200);
-    }
-
-    private void waitForWorkflowComplete(String workflowId) {
+    private void waitForWorkflowComplete(String workflowId, boolean swarm) {
+        final int timeout = swarm ? Settings.CS_SWARM_TIMEOUT : 5;
         final long start = System.currentTimeMillis();
         String status;
         do {
@@ -374,7 +391,7 @@ public class TestContainerService extends BaseXnatRestTest {
                     .get(restDriver.formatRestUrl("workflows", workflowId))
                     .jsonPath().getString("items.get(0).data_fields.status");
         } while (!(PersistentWorkflowUtils.COMPLETE.equals(status) || status.startsWith(PersistentWorkflowUtils.FAILED)) &&
-                System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(15));
+                System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(timeout));
 
         assertEquals(PersistentWorkflowUtils.COMPLETE, status);
     }
@@ -421,12 +438,12 @@ public class TestContainerService extends BaseXnatRestTest {
                 .then().assertThat().statusCode(201).and().extract().jsonPath();
     }
 
-    public static class WrapperInfo {
+    public static class WrapperMetadata {
         String wrapperId;
         String wrapperName;
         String csType;
 
-        public WrapperInfo(String wrapperId, String wrapperName, String csType) {
+        public WrapperMetadata(String wrapperId, String wrapperName, String csType) {
             this.wrapperId = wrapperId;
             this.wrapperName = wrapperName;
             this.csType = csType;
