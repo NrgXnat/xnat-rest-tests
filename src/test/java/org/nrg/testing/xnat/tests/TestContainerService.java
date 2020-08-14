@@ -4,10 +4,7 @@ import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.path.json.JsonPath;
 import org.apache.commons.io.IOUtils;
 import org.nrg.testing.TimeUtils;
-import org.nrg.testing.annotations.AddedIn;
-import org.nrg.testing.annotations.HardDependency;
-import org.nrg.testing.annotations.SoftDependency;
-import org.nrg.testing.annotations.TestRequires;
+import org.nrg.testing.annotations.*;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.versions.Xnat_1_7_7;
@@ -168,7 +165,8 @@ public class TestContainerService extends BaseXnatRestTest {
                 String.format("/archive/subjects/%s", subject.getAccessionNumber()));
     }
 
-    @Test(enabled = false)
+    @Test
+    @ExpectedFailure(jiraIssue = "XNAT-6421")
     @SoftDependency("testDisableSwarmMode")
     public void testContainerSubjectAltUri() {
         enableAndRunContainerThenCheckOutputs(XnatSubjectdata.SCHEMA_ELEMENT_NAME,
@@ -211,7 +209,8 @@ public class TestContainerService extends BaseXnatRestTest {
                         session.getAccessionNumber(), assessor.getAccessionNumber()));
     }
 
-    @Test(enabled = false)
+    @Test
+    @ExpectedFailure(jiraIssue = "CS-606")
     @SoftDependency("testDisableSwarmMode")
     public void testContainerAssessorAltUri() {
         enableAndRunContainerThenCheckOutputs(XnatQcassessmentdata.SCHEMA_ELEMENT_NAME,
@@ -219,7 +218,8 @@ public class TestContainerService extends BaseXnatRestTest {
                         project.getId(), subject.getLabel(), session.getLabel(), assessor.getLabel()));
     }
 
-    @Test(enabled = false)
+    @Test
+    @ExpectedFailure(jiraIssue = "XNAT-6423")
     @SoftDependency("testDisableSwarmMode")
     public void testContainerAssessorAltUri2() {
         enableAndRunContainerThenCheckOutputs(XnatQcassessmentdata.SCHEMA_ELEMENT_NAME,
@@ -227,7 +227,8 @@ public class TestContainerService extends BaseXnatRestTest {
                         session.getAccessionNumber(), assessor.getLabel()));
     }
 
-    @Test(enabled = false)
+    @Test
+    @ExpectedFailure(jiraIssue = "CS-606")
     @SoftDependency("testDisableSwarmMode")
     public void testContainerAssessorAltUri3() {
         enableAndRunContainerThenCheckOutputs(XnatQcassessmentdata.SCHEMA_ELEMENT_NAME,
