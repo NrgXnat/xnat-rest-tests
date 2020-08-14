@@ -1,5 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.*;
@@ -7,6 +8,7 @@ import org.nrg.testing.dicom.ScriptValidation;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.XnatObjectUtils;
+import org.nrg.testing.xnat.versions.Xnat_1_7_7;
 import org.nrg.xnat.pogo.AnonScript;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -35,7 +37,6 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     private final AnonScript siteAnonDE4 = XnatObjectUtils.anonScriptFromFile(DE_4, "siteAnon.das");
     private final AnonScript siteAnonDE6 = XnatObjectUtils.anonScriptFromFile(DE_6, "siteAnon.das");
     private final AnonScript removeAllPrivateTags = XnatObjectUtils.anonScriptFromFile(DE_6, "removeAllPrivateTags.das");
-    private final AnonScript privateTagWhitelist = XnatObjectUtils.anonScriptFromFile(DE_6, "privateTagWhitelist.das");
     private final AnonScript duplicatedPrivateTagRemoval = XnatObjectUtils.anonScriptFromFile(DE_6, "de21.das");
     private final Map<AnonScript, ScriptValidation> scriptValidationMap = new HashMap<>();
     boolean projectCreated = false;
@@ -50,7 +51,6 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         scriptValidationMap.put(siteAnonDE4, new SiteDE4Script());
         scriptValidationMap.put(siteAnonDE6, new SiteDE6Script());
         scriptValidationMap.put(removeAllPrivateTags, new RemoveAllPrivateTags());
-        scriptValidationMap.put(privateTagWhitelist, new PrivateTagWhitelist());
         scriptValidationMap.put(duplicatedPrivateTagRemoval, new DuplicatedInvalidPrivateTagRemoval());
     }
 
@@ -112,17 +112,14 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         performSessionRelabelAnonTest(projectAnonDE6, siteAnonDE6);
     }
 
-    @Test(enabled = false)
+    @Test
+    @AddedIn(Xnat_1_7_7.class) // this technically could probably be earlier, but this is fine
     public void testRemoveAllPrivateTagsDE6() {
         performBasicScriptTest(anonData, removeAllPrivateTags);
     }
 
-    @Test(enabled = false)
-    public void testPrivateTagWhitelistDE6() {
-        performBasicScriptTest(anonData, privateTagWhitelist);
-    }
-
-    @Test(enabled = false) // Tests DE-21
+    @Test // Tests DE-21
+    @AddedIn(Xnat_1_7_7.class) // this technically could probably be earlier, but this is fine
     public void testInvalidDuplicatedPrivateTagRemovalDE6() {
         performBasicScriptTest(TestData.ANON_DUPLICATE_PRIVATE_TAG.toFile(), duplicatedPrivateTagRemoval);
     }

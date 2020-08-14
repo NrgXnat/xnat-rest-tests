@@ -61,7 +61,7 @@ public class DuplicatedInvalidPrivateTagRemoval extends ScriptValidation {
             dicomMap.put(dicomFile, root);
         }
 
-        root.putValueEqualCheck("(0008,1040)", "ANATOMY AND NEUROBIOLOGY");
+        root.putValueEqualCheck("(0008,0060)", "CT");
 
         return dicomMap;
     }
