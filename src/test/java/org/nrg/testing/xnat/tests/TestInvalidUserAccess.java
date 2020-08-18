@@ -53,7 +53,10 @@ public class TestInvalidUserAccess extends BaseXnatRestTest {
         restDriver.assertProjectAccessibility(mainUser, testProject, Accessibility.PROTECTED); // foreign user should be able to read protected project's accessibility
 
         restDriver.invalidCredentials().given().queryParam("format", "xml").expect().statusCode(401).
-                put(restDriver.accessibilityRestUrl(testProject, Accessibility.PUBLIC)).then().assertThat().body(Matchers.containsString("This request requires HTTP authentication."));
+                put(restDriver.accessibilityRestUrl(testProject, Accessibility.PUBLIC)).then().assertThat()
+                .body(Matchers.anyOf(Matchers.containsString("This request requires HTTP authentication."),
+                        Matchers.containsString("The request has not been applied because it lacks valid authentication credentials for the target resource")));
+        
         mainCredentials().given().queryParam("format", "xml").expect().statusCode(403).
                 put(restDriver.accessibilityRestUrl(testProject, Accessibility.PUBLIC));
         restDriver.assertProjectAccessibility(mainAdminUser, testProject, Accessibility.PROTECTED);
