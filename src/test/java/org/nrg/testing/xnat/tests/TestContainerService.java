@@ -7,6 +7,7 @@ import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.*;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
+import org.nrg.testing.xnat.versions.XnatVersionList;
 import org.nrg.testing.xnat.versions.Xnat_1_7_7;
 import org.nrg.testing.xnat.versions.Xnat_1_8_0;
 import org.nrg.xdat.om.*;
@@ -377,7 +378,11 @@ public class TestContainerService extends BaseXnatRestTest {
     private Map<String, Object> makeFilterMap(String wrapperName) {
         Map<String, String> filterVals = new HashMap<>();
         filterVals.put("like", wrapperName);
-        filterVals.put("type", "string");
+        if (XnatVersionList.testedVersionPrecedes(Xnat_1_8_0.class)) {
+            filterVals.put("type", "string");
+        } else {
+            filterVals.put("backend", "sql_string");
+        }
         Map<String, Object> filters = new HashMap<>();
         filters.put("pipelineName", filterVals);
         return filters;
