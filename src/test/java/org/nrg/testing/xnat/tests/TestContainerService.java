@@ -8,6 +8,7 @@ import org.nrg.testing.annotations.*;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.versions.Xnat_1_7_7;
+import org.nrg.testing.xnat.versions.Xnat_1_8_0;
 import org.nrg.xdat.om.*;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xnat.enums.Gender;
@@ -210,7 +211,7 @@ public class TestContainerService extends BaseXnatRestTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "CS-606")
+    @AddedIn(Xnat_1_8_0.class)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerAssessorAltUri() {
         enableAndRunContainerThenCheckOutputs(XnatQcassessmentdata.SCHEMA_ELEMENT_NAME,
@@ -228,7 +229,7 @@ public class TestContainerService extends BaseXnatRestTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "CS-606")
+    @AddedIn(Xnat_1_8_0.class)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerAssessorAltUri3() {
         enableAndRunContainerThenCheckOutputs(XnatQcassessmentdata.SCHEMA_ELEMENT_NAME,
