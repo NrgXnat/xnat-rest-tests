@@ -278,6 +278,8 @@ public class TestDicomRouting extends BaseXnatRestTest {
     }
 
     private void testProjectRouting(Consumer<String> uploadFn) {
+        // Because XNAT cannot delete and readd a project with the same ID, we have to include a random component in
+        // the project id. Hopefully 0-99 is sufficient to ensure no conflicts within a given test run/rerun.
         String rand = Integer.toString(new Random().nextInt(100));
         for (String key : cfgMapProject.keySet()) {
             String cfg = cfgMapProject.get(key).replaceAll(REPLACE_STR, rand);
@@ -307,7 +309,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
     }
 
     private void verifyImport(SubjectAssessor session) {
-        // is session can be retrieved at this URL, then project, subject, session are all labelled properly
+        // if session can be retrieved at this URL, then project, subject, session are all labelled properly
         mainCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
     }
 }
