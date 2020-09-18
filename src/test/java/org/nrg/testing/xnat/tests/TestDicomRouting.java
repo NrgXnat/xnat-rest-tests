@@ -3,12 +3,18 @@ package org.nrg.testing.xnat.tests;
 import com.jayway.restassured.specification.RequestSpecification;
 import org.apache.log4j.Logger;
 import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.DatasetWithFMI;
+import org.dcm4che3.data.VR;
+import org.nrg.testing.DicomUtils;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
+import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.enums.PrearchiveCode;
 import org.nrg.xnat.pogo.Project;
@@ -18,19 +24,26 @@ import org.nrg.xnat.pogo.experiments.SubjectAssessor;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.testng.annotations.*;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.function.Consumer;
+import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
+
+import static org.junit.Assert.fail;
 
 public class TestDicomRouting extends BaseXnatRestTest {
 
     private final Project project = new Project().prearchiveCode(PrearchiveCode.AUTO_ARCHIVE_OVERWRITE);
+    private final Path tmpDir = Paths.get(Settings.TEMP_SUBDIR);
     private final File testZip = getDataFile("mr_1.zip");
+    private final List<File> filesToRemove = new ArrayList<>();
     private static final String subjectFromTestZip = "SPP_0x220790";
     private static final String sessionFromTestZip = "SPP_0x220790_MR2";
     private static final String accessionNumStripped = "497684894126";
@@ -55,6 +68,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
     public void setupImportProject() {
         restDriver.createProject(mainUser, project);
         restDriver.disableSiteAnonScript(mainAdminUser);
+        restDriver.interfaceFor(mainAdminUser).setSessionXmlRebuilderTimes(1, 10000);
     }
 
     @BeforeMethod(alwaysRun = true) // clear out prearchive/archive for each test
@@ -80,6 +94,13 @@ public class TestDicomRouting extends BaseXnatRestTest {
         }
     }
 
+    @AfterMethod(alwaysRun = true)
+    public void removeTmpFiles() {
+        for (File f : filesToRemove) {
+            f.delete();
+        }
+    }
+
     @AfterClass(alwaysRun = true)
     public void tearDownImportTests() {
         restDriver.deleteProjectSilently(mainAdminUser, project);
@@ -89,37 +110,37 @@ public class TestDicomRouting extends BaseXnatRestTest {
     @Test
     @AddedIn(Xnat_1_8_0.class)
     public void testProjectRoutingSessionImporter() {
-        testProjectRouting(this::uploadViaSessionImporter);
+        testProjectRouting(this::uploadViaImporter, null);
     }
 
     @Test
     @AddedIn(Xnat_1_8_0.class)
     public void testProjectRoutingDicomZip() {
-        testProjectRouting(this::uploadViaDicomZip);
+        testProjectRouting(this::uploadViaImporter, "DICOM-zip");
     }
 
     @Test
     @AddedIn(Xnat_1_8_0.class)
     public void testSubjectRoutingSessionImporter() {
-        testSubjectRouting(this::uploadViaSessionImporter);
+        testSubjectRouting(this::uploadViaImporter, null);
     }
 
     @Test
     @AddedIn(Xnat_1_8_0.class)
     public void testSubjectRoutingDicomZip() {
-        testSubjectRouting(this::uploadViaDicomZip);
+        testSubjectRouting(this::uploadViaImporter, "DICOM-zip");
     }
 
     @Test
     @AddedIn(Xnat_1_8_0.class)
     public void testSessionRoutingSessionImporter() {
-        testSessionRouting(this::uploadViaSessionImporter);
+        testSessionRouting(this::uploadViaImporter, null);
     }
 
     @Test
     @AddedIn(Xnat_1_8_0.class)
     public void testSessionRoutingDicomZip() {
-        testSessionRouting(this::uploadViaDicomZip);
+        testSessionRouting(this::uploadViaImporter, "DICOM-zip");
     }
 
     @Test
@@ -128,7 +149,6 @@ public class TestDicomRouting extends BaseXnatRestTest {
     })
     @AddedIn(Xnat_1_8_0.class)
     public void testCombinedDicomScp() {
-        restDriver.interfaceFor(mainAdminUser).setSessionXmlRebuilderTimes(1, 10000);
         String rand = Integer.toString(new Random().nextInt(100));
         String tagVal = "SIEMENS";
         String projectCfg = "(0008,0030):(.*)"  + System.lineSeparator() + "(0008,0070):([^M]+).* t:$ r:" + rand;
@@ -146,9 +166,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
         restDriver.createProject(mainUser, project);
 
         // upload
-        new XnatCStore().data(TestData.SAMPLE_1_SCAN_4).sendDICOM();
-        TimeUtils.sleep(60000);
-        restDriver.waitForPrearchiveEmpty(mainUser, project, 120);
+        uploadViaDicomScp(Collections.emptyMap(), project);
 
         // check
         final Subject subject = new Subject(project, expectedSub);
@@ -163,7 +181,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
             TestData.SAMPLE_1_SCAN_4
     })
     public void testXnatDefaultRoutingPatientComments() {
-        testXnatDefaultRouting(Tag.PatientComments, true);
+        testXnatDefaultRouting(Tag.PatientComments, true, this::uploadViaDicomScp);
     }
 
     @Test
@@ -171,7 +189,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
             TestData.SAMPLE_1_SCAN_4
     })
     public void testXnatDefaultRoutingStudyComments() {
-        testXnatDefaultRouting(Tag.StudyComments, true, Tag.PatientComments);
+        testXnatDefaultRouting(Tag.StudyComments, true, this::uploadViaDicomScp, Tag.PatientComments);
     }
 
     @Test
@@ -180,7 +198,8 @@ public class TestDicomRouting extends BaseXnatRestTest {
     })
     @AddedIn(Xnat_1_8_0.class)
     public void testXnatDefaultRoutingAddlPatHist() {
-        testXnatDefaultRouting(Tag.AdditionalPatientHistory, true, Tag.StudyComments, Tag.PatientComments);
+        testXnatDefaultRouting(Tag.AdditionalPatientHistory, true, this::uploadViaDicomScp,
+                Tag.StudyComments, Tag.PatientComments);
     }
 
     @Test
@@ -188,7 +207,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
             TestData.SAMPLE_1_SCAN_4
     })
     public void testXnatDefaultRoutingStudyDesc() {
-        testXnatDefaultRouting(Tag.StudyDescription, false,
+        testXnatDefaultRouting(Tag.StudyDescription, false, this::uploadViaDicomScp,
                 Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments);
     }
 
@@ -197,16 +216,97 @@ public class TestDicomRouting extends BaseXnatRestTest {
             TestData.SAMPLE_1_SCAN_4
     })
     public void testXnatDefaultRoutingAccession() {
-        testXnatDefaultRouting(Tag.AccessionNumber, false,
+        testXnatDefaultRouting(Tag.AccessionNumber, false, this::uploadViaDicomScp,
                 Tag.StudyDescription, Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments);
     }
 
-    private void testXnatDefaultRouting(int tag, boolean combined, int... tagsToClear) {
+    @Test
+    public void testXnatDefaultRoutingPatientCommentsDicomZip() {
+        testXnatDefaultRouting(Tag.PatientComments, true, this::uploadViaImporter, "DICOM-zip", testZip);
+    }
+
+    @Test
+    public void testXnatDefaultRoutingStudyCommentsDicomZip() {
+        testXnatDefaultRouting(Tag.StudyComments, true, this::uploadViaImporter, "DICOM-zip", testZip, 
+                Tag.PatientComments);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testXnatDefaultRoutingAddlPatHistDicomZip() {
+        testXnatDefaultRouting(Tag.AdditionalPatientHistory, true, this::uploadViaImporter, "DICOM-zip", testZip,
+                Tag.StudyComments, Tag.PatientComments);
+    }
+
+    @Test
+    public void testXnatDefaultRoutingStudyDescDicomZip() {
+        testXnatDefaultRouting(Tag.StudyDescription, false, this::uploadViaImporter, "DICOM-zip", testZip,
+                Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments);
+    }
+
+    @Test
+    public void testXnatDefaultRoutingAccessionDicomZip() {
+        testXnatDefaultRouting(Tag.AccessionNumber, false, this::uploadViaImporter, "DICOM-zip", testZip,
+                Tag.StudyDescription, Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testXnatDefaultRoutingPatientCommentsSessionImporter() {
+        testXnatDefaultRouting(Tag.PatientComments, true, this::uploadViaImporter, null, testZip);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testXnatDefaultRoutingStudyCommentsSessionImporter() {
+        testXnatDefaultRouting(Tag.StudyComments, true, this::uploadViaImporter, null, testZip,
+                Tag.PatientComments);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testXnatDefaultRoutingAddlPatHistSessionImporter() {
+        testXnatDefaultRouting(Tag.AdditionalPatientHistory, true, this::uploadViaImporter, null, testZip,
+                Tag.StudyComments, Tag.PatientComments);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testXnatDefaultRoutingStudyDescSessionImporter() {
+        testXnatDefaultRouting(Tag.StudyDescription, false, this::uploadViaImporter, null, testZip,
+                Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments);
+    }
+
+    @Test
+    @ExpectedFailure(jiraIssue = "XNAT-6469")
+    public void testXnatDefaultRoutingAccessionSessionImporter() {
+        testXnatDefaultRouting(Tag.AccessionNumber, false, this::uploadViaImporter, null,
+                testZip, Tag.StudyDescription, Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testXnatDefaultRoutingAccessionSessionImporterAlt() {
+        testXnatDefaultRouting(Tag.AccessionNumber, false, this::uploadViaImporter, null, "",
+                testZip, Tag.StudyDescription, Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments);
+    }
+
+    private void testXnatDefaultRouting(int tag, boolean combined, UploadFn uploadFn, int... tagsToClear) {
+        testXnatDefaultRouting(tag, combined, uploadFn, null, null, tagsToClear);
+    }
+
+    private void testXnatDefaultRouting(int tag, boolean combined, UploadFn uploadFn, String handler,
+                                        File zipFile, int... tagsToClear) {
+        testXnatDefaultRouting(tag, combined, uploadFn, handler, "notPatternOrProject", zipFile, tagsToClear);
+    }
+
+    private void testXnatDefaultRouting(int tag, boolean combined, UploadFn uploadFn, String handler, String replaceVal,
+                                        File zipFile, int... tagsToClear) {
         final String listener = Long.toString(System.currentTimeMillis());
-        final Project project = new Project("project" + listener).prearchiveCode(PrearchiveCode.AUTO_ARCHIVE);
+        final Project project = new Project(listener).prearchiveCode(PrearchiveCode.AUTO_ARCHIVE);
         restDriver.createProject(mainUser, project);
-        final Subject   subject = new Subject(project, "subject" + listener);
-        final MRSession session = new MRSession(project, subject, "session" + listener);
+        final Subject   subject = new Subject(project, "su" + listener);
+        final MRSession session = new MRSession(project, subject, "se" + listener);
 
         // update headers
         Map<Integer, String> hdr = new HashMap<>();
@@ -219,47 +319,110 @@ public class TestDicomRouting extends BaseXnatRestTest {
             hdr.put(Tag.PatientID, session.getLabel());
         }
         for (int t : tagsToClear) {
-            hdr.put(t, "junkThatDoesntMatchAProject");
+            hdr.put(t, replaceVal);
         }
 
         // upload
-        new XnatCStore().data(TestData.SAMPLE_1_SCAN_4).overwrittenHeaders(hdr).sendDICOM();
-        TimeUtils.sleep(60000);
-        restDriver.waitForPrearchiveEmpty(mainUser, project, 120);
+        uploadFn.accept(hdr, project, zipFile, handler);
 
         // verify
         verifyImport(session);
+
+        // cleanup
         restDriver.waitForAutoRun(session);
         restDriver.deleteProjectSilently(mainUser, project);
     }
 
-    private void uploadViaSessionImporter(@Nullable String projectId) {
-        RequestSpecification request = mainCredentials().
-                queryParam("triggerPipelines", false);
-        if (projectId != null) {
-            request.queryParam("PROJECT_ID", projectId);
-        }
-        request.multiPart(testZip).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200);
+    private void uploadViaImporter(@Nullable Project project, @Nullable String handler, boolean sendProjectId) {
+        uploadViaImporter(null, project, testZip, handler, sendProjectId);
     }
 
-    private void uploadViaDicomZip(@Nullable String projectId) {
-        RequestSpecification request = mainCredentials()
-                .queryParam("triggerPipelines", false)
-                .queryParam("handler", "DICOM-zip");
-        if (projectId != null) {
-            request.queryParam("PROJECT_ID", projectId);
+    private void uploadViaImporter(Map<Integer, String> hdr, Project project, File zip, @Nullable String handler) {
+        uploadViaImporter(hdr, project, zip, handler, false);
+    }
+
+    private void uploadViaImporter(Map<Integer, String> hdr, Project project, File zip, @Nullable String handler, 
+                                   boolean sendProjectId) {
+        if (hdr != null) {
+            try {
+                zip = editDicomInZip(zip, hdr);
+                filesToRemove.add(zip);
+            } catch (IOException e) {
+                fail("Issue editing DICOM in " + zip);
+            }
         }
-        request.multiPart(testZip)
+
+        RequestSpecification request = mainCredentials();
+        if (handler != null) {
+            request.queryParam("import-handler", handler);
+        }
+        if (sendProjectId) {
+            request.queryParam("PROJECT_ID", project.getId());
+        }
+        request.multiPart(zip)
                 .post(formatRestUrl("services/import"))
                 .then().assertThat().statusCode(200);
+        
+        if (handler != null) {
+            waitForDicomRecieve(project);
+        }
+    }
+
+    private File editDicomInZip(File zip, @Nonnull Map<Integer, String> hdr) throws IOException {
+        ZipFile zf = new ZipFile(zip);
+        File destZipFile = tmpDir.resolve(System.currentTimeMillis() + ".zip").toFile();
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(destZipFile))) {
+            Enumeration<? extends ZipEntry> entries = zf.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry ze = entries.nextElement();
+                if (ze.isDirectory()) {
+                    continue;
+                }
+                DatasetWithFMI dcm;
+                try (InputStream is = zf.getInputStream(ze)) {
+                    dcm = DicomUtils.readDicom(is);
+                }
+                Attributes attr = dcm.getDataset();
+                for (Integer tag : hdr.keySet()) {
+                    VR vr = attr.getVR(tag);
+                    attr.setString(tag, vr == null ? VR.LT : vr, hdr.get(tag));
+                }
+                File f = DicomUtils.writeDicomToFile(dcm);
+                try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(f))) {
+                    zos.putNextEntry(new ZipEntry(ze.getName()));
+                    byte[] readBuffer = new byte[4096];
+                    int amountRead;
+                    while ((amountRead = bis.read(readBuffer)) > 0) {
+                        zos.write(readBuffer, 0, amountRead);
+                    }
+                    zos.closeEntry();
+                }
+                f.delete();
+            }
+        }
+        return destZipFile;
+    }
+
+    private void uploadViaDicomScp(Map<Integer, String> hdr, Project project) {
+        uploadViaDicomScp(hdr, project,null, null);
+    }
+    
+    private void uploadViaDicomScp(Map<Integer, String> hdr, Project project, File ignored, String ignored2) {
+        // ignored arguments here so this upload function matches DICOM-zip and SI
+        new XnatCStore().data(TestData.SAMPLE_1_SCAN_4).overwrittenHeaders(hdr).sendDICOM();
+        waitForDicomRecieve(project);
+    }
+
+    private void waitForDicomRecieve(Project project) {
+        TimeUtils.sleep(60000);
+        restDriver.waitForPrearchiveEmpty(mainUser, project, 300);
     }
 
     private void verifyProject(Project p) {
         final Subject subject = new Subject(p, subjectFromTestZip);
         final ImagingSession session = new MRSession(p, subject, sessionFromTestZip);
         verifyImport(session);
+        restDriver.waitForAutoRun(session);
         restDriver.deleteProjectSilently(mainUser, p);
     }
 
@@ -267,6 +430,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
         final Subject subject = new Subject(project, expected);
         final ImagingSession session = new MRSession(project, subject, sessionFromTestZip);
         verifyImport(session);
+        restDriver.waitForAutoRun(session);
         restDriver.deleteSubjectAssessor(mainUser, session);
     }
 
@@ -274,10 +438,11 @@ public class TestDicomRouting extends BaseXnatRestTest {
         final Subject subject = new Subject(project, subjectFromTestZip);
         final ImagingSession session = new MRSession(project, subject, expected);
         verifyImport(session);
+        restDriver.waitForAutoRun(session);
         restDriver.deleteSubjectAssessor(mainUser, session);
     }
 
-    private void testProjectRouting(Consumer<String> uploadFn) {
+    private void testProjectRouting(ApiUploadFn uploadFn, String handler) {
         // Because XNAT cannot delete and readd a project with the same ID, we have to include a random component in
         // the project id. Hopefully 0-99 is sufficient to ensure no conflicts within a given test run/rerun.
         String rand = Integer.toString(new Random().nextInt(100));
@@ -287,23 +452,23 @@ public class TestDicomRouting extends BaseXnatRestTest {
             String expected = key.replaceAll(REPLACE_STR, rand);
             Project p = new Project(expected);
             restDriver.createProject(mainUser, p);
-            uploadFn.accept(null);
+            uploadFn.accept(p, handler, false);
             verifyProject(p);
         }
     }
 
-    private void testSubjectRouting(Consumer<String> uploadFn) {
+    private void testSubjectRouting(ApiUploadFn uploadFn, String handler) {
         for (String expected : cfgMap.keySet()) {
             restDriver.setSubjectDicomRoutingConfig(cfgMap.get(expected));
-            uploadFn.accept(project.getId());
+            uploadFn.accept(project, handler, true);
             verifySubject(expected);
         }
     }
 
-    private void testSessionRouting(Consumer<String> uploadFn) {
+    private void testSessionRouting(ApiUploadFn uploadFn, String handler) {
         for (String expected : cfgMap.keySet()) {
             restDriver.setSessionDicomRoutingConfig(cfgMap.get(expected));
-            uploadFn.accept(project.getId());
+            uploadFn.accept(project, handler, true);
             verifySession(expected);
         }
     }
@@ -311,5 +476,15 @@ public class TestDicomRouting extends BaseXnatRestTest {
     private void verifyImport(SubjectAssessor session) {
         // if session can be retrieved at this URL, then project, subject, session are all labelled properly
         mainCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
+    }
+
+    @FunctionalInterface
+    public interface ApiUploadFn {
+        void accept(Project project, String handler, boolean sendProject);
+    }
+    
+    @FunctionalInterface
+    public interface UploadFn {
+        void accept(Map<Integer, String> hdr, Project project, File zip, String handler);
     }
 }
