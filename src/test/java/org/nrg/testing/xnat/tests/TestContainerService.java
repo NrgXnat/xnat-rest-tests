@@ -168,7 +168,7 @@ public class TestContainerService extends BaseXnatRestTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "XNAT-6421")
+    @AddedIn(Xnat_1_8_0.class)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerSubjectAltUri() {
         enableAndRunContainerThenCheckOutputs(XnatSubjectdata.SCHEMA_ELEMENT_NAME,
