@@ -97,8 +97,9 @@ public class TestContainerService extends BaseXnatRestTest {
     @Test
     public void testDeleteAllImages() {
         final List<String> imageIds = mainAdminCredentials()
-                .get(restDriver.formatXapiUrl("docker", "images"))
-                .then().assertThat().statusCode(200).and().extract().jsonPath().getList("image-id");
+                .get(restDriver.formatXapiUrl("docker", "image-summaries"))
+                .then().assertThat().statusCode(200).and().extract()
+                .jsonPath().getList("findAll { it.commands.size() > 0 }.image-id");
 
         for (String id : imageIds) {
             mainAdminCredentials()
@@ -133,13 +134,14 @@ public class TestContainerService extends BaseXnatRestTest {
     @Test
     @SoftDependency({"testDisableSwarmMode", "testContainerProject","testContainerSubject","testContainerSubjectAltUri","testContainerSession","testContainerSessionAltUri","testContainerAssessor","testContainerAssessorAltUri","testContainerAssessorAltUri2","testContainerScan","testContainerScanAltUri"})
     public void testDeleteImage() {
-        final JsonPath images = mainAdminCredentials()
-                .get(restDriver.formatXapiUrl("docker", "images"))
-                .then().assertThat().statusCode(200).and().extract().jsonPath();
+        final List<String> imageIds = mainAdminCredentials()
+                .get(restDriver.formatXapiUrl("docker", "image-summaries"))
+                .then().assertThat().statusCode(200).and().extract()
+                .jsonPath().getList("findAll { it.commands.size() > 0 }.image-id");
 
-        assertEquals(1, images.getList("$").size());
+        assertEquals(1, imageIds.size());
 
-        String id = images.getString("image-id.get(0)");
+        String id = imageIds.get(0);
 
         mainAdminCredentials()
                 .delete(restDriver.formatXapiUrl("docker", "images", id))
