@@ -83,10 +83,10 @@ public class TestContainerService extends BaseXnatRestTest {
         // Sets accession number on subject, session, and assessor
         restDriver.interfaceFor(mainUser).getAccessionNumber(subject);
         restDriver.interfaceFor(mainUser).getAccessionNumber(session);
-        assessor.setAccessionNumber(mainAdminCredentials()
-                .get(restDriver.formatRestUrl("experiments", session.getAccessionNumber(), "assessors"))
-                        .then().extract().jsonPath()
-                        .getString("ResultSet.Result.find {it.label == '" + assessor.getLabel() + "' }.ID"));
+        assessor.setAccessionNumber(mainQueryBase().queryParam("format", "json")
+                .get(restDriver.assessorsByAccessionNumber(session))
+                .then().assertThat().statusCode(200).and().extract().jsonPath()
+                .getString("ResultSet.Result.find {it.label == '" + assessor.getLabel() + "' }.ID"));
     }
 
     @AfterMethod
