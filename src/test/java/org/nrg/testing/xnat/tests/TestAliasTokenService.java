@@ -7,6 +7,7 @@ import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.versions.XnatVersionList;
 import org.nrg.testing.xnat.versions.Xnat_1_7_4;
+import org.nrg.testing.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.enums.Accessibility;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.users.User;
@@ -82,7 +83,11 @@ public class TestAliasTokenService extends BaseXnatRestTest {
     }
 
     private XnatAliasToken readTokenFromResponse(Response response) {
-        return response.then().assertThat().statusCode(200).and().extract().jsonPath().getObject("", XnatAliasToken.class); // use longer .jsonPath().getObject(...) form because content-type from XNAT is not properly set
+        if (XnatVersionList.testedVersionPrecedes(Xnat_1_8_0.class)) { // see: XNAT-5498
+            return response.then().assertThat().statusCode(200).and().extract().jsonPath().getObject("", XnatAliasToken.class);
+        } else {
+            return response.then().assertThat().statusCode(200).and().extract().as(XnatAliasToken.class);
+        }
     }
 
     private void checkAliasTokenForMainUser(XnatAliasToken aliasToken) {
