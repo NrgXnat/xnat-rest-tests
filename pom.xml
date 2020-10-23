@@ -7,11 +7,11 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>test_dependencies</artifactId>
-        <version>3.0-SNAPSHOT</version>
+        <version>3.0</version>
     </parent>
 
     <artifactId>xnat_rest_tests</artifactId>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.2</version>
 
     <name>REST-based XNAT Tests</name>
     <description>Runs a suite of REST tests on an XNAT server.</description>
@@ -43,7 +43,7 @@
     </scm>
 
     <properties>
-        <nrg_test.version>2.2-SNAPSHOT</nrg_test.version>
+        <nrg_test.version>2.2</nrg_test.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
