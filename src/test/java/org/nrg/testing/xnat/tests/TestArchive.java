@@ -1,6 +1,8 @@
 package org.nrg.testing.xnat.tests;
 
+import org.nrg.testing.annotations.DeprecatedIn;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
@@ -45,6 +47,7 @@ public class TestArchive extends BaseXnatRestTest {
     }
 
     @Test
+    @DeprecatedIn(Xnat_1_8_0.class)
     public void testWebQCGeneration() {
         final Subject subject = new Subject(project);
         final ImagingSession session = new MRSession(project, subject).date(LocalDate.parse("2001-01-01"));

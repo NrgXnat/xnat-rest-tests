@@ -722,12 +722,11 @@ public class TestImport extends BaseXnatRestTest {
         new XnatCStore().data(TestData.SAMPLE_1_SCAN_6).sendDICOMToProject(project);
         TimeUtils.sleep(60000);
         restDriver.waitForPrearchiveEmpty(mainUser, project, 120);
-        restDriver.waitForAutoRun(session);
+        restDriver.mainInterface().waitForPipelineCompletion(session, "Merged");
         final List<Scan> allScans = restDriver.readScans(mainUser, project, subject, session);
         assertEquals(3, allScans.size());
         for (Scan scan : allScans) {
             final List<Resource> scanResources = scan.getScanResources();
-            assertEquals(2, scanResources.size());
             assertEquals(176, restDriver.interfaceFor(mainUser).findResource(scanResources, "DICOM").getFileCount());
         }
         restDriver.deleteProject(mainUser, project);
