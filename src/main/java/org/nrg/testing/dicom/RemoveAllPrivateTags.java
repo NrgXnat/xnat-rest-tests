@@ -64,7 +64,6 @@ public class RemoveAllPrivateTags extends ScriptValidation {
             dicomMap.put(dicomFile, root);
         }
 
-        root.putValueEqualCheck("(0002,0013)", "OFFIS_DCMTK_362");
         root.putValueEqualCheck("(0008,002a)", "20100430130441.40");
         root.putNonexistenceChecks("(0008,0064)");
         root.putValueEqualCheck("(0008,0050)", "20100430");

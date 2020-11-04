@@ -79,13 +79,13 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "DE-9")
+    @ExpectedFailure(jiraIssue = "DE-7")
     public void testSubjectRelabel_6P_4S() {
         performSubjectRelabelAnonTest(projectAnonDE6, siteAnonDE4);
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "DE-9")
+    @ExpectedFailure(jiraIssue = "DE-7")
     public void testSubjectRelabel_6P_6S() {
         performSubjectRelabelAnonTest(projectAnonDE6, siteAnonDE6);
     }
@@ -101,13 +101,13 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "DE-9")
+    @ExpectedFailure(jiraIssue = "DE-7")
     public void testSessionRelabel_6P_4S() {
         performSessionRelabelAnonTest(projectAnonDE6, siteAnonDE4);
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "DE-9")
+    @ExpectedFailure(jiraIssue = "DE-7")
     public void testSessionRelabel_6P_6S() {
         performSessionRelabelAnonTest(projectAnonDE6, siteAnonDE6);
     }

@@ -15,7 +15,7 @@ public class ProjectDE4Script extends ScriptValidation {
         final Map<File, DicomObject> dicomMap = fixedChecks(dicomFiles);
         final DicomObject root = dicomMap.values().iterator().next();
 
-        root.putNonexistenceChecks("(0002,0013)", "(0008,002a)");
+        root.putNonexistenceChecks("(0008,002a)");
         root.putValueEqualCheck("(0008,0064)", "WSD");
         root.putValueEqualCheck("(0008,0050)", "REMOVED");
         root.putValueEqualCheck("(0008,1040)", "Dept A");
@@ -42,7 +42,6 @@ public class ProjectDE4Script extends ScriptValidation {
         final Map<File, DicomObject> dicomMap = fixedChecks(dicomFiles);
         final DicomObject root = dicomMap.values().iterator().next();
 
-        root.putValueEqualCheck("(0002,0013)", "OFFIS_DCMTK_362");
         root.putValueEqualCheck("(0008,002a)", "20100430130441.40");
         root.putNonexistenceChecks("(0008,0064)");
         root.putValueEqualCheck("(0008,0050)", "20100430");

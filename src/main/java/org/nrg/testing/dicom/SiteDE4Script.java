@@ -14,7 +14,7 @@ public class SiteDE4Script extends ScriptValidation {
         final Map<File, DicomObject> dicomMap = fixedChecks(dicomFiles);
         final DicomObject root = dicomMap.values().iterator().next();
 
-        root.putNonexistenceChecks("(0002,0016)", "(0008,0033)");
+        root.putNonexistenceChecks("(0008,0033)");
         root.putValueEqualCheck("(0008,0061)", "MR");
         root.putValueEqualCheck("(0008,1080)", "DIAG");
         root.putValueEqualCheck("(0008,0100)", "Val1");
@@ -44,7 +44,6 @@ public class SiteDE4Script extends ScriptValidation {
         final Map<File, DicomObject> dicomMap = fixedChecks(dicomFiles);
         final DicomObject root = dicomMap.values().iterator().next();
 
-        root.putValueEqualCheck("(0002,0016)", "DicomBrowser");
         root.putValueEqualCheck("(0008,0033)", "131758");
         root.putNonexistenceChecks("(0008,0061)");
         root.putValueEqualCheck("(0008,1080)", null);
