@@ -1,7 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.http.ContentType;
-import com.jayway.restassured.path.json.JsonPath;
 import org.apache.commons.io.IOUtils;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.*;
@@ -10,11 +9,13 @@ import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.versions.XnatVersionList;
 import org.nrg.testing.xnat.versions.Xnat_1_7_7;
 import org.nrg.testing.xnat.versions.Xnat_1_8_0;
-import org.nrg.xdat.om.*;
-import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xnat.enums.Gender;
+import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
+import org.nrg.xnat.pogo.containers.CommandSummaryForContext;
+import org.nrg.xnat.pogo.containers.DockerServer;
+import org.nrg.xnat.pogo.containers.Image;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.pogo.experiments.SessionAssessor;
@@ -42,8 +43,10 @@ import static org.testng.AssertJUnit.*;
 public class TestContainerService extends BaseXnatRestTest {
     private static final String OUTPUT_CONTENT = "hello world";
     private static final String OUTPUT_FILENAME = "out.txt";
-    private static final String DEBUG_IMG = "xnat/debug-command:latest";
+    private static final Image DEBUG_IMG = new Image("xnat", "debug-command", "latest");
     private static final String OUTPUT_RESOURCE = "DEBUG_OUTPUT";
+    private static final String IMAGES_WITH_COMMANDS_JSON_PATH = "findAll { it.commands.size() > 0 }";
+    private static final Map<String, String> BASE_DEBUG_LAUNCH_PARAMS = makeContainerLaunchReqBody();
 
     private Project project;
     private Subject subject;
@@ -96,76 +99,45 @@ public class TestContainerService extends BaseXnatRestTest {
 
     @Test
     public void testDeleteAllImages() {
-        final List<String> imageIds = mainAdminCredentials()
-                .get(restDriver.formatXapiUrl("docker", "image-summaries"))
-                .then().assertThat().statusCode(200).and().extract()
-                .jsonPath().getList("findAll { it.commands.size() > 0 }.image-id");
+        final List<Image> imagesWithCommands = mainAdminInterface().readImages(IMAGES_WITH_COMMANDS_JSON_PATH);
 
-        for (String id : imageIds) {
-            mainAdminCredentials()
-                    .delete(restDriver.formatXapiUrl("docker", "images", id))
-                    .then().assertThat().statusCode(204);
+        for (Image image : imagesWithCommands) {
+            mainAdminInterface().deleteImage(image);
         }
 
-        final JsonPath commands = mainAdminCredentials()
-                .queryParam("image", DEBUG_IMG)
-                .get(restDriver.formatXapiUrl("commands"))
-                .then().assertThat().statusCode(200).and().extract().jsonPath();
-
-        assertEquals(0, commands.getList("$").size());
+        assertEquals(0, mainAdminInterface().readCommands(DEBUG_IMG).size());
     }
 
     @Test
     @HardDependency("testDeleteAllImages")
     public void testPullImageWithCommand() {
         // Add new image with commands
-        mainAdminCredentials().queryParam("image", DEBUG_IMG)
-                .post(restDriver.formatXapiUrl("docker", "pull"))
-                .then().assertThat().statusCode(200);
-
-        final JsonPath commands = mainAdminCredentials()
-                .queryParam("image", DEBUG_IMG)
-                .get(restDriver.formatXapiUrl("commands"))
-                .then().assertThat().statusCode(200).and().extract().jsonPath();
-
-        assertEquals(1, commands.getList("$").size());
+        assertEquals(
+                1,
+                mainAdminInterface().pullImage(DEBUG_IMG).readCommands(DEBUG_IMG).size()
+        );
     }
 
     @Test
-    @SoftDependency({"testDisableSwarmMode", "testContainerProject","testContainerSubject","testContainerSubjectAltUri","testContainerSession","testContainerSessionAltUri","testContainerAssessor","testContainerAssessorAltUri","testContainerAssessorAltUri2","testContainerScan","testContainerScanAltUri"})
+    @SoftDependency({"testDisableSwarmMode", "testContainerProject", "testContainerSubject", "testContainerSubjectAltUri", "testContainerSession", "testContainerSessionAltUri", "testContainerAssessor", "testContainerAssessorAltUri", "testContainerAssessorAltUri2", "testContainerScan", "testContainerScanAltUri"})
     public void testDeleteImage() {
-        final List<String> imageIds = mainAdminCredentials()
-                .get(restDriver.formatXapiUrl("docker", "image-summaries"))
-                .then().assertThat().statusCode(200).and().extract()
-                .jsonPath().getList("findAll { it.commands.size() > 0 }.image-id");
-
-        assertEquals(1, imageIds.size());
-
-        String id = imageIds.get(0);
-
-        mainAdminCredentials()
-                .delete(restDriver.formatXapiUrl("docker", "images", id))
-                .then().assertThat().statusCode(204);
-
-        final JsonPath commands = mainAdminCredentials()
-                .queryParam("image", DEBUG_IMG)
-                .get(restDriver.formatXapiUrl("commands"))
-                .then().assertThat().statusCode(200).and().extract().jsonPath();
-
-        assertEquals(0, commands.getList("$").size());
+        final List<Image> imagesWithCommands = mainAdminInterface().readImages(IMAGES_WITH_COMMANDS_JSON_PATH);
+        assertEquals(1, imagesWithCommands.size());
+        mainAdminInterface().deleteImage(imagesWithCommands.get(0));
+        assertEquals(0, mainAdminInterface().readCommands(DEBUG_IMG).size());
     }
 
     @Test
     @SoftDependency("testDisableSwarmMode")
     public void testContainerProject() {
-        enableAndRunContainerThenCheckOutputs(XnatProjectdata.SCHEMA_ELEMENT_NAME,
+        enableAndRunContainerThenCheckOutputs(DataType.PROJECT,
                 String.format("/archive/projects/%s", project.getId()));
     }
 
     @Test
     @SoftDependency("testDisableSwarmMode")
     public void testContainerSubject() {
-        enableAndRunContainerThenCheckOutputs(XnatSubjectdata.SCHEMA_ELEMENT_NAME,
+        enableAndRunContainerThenCheckOutputs(DataType.SUBJECT,
                 String.format("/archive/subjects/%s", subject.getAccessionNumber()));
     }
 
@@ -173,14 +145,14 @@ public class TestContainerService extends BaseXnatRestTest {
     @AddedIn(Xnat_1_8_0.class)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerSubjectAltUri() {
-        enableAndRunContainerThenCheckOutputs(XnatSubjectdata.SCHEMA_ELEMENT_NAME,
+        enableAndRunContainerThenCheckOutputs(DataType.SUBJECT,
                 String.format("/archive/projects/%s/subjects/%s", project.getId(), subject.getLabel()));
     }
 
     @Test
     @SoftDependency("testDisableSwarmMode")
     public void testContainerSession() {
-        enableAndRunContainerThenCheckOutputs(XnatMrsessiondata.SCHEMA_ELEMENT_NAME,
+        enableAndRunContainerThenCheckOutputs(DataType.MR_SESSION,
                 String.format("/archive/experiments/%s", session.getAccessionNumber()));
     }
 
@@ -188,19 +160,19 @@ public class TestContainerService extends BaseXnatRestTest {
     @TestRequires(plugins = "batchLaunchPlugin")
     @SoftDependency("testDisableSwarmMode")
     public void testContainerSessionBulk() {
-        MRSession session2 = new MRSession(project, subject, "MR2").date(LocalDate.parse("2000-01-02"));
+        final MRSession session2 = new MRSession(project, subject, "MR2").date(LocalDate.parse("2000-01-02"));
         restDriver.createSubjectAssessor(mainUser, session2);
-        restDriver.interfaceFor(mainUser).getAccessionNumber(session2);
-        Map<String, String> uriToId = new HashMap<>();
+        mainInterface().getAccessionNumber(session2);
+        final Map<String, String> uriToId = new HashMap<>();
         uriToId.put(String.format("/archive/experiments/%s", session.getAccessionNumber()), session.getAccessionNumber());
         uriToId.put(String.format("/archive/experiments/%s", session2.getAccessionNumber()), session2.getAccessionNumber());
-        enableAndRunContainerThenCheckOutputs(XnatMrsessiondata.SCHEMA_ELEMENT_NAME, uriToId);
+        enableAndRunContainerThenCheckOutputs(DataType.MR_SESSION, uriToId);
     }
 
     @Test
     @SoftDependency("testDisableSwarmMode")
     public void testContainerSessionAltUri() {
-        enableAndRunContainerThenCheckOutputs(XnatMrsessiondata.SCHEMA_ELEMENT_NAME,
+        enableAndRunContainerThenCheckOutputs(DataType.MR_SESSION,
                 String.format("/archive/projects/%s/subjects/%s/experiments/%s",
                         project.getId(), subject.getLabel(), session.getLabel()));
     }
@@ -208,7 +180,7 @@ public class TestContainerService extends BaseXnatRestTest {
     @Test
     @SoftDependency("testDisableSwarmMode")
     public void testContainerAssessor() {
-        enableAndRunContainerThenCheckOutputs(XnatQcassessmentdata.SCHEMA_ELEMENT_NAME,
+        enableAndRunContainerThenCheckOutputs(DataType.QC,
                 String.format("/archive/experiments/%s/assessors/%s",
                         session.getAccessionNumber(), assessor.getAccessionNumber()));
     }
@@ -217,7 +189,7 @@ public class TestContainerService extends BaseXnatRestTest {
     @AddedIn(Xnat_1_8_0.class)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerAssessorAltUri() {
-        enableAndRunContainerThenCheckOutputs(XnatQcassessmentdata.SCHEMA_ELEMENT_NAME,
+        enableAndRunContainerThenCheckOutputs(DataType.QC,
                 String.format("/archive/projects/%s/subjects/%s/experiments/%s/assessors/%s",
                         project.getId(), subject.getLabel(), session.getLabel(), assessor.getLabel()));
     }
@@ -226,7 +198,7 @@ public class TestContainerService extends BaseXnatRestTest {
     @AddedIn(Xnat_1_8_0.class)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerAssessorAltUri2() {
-        enableAndRunContainerThenCheckOutputs(XnatQcassessmentdata.SCHEMA_ELEMENT_NAME,
+        enableAndRunContainerThenCheckOutputs(DataType.QC,
                 String.format("/archive/experiments/%s/assessors/%s",
                         session.getAccessionNumber(), assessor.getLabel()));
     }
@@ -235,21 +207,21 @@ public class TestContainerService extends BaseXnatRestTest {
     @AddedIn(Xnat_1_8_0.class)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerAssessorAltUri3() {
-        enableAndRunContainerThenCheckOutputs(XnatQcassessmentdata.SCHEMA_ELEMENT_NAME,
+        enableAndRunContainerThenCheckOutputs(DataType.QC,
                 String.format("/archive/experiments/%s", assessor.getAccessionNumber()));
     }
 
     @Test
     @SoftDependency("testDisableSwarmMode")
     public void testContainerScan() {
-        enableAndRunContainerThenCheckOutputs(XnatMrscandata.SCHEMA_ELEMENT_NAME,
+        enableAndRunContainerThenCheckOutputs(DataType.MR_SCAN,
                 String.format("/archive/experiments/%s/scans/%s", session.getAccessionNumber(), scan.getId()));
     }
 
     @Test
     @SoftDependency("testDisableSwarmMode")
     public void testContainerScanAltUri() {
-        enableAndRunContainerThenCheckOutputs(XnatMrscandata.SCHEMA_ELEMENT_NAME,
+        enableAndRunContainerThenCheckOutputs(DataType.MR_SCAN,
                 String.format("/archive/projects/%s/subjects/%s/experiments/%s/scans/%s",
                         project.getId(), subject.getLabel(), session.getLabel(), scan.getId()));
     }
@@ -258,15 +230,15 @@ public class TestContainerService extends BaseXnatRestTest {
     @TestRequires(csSwarmCanEnable = true)
     @HardDependency("testPullImageWithCommand")
     public void testEnableSwarmMode() {
-        JsonPath server = toggleSwarmMode(true);
-        assertTrue(server.getBoolean("swarm-mode"));
+        toggleSwarmMode(true);
+        assertTrue(mainInterface().readDockerServer().getSwarmMode());
     }
 
     @Test
     @TestRequires(csSwarmCanEnable = true)
     @HardDependency("testEnableSwarmMode")
     public void testContainerSessionSwarm() {
-        enableAndRunContainerThenCheckOutputs(XnatMrsessiondata.SCHEMA_ELEMENT_NAME,
+        enableAndRunContainerThenCheckOutputs(DataType.MR_SESSION,
                 String.format("/archive/experiments/%s", session.getAccessionNumber()), true);
     }
 
@@ -274,137 +246,82 @@ public class TestContainerService extends BaseXnatRestTest {
     @TestRequires(csSwarmCanEnable = true)
     @SoftDependency("testContainerSessionSwarm")
     public void testDisableSwarmMode() {
-        JsonPath server = toggleSwarmMode(false);
-        assertFalse(server.getBoolean("swarm-mode"));
+        toggleSwarmMode(false);
+        assertFalse(mainInterface().readDockerServer().getSwarmMode());
     }
 
-    private void enableAndRunContainerThenCheckOutputs(String xsiType, String uri) {
-        enableAndRunContainerThenCheckOutputs(xsiType, uri, false);
+    private void enableAndRunContainerThenCheckOutputs(DataType dataType, String uri) {
+        enableAndRunContainerThenCheckOutputs(dataType, uri, false);
     }
 
-    private void enableAndRunContainerThenCheckOutputs(String xsiType, String uri, boolean swarm) {
-        WrapperMetadata wd = getWrapperMetadata(xsiType);
-
-        enableOnProject(wd.wrapperId);
-
-        Map<String, String> queryParams = makeContainerLaunchReqBody(wd.csType, uri);
-
-        JsonPath result = requestContainerLaunch(queryParams, wd, "launch");
-        String workflowId = result.getString("workflow-id");
-
+    private void enableAndRunContainerThenCheckOutputs(DataType dataType, String uri, boolean swarm) {
+        final CommandSummaryForContext wrapper = readWrapper(dataType);
+        mainInterface().setWrapperStatusOnProject(wrapper, project, true);
+        final int workflowId = mainInterface().launchContainer(project, wrapper, uri, BASE_DEBUG_LAUNCH_PARAMS);
         waitForWorkflowComplete(workflowId, swarm);
-
         verifyOutputs(uri);
     }
 
-    private void enableAndRunContainerThenCheckOutputs(String xsiType, Map<String, String> urisAndIds) {
-        enableAndRunContainerThenCheckOutputs(xsiType, urisAndIds, false);
+    private void enableAndRunContainerThenCheckOutputs(DataType dataType, Map<String, String> urisAndIds) {
+        enableAndRunContainerThenCheckOutputs(dataType, urisAndIds, false);
     }
 
-    private void enableAndRunContainerThenCheckOutputs(String xsiType, Map<String, String> urisAndIds, boolean swarm) {
-        WrapperMetadata wd = getWrapperMetadata(xsiType);
-
-        enableOnProject(wd.wrapperId);
-
-        Map<String, String> queryParams = makeContainerLaunchReqBody(wd.csType,
-                "[\"" + String.join("\",\"", urisAndIds.keySet()) + "\"]");
-
-        JsonPath result = requestContainerLaunch(queryParams, wd, "bulklaunch");
-        assertEquals(result.getList("successes").size(), urisAndIds.size()); //successfully queued to be launched
+    private void enableAndRunContainerThenCheckOutputs(DataType dataType, Map<String, String> urisAndIds, boolean swarm) {
+        final CommandSummaryForContext wrapper = mainInterface().readAvailableCommands(dataType, project).get(0);
+        mainInterface().setWrapperStatusOnProject(wrapper, project, true);
+        mainInterface().bulkLaunchContainers(project, wrapper, urisAndIds.keySet(), BASE_DEBUG_LAUNCH_PARAMS);
 
         // Determine workflow ID, wait for complete, verify outputs
-        for (String uri : urisAndIds.keySet()) {
-            String id = urisAndIds.get(uri);
-            String workflowId = determineWorkflowId(xsiType, id, wd.wrapperName);
+        for (Map.Entry<String, String> uriAndId : urisAndIds.entrySet()) {
+            final int workflowId = determineWorkflowId(dataType, uriAndId.getValue(), wrapper);
             waitForWorkflowComplete(workflowId, swarm);
-            verifyOutputs(uri);
+            verifyOutputs(uriAndId.getKey());
         }
     }
 
-    private WrapperMetadata getWrapperMetadata(String xsiType) {
-        JsonPath json = mainQueryBase().queryParam("project", project.getId())
-                .queryParam("xsiType", xsiType)
-                .get(restDriver.formatXapiUrl("commands", "available"))
-                .then().assertThat().statusCode(200).and().extract().jsonPath();
-
-        String wrapperId = json.getString("wrapper-id.get(0)");
-        String wrapperName = json.getString("wrapper-name.get(0)");
-        String csType = json.getString("root-element-name.get(0)");
-        return new WrapperMetadata(wrapperId, wrapperName, csType);
+    private CommandSummaryForContext readWrapper(DataType dataType) {
+        return mainInterface().readAvailableCommands(dataType, project).get(0);
     }
 
-    private void enableOnProject(String wrapperId) {
-        mainQueryBase().put(restDriver.formatXapiUrl("projects", project.getId(), "wrappers", wrapperId, "enabled"))
-                .then().assertThat().statusCode(200);
-    }
-
-    private Map<String, String> makeContainerLaunchReqBody(String csType, String uriParam) {
-        Map<String, String> queryParams = new HashMap<>();
-        queryParams.put(csType, uriParam);
-        queryParams.put("command", "echo " + OUTPUT_CONTENT);
-        queryParams.put("output-file", OUTPUT_FILENAME);
-        return queryParams;
-    }
-
-    private JsonPath requestContainerLaunch(Map<String, String> queryParams, WrapperMetadata wd, String launchType) {
-        return mainQueryBase().body(queryParams)
-                .contentType(ContentType.JSON)
-                .post(restDriver.formatXapiUrl("projects", project.getId(), "wrappers",
-                        wd.wrapperId, "root", wd.csType, launchType))
-                .then().assertThat().statusCode(200).and().extract().jsonPath();
-    }
-
-    private String determineWorkflowId(String xsiType, String id, String wrapperName) {
-        Map<String, Object> params = new HashMap<>();
-        params.put("data_type", xsiType);
+    private int determineWorkflowId(DataType dataType, String id, CommandSummaryForContext wrapper) {
+        final Map<String, Object> params = new HashMap<>();
+        params.put("data_type", dataType.getXsiType());
         params.put("id", id);
         params.put("sort_col", "launchTime");
         params.put("sort_dir", "desc");
         params.put("page", "1");
-        params.put("filters", makeFilterMap(wrapperName));
+        params.put("filters", makeFilterMap(wrapper.getWrapperName()));
 
         final long start = System.currentTimeMillis();
-        String workflowId;
+        int workflowId;
         do {
             TimeUtils.sleep(1000); // give the thread time to submit these
             workflowId = mainQueryBase().body(params)
                     .contentType(ContentType.JSON)
                     .post(restDriver.formatXapiUrl("workflows"))
-                    .then().assertThat().statusCode(200).and().extract().jsonPath().getString("wfid.get(0)");
-        } while (workflowId == null && System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(5));
+                    .then().assertThat().statusCode(200).and().extract().jsonPath().getInt("wfid.get(0)");
+        } while (workflowId == 0 && System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(5));
 
-        assertNotNull(workflowId);
+        assertTrue(workflowId > 0);
         return workflowId;
     }
 
     private Map<String, Object> makeFilterMap(String wrapperName) {
-        Map<String, String> filterVals = new HashMap<>();
+        final Map<String, String> filterVals = new HashMap<>();
         filterVals.put("like", wrapperName);
         if (XnatVersionList.testedVersionPrecedes(Xnat_1_8_0.class)) {
             filterVals.put("type", "string");
         } else {
             filterVals.put("backend", "sql_string");
         }
-        Map<String, Object> filters = new HashMap<>();
-        filters.put("pipelineName", filterVals);
-        return filters;
+        return Collections.singletonMap("pipelineName", filterVals);
     }
 
-    private void waitForWorkflowComplete(String workflowId, boolean swarm) {
-        final int timeout = swarm ? Settings.CS_SWARM_TIMEOUT : 5;
-        final long start = System.currentTimeMillis();
-        String status;
-        do {
-            TimeUtils.sleep(1000);
-            status = mainQueryBase().given().queryParams("format", "json")
-                    .get(restDriver.formatRestUrl("workflows", workflowId))
-                    .jsonPath().getString("items.get(0).data_fields.status");
-        } while (!(PersistentWorkflowUtils.COMPLETE.equals(status) || status.startsWith(PersistentWorkflowUtils.FAILED)) &&
-                System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(timeout));
-
-        assertEquals(PersistentWorkflowUtils.COMPLETE, status);
+    private void waitForWorkflowComplete(int workflowId, boolean swarm) {
+        mainInterface().waitForWorkflowComplete(workflowId, 60 * (swarm ? Settings.CS_SWARM_TIMEOUT : 5));
     }
 
+    @Deprecated
     private void verifyOutputs(String uri) {
         byte[] zipBytes = mainQueryBase().queryParam("format", "zip")
                 .get(restDriver.formatRestUrl(uri, "resources", "DEBUG_OUTPUT", "files"))
@@ -433,29 +350,17 @@ public class TestContainerService extends BaseXnatRestTest {
         }
     }
 
-    private JsonPath toggleSwarmMode(boolean enable) {
-        String serverJson = mainAdminCredentials().get(restDriver.formatXapiUrl("docker", "server"))
-                .then().assertThat().statusCode(200).and().extract().asString();
-
-        //TODO this is a hack, we should deserialize as POJO but then we add a CS dep
-        String serverJsonSwarm = serverJson.replace("\"swarm-mode\":" + !enable,
-                "\"swarm-mode\":" + enable)
-                .replaceAll("\"id\":[0-9]*,", "");
-
-        return mainAdminCredentials().content(serverJsonSwarm).contentType(ContentType.JSON)
-                .post(restDriver.formatXapiUrl("docker", "server"))
-                .then().assertThat().statusCode(201).and().extract().jsonPath();
+    private void toggleSwarmMode(boolean enable) {
+        final DockerServer dockerServer = mainAdminInterface().readDockerServer();
+        dockerServer.setSwarmMode(enable);
+        mainAdminInterface().updateDockerServer(dockerServer);
     }
 
-    public static class WrapperMetadata {
-        String wrapperId;
-        String wrapperName;
-        String csType;
-
-        public WrapperMetadata(String wrapperId, String wrapperName, String csType) {
-            this.wrapperId = wrapperId;
-            this.wrapperName = wrapperName;
-            this.csType = csType;
-        }
+    private static Map<String, String> makeContainerLaunchReqBody() {
+        final Map<String, String> queryParams = new HashMap<>();
+        queryParams.put("command", "echo " + OUTPUT_CONTENT);
+        queryParams.put("output-file", OUTPUT_FILENAME);
+        return queryParams;
     }
+
 }
