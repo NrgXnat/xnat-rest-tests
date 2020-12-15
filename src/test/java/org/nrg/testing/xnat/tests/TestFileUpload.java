@@ -2,8 +2,10 @@ package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.response.Response;
 import org.nrg.testing.*;
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
+import org.nrg.testing.xnat.versions.Xnat_1_8_0;
 import org.nrg.xdat.bean.XnatMrsessiondataBean;
 import org.nrg.xnat.enums.Gender;
 import org.nrg.xnat.pogo.DataType;
@@ -24,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.zip.ZipFile;
 
 import static org.testng.AssertJUnit.assertEquals;
@@ -33,6 +36,9 @@ public class TestFileUpload extends BaseXnatRestTest {
 
     private final SimpleDateFormat americanDate = new SimpleDateFormat("MM/dd/yyyy");
     private final File testZip = getDataFile("mr_1.zip");
+    private final File testTarGz = getDataFile("mr_1.tar.gz");
+    private final File testTar = getDataFile("mr_1.tar");
+    private final File testTgz = getDataFile("mr_1.tgz");
     private final File dicomFile1 = getDataFile("mr_1/1.dcm");
     private final File dicomFile2 = getDataFile("mr_1/2.dcm");
     private final File dicomFile3 = getDataFile("mr_1/3.dcm");
@@ -234,6 +240,133 @@ public class TestFileUpload extends BaseXnatRestTest {
         restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(projectUrl, "files/1.dcm"), dicomFile3);
     }
 
+    @Test
+    public void testMRResourceUploadZip() {
+        uploadAndExtractToSession(testZip);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testMRResourceUploadTar() {
+        uploadAndExtractToSession(testTar);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testMRResourceUploadTarGz() {
+        uploadAndExtractToSession(testTarGz);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testMRResourceUploadTgz() {
+        uploadAndExtractToSession(testTgz);
+    }
+
+    @Test
+    public void testScanResourceUploadZip() {
+        uploadAndExtractToScan(testZip);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testScanResourceUploadTar() {
+        uploadAndExtractToScan(testTar);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testScanResourceUploadTarGz() {
+        uploadAndExtractToScan(testTarGz);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testScanResourceUploadTgz() {
+        uploadAndExtractToScan(testTgz);
+    }
+
+    @Test
+    public void testSubjectResourceUploadZip() {
+        uploadAndExtractToSubject(testZip);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testSubjectResourceUploadTar() {
+        uploadAndExtractToSubject(testTar);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testSubjectResourceUploadTarGz() {
+        uploadAndExtractToSubject(testTarGz);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testSubjectResourceUploadTgz() {
+        uploadAndExtractToSubject(testTgz);
+    }
+
+    @Test
+    public void testProjectResourceUploadZip() {
+        uploadAndExtractToProject(testZip);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testProjectResourceUploadTar() {
+        uploadAndExtractToProject(testTar);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testProjectResourceUploadTarGz() {
+        uploadAndExtractToProject(testTarGz);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testProjectResourceUploadTgz() {
+        uploadAndExtractToProject(testTgz);
+    }
+
+    private void uploadAndExtractToScan(File compressedFile) {
+        final Scan scan = new MRScan(session, "MR1_scan1");
+        restDriver.createScan(mainUser, project, subject, session, scan);
+        final String scanUrl = restDriver.scanUrl(scan);
+        uploadAndExtract(scanUrl, compressedFile);
+    }
+
+    private void uploadAndExtractToSession(File compressedFile) {
+        final String sessionUrl = restDriver.subjectAssessorUrl(session);
+        uploadAndExtract(sessionUrl, compressedFile);
+    }
+
+    private void uploadAndExtractToSubject(File compressedFile) {
+        final String subjectUrl = restDriver.subjectUrl(subject);
+        uploadAndExtract(subjectUrl, compressedFile);
+    }
+
+    private void uploadAndExtractToProject(File compressedFile) {
+        final String projectUrl = restDriver.projectUrl(project);
+        uploadAndExtract(projectUrl, compressedFile);
+    }
+    
+    private void uploadAndExtract(String url, File compressedFile) {
+        mainCredentials().multiPart(compressedFile)
+                .queryParam("extract", "true")
+                .post(CommonStringUtils.formatUrl(url, "resources/TEST/files"))
+                .then().assertThat().statusCode(200);
+
+        for (String name : Arrays.asList("1.dcm", "2.dcm", "3.dcm", "4.dcm", "5.dcm", "6.dcm")) {
+            String fname = "mr_1/" + name;
+            restDriver.validateUpload(mainUser,
+                    CommonStringUtils.formatUrl(url, "resources/TEST/files/" + fname),
+                    getDataFile(fname));
+        }
+    }
 
     /**
      * Checks the the totalRecords for an MR Session.
