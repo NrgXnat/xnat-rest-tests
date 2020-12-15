@@ -727,7 +727,6 @@ public class TestImport extends BaseXnatRestTest {
         assertEquals(3, allScans.size());
         for (Scan scan : allScans) {
             final List<Resource> scanResources = scan.getScanResources();
-            assertEquals(2, scanResources.size());
             assertEquals(176, restDriver.interfaceFor(mainUser).findResource(scanResources, "DICOM").getFileCount());
         }
         restDriver.deleteProject(mainUser, project);
