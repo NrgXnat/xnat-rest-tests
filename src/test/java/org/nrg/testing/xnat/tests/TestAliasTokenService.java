@@ -114,7 +114,7 @@ public class TestAliasTokenService extends BaseXnatRestTest {
         checkAliasTokenForAdmin(selfProxyToken);
 
         proxyAliasTokenCall(null, mainUser).then().assertThat().statusCode(projectCodeBadToken(openXnat));
-        proxyAliasTokenCall(otherUser, mainUser).then().assertThat().statusCode(403).and().body(Matchers.containsString("Only admins can"));
+        proxyAliasTokenCall(otherUser, mainUser).then().assertThat().statusCode(403).and().body(Matchers.containsString("admin"));
 
         final XnatAliasToken proxyToken = readTokenFromResponse(proxyAliasTokenCall(mainAdminUser, mainUser));
         checkAliasTokenForMainUser(proxyToken);
