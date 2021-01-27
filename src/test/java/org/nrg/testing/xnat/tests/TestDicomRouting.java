@@ -475,6 +475,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
 
     private void verifyImport(SubjectAssessor session) {
         // if session can be retrieved at this URL, then project, subject, session are all labelled properly
+        TimeUtils.sleep(1000); // sleep for 1s to accommodate a little gap between prearchive being empty and session being accessible
         mainCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
     }
 
