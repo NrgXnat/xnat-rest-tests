@@ -648,7 +648,7 @@ public class TestImport extends BaseXnatRestTest {
         mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(restDriver.scanUrl(scan1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
 
         // upload frame 2, should create scan 1-MR1
-        TimeUtils.sleep(1000); // wait for 1s so cache backup dir is distinct
+        waitForBackup();
         mainCredentials().
                 queryParam("triggerPipelines", false).
                 queryParam("dest", archiveUrl).
@@ -662,7 +662,7 @@ public class TestImport extends BaseXnatRestTest {
         mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(restDriver.scanUrl(scan1MR1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
 
         // upload frame 3, should be added to scan 1-MR1
-        TimeUtils.sleep(1000); // wait for 1s so cache backup dir is distinct
+        waitForBackup();
         mainCredentials().
                 queryParam("triggerPipelines", false).
                 queryParam("dest", archiveUrl).
@@ -676,7 +676,7 @@ public class TestImport extends BaseXnatRestTest {
         mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(restDriver.scanUrl(scan1MR1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
 
         // upload frame 4 & 5, should be added to scan 1
-        TimeUtils.sleep(1000); // wait for 1s so cache backup dir is distinct
+        waitForBackup();
         mainCredentials().
                 queryParam("triggerPipelines", false).
                 queryParam("dest", archiveUrl).
@@ -849,6 +849,12 @@ public class TestImport extends BaseXnatRestTest {
     private void setCrossModalityMergePrevention(boolean state) {
         if (XnatVersionList.testedVersionFollows(Xnat_1_7_6.class)) {
             restDriver.postToSiteConfig(mainAdminUser, Collections.singletonMap(SiteConfig.PREVENT_CROSS_MODALITY_MERGE, state));
+        }
+    }
+
+    private void waitForBackup() { // see https://issues.xnat.org/browse/XNAT-6424
+        if (XnatVersionList.testedVersionPrecedes(Xnat_1_8_0.class)) {
+            TimeUtils.sleep(1000); // wait for 1s so cache backup dir is distinct
         }
     }
 
