@@ -66,9 +66,9 @@ public class TestDicomRouting extends BaseXnatRestTest {
 
     @BeforeClass
     public void setupImportProject() {
-        restDriver.createProject(mainUser, project);
-        restDriver.disableSiteAnonScript(mainAdminUser);
-        restDriver.interfaceFor(mainAdminUser).setSessionXmlRebuilderTimes(1, 10000);
+        mainInterface().createProject(project);
+        mainAdminInterface().disableSiteAnonScript();
+        mainAdminInterface().setSessionXmlRebuilderTimes(1, 10000);
     }
 
     @BeforeMethod(alwaysRun = true) // clear out prearchive/archive for each test
@@ -80,7 +80,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
             LOGGER.warn(throwable);
         }
         try {
-            restDriver.clearProject(mainUser, project);
+            mainInterface().deleteAllProjectData(project);
             TimeUtils.sleep(1000);
         } catch (Throwable throwable) {
             LOGGER.warn(throwable);
@@ -104,7 +104,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
     @AfterClass(alwaysRun = true)
     public void tearDownImportTests() {
         restDriver.deleteProjectSilently(mainAdminUser, project);
-        restDriver.enableSiteAnonScript(mainAdminUser);
+        mainAdminInterface().enableSiteAnonScript();
     }
 
     @Test
@@ -163,7 +163,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
 
         // create destination project
         final Project project = new Project(expectedProject).prearchiveCode(PrearchiveCode.AUTO_ARCHIVE_OVERWRITE);
-        restDriver.createProject(mainUser, project);
+        mainInterface().createProject(project);
 
         // upload
         uploadViaDicomScp(Collections.emptyMap(), project);
@@ -304,7 +304,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
                                         File zipFile, int... tagsToClear) {
         final String listener = Long.toString(System.currentTimeMillis());
         final Project project = new Project(listener).prearchiveCode(PrearchiveCode.AUTO_ARCHIVE);
-        restDriver.createProject(mainUser, project);
+        mainInterface().createProject(project);
         final Subject   subject = new Subject(project, "su" + listener);
         final MRSession session = new MRSession(project, subject, "se" + listener);
 
@@ -431,7 +431,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
         final ImagingSession session = new MRSession(project, subject, sessionFromTestZip);
         verifyImport(session);
         restDriver.waitForAutoRun(session);
-        restDriver.deleteSubjectAssessor(mainUser, session);
+        mainInterface().deleteSubjectAssessor(session);
     }
 
     private void verifySession(String expected) {
@@ -439,7 +439,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
         final ImagingSession session = new MRSession(project, subject, expected);
         verifyImport(session);
         restDriver.waitForAutoRun(session);
-        restDriver.deleteSubjectAssessor(mainUser, session);
+        mainInterface().deleteSubjectAssessor(session);
     }
 
     private void testProjectRouting(ApiUploadFn uploadFn, String handler) {
@@ -451,7 +451,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
             restDriver.setProjectDicomRoutingConfig(cfg);
             String expected = key.replaceAll(REPLACE_STR, rand);
             Project p = new Project(expected);
-            restDriver.createProject(mainUser, p);
+            mainInterface().createProject(p);
             uploadFn.accept(p, handler, false);
             verifyProject(p);
         }

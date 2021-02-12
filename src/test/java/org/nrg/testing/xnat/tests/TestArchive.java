@@ -27,18 +27,18 @@ public class TestArchive extends BaseXnatRestTest {
 
     @BeforeClass
     public void disableSiteAnonScript() {
-        restDriver.disableSiteAnonScript(mainAdminUser);
+        mainAdminInterface().disableSiteAnonScript();
     }
 
     @AfterClass(alwaysRun = true)
     public void enableSiteAnonScript() {
-        restDriver.enableSiteAnonScript(mainAdminUser);
+        mainAdminInterface().enableSiteAnonScript();
     }
 
     @BeforeMethod
     public void createTestProject() {
         project = new Project();
-        restDriver.createProject(mainUser, project);
+        mainInterface().createProject(project);
     }
 
     @AfterMethod(alwaysRun = true)
@@ -62,11 +62,11 @@ public class TestArchive extends BaseXnatRestTest {
             scan2Resource.addResourceFile(new ResourceFile().name(dicomFile.getName()).extension(new SimpleResourceFileExtension(dicomFile)));
         }
 
-        restDriver.createSubject(mainUser, subject);
+        mainInterface().createSubject(subject);
 
-        mainCredentials().given().queryParam("triggerPipelines", true).put(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
+        mainCredentials().given().queryParam("triggerPipelines", true).put(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
 
-        restDriver.waitForAutoRun(mainUser, 60, session);
+        mainInterface().waitForAutoRun(session, 60);
 
         mainCredentials().queryParam("file_content", "ORIGINAL").queryParam("index", 0).
                 get(restDriver.resourceFilesUrl(new ScanResource(project, subject, session, scan1).folder("SNAPSHOTS"))).
@@ -88,11 +88,11 @@ public class TestArchive extends BaseXnatRestTest {
         final ImagingSession mr2 = new MRSession(project, subject, "MR2").date(LocalDate.parse("2001-01-02"));
         new MRScan(mr2, "1").seriesDescription(commonSeriesDescription).type(scanType).quality("usable"); // mapped type!
 
-        restDriver.createSubject(mainUser, subject);
+        mainInterface().createSubject(subject);
 
         // call fixScanTypes
-        // all other $commonSeriesDescription scans in this project have been labeled as '$scanType', so these should be to.
-        mainCredentials().queryParam("fixScanTypes", true).put(restDriver.subjectAssessorUrl(mr1)).then().assertThat().statusCode(200);
+        // all other $commonSeriesDescription scans in this project have been labeled as '$scanType', so these should be too.
+        mainQueryBase().queryParam("fixScanTypes", true).put(mainInterface().subjectAssessorUrl(mr1)).then().assertThat().statusCode(200);
 
         final Scan[] readScans = mainCredentials().given().queryParam("format", "json").get(restDriver.sessionScansUrl(mr1)).jsonPath().getObject("ResultSet.Result", Scan[].class);
         assertEquals(mr1.getScans().size(), readScans.length);

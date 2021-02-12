@@ -21,7 +21,7 @@ public class TestFileFiltering extends BaseXnatRestTest {
 
     @BeforeMethod
     public void setupFileFilterTest() {
-        restDriver.createProject(mainAdminUser, testSpecificProject);
+        mainAdminInterface().createProject(testSpecificProject);
     }
 
     @AfterMethod(alwaysRun = true)
@@ -45,7 +45,7 @@ public class TestFileFiltering extends BaseXnatRestTest {
 
         final String resourceFilesUrl = restDriver.formatXnatUrl(resource.resourceUrl(), "resources", resource.getFolder(), "files");
 
-        restDriver.createSubjectAssessor(mainAdminUser, testSpecificProject, testSpecificSubject, session);
+        mainAdminInterface().createSubjectAssessor(testSpecificProject, testSpecificSubject, session);
 
         // query all
         mainAdminCredentials().given().queryParam("format", "json").get(resourceFilesUrl).then().assertThat().body("ResultSet.Result", Matchers.hasSize(5));

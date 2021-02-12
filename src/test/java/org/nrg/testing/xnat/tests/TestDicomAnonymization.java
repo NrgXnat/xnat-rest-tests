@@ -43,7 +43,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
 
     @BeforeClass
     public void createProject() {
-        restDriver.createProject(mainUser, anonProject);
+        mainInterface().createProject(anonProject);
         projectCreated = true;
         restDriver.interfaceFor(mainUser).regenerateUserSession(); // hack for XNAT-5187
         scriptValidationMap.put(projectAnonDE4, new ProjectDE4Script());
@@ -58,14 +58,14 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     public void clean() {
         restDriver.clearPrearchiveSessions(mainUser, anonProject);
         if (projectCreated) {
-            restDriver.clearProject(mainUser, anonProject);
+            mainInterface().deleteAllProjectData(anonProject);
         }
     }
 
     @AfterClass(alwaysRun = true)
     public void resetAnon() {
-        restDriver.enableSiteAnonScript(mainAdminUser);
-        restDriver.setSiteAnonScript(mainAdminUser, restDriver.getDefaultXnatAnonScript());
+        mainAdminInterface().enableSiteAnonScript();
+        mainAdminInterface().setSiteAnonScript(restDriver.getDefaultXnatAnonScript());
     }
 
     @Test
@@ -125,43 +125,42 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     private void performSubjectRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
-        restDriver.setSiteAnonScript(mainAdminUser, siteScript);
-        restDriver.setProjectAnonScript(mainUser, anonProject, projectScript);
-        restDriver.disableProjectAnonScript(mainUser, anonProject);
-        restDriver.disableSiteAnonScript(mainAdminUser);
+        mainAdminInterface().setSiteAnonScript(siteScript);
+        mainInterface().setProjectAnonScript(anonProject, projectScript);
+        mainInterface().disableProjectAnonScript(anonProject);
+        mainAdminInterface().disableSiteAnonScript();
 
         final ImagingSession session = importAnonSession();
         validateAnon(session, null, Arrays.asList(projectScript, siteScript));
         restDriver.waitForAutoRun(session);
 
-        restDriver.enableProjectAnonScript(mainUser, anonProject);
+        mainInterface().enableProjectAnonScript(anonProject);
 
-        restDriver.relabelSubject(mainUser, session.getSubject(), "NEWLABEL");
+        mainInterface().relabelSubject(session.getSubject(), "NEWLABEL");
         validateAnon(session, Collections.singletonList(projectScript), Collections.singletonList(siteScript));
     }
 
     private void performSessionRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
-        restDriver.setSiteAnonScript(mainAdminUser, siteScript);
-        restDriver.setProjectAnonScript(mainUser, anonProject, projectScript);
-        restDriver.disableProjectAnonScript(mainUser, anonProject);
-        restDriver.disableSiteAnonScript(mainAdminUser);
+        mainAdminInterface().setSiteAnonScript(siteScript);
+        mainInterface().setProjectAnonScript(anonProject, projectScript);
+        mainInterface().disableProjectAnonScript(anonProject);
+        mainAdminInterface().disableSiteAnonScript();
 
         final ImagingSession session = importAnonSession();
         validateAnon(session, null, Arrays.asList(projectScript, siteScript));
         restDriver.waitForAutoRun(session);
 
-        restDriver.enableProjectAnonScript(mainUser, anonProject);
+        mainInterface().enableProjectAnonScript(anonProject);
 
-        restDriver.relabelSubjectAssessor(mainUser, session, "NEWLABEL");
+        mainInterface().relabelSubjectAssessor(session, "NEWLABEL");
         validateAnon(session, Collections.singletonList(projectScript), Collections.singletonList(siteScript));
     }
 
     private void performBasicScriptTest(File testData, AnonScript script) {
-        restDriver.setProjectAnonScript(mainUser, anonProject, script);
-        restDriver.disableSiteAnonScript(mainAdminUser);
+        mainInterface().setProjectAnonScript(anonProject, script);
+        mainAdminInterface().disableSiteAnonScript();
 
-        final ImagingSession session = importSession(testData);
-        validateAnon(session, Collections.singletonList(script), null);
+        validateAnon(importSession(testData), Collections.singletonList(script), null);
     }
 
     private ImagingSession importAnonSession() {
@@ -172,13 +171,13 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         final Subject subject = new Subject(anonProject);
         final ImagingSession session = new ImagingSession(anonProject, subject);
         session.extension(new SessionImportExtension(restDriver.interfaceFor(mainUser), session, testData));
-        restDriver.createSubject(mainUser, subject);
+        mainInterface().createSubject(subject);
         return session;
     }
 
     private List<File> downloadResourceFiles(ImagingSession session) {
         final List<File> dicomFiles = new ArrayList<>();
-        final List<Scan> scans = restDriver.readScans(mainUser, anonProject, session.getSubject(), session);
+        final List<Scan> scans = mainInterface().readScans(anonProject, session.getSubject(), session);
         for (Scan scan : scans) {
             final Resource dicom = restDriver.findResource(scan.getScanResources(), "DICOM");
             for (ResourceFile file : dicom.getResourceFiles()) {

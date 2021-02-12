@@ -54,12 +54,12 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
 
     @BeforeClass
     public void disableAnonAndSetupProject() {
-        restDriver.disableSiteAnonScript(mainAdminUser);
-        new SessionImportExtension(restDriver.interfaceFor(mainUser), standardMRSession, TestData.EXTRACTION_MR.toFile());
-        new SessionImportExtension(restDriver.interfaceFor(mainUser), diffusionMR, TestData.EXTRACTION_DIFFUSION.toFile());
-        new SessionImportExtension(restDriver.interfaceFor(mainUser), standardCTSession, TestData.EXTRACTION_CT.toFile());
-        new SessionImportExtension(restDriver.interfaceFor(mainUser), optSession, TestData.EXTRACTION_OPT.toFile());
-        restDriver.createProject(mainUser, testProject);
+        mainAdminInterface().disableSiteAnonScript();
+        new SessionImportExtension(mainInterface(), standardMRSession, TestData.EXTRACTION_MR.toFile());
+        new SessionImportExtension(mainInterface(), diffusionMR, TestData.EXTRACTION_DIFFUSION.toFile());
+        new SessionImportExtension(mainInterface(), standardCTSession, TestData.EXTRACTION_CT.toFile());
+        new SessionImportExtension(mainInterface(), optSession, TestData.EXTRACTION_OPT.toFile());
+        mainInterface().createProject(testProject);
     }
 
     @AfterClass(alwaysRun = true)

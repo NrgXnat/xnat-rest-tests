@@ -38,8 +38,14 @@ public class TestUserAccess extends BaseXnatRestTest {
     @TestRequires(users = 1)
     public void testNonExpiringUserRestCalls() {
         final User nonExpiringUser = getGenericUser();
-        restDriver.assignUserToRoles(mainAdminUser, nonExpiringUser, "non_expiring");
-        restDriver.createProject(nonExpiringUser, new Project().addResource(new ProjectResource().folder("test-resource").addResourceFile(new ResourceFile().extension(new SimpleResourceFileExtension(getDataFile("louie.jpg"))))));
+        mainAdminInterface().assignUserToRoles(nonExpiringUser, "non_expiring");
+        interfaceFor(nonExpiringUser).createProject(
+                new Project().addResource(
+                        new ProjectResource().folder("test-resource").addResourceFile(
+                                new ResourceFile().extension(new SimpleResourceFileExtension(getDataFile("louie.jpg")))
+                        )
+                )
+        );
     }
 
     @Test
@@ -47,7 +53,7 @@ public class TestUserAccess extends BaseXnatRestTest {
     public void testUserSessionInvalidation() {
         final User testUser = getGenericUser();
         final Project project = new Project().accessibility(Accessibility.PRIVATE);
-        restDriver.createProject(testUser, project);
+        interfaceFor(testUser).createProject(project);
         final String singleLoginJsession = restDriver.interfaceFor(testUser).jsessionId();
 
         invalidateJsessions(testUser, Collections.singleton(singleLoginJsession));

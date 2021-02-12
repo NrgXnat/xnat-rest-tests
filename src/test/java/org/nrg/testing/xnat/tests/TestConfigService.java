@@ -99,7 +99,7 @@ public class TestConfigService extends BaseXnatRestTest {
         final Project project = registerProject();
         final String contents = readDataFile("test_asst_v1.xml");
 
-        restDriver.createProject(mainUser, project);
+        mainInterface().createProject(project);
 
         final List<String> urlsToTest = new ArrayList<>();
 
@@ -155,7 +155,7 @@ public class TestConfigService extends BaseXnatRestTest {
         final String v2 = readDataFile("test_subject_v2.xml");
         final String v3 = readDataFile("test_subject_v3.xml");
 
-        restDriver.createProject(mainUser, project);
+        mainInterface().createProject(project);
 
         final List<String> urlsToTest = new ArrayList<>();
 
@@ -208,7 +208,7 @@ public class TestConfigService extends BaseXnatRestTest {
         final Project project = registerProject();
         final String contents = readDataFile("test_subject_v1.xml");
 
-        restDriver.createProject(mainUser, project);
+        mainInterface().createProject(project);
 
         final List<String> urlsToTest = new ArrayList<>();
 
@@ -241,7 +241,7 @@ public class TestConfigService extends BaseXnatRestTest {
         final String contents = dummyContents;
 
         // create a new project as admin.
-        restDriver.createProject(mainAdminUser, project);
+        mainAdminInterface().createProject(project);
 
         // put a config in that project
         mainAdminCredentials().contentType(ContentType.TEXT).body(contents).put(urlToTest).then().assertThat().statusCode(isOk);
@@ -257,13 +257,13 @@ public class TestConfigService extends BaseXnatRestTest {
         final User member = Users.genericAccount();
         final User collaborator = Users.genericAccount();
         final User unauthorizedUser = Users.genericAccount();
-        restDriver.createUser(mainAdminUser, member);
-        restDriver.createUser(mainAdminUser, collaborator);
-        restDriver.createUser(mainAdminUser, unauthorizedUser);
+        mainAdminInterface().createUser(member);
+        mainAdminInterface().createUser(collaborator);
+        mainAdminInterface().createUser(unauthorizedUser);
         project.addOwner(mainUser);
         project.addMember(member);
         project.addCollaborator(collaborator);
-        restDriver.createProject(mainAdminUser, project);
+        mainAdminInterface().createProject(project);
 
         final String path = "tracers/tracers";
         final String tracers = "PIB FDG";

@@ -35,9 +35,9 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
     @BeforeClass
     public void addPrearchiveMgmtProjects() {
-        restDriver.createProject(mainUser, project1);
-        restDriver.createProject(mainUser, project2);
-        restDriver.createProject(mainUser, project3);
+        mainInterface().createProject(project1);
+        mainInterface().createProject(project2);
+        mainInterface().createProject(project3);
 
         for (Subject subject : project1.getSubjects()) {
             for (SubjectAssessor session : subject.getExperiments()) {

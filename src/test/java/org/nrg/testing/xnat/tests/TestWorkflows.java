@@ -26,7 +26,7 @@ public class TestWorkflows extends BaseXnatRestTest {
         adminSubject = new Subject().label("workflow_subj_1").addExperiment(adminExp);
         adminProject = new Project().addSubject(adminSubject);
 
-        restDriver.createProject(mainAdminUser, adminProject);
+        mainAdminInterface().createProject(adminProject);
     }
 
     @AfterMethod(alwaysRun = true)

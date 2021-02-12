@@ -6,7 +6,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.nrg.testing.TestNgUtils;
-import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.Users;
@@ -26,7 +25,6 @@ import org.nrg.xnat.pogo.users.CustomUserGroup;
 import org.nrg.xnat.pogo.users.User;
 import org.nrg.xnat.pogo.users.UserGroups;
 import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 import java.util.*;
 
@@ -74,20 +72,20 @@ public class BasePermissionComparisonTest extends BaseXnatRestTest {
     public void createTestProjects() {
         TestNgUtils.assumeFalse(mainAdminUser.getUsername().equals(mainUser.getUsername()), "Main admin user and main user accounts must be distinct.");
         for (User user : Arrays.asList(allDataAdmin, allDataAccess, owner, member, collaborator, readSubjects, manageSubjects, readMR, editMR, manageMR, readQC, manageQC)) {
-            restDriver.createUser(mainAdminUser, user);
+            mainAdminInterface().createUser(user);
         }
         for (Project project : allProjects) {
-            restDriver.createProject(mainAdminUser, project);
+            mainAdminInterface().createProject(project);
         }
         for (Project project : mainProjects) {
-            restDriver.interfaceFor(mainAdminUser).createSubject(project, generateFullyIntertwinedSubject(project, outsideProject));
-            restDriver.interfaceFor(mainAdminUser).createSubject(outsideProject, generateFullyIntertwinedSubject(outsideProject, project));
+            mainAdminInterface().createSubject(project, generateFullyIntertwinedSubject(project, outsideProject));
+            mainAdminInterface().createSubject(outsideProject, generateFullyIntertwinedSubject(outsideProject, project));
         }
         for (Project project : allProjects) {
             for (Subject subject : project.getSubjects()) {
-                restDriver.interfaceFor(mainAdminUser).getAccessionNumber(subject);
+                mainAdminInterface().getAccessionNumber(subject);
             }
-            restDriver.interfaceFor(mainAdminUser).removeUserFromGroups(mainAdminUser, String.format("%s_%s", project.getId(), UserGroups.OWNER.groupIdSuffix()));
+            mainAdminInterface().removeUserFromGroups(mainAdminUser, String.format("%s_%s", project.getId(), UserGroups.OWNER.groupIdSuffix()));
         }
     }
 
@@ -148,13 +146,13 @@ public class BasePermissionComparisonTest extends BaseXnatRestTest {
 
     private MRSession shareSafeMR(Project project, Subject subject) {
         final MRSession session = new MRSession(project, subject);
-        new ShareSafeSubjectAssessorExtension(restDriver.interfaceFor(mainAdminUser), session);
+        new ShareSafeSubjectAssessorExtension(mainAdminInterface(), session);
         return session;
     }
 
     private QC shareSafeQC(Project project, Subject subject, ImagingSession session) {
         final QC qc = new QC(project, subject, session);
-        new ShareSafeSessionAssessorExtension(restDriver.interfaceFor(mainAdminUser), qc);
+        new ShareSafeSessionAssessorExtension(mainAdminInterface(), qc);
         return qc;
     }
 

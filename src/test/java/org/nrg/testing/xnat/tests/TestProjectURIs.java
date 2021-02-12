@@ -13,7 +13,7 @@ public class TestProjectURIs extends BaseXnatRestTest {
     @Test
     public void testPrearchiveConfig() {
         try {
-            restDriver.createProject(mainUser, testSpecificProject);
+            mainInterface().createProject(testSpecificProject);
 
             for (int code : new int[]{4, 0, 11}) {
                 mainCredentials().expect().statusCode(200).when().put(restDriver.formatRestUrl("projects", testSpecificProject.getId(), "prearchive_code", Integer.toString(code)));
@@ -32,10 +32,11 @@ public class TestProjectURIs extends BaseXnatRestTest {
         Project projDelCross2 = new Project().addResource(resource2);
 
         try {
-            restDriver.createProject(mainUser, projDelCross1);
-            restDriver.createProject(mainUser, projDelCross2);
+            mainInterface().createProject(projDelCross1);
+            mainInterface().createProject(projDelCross2);
+
             restDriver.validateResource(mainUser, resource1);
-            restDriver.deleteProject(mainUser, projDelCross2);
+            mainInterface().deleteProject(projDelCross2);
             restDriver.validateResource(mainUser, resource1);
         } catch (Exception | Error throwable) {
             restDriver.deleteProjectSilently(mainUser, projDelCross1);

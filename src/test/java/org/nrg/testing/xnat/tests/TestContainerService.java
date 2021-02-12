@@ -67,7 +67,7 @@ public class TestContainerService extends BaseXnatRestTest {
                 .addResourceFile(new ResourceFile().name(dcmFile.getName())
                         .extension(new SimpleResourceFileExtension(dcmFile)));
 
-        restDriver.createProject(mainUser, project);
+        mainInterface().createProject(project);
         TimeUtils.sleep(1000); // cache update
 
         // setup assessor
@@ -81,7 +81,7 @@ public class TestContainerService extends BaseXnatRestTest {
                 .addResourceFile(new ResourceFile().name(dummyFile.getName())
                         .extension(new SimpleResourceFileExtension(dummyFile)));
 
-        restDriver.createSessionAssessor(mainUser, assessor);
+        mainInterface().createSessionAssessor(assessor);
 
         // Sets accession number on subject, session, and assessor
         mainInterface().getAccessionNumber(subject);
@@ -161,7 +161,7 @@ public class TestContainerService extends BaseXnatRestTest {
     @SoftDependency("testDisableSwarmMode")
     public void testContainerSessionBulk() {
         final MRSession session2 = new MRSession(project, subject, "MR2").date(LocalDate.parse("2000-01-02"));
-        restDriver.createSubjectAssessor(mainUser, session2);
+        mainInterface().createSubjectAssessor(session2);
         mainInterface().getAccessionNumber(session2);
         final Map<String, String> uriToId = new HashMap<>();
         uriToId.put(String.format("/archive/experiments/%s", session.getAccessionNumber()), session.getAccessionNumber());

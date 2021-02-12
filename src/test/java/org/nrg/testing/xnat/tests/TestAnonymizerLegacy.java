@@ -56,12 +56,12 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
 
     @BeforeClass
     public void setSiteScript() {
-        restDriver.setSiteAnonScript(mainAdminUser, restDriver.getDefaultXnatAnonScript());
+        mainAdminInterface().setSiteAnonScript(restDriver.getDefaultXnatAnonScript());
     }
 
     @BeforeMethod
     public void enableSiteScript() {
-        restDriver.enableSiteAnonScript(mainAdminUser);
+        mainAdminInterface().enableSiteAnonScript();
     }
 
     @BeforeMethod
@@ -71,7 +71,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
         session = new MRSession(currentProject, subject, "MR1").date(LocalDate.parse("2000-01-01"));
         // only currentProject is used by all projects, so no reason to re create all of them each time
 
-        restDriver.createProject(mainUser, currentProject);
+        mainInterface().createProject(currentProject);
     }
 
     @AfterMethod(alwaysRun = true)
@@ -85,11 +85,11 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      */
     @Test
     public void testUploadScriptToProject() {
-        restDriver.setProjectAnonScript(mainUser, currentProject, anonScript1);
-        assertEquals(FileIOUtils.readFile(anonScript1File), restDriver.getProjectAnonScript(mainUser, currentProject).getContents().trim());
+        mainInterface().setProjectAnonScript(currentProject, anonScript1);
+        assertEquals(FileIOUtils.readFile(anonScript1File), mainInterface().readProjectAnonScript(currentProject).getContents().trim());
 
-        restDriver.setProjectAnonScript(mainUser, currentProject, anonScript2);
-        assertEquals(FileIOUtils.readFile(anonScript2File), restDriver.getProjectAnonScript(mainUser, currentProject).getContents().trim());
+        mainInterface().setProjectAnonScript(currentProject, anonScript2);
+        assertEquals(FileIOUtils.readFile(anonScript2File), mainInterface().readProjectAnonScript(currentProject).getContents().trim());
     }
 
     /**
@@ -98,7 +98,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      */
     @Test
     public void testPrearchiveProjectZipUpload() throws IOException {
-        restDriver.setProjectAnonScript(mainUser, currentProject, anonScript1);
+        mainInterface().setProjectAnonScript(currentProject, anonScript1);
         mainCredentials().
                 queryParam("triggerPipelines", false).
                 queryParam("dest", "/archive/projects/" + currentProject.getId()).
@@ -126,7 +126,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      */
     @Test
     public void testProjectZipUpload() throws IOException {
-        restDriver.setProjectAnonScript(mainUser, currentProject, anonScript1);
+        mainInterface().setProjectAnonScript(currentProject, anonScript1);
 
         // upload DICOM to the experiment
         mainCredentials().
@@ -157,7 +157,8 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      */
     @Test
     public void testSessionLabelInHeader() throws IOException {
-        restDriver.setProjectAnonScript(mainUser, currentProject, anonScript1);
+        mainInterface().setProjectAnonScript(currentProject, anonScript1);
+
 
         // upload DICOM to the experiment
         mainCredentials().
@@ -189,8 +190,8 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      */
     @Test
     public void testDisabledProjectScript() throws IOException {
-        restDriver.setProjectAnonScript(mainUser, currentProject, anonScript1);
-        restDriver.disableProjectAnonScript(mainUser, currentProject);
+        mainInterface().setProjectAnonScript(currentProject, anonScript1);
+        mainInterface().disableProjectAnonScript(currentProject);
 
         // upload DICOM to the experiment
         mainCredentials().
@@ -218,9 +219,8 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      */
     @Test
     public void testDisabledSiteWideScript() throws IOException {
-        restDriver.setProjectAnonScript(mainUser, currentProject, anonScript1);
-
-        restDriver.disableSiteAnonScript(mainAdminUser);
+        mainInterface().setProjectAnonScript(currentProject, anonScript1);
+        mainAdminInterface().disableSiteAnonScript();
 
         // upload DICOM to the experiment
         mainCredentials().
@@ -270,14 +270,14 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      */
     @Test
     public void testResourceUpload() throws IOException {
-        restDriver.setProjectAnonScript(mainUser, currentProject, anonScript1);
+        mainInterface().setProjectAnonScript(currentProject, anonScript1);
 
-        restDriver.setProjectAnonScript(mainUser, currentProject, anonScript2);
+        mainInterface().setProjectAnonScript(currentProject, anonScript2);
 
         final Scan scan = new MRScan(session, "1");
         final Resource dicomResource = new ScanResource(currentProject, subject, session, scan).folder("DICOM");
         dicomResource.addResourceFile(new ResourceFile().name(dicomFile.getName()).extension(new SimpleResourceFileExtension(dicomFile)));
-        restDriver.createScan(mainUser, currentProject, subject, session, scan);
+        mainInterface().createScan(currentProject, subject, session, scan);
 
         final File downloadedDicom = saveDicomFile(mainUser, restDriver.subjectAssessorUrl(session));
 
@@ -292,7 +292,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      */
     @Test
     public void testDefaultAnonGradualDicomUpload() throws IOException {
-        restDriver.setProjectAnonScript(mainUser, currentProject, anonScript1);
+        mainInterface().setProjectAnonScript(currentProject, anonScript1);
 
         final String uri = mainCredentials().
                 queryParam("triggerPipelines", false).
@@ -341,7 +341,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      */
     @Test
     public void testDefaultProjectGradualDicomUpload() throws IOException {
-        restDriver.setProjectAnonScript(mainUser, currentProject, anonScript1);
+        mainInterface().setProjectAnonScript(currentProject, anonScript1);
 
         final String uri = mainCredentials().
                 queryParam("triggerPipelines", false).
@@ -378,7 +378,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
         final Subject testSubject = new Subject(currentProject, "00001");
         final ImagingSession testSession = new MRSession(currentProject, testSubject, "case01");
 
-        restDriver.setProjectAnonScript(mainUser, currentProject, anonScript1);
+        mainInterface().setProjectAnonScript(currentProject, anonScript1);
 
         restDriver.uploadToSessionZipImporter(testZip, testSession);
         restDriver.waitForAutoRun(testSession);
@@ -412,7 +412,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
         final Subject testSubject = new Subject(currentProject, "00001");
         final ImagingSession testSession = new MRSession(currentProject, testSubject, "case01");
 
-        restDriver.setProjectAnonScript(mainUser, currentProject, anonScript3);
+        mainInterface().setProjectAnonScript(currentProject, anonScript3);
 
         mainCredentials().
                 queryParam("triggerPipelines", false).
@@ -452,10 +452,10 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
         otherProject = new Project();
         final Subject otherSubject = new Subject(otherProject, "filler");
         new MRSession(otherProject, otherSubject, "filler_MR1").date(LocalDate.parse("2000-01-01"));
-        restDriver.createProject(mainUser, otherProject);
+        mainInterface().createProject(otherProject);
 
-        restDriver.setProjectAnonScript(mainUser, currentProject, anonScript1);
-        restDriver.setProjectAnonScript(mainUser, otherProject, anonScript1);
+        mainInterface().setProjectAnonScript(currentProject, anonScript1);
+        mainInterface().setProjectAnonScript(otherProject, anonScript1);
 
         final Subject testSubject = new Subject(currentProject, "00001");
         final ImagingSession testSession = new MRSession(currentProject, testSubject, "case01");

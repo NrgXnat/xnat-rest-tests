@@ -49,15 +49,15 @@ public class TestProjectResources extends BaseXnatRestTest {
 
         final Project project = registerProject().extension(new ProjectXMLPutExtension(restDriver.interfaceFor(mainUser), original));
 
-        restDriver.createProject(mainUser, project);
+        mainInterface().createProject(project);
         compare(project, original);
-        restDriver.createProject(mainUser, project.extension(new ProjectXMLPutExtension(restDriver.interfaceFor(mainUser), updated))); // update project
+        mainInterface().createProject(project.extension(new ProjectXMLPutExtension(mainInterface(), updated))); // update project
         TimeUtils.sleep(1000); // cache update
         compare(project, updated);
-        restDriver.createProject(mainUser, project); // resubmit (no change)
+        mainInterface().createProject(project); // resubmit (no change)
         TimeUtils.sleep(1000); // cache update
         compare(project, updated);
-        restDriver.deleteProject(mainUser, project);
+        mainInterface().deleteProject(project);
         TimeUtils.sleep(1000); // cache update
         mainCredentials().given().queryParam("format", "xml").get(restDriver.projectUrl(project)).then().statusCode(404); // confirm deleted
     }

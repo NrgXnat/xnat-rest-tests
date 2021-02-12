@@ -6,11 +6,9 @@ import org.testng.annotations.Test;
 
 import java.util.Map;
 
-import static org.nrg.xnat.pogo.DataType.MR_SCAN;
 import static org.nrg.xnat.pogo.DataType.MR_SESSION;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.AssertJUnit.assertEquals;
-import static org.testng.AssertJUnit.assertNull;
 
 public class TestSearch extends BaseXnatRestTest {
 

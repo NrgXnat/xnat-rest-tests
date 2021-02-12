@@ -30,8 +30,8 @@ public class TestSharing extends BaseXnatRestTest {
     public void setupSharingProjects() {
         userProject = new Project().accessibility(Accessibility.PROTECTED);
         adminProject = new Project().accessibility(Accessibility.PROTECTED);
-        restDriver.createProject(mainUser, userProject);
-        restDriver.createProject(mainAdminUser, adminProject);
+        mainInterface().createProject(userProject);
+        mainAdminInterface().createProject(adminProject);
     }
 
     @AfterMethod(alwaysRun = true)
@@ -52,7 +52,7 @@ public class TestSharing extends BaseXnatRestTest {
 
         final ImagingSession session = new MRSession(adminProject, subject, "MR1").date(LocalDate.parse("2000-01-01"));
 
-        restDriver.createSubject(mainAdminUser, subject);
+        mainAdminInterface().createSubject(subject);
 
         final String sharedSubjectLabel = "TOLSEN1";
         final Share subjectShare = new Share(userProject, sharedSubjectLabel);
@@ -65,7 +65,7 @@ public class TestSharing extends BaseXnatRestTest {
         mainCredentials().get(restDriver.subjectUrl(subject)).then().assertThat().statusCode(404);
         mainCredentials().delete(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(404);
         mainCredentials().delete(restDriver.subjectUrl(subject)).then().assertThat().statusCode(404);
-        restDriver.shareSubject(mainAdminUser, adminProject, subject, subjectShare);
+        mainAdminInterface().shareSubject(adminProject, subject, subjectShare);
 
         // check get of original by admin
         mainAdminCredentials().get(restDriver.subjectUrl(subject)).then().assertThat().statusCode(200);
@@ -73,7 +73,7 @@ public class TestSharing extends BaseXnatRestTest {
 
         // still can't read the MR
         mainCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(404);
-        restDriver.shareSubjectAssessor(mainAdminUser, session, sessionShare);
+        mainAdminInterface().shareSubjectAssessor(session, sessionShare);
 
         mainAdminCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
         mainCredentials().get(restDriver.subjectAssessorUrl(sharedSession)).then().assertThat().statusCode(200);
@@ -82,7 +82,7 @@ public class TestSharing extends BaseXnatRestTest {
         mainCredentials().delete(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(Matchers.isOneOf(403, 404));
 
         // unshares
-        restDriver.deleteSubject(mainUser, sharedSubject);
+        mainInterface().deleteSubject(sharedSubject);
 
         // confirm admin get
         mainAdminCredentials().get(restDriver.subjectUrl(subject)).then().assertThat().statusCode(200);
@@ -91,15 +91,15 @@ public class TestSharing extends BaseXnatRestTest {
         mainCredentials().get(restDriver.subjectUrl(subject)).then().assertThat().statusCode(404);
         mainCredentials().delete(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(404);
 
-        restDriver.addUserToProject(mainAdminUser, mainUser, adminProject, UserGroups.MEMBER);
+        mainAdminInterface().addUserToProject(mainUser, adminProject, UserGroups.MEMBER);
         TimeUtils.sleep(1000); // let cache update
         mainCredentials().get(restDriver.subjectUrl(subject)).then().assertThat().statusCode(200);
         mainCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
 
         restDriver.interfaceFor(mainUser).logout();
         restDriver.interfaceFor(mainUser).reauthenticate();
-        restDriver.shareSubject(mainUser, adminProject, subject, subjectShare);
-        restDriver.shareSubjectAssessor(mainUser, session, sessionShare);
+        mainInterface().shareSubject(adminProject, subject, subjectShare);
+        mainInterface().shareSubjectAssessor(session, sessionShare);
 
         mainCredentials().get(restDriver.subjectUrl(subject)).then().assertThat().statusCode(200);
         mainCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
@@ -115,10 +115,10 @@ public class TestSharing extends BaseXnatRestTest {
                 queryParam("xnat:qcManualAssessorData/pass", 0).
                 put(restDriver.sessionAssessorUrl(assessor));
 
-        restDriver.deleteSessionAssessor(mainUser, assessor);
+        mainInterface().deleteSessionAssessor(assessor);
 
         // unshares
-        restDriver.deleteSubject(mainUser, sharedSubject);
+        mainInterface().deleteSubject(sharedSubject);
 
         mainCredentials().get(restDriver.subjectUrl(subject)).then().assertThat().statusCode(200);
         mainCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
@@ -128,16 +128,16 @@ public class TestSharing extends BaseXnatRestTest {
         sharedSession.setLabel(session.getLabel());
 
         mainCredentials().delete(restDriver.subjectUrl(subject)).then().assertThat().statusCode(403); // members can't delete
-        restDriver.deleteSubject(mainAdminUser, subject);
+        mainAdminInterface().deleteSubject(subject);
 
         final Subject subject2 = new Subject(adminProject, "2");
         final Subject sharedSubject2 = new Subject(userProject, "TOLSEN_2");
         subject2.addShare(new Share(userProject, sharedSubject2.getLabel()));
-        restDriver.createSubject(mainAdminUser, subject2);
+        mainAdminInterface().createSubject(subject2);
 
         mainCredentials().get(restDriver.subjectUrl(sharedSubject2)).then().assertThat().statusCode(200);
         final ImagingSession session2 = new MRSession(userProject, sharedSubject2, "MR2").date(LocalDate.parse("2000-01-01"));
-        restDriver.createSubjectAssessor(mainUser, session2);
+        mainInterface().createSubjectAssessor(session2);
 
         mainAdminCredentials().get(restDriver.subjectAssessorUrl(adminProject, subject2, session2)).then().assertThat().statusCode(404); // mr2 is not available in source project
 
@@ -146,7 +146,7 @@ public class TestSharing extends BaseXnatRestTest {
         final Scan mr5Scan = new MRScan(mr5, "SCAN5");
         final String recon = "RECON5";
 
-        restDriver.createSubject(mainUser, subject5);
+        mainInterface().createSubject(subject5);
         mainCredentials().
                 queryParam("format", "xml").
                 queryParam("req_format", "qs").
@@ -182,27 +182,27 @@ public class TestSharing extends BaseXnatRestTest {
         // in this test the userProject is the aggregator project and the adminProject is a site-project
 
         // cross share users as collaborators
-        restDriver.addUserToProject(mainAdminUser, mainUser, adminProject, UserGroups.COLLABORATOR);
+        mainAdminInterface().addUserToProject(mainUser, adminProject, UserGroups.COLLABORATOR);
         restDriver.interfaceFor(mainUser).logout();
         restDriver.interfaceFor(mainUser).reauthenticate();
-        restDriver.addUserToProject(mainUser, mainAdminUser, userProject, UserGroups.COLLABORATOR);
+        mainInterface().addUserToProject(mainAdminUser, userProject, UserGroups.COLLABORATOR);
 
         // create subject in user project and share to admin project
         final Subject subject = new Subject(userProject, "6");
-        restDriver.createSubject(mainUser, subject);
+        mainInterface().createSubject(subject);
 
         final Share subjectShare = new Share(adminProject, "SHARE_S6");
         final Subject sharedSubject = new Subject(adminProject, subject.getLabel()); // access subject by original label
         subject.addShare(subjectShare);
-        restDriver.shareSubject(mainAdminUser, userProject, subject, subjectShare);
+        mainAdminInterface().shareSubject(userProject, subject, subjectShare);
 
         // create session in admin project and share to user project
         final ImagingSession session = new MRSession(adminProject, sharedSubject, "MR6_6").date(LocalDate.parse("2000-01-01"));
-        restDriver.createSubjectAssessor(mainAdminUser, session);
+        mainAdminInterface().createSubjectAssessor(session);
 
         final Share sessionShare = new Share(userProject, "SHARE_E6");
         final ImagingSession sharedSession = new MRSession(userProject, subject, sessionShare.getDestinationLabel());
-        restDriver.shareSubjectAssessor(mainUser, session, sessionShare);
+        mainInterface().shareSubjectAssessor(session, sessionShare);
 
         final SessionAssessor assessor = new ManualQC(userProject, sharedSubject, sharedSession, "QC1");
         // create qc in the user project
@@ -222,10 +222,10 @@ public class TestSharing extends BaseXnatRestTest {
 
         // house cleaning
         mainAdminCredentials().delete(assessorShareUrl).then().assertThat().statusCode(200);
-        restDriver.deleteSessionAssessor(mainUser, assessor);
+        mainInterface().deleteSessionAssessor(assessor);
         mainCredentials().delete(CommonStringUtils.formatUrl(restDriver.subjectAssessorUrl(session), "projects", userProject.getId())).then().assertThat().statusCode(200);
-        restDriver.deleteSubjectAssessor(mainAdminUser, session);
-        restDriver.deleteSubject(mainUser, subject);
+        mainAdminInterface().deleteSubjectAssessor(session);
+        mainInterface().deleteSubject(subject);
     }
 
     private String reconUrl(ImagingSession session, String recon) {

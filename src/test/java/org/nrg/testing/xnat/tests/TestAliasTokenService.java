@@ -31,15 +31,15 @@ public class TestAliasTokenService extends BaseXnatRestTest {
     @BeforeClass
     public void addPrivateProject() {
         otherUser = getGenericUser();
-        restDriver.createProject(mainUser, project);
-        restDriver.createProject(otherUser, otherUserProject);
+        mainInterface().createProject(project);
+        interfaceFor(otherUser).createProject(otherUserProject);
     }
 
     @AfterClass(alwaysRun = true)
     public void revertState() {
         restDriver.deleteProjectSilently(mainAdminUser, project);
         restDriver.deleteProjectSilently(mainAdminUser, otherUserProject);
-        restDriver.closeXnat(mainAdminUser);
+        mainAdminInterface().closeXnat();
     }
 
     @TestRequires(closedXnat = true)
@@ -104,7 +104,7 @@ public class TestAliasTokenService extends BaseXnatRestTest {
     }
 
     private XnatAliasToken selfAliasTokenTest() {
-        final XnatAliasToken aliasToken = restDriver.generateAliasToken(mainUser);
+        final XnatAliasToken aliasToken = mainInterface().generateAliasToken();
         checkAliasTokenForMainUser(aliasToken);
         return aliasToken;
     }

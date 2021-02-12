@@ -32,8 +32,8 @@ public class TestRename extends BaseXnatRestTest {
 
     @BeforeClass
     public void addRenameProjects() {
-        restDriver.createProject(mainAdminUser, renameProject1);
-        restDriver.createProject(mainAdminUser, renameProject2);
+        mainAdminInterface().createProject(renameProject1);
+        mainAdminInterface().createProject(renameProject2);
     }
 
     @AfterClass(alwaysRun = true)
@@ -56,7 +56,7 @@ public class TestRename extends BaseXnatRestTest {
 
         final String newLabel = "MOD1";
 
-        restDriver.createSubject(mainAdminUser, subject);
+        mainAdminInterface().createSubject(subject);
         mainAdminCredentials().given().queryParam("label", newLabel).put(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
         session.setLabel(newLabel);
 
@@ -78,7 +78,7 @@ public class TestRename extends BaseXnatRestTest {
 
         final String newLabel = "MOD2";
 
-        restDriver.createSubject(mainAdminUser, subject);
+        mainAdminInterface().createSubject(subject);
         mainAdminCredentials().given().queryParam("label", newLabel).put(restDriver.subjectUrl(subject));
         subject.setLabel(newLabel);
 
@@ -94,32 +94,32 @@ public class TestRename extends BaseXnatRestTest {
 
         final String newLabel = "MOD3";
 
-        restDriver.addUserToProject(mainAdminUser, mainUser, renameProject2, UserGroups.MEMBER);
-        restDriver.createSubject(mainAdminUser, subject);
+        mainAdminInterface().addUserToProject(mainUser, renameProject2, UserGroups.MEMBER);
+        mainAdminInterface().createSubject(subject);
 
         final SessionAssessor assessor = new QC(renameProject2, subject, session, "QC1");
-        restDriver.createSessionAssessor(mainAdminUser, renameProject2, subject, session, assessor);
+        mainAdminInterface().createSessionAssessor(renameProject2, subject, session, assessor);
 
         final Resource sessionResource = new SubjectAssessorResource(renameProject1, subject, session, "TEST").addResourceFile(
                 new ResourceFile().extension(new SimpleResourceFileExtension(dicomFile))
         );
         final Resource assessorResource = new SessionAssessorResource(renameProject2, subject, session, assessor).folder("ASSESSOR_RESOURCE").addResourceFile(new ResourceFile().extension(new SimpleResourceFileExtension(louieFile)));
 
-        restDriver.uploadResource(mainAdminUser, sessionResource);
-        restDriver.uploadResource(mainAdminUser, assessorResource);
+        mainAdminInterface().uploadResource(sessionResource);
+        mainAdminInterface().uploadResource(assessorResource);
 
         // user with no access to source project should not be able to relabel
         mainCredentials().given().queryParam("label", newLabel).
                 put(restDriver.subjectAssessorUrl(renameProject1, subject, session)).
                 then().assertThat().statusCode(404);
 
-        restDriver.addUserToProject(mainAdminUser, mainUser, renameProject1, UserGroups.COLLABORATOR);
+        mainAdminInterface().addUserToProject(mainUser, renameProject1, UserGroups.COLLABORATOR);
 
         // user with collaborator to source project should not be able to relabel
         mainCredentials().given().queryParam("label", newLabel).put(restDriver.subjectAssessorUrl(renameProject1, subject, session)).then().assertThat().statusCode(Matchers.isOneOf(403, 417));
         restDriver.validateResource(mainUser, sessionResource);
 
-        restDriver.addUserToProject(mainAdminUser, mainUser, renameProject1, UserGroups.MEMBER);
+        mainAdminInterface().addUserToProject(mainUser, renameProject1, UserGroups.MEMBER);
         TimeUtils.sleep(1000); // let cache update
 
         mainCredentials().given().queryParam("label", newLabel).put(restDriver.subjectAssessorUrl(renameProject1, subject, session)).then().assertThat().statusCode(200);

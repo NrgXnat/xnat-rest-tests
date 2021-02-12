@@ -23,7 +23,7 @@ public class TestXapiInvestigator extends BaseXnatRestTest {
     @Test
     @TestedApiSpec(method = {Method.GET, Method.POST}, url = "/xapi/investigators")
     public void testInvestigators() {
-        final List<Investigator> extantInvestigators = restDriver.readInvestigators(mainUser); // GET to /xapi/investigators
+        final List<Investigator> extantInvestigators = mainInterface().readInvestigators(); // GET to /xapi/investigators
 
         final Investigator pi = randomInvestigator().title("Dr.").department("DEPT").institution("INST").email(Settings.EMAIL).phone("314-867-5309");
         final Investigator investigator = randomInvestigator();
@@ -31,8 +31,8 @@ public class TestXapiInvestigator extends BaseXnatRestTest {
         pi.primaryProjects(Collections.singletonList(project.getId()));
         investigator.investigatorProjects(Collections.singletonList(project.getId()));
 
-        restDriver.createProject(mainUser, project); // POST to /xapi/investigators
-        final List<Investigator> allInvestigators = restDriver.readInvestigators(mainUser);
+        mainInterface().createProject(project); // POST to /xapi/investigators
+        final List<Investigator> allInvestigators = mainInterface().readInvestigators();
         assertEquals(extantInvestigators.size() + 2, allInvestigators.size());
         findAndCheck(allInvestigators, pi);
         findAndCheck(allInvestigators, investigator);
@@ -44,20 +44,20 @@ public class TestXapiInvestigator extends BaseXnatRestTest {
         final Investigator investigator = randomInvestigator().title("Dr.").department("DEPT").email(Settings.EMAIL).phone("314-867-5309");
         final Project project = new Project().pi(investigator);
         investigator.setPrimaryProjects(Collections.singletonList(project.getId()));
-        restDriver.createProject(mainUser, project);
-        final int numSystemInvestigators = restDriver.readInvestigators(mainUser).size();
+        mainInterface().createProject(project);
+        final int numSystemInvestigators = mainInterface().readInvestigators().size();
         restDriver.mainInterface().queryBase().contentType(ContentType.JSON).body(investigator.firstname(RandomHelper.randomLetters(8)).phone("1-800-867-5309").institution("INST")).
                 put(investigatorUrl(investigator.getXnatInvestigatordataId())).then().assertThat().statusCode(200);
-        assertEquals(numSystemInvestigators, restDriver.readInvestigators(mainUser).size()); // update should not create additional investigator
+        assertEquals(numSystemInvestigators, mainInterface().readInvestigators().size()); // update should not create additional investigator
         assertInvestigatorData(investigator, restDriver.mainInterface().queryBase().get(investigatorUrl(investigator.getXnatInvestigatordataId())).then().assertThat().statusCode(200).and().extract().as(Investigator.class));
 
         restDriver.interfaceFor(mainAdminUser).queryBase().delete(investigatorUrl(investigator.getXnatInvestigatordataId())).then().assertThat().statusCode(200);
-        final List<Investigator> investigatorsAfterDelete = restDriver.readInvestigators(mainUser);
+        final List<Investigator> investigatorsAfterDelete = mainInterface().readInvestigators();
         assertEquals(numSystemInvestigators - 1, investigatorsAfterDelete.size());
         assertNull(find(investigatorsAfterDelete, investigator));
         restDriver.interfaceFor(mainUser).queryBase().get(investigatorUrl(investigator.getXnatInvestigatordataId())).then().assertThat().statusCode(Matchers.isOneOf(404, 500)); // should really be 404, but eh, whatever
         TimeUtils.sleep(1000); // let cache recover
-        assertNull(restDriver.readProject(mainUser, project.getId()).getPi());
+        assertNull(mainInterface().readProject(project.getId()).getPi());
     }
 
     private Investigator randomInvestigator() {

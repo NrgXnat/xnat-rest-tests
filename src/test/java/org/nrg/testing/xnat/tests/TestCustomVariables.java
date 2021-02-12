@@ -20,7 +20,7 @@ public class TestCustomVariables extends BaseXnatRestTest {
 
     @BeforeMethod
     public void createTestProject() {
-        restDriver.createProject(mainUser, testSpecificProject);
+        mainInterface().createProject(testSpecificProject);
     }
 
     @AfterMethod(alwaysRun = true)
@@ -37,7 +37,7 @@ public class TestCustomVariables extends BaseXnatRestTest {
         final Project project = testSpecificProject;
         final Subject subject = testSpecificSubject.project(project).group("control").src("12").dob(LocalDate.parse("2001-01-01")).gender(Gender.MALE).handedness(Handedness.LEFT);
         final SubjectAssessor subjectAssessor = new MRSession(project, subject).date(LocalDate.parse("1999-12-31"));
-        restDriver.createProject(mainUser, project);
+        mainInterface().createProject(project);
 
         mainCredentials().given().queryParam(testField, originalFieldValue).put(restDriver.subjectAssessorUrl(subjectAssessor)).then().statusCode(200);
         readCustomVariables(subjectAssessor).then().assertThat().body(customVariableJsonPath(originalFieldValue, fieldName), Matchers.notNullValue());

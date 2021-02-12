@@ -33,7 +33,7 @@ public class TestSubjAssessmentResources extends BaseXnatRestTest {
     public void setupCurrentProject() {
         currentProject = new Project();
         subject1 = new Subject(currentProject, "1");
-        restDriver.createProject(mainUser, currentProject);
+        mainInterface().createProject(currentProject);
     }
 
     @AfterMethod(alwaysRun = true)
@@ -64,8 +64,8 @@ public class TestSubjAssessmentResources extends BaseXnatRestTest {
         final MRSession uriWithRelativePath = new MRSession(currentProject, subject1).extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainUser), getDataFile("test_expt_bad_URI3.xml")));
         final MRSession uriWithWindowsSlash = new MRSession(currentProject, subject1).extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainUser), getDataFile("test_expt_bad_URI4.xml")));
 
-        restDriver.createSubjectAssessor(mainUser, uriWithRelativePath); // allowed
-        restDriver.createSubjectAssessor(mainUser, uriWithWindowsSlash); // allowed
+        mainInterface().createSubjectAssessor(uriWithRelativePath);
+        mainInterface().createSubjectAssessor(uriWithWindowsSlash);
 
         mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(readDataFile("test_expt_bad_URI5.xml")).
                 post(experimentsUrl()).then().assertThat().statusCode(400); // contains parent directory syntax => invalid
@@ -90,7 +90,7 @@ public class TestSubjAssessmentResources extends BaseXnatRestTest {
         final ImagingSession session = new MRSession(currentProject, subject1).extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainUser), experimentV1));
 
         mainCredentials().given().queryParam("format", "html").get(experimentsUrl()).then().assertThat().statusCode(200);
-        restDriver.createSubjectAssessor(mainUser, session);
+        mainInterface().createSubjectAssessor(session);
 
         final Map<Class<? extends BaseElement>, List<String>> fieldsToIgnore = new HashMap<>();
         fieldsToIgnore.put(XnatMrsessiondataBean.class, Collections.singletonList("project"));
@@ -123,7 +123,7 @@ public class TestSubjAssessmentResources extends BaseXnatRestTest {
         assertEquals(Collections.singletonList("mrSessionData/coil Mismatch: test test2"), comparison.critical);
 
         TimeUtils.sleep(1000); // cache update
-        restDriver.deleteSubjectAssessor(mainUser, session);
+        mainInterface().deleteSubjectAssessor(session);
 
         mainCredentials().given().queryParam("format", "html").get(experimentsUrl()).then().assertThat().statusCode(200);
 

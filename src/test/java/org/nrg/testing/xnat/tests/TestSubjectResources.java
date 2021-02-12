@@ -29,7 +29,7 @@ public class TestSubjectResources extends BaseXnatRestTest {
 
     @BeforeMethod
     public void addSubjectResourceTestProject() {
-        restDriver.createProject(mainUser, testSpecificProject);
+        mainInterface().createProject(testSpecificProject);
     }
 
     @AfterMethod(alwaysRun = true)
@@ -67,13 +67,13 @@ public class TestSubjectResources extends BaseXnatRestTest {
         final File subjectXML3 = getDataFile("test_subject_v3.xml"); // same as v3, except contains additional weight and height fields
         final Map<Class<? extends BaseElement>, List<String>> ignoredFields = Collections.singletonMap(XnatSubjectdataBean.class, Collections.singletonList("project"));
 
-        restDriver.createProject(mainUser, project);
+        mainInterface().createProject(project);
 
         // listing should work even if no subjects
         mainCredentials().given().queryParam("format", "html").get(formatRestUrl("projects", project.getId(), "subjects")).then().assertThat().statusCode(200);
 
         final Subject subject = new Subject(project).extension(new SubjectXMLPutExtension(restDriver.interfaceFor(mainUser), subjectXML1));
-        restDriver.createSubject(mainUser, subject);
+        mainInterface().createSubject(subject);
 
         compareBeanXML(subjectXML1, subject, ignoredFields);
 
@@ -129,7 +129,7 @@ public class TestSubjectResources extends BaseXnatRestTest {
 
         mainCredentials().given().queryParam("format", "html").get(formatRestUrl("projects", project.getId(), "subjects")).then().assertThat().statusCode(200);
 
-        restDriver.deleteSubject(mainUser, subject);
+        mainInterface().deleteSubject(subject);
 
         // make sure subject deleted
         mainCredentials().given().queryParam("format", "xml").get(restDriver.subjectUrl(subject)).then().assertThat().statusCode(404);

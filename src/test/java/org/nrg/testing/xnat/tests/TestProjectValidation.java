@@ -15,7 +15,7 @@ public class TestProjectValidation extends BaseXnatRestTest {
     @BeforeMethod
     public void addProjectValidationProject() {
         project = new Project().runningTitle(RandomHelper.randomID()).title(RandomHelper.randomID()).addAlias(RandomHelper.randomID());
-        restDriver.createProject(mainAdminUser, project);
+        mainAdminInterface().createProject(project);
     }
 
     @AfterMethod(alwaysRun = true)

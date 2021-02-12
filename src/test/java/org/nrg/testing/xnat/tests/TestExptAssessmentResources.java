@@ -41,8 +41,8 @@ public class TestExptAssessmentResources extends BaseXnatRestTest {
 
     @BeforeMethod
     public void setupExperimentAssessmentResourcesTest() {
-        restDriver.createProject(mainUser, project1);
-        restDriver.createProject(mainUser, project2);
+        mainInterface().createProject(project1);
+        mainInterface().createProject(project2);
     }
 
     @AfterMethod(alwaysRun = true)
@@ -57,7 +57,7 @@ public class TestExptAssessmentResources extends BaseXnatRestTest {
         final File assessorV2 = getDataFile("test_asst_v2.xml");
 
         final SessionAssessor assessor = new ManualQC(project2, subject, session).extension(new SessionAssessorXMLExtension(restDriver.interfaceFor(mainUser), assessorV1));
-        restDriver.createSessionAssessor(mainUser, assessor);
+        mainInterface().createSessionAssessor(assessor);
 
         LegacyComparison.compareBeanXML(
                 assessorV1,
@@ -83,7 +83,7 @@ public class TestExptAssessmentResources extends BaseXnatRestTest {
         mainCredentials().given().queryParam("format", "json").get(CommonStringUtils.formatUrl(restDriver.sessionAssessorUrl(assessor), "projects")).
                 then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
 
-        restDriver.deleteSessionAssessor(mainUser, assessor);
+        mainInterface().deleteSessionAssessor(assessor);
 
         mainCredentials().given().queryParam("format", "json").get(restDriver.assessorsUrl(project2, subject, session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(0));
         mainCredentials().given().queryParam("format", "json").get(restDriver.assessorsByAccessionNumber(session)).
@@ -91,7 +91,7 @@ public class TestExptAssessmentResources extends BaseXnatRestTest {
 
         mainCredentials().given().queryParam("format", "xml").get(restDriver.sessionAssessorUrl(assessor)).then().assertThat().statusCode(404);
 
-        restDriver.createSessionAssessor(mainUser, assessor); // reupload
+        mainInterface().createSessionAssessor(assessor); // reupload
 
         mainCredentials().given().queryParam("format", "json").get(restDriver.assessorsByAccessionNumber(session)).
                 then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));

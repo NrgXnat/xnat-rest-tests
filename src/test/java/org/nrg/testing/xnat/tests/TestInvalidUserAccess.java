@@ -31,11 +31,11 @@ public class TestInvalidUserAccess extends BaseXnatRestTest {
     @BeforeMethod
     public void setupInvalidUserAccessTest() {
         testProject = new Project();
-        testSubject = new Subject(testProject).extension(new SubjectXMLPutExtension(restDriver.interfaceFor(mainAdminUser), getDataFile("test_subject_v1.xml")));
-        testSession = new MRSession(testProject, testSubject).extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainAdminUser), getDataFile("test_expt_v1.xml")));
-        testSessionAssessor = new ManualQC(testProject, testSubject, testSession).extension(new SessionAssessorXMLExtension(restDriver.interfaceFor(mainAdminUser), getDataFile("test_asst_v1.xml")));
+        testSubject = new Subject(testProject).extension(new SubjectXMLPutExtension(mainAdminInterface(), getDataFile("test_subject_v1.xml")));
+        testSession = new MRSession(testProject, testSubject).extension(new SubjectAssessorXMLExtension(mainAdminInterface(), getDataFile("test_expt_v1.xml")));
+        testSessionAssessor = new ManualQC(testProject, testSubject, testSession).extension(new SessionAssessorXMLExtension(mainAdminInterface(), getDataFile("test_asst_v1.xml")));
 
-        restDriver.createProject(mainAdminUser, testProject);
+        mainAdminInterface().createProject(testProject);
     }
 
     @AfterMethod(alwaysRun = true)
@@ -46,7 +46,7 @@ public class TestInvalidUserAccess extends BaseXnatRestTest {
     @Test
     @TestRequires(closedXnat = true)
     public void testProtectedXMLCRUD() {
-        restDriver.updateAccessibility(mainAdminUser, testProject, Accessibility.PROTECTED);
+        mainAdminInterface().updateAccessibility(testProject, Accessibility.PROTECTED);
         restDriver.assertProjectAccessibility(mainAdminUser, testProject, Accessibility.PROTECTED);
 
         restDriver.invalidCredentials().given().queryParam("format", "xml").expect().statusCode(401).get(restDriver.accessibilityRestUrl(testProject));

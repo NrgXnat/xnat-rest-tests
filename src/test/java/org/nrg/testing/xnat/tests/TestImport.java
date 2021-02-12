@@ -9,7 +9,6 @@ import org.nrg.testing.CommonStringUtils;
 import org.nrg.testing.TestNgUtils;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
-import org.nrg.testing.annotations.DisallowXnatVersion;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.enums.TestData;
@@ -57,8 +56,8 @@ public class TestImport extends BaseXnatRestTest {
 
     @BeforeClass
     public void setupImportProject() {
-        restDriver.createProject(mainUser, project);
-        restDriver.disableSiteAnonScript(mainAdminUser);
+        mainInterface().createProject(project);
+        mainAdminInterface().disableSiteAnonScript();
     }
 
     @BeforeMethod(alwaysRun = true) // clear out prearchive/archive for each test
@@ -70,7 +69,7 @@ public class TestImport extends BaseXnatRestTest {
             LOGGER.warn(throwable);
         }
         try {
-            restDriver.clearProject(mainUser, project);
+            mainInterface().deleteAllProjectData(project);
             TimeUtils.sleep(1000);
         } catch (Throwable throwable) {
             LOGGER.warn(throwable);
@@ -80,7 +79,7 @@ public class TestImport extends BaseXnatRestTest {
     @AfterClass(alwaysRun = true)
     public void tearDownImportTests() {
         restDriver.deleteProjectSilently(mainAdminUser, project);
-        restDriver.enableSiteAnonScript(mainAdminUser);
+        mainAdminInterface().enableSiteAnonScript();
         setCrossModalityMergePrevention(true);
     }
 
@@ -100,7 +99,7 @@ public class TestImport extends BaseXnatRestTest {
 
         mainCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
 
-        restDriver.deleteSubjectAssessor(mainUser, session);
+        mainInterface().deleteSubjectAssessor(session);
     }
 
     @Test
@@ -120,7 +119,7 @@ public class TestImport extends BaseXnatRestTest {
 
         mainCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
 
-        restDriver.deleteSubjectAssessor(mainUser, session);
+        mainInterface().deleteSubjectAssessor(session);
     }
 
     @Test
@@ -139,7 +138,7 @@ public class TestImport extends BaseXnatRestTest {
 
         mainCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
 
-        restDriver.deleteSubjectAssessor(mainUser, session);
+        mainInterface().deleteSubjectAssessor(session);
 
     }
 
@@ -152,7 +151,7 @@ public class TestImport extends BaseXnatRestTest {
         final String resourceUrl = CommonStringUtils.formatUrl(restDriver.subjectAssessorUrl(session), "/resources/TEST/files/files.zip");
 
         // create subject & session with custom date
-        restDriver.createSubject(mainUser, subject);
+        mainInterface().createSubject(subject);
 
         // add misc resource
         mainCredentials().multiPart(testZip).put(resourceUrl).then().assertThat().statusCode(200);
@@ -177,7 +176,7 @@ public class TestImport extends BaseXnatRestTest {
         );
 
         restDriver.validateUpload(mainUser, resourceUrl, testZip);
-        restDriver.deleteSubjectAssessor(mainUser, session);
+        mainInterface().deleteSubjectAssessor(session);
     }
 
     /**
@@ -190,7 +189,7 @@ public class TestImport extends BaseXnatRestTest {
         final Subject subject = new Subject(project, "SUBJ3");
         final ImagingSession session = new PETSession(project, subject).date(LocalDate.parse("2000-01-01"));
 
-        restDriver.createSubject(mainUser, subject);
+        mainInterface().createSubject(subject);
 
         mainCredentials().
                 queryParam("triggerPipelines", false).
@@ -199,7 +198,7 @@ public class TestImport extends BaseXnatRestTest {
                 post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(409);
 
-        restDriver.deleteSubjectAssessor(mainUser, session);
+        mainInterface().deleteSubjectAssessor(session);
     }
 
     /**
@@ -212,7 +211,7 @@ public class TestImport extends BaseXnatRestTest {
         final Subject subject = new Subject(project, "SUBJ_03");
         final ImagingSession session = new PETSession(project, subject).date(LocalDate.parse("2000-01-01"));
 
-        restDriver.createSubject(mainUser, subject);
+        mainInterface().createSubject(subject);
 
         mainCredentials().
                 queryParam("triggerPipelines", false).
@@ -232,7 +231,7 @@ public class TestImport extends BaseXnatRestTest {
                     post(formatRestUrl("services/import")).
                     then().assertThat().statusCode(200);
 
-            final List<SubjectAssessor> subjectAssessors = restDriver.readSubjectAssesssors(mainUser, project, subject);
+            final List<SubjectAssessor> subjectAssessors = mainInterface().readSubjectAssessors(project, subject);
             assertEquals(1, subjectAssessors.size());
 
             final ImagingSession retrievedSessionRepresentation = (ImagingSession) subjectAssessors.get(0);
@@ -241,7 +240,7 @@ public class TestImport extends BaseXnatRestTest {
             assertEquals(DataType.MR_SCAN.getXsiType(), retrievedSessionRepresentation.findScan("1").getXsiType());
         }
 
-        restDriver.deleteSubjectAssessor(mainUser, session);
+        mainInterface().deleteSubjectAssessor(session);
     }
 
 
@@ -259,7 +258,7 @@ public class TestImport extends BaseXnatRestTest {
                     then().assertThat().statusCode((i == 0) ? 200 : 409); // Should work only the first time
         }
 
-        restDriver.deleteSubjectAssessor(mainUser, session);
+        mainInterface().deleteSubjectAssessor(session);
     }
 
     @Test
@@ -280,7 +279,7 @@ public class TestImport extends BaseXnatRestTest {
                     then().assertThat().statusCode((i == 0) ? 200 : 409); // Should work only the first time
         }
 
-        restDriver.deleteSubjectAssessor(mainUser, session);
+        mainInterface().deleteSubjectAssessor(session);
     }
 
     /**
@@ -307,7 +306,7 @@ public class TestImport extends BaseXnatRestTest {
                     then().assertThat().statusCode(200); // Should work either time
         }
 
-        restDriver.deleteSubjectAssessor(mainUser, session);
+        mainInterface().deleteSubjectAssessor(session);
     }
 
     @Test
@@ -330,7 +329,7 @@ public class TestImport extends BaseXnatRestTest {
                     then().assertThat().statusCode(200); // Should work either time
         }
 
-        restDriver.deleteSubjectAssessor(mainUser, session);
+        mainInterface().deleteSubjectAssessor(session);
     }
 
     @Test
@@ -521,7 +520,7 @@ public class TestImport extends BaseXnatRestTest {
         assertFalse(unassignedUrl.equals(archiveUrl));
         assertTrue(archiveUrl.startsWith("/data/archive"));
 
-        restDriver.waitForAutoRun(restDriver.readProject(mainUser, project.getId()).getSubjects().get(0).getSessions().get(0));
+        restDriver.waitForAutoRun(mainInterface().readProject(project.getId()).getSubjects().get(0).getSessions().get(0));
 
         for (int i = 1; i < 3; i++) {
             TestNgUtils.assertBinaryFilesEqual(
@@ -572,7 +571,7 @@ public class TestImport extends BaseXnatRestTest {
     @Test
     public void testDataProjectExperimentNewScan() {
         final Subject subject = new Subject(project, "SUBJ_0009");
-        restDriver.createSubject(mainUser, subject);
+        mainInterface().createSubject(subject);
         final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
 
         mainCredentials().
@@ -717,19 +716,19 @@ public class TestImport extends BaseXnatRestTest {
         final Subject subject = new Subject(project, "Sample_Patient");
         final MRSession session = new MRSession(project, subject, "Sample_ID");
         new SessionImportExtension(restDriver.interfaceFor(mainUser), session, TestData.SAMPLE_1_SCAN_4.toFile());
-        restDriver.createProject(mainUser, project);
+        mainInterface().createProject(project);
         new XnatCStore().data(TestData.SAMPLE_1_SCAN_5).sendDICOMToProject(project);
         new XnatCStore().data(TestData.SAMPLE_1_SCAN_6).sendDICOMToProject(project);
         TimeUtils.sleep(60000);
         restDriver.waitForPrearchiveEmpty(mainUser, project, 120);
         restDriver.mainInterface().waitForPipelineCompletion(session, "Merged");
-        final List<Scan> allScans = restDriver.readScans(mainUser, project, subject, session);
+        final List<Scan> allScans = mainInterface().readScans(project, subject, session);
         assertEquals(3, allScans.size());
         for (Scan scan : allScans) {
             final List<Resource> scanResources = scan.getScanResources();
             assertEquals(176, restDriver.interfaceFor(mainUser).findResource(scanResources, "DICOM").getFileCount());
         }
-        restDriver.deleteProject(mainUser, project);
+        mainInterface().deleteProject(project);
     }
 
     @Test // Test content donated by Kate at Radiologics
@@ -768,7 +767,7 @@ public class TestImport extends BaseXnatRestTest {
 
         assertTrue(completed);
         restDriver.waitForAutoRun(session);
-        restDriver.deleteProject(mainUser, project);
+        mainInterface().deleteProject(project);
     }
 
     @Test // Test content donated by Kate at Radiologics
@@ -815,14 +814,14 @@ public class TestImport extends BaseXnatRestTest {
                 .then().assertThat().statusCode(404);
 
         restDriver.waitForAutoRun(session);
-        restDriver.deleteProject(mainUser, project);
+        mainInterface().deleteProject(project);
     }
 
     private Object[] setupForUserCacheUpload(RequestSpecification reqSpec) {
         final String listener = Long.toString(System.currentTimeMillis());
 
         final Project project = new Project("project" + listener).prearchiveCode(PrearchiveCode.MANUAL);
-        restDriver.createProject(mainUser, project);
+        mainInterface().createProject(project);
         final Subject   subject = new Subject(project, "subject" + listener);
         final MRSession session = new MRSession(project, subject, "session" + listener);
 
@@ -848,7 +847,7 @@ public class TestImport extends BaseXnatRestTest {
 
     private void setCrossModalityMergePrevention(boolean state) {
         if (XnatVersionList.testedVersionFollows(Xnat_1_7_6.class)) {
-            restDriver.postToSiteConfig(mainAdminUser, Collections.singletonMap(SiteConfig.PREVENT_CROSS_MODALITY_MERGE, state));
+            mainAdminInterface().postToSiteConfig(Collections.singletonMap(SiteConfig.PREVENT_CROSS_MODALITY_MERGE, state));
         }
     }
 
