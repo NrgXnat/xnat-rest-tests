@@ -49,7 +49,7 @@ public class TestFileUpload extends BaseXnatRestTest {
 
     @BeforeClass
     public void disableSiteAnon() {
-        restDriver.disableSiteAnonScript(mainAdminUser);
+        mainAdminInterface().disableSiteAnonScript();
     }
 
     @BeforeMethod
@@ -57,7 +57,7 @@ public class TestFileUpload extends BaseXnatRestTest {
         project = testSpecificProject;
         subject = new Subject(project, "1").gender(Gender.MALE);
         session = new MRSession(project, subject, "MR1").date(LocalDate.parse("2000-01-01"));
-        restDriver.createProject(mainUser, project);
+        mainInterface().createProject(project);
         TimeUtils.sleep(1000); // cache update
     }
 
@@ -68,7 +68,7 @@ public class TestFileUpload extends BaseXnatRestTest {
 
     @AfterClass(alwaysRun = true)
     public void enableSiteAnon() {
-        restDriver.enableSiteAnonScript(mainAdminUser);
+        mainAdminInterface().enableSiteAnonScript();
     }
 
     @Test
@@ -79,7 +79,7 @@ public class TestFileUpload extends BaseXnatRestTest {
         final Resource scanResource = new ScanResource(project, subject, session, scan1).folder("DICOM").addResourceFile(resourceFile);
 
         for (Scan scan : session.getScans()) {
-            restDriver.createScan(mainUser, project, subject, session, scan);
+            mainInterface().createScan(project, subject, session, scan);
         }
 
         restDriver.validateResource(mainUser, scanResource);
@@ -93,7 +93,7 @@ public class TestFileUpload extends BaseXnatRestTest {
         final Resource scanResource = new ScanResource(project, subject, session, scan1).folder("DICOM").addResourceFile(resourceFile);
 
         for (Scan scan : session.getScans()) {
-            restDriver.createScan(mainUser, project, subject, session, scan);
+            mainInterface().createScan(project, subject, session, scan);
         }
 
         restDriver.validateResource(mainUser, scanResource);
@@ -171,8 +171,8 @@ public class TestFileUpload extends BaseXnatRestTest {
     public void testTextIMGUploadWOPrecreate() {
         final Scan scan1 = new MRScan(session, "1").seriesDescription("LOCALIZER").quality("usable");
         final Scan scan2 = new MRScan(session, "2").seriesDescription("localizer").quality("questionable");
-        restDriver.createScan(mainUser, project, subject, session, scan1);
-        restDriver.createScan(mainUser, project, subject, session, scan2);
+        mainInterface().createScan(project, subject, session, scan1);
+        mainInterface().createScan(project, subject, session, scan2);
         final String scanUrl = restDriver.scanUrl(scan1);
 
         mainCredentials().multiPart(dicomFile2).put(CommonStringUtils.formatUrl(scanUrl, "resources/TEST/files/3.dcm")).then().assertThat().statusCode(200);
@@ -194,7 +194,7 @@ public class TestFileUpload extends BaseXnatRestTest {
     @Test
     public void testScanUpload() {
         final Scan scan = new MRScan(session, "MR1_scan1");
-        restDriver.createScan(mainUser, project, subject, session, scan);
+        mainInterface().createScan(project, subject, session, scan);
         final String scanUrl = restDriver.scanUrl(scan);
 
         mainCredentials().multiPart(dicomFile1).put(CommonStringUtils.formatUrl(scanUrl, "resources/DICOM/files/1.dcm")).then().assertThat().statusCode(200);
@@ -334,7 +334,7 @@ public class TestFileUpload extends BaseXnatRestTest {
 
     private void uploadAndExtractToScan(File compressedFile) {
         final Scan scan = new MRScan(session, "MR1_scan1");
-        restDriver.createScan(mainUser, project, subject, session, scan);
+        mainInterface().createScan(project, subject, session, scan);
         final String scanUrl = restDriver.scanUrl(scan);
         uploadAndExtract(scanUrl, compressedFile);
     }
