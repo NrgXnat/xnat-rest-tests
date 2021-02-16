@@ -11,7 +11,7 @@
     </parent>
 
     <artifactId>xnat_rest_tests</artifactId>
-    <version>1.3-SNAPSHOT</version>
+    <version>1.3</version>
 
     <name>REST-based XNAT Tests</name>
     <description>Runs a suite of REST tests on an XNAT server.</description>
@@ -43,7 +43,7 @@
     </scm>
 
     <properties>
-        <nrg_test.version>2.3-SNAPSHOT</nrg_test.version>
+        <nrg_test.version>2.3</nrg_test.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
