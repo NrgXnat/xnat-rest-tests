@@ -5,7 +5,7 @@ import org.nrg.testing.*;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
-import org.nrg.testing.xnat.versions.Xnat_1_8_0;
+import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xdat.bean.XnatMrsessiondataBean;
 import org.nrg.xnat.enums.Gender;
 import org.nrg.xnat.pogo.DataType;

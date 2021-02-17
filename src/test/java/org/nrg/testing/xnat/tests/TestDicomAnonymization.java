@@ -8,7 +8,7 @@ import org.nrg.testing.dicom.ScriptValidation;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.XnatObjectUtils;
-import org.nrg.testing.xnat.versions.Xnat_1_7_7;
+import org.nrg.xnat.versions.Xnat_1_7_7;
 import org.nrg.xnat.pogo.AnonScript;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;

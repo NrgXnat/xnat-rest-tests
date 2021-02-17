@@ -15,7 +15,7 @@ import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
-import org.nrg.testing.xnat.versions.Xnat_1_8_0;
+import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.enums.PrearchiveCode;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;

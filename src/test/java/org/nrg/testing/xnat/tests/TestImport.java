@@ -29,6 +29,9 @@ import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
 import org.nrg.xnat.pogo.resources.Resource;
 import org.nrg.xnat.pogo.resources.ScanResource;
 import org.nrg.xnat.pogo.users.User;
+import org.nrg.xnat.versions.Xnat_1_7_6;
+import org.nrg.xnat.versions.Xnat_1_7_7;
+import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.testng.annotations.*;
 
 import java.io.File;
@@ -221,7 +224,7 @@ public class TestImport extends BaseXnatRestTest {
                 post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(409);
 
-        if (XnatVersionList.testedVersionFollows(Xnat_1_7_6.class)) {
+        if (XnatTestingVersionManager.testedVersionFollows(Xnat_1_7_6.class)) {
             setCrossModalityMergePrevention(false);
             mainCredentials().
                     queryParam("triggerPipelines", false).
@@ -846,13 +849,13 @@ public class TestImport extends BaseXnatRestTest {
     }
 
     private void setCrossModalityMergePrevention(boolean state) {
-        if (XnatVersionList.testedVersionFollows(Xnat_1_7_6.class)) {
+        if (XnatTestingVersionManager.testedVersionFollows(Xnat_1_7_6.class)) {
             mainAdminInterface().postToSiteConfig(Collections.singletonMap(SiteConfig.PREVENT_CROSS_MODALITY_MERGE, state));
         }
     }
 
     private void waitForBackup() { // see https://issues.xnat.org/browse/XNAT-6424
-        if (XnatVersionList.testedVersionPrecedes(Xnat_1_8_0.class)) {
+        if (XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_8_0.class)) {
             TimeUtils.sleep(1000); // wait for 1s so cache backup dir is distinct
         }
     }

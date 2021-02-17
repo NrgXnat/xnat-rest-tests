@@ -5,9 +5,9 @@ import com.jayway.restassured.response.ValidatableResponse;
 import org.hamcrest.Matchers;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
-import org.nrg.testing.xnat.versions.XnatVersionList;
-import org.nrg.testing.xnat.versions.Xnat_1_7_4;
-import org.nrg.testing.xnat.versions.Xnat_1_8_0;
+import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
+import org.nrg.xnat.versions.Xnat_1_7_4;
+import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.enums.Accessibility;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.users.User;
@@ -83,7 +83,7 @@ public class TestAliasTokenService extends BaseXnatRestTest {
     }
 
     private XnatAliasToken readTokenFromResponse(Response response) {
-        if (XnatVersionList.testedVersionPrecedes(Xnat_1_8_0.class)) { // see: XNAT-5498
+        if (XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_8_0.class)) { // see: XNAT-5498
             return response.then().assertThat().statusCode(200).and().extract().jsonPath().getObject("", XnatAliasToken.class);
         } else {
             return response.then().assertThat().statusCode(200).and().extract().as(XnatAliasToken.class);
@@ -126,7 +126,7 @@ public class TestAliasTokenService extends BaseXnatRestTest {
 
         final XnatAliasToken bogusToken = new XnatAliasToken("1-2-3-4-5-6-7-8", "hidden secret number");
         final ValidatableResponse response = responseForValidate(bogusToken).then().assertThat();
-        if (XnatVersionList.testedVersionFollows(Xnat_1_7_4.class)) {
+        if (XnatTestingVersionManager.testedVersionFollows(Xnat_1_7_4.class)) {
             response.statusCode(404);
         } else {
             response.statusCode(200).and().assertThat().body(Matchers.equalTo("{}"));
@@ -146,7 +146,7 @@ public class TestAliasTokenService extends BaseXnatRestTest {
     }
 
     private int invalidatedTokenCode() {
-        return XnatVersionList.testedVersionFollows(Xnat_1_7_4.class) ? 401 : 403;
+        return XnatTestingVersionManager.testedVersionFollows(Xnat_1_7_4.class) ? 401 : 403;
     }
 
 }

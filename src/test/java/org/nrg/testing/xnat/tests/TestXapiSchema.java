@@ -7,7 +7,7 @@ import org.nrg.testing.annotations.TestedApiSpec;
 import org.nrg.testing.matchers.ValidSchemaMatcher;
 import org.nrg.testing.annotations.DisallowXnatVersion;
 import org.nrg.testing.xnat.BaseXnatRestTest;
-import org.nrg.testing.xnat.versions.Xnat_1_6dev;
+import org.nrg.xnat.versions.Xnat_1_6dev;
 import org.nrg.xnat.pogo.DataType;
 import org.testng.annotations.Test;
 

@@ -6,9 +6,9 @@ import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.*;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
-import org.nrg.testing.xnat.versions.XnatVersionList;
-import org.nrg.testing.xnat.versions.Xnat_1_7_7;
-import org.nrg.testing.xnat.versions.Xnat_1_8_0;
+import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
+import org.nrg.xnat.versions.Xnat_1_7_7;
+import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.enums.Gender;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
@@ -309,7 +309,7 @@ public class TestContainerService extends BaseXnatRestTest {
     private Map<String, Object> makeFilterMap(String wrapperName) {
         final Map<String, String> filterVals = new HashMap<>();
         filterVals.put("like", wrapperName);
-        if (XnatVersionList.testedVersionPrecedes(Xnat_1_8_0.class)) {
+        if (XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_8_0.class)) {
             filterVals.put("type", "string");
         } else {
             filterVals.put("backend", "sql_string");
