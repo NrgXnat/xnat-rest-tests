@@ -87,7 +87,7 @@ public class TestContainerService extends BaseXnatRestTest {
         mainInterface().getAccessionNumber(subject);
         mainInterface().getAccessionNumber(session);
         assessor.setAccessionNumber(mainInterface().jsonQuery()
-                .get(restDriver.assessorsByAccessionNumber(session))
+                .get(mainInterface().assessorsUrlByAccessionNumber(session))
                 .then().assertThat().statusCode(200).and().extract().jsonPath()
                 .getString("ResultSet.Result.find {it.label == '" + assessor.getLabel() + "' }.ID"));
     }

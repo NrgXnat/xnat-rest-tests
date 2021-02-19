@@ -35,11 +35,11 @@ public class TestProjectResources extends BaseXnatRestTest {
         project.addAlias(alias);
 
         mainCredentials().given().queryParam("format", "xml").queryParam("req_format", "qs").queryParam("alias", alias).
-                put(restDriver.projectUrl(project)).
+                put(mainInterface().projectUrl(project)).
                 then().statusCode(200);
 
-        mainCredentials().given().queryParam("format", "xml").get(restDriver.projectUrl(project)).then().statusCode(200);
-        mainCredentials().given().queryParam("format", "xml").get(restDriver.projectUrl(new Project(alias))).then().statusCode(200);
+        mainCredentials().given().queryParam("format", "xml").get(mainInterface().projectUrl(project)).then().statusCode(200);
+        mainCredentials().given().queryParam("format", "xml").get(mainInterface().projectUrl(new Project(alias))).then().statusCode(200);
     }
 
     @Test
@@ -59,7 +59,7 @@ public class TestProjectResources extends BaseXnatRestTest {
         compare(project, updated);
         mainInterface().deleteProject(project);
         TimeUtils.sleep(1000); // cache update
-        mainCredentials().given().queryParam("format", "xml").get(restDriver.projectUrl(project)).then().statusCode(404); // confirm deleted
+        mainCredentials().given().queryParam("format", "xml").get(mainInterface().projectUrl(project)).then().statusCode(404); // confirm deleted
     }
 
     private Project registerProject() {
@@ -69,7 +69,7 @@ public class TestProjectResources extends BaseXnatRestTest {
     }
 
     private void compare(Project project, File expectedProjectXml) {
-        final File actualXml = restDriver.saveBinaryResponseToFile(mainCredentials().given().queryParam("format", "xml").get(restDriver.projectUrl(project)));
+        final File actualXml = restDriver.saveBinaryResponseToFile(mainCredentials().given().queryParam("format", "xml").get(mainInterface().projectUrl(project)));
 
         LegacyComparison.compareBeanXML(actualXml, expectedProjectXml,
                 Collections.singletonMap(XnatProjectdataBean.class, Arrays.asList("ID", "studyProtocol", "secondary_ID", "active")));

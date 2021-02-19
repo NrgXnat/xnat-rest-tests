@@ -49,11 +49,11 @@ public class TestSubjectResources extends BaseXnatRestTest {
                 gender(Gender.MALE).
                 handedness(Handedness.LEFT);
 
-        mainCredentials().given().queryParam("format", "xml").queryParam("req_format", "qs").queryParams(SerializationUtils.serializeToMap(subject)).put(restDriver.subjectUrl(subject)).
+        mainCredentials().given().queryParam("format", "xml").queryParam("req_format", "qs").queryParams(SerializationUtils.serializeToMap(subject)).put(mainInterface().subjectUrl(subject)).
                 then().assertThat().statusCode(201);
 
         LegacyComparison.compareBeanXML(
-                restDriver.saveBinaryResponseToFile(mainCredentials().given().queryParam("format", "xml").get(restDriver.subjectUrl(subject))),
+                restDriver.saveBinaryResponseToFile(mainCredentials().given().queryParam("format", "xml").get(mainInterface().subjectUrl(subject))),
                 getDataFile("qs_subject_v1.xml"),
                 Collections.singletonMap(XnatSubjectdataBean.class, Collections.singletonList("project"))
         );
@@ -72,7 +72,7 @@ public class TestSubjectResources extends BaseXnatRestTest {
         // listing should work even if no subjects
         mainCredentials().given().queryParam("format", "html").get(formatRestUrl("projects", project.getId(), "subjects")).then().assertThat().statusCode(200);
 
-        final Subject subject = new Subject(project).extension(new SubjectXMLPutExtension(restDriver.interfaceFor(mainUser), subjectXML1));
+        final Subject subject = new Subject(project).extension(new SubjectXMLPutExtension(mainInterface(), subjectXML1));
         mainInterface().createSubject(subject);
 
         compareBeanXML(subjectXML1, subject, ignoredFields);
@@ -82,7 +82,7 @@ public class TestSubjectResources extends BaseXnatRestTest {
 
         // resave with v2 XML but allowDataDeletion=false
         mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIOUtils.readFile(subjectXML2)).
-                put(restDriver.subjectUrl(subject)).then().assertThat().statusCode(200);
+                put(mainInterface().subjectUrl(subject)).then().assertThat().statusCode(200);
 
         final LegacyComparison comparison = LegacyComparison.compareObjectsFromFile(
                 subjectXML2,
@@ -97,7 +97,7 @@ public class TestSubjectResources extends BaseXnatRestTest {
 
         // resave with v2 XML and allowDataDeletion=true
         mainCredentials().given().queryParam("format", "xml").queryParam("allowDataDeletion", true).contentType(ContentType.XML).body(FileIOUtils.readFile(subjectXML2)).
-                put(restDriver.subjectUrl(subject)).then().assertThat().statusCode(200);
+                put(mainInterface().subjectUrl(subject)).then().assertThat().statusCode(200);
 
         // should no longer match original
         final LegacyComparison comparison2 = LegacyComparison.compareObjectsFromFile(
@@ -113,7 +113,7 @@ public class TestSubjectResources extends BaseXnatRestTest {
 
         // resave with v3 XML
         mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIOUtils.readFile(subjectXML3)).
-                put(restDriver.subjectUrl(subject)).then().assertThat().statusCode(200);
+                put(mainInterface().subjectUrl(subject)).then().assertThat().statusCode(200);
 
         final LegacyComparison comparison3 = LegacyComparison.compareObjectsFromFile(
                 subjectXML1,
@@ -132,11 +132,11 @@ public class TestSubjectResources extends BaseXnatRestTest {
         mainInterface().deleteSubject(subject);
 
         // make sure subject deleted
-        mainCredentials().given().queryParam("format", "xml").get(restDriver.subjectUrl(subject)).then().assertThat().statusCode(404);
+        mainCredentials().given().queryParam("format", "xml").get(mainInterface().subjectUrl(subject)).then().assertThat().statusCode(404);
     }
 
     private File getSubjectXML(Subject subject) {
-        return restDriver.saveBinaryResponseToFile(mainCredentials().given().queryParam("format", "xml").get(restDriver.subjectUrl(subject)));
+        return restDriver.saveBinaryResponseToFile(mainCredentials().given().queryParam("format", "xml").get(mainInterface().subjectUrl(subject)));
     }
 
     private void compareBeanXML(File subjectXML, Subject subject, Map<Class<? extends BaseElement>, List<String>> ignoredFields) {

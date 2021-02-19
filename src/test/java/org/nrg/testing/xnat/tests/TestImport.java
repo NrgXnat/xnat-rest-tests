@@ -40,6 +40,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.AssertJUnit.*;
 
 public class TestImport extends BaseXnatRestTest {
@@ -100,7 +101,7 @@ public class TestImport extends BaseXnatRestTest {
         final Subject subject = new Subject(project, subjectFromTestZip);
         final ImagingSession session = new MRSession(project, subject, sessionFromTestZip);
 
-        mainCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
+        mainCredentials().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
 
         mainInterface().deleteSubjectAssessor(session);
     }
@@ -120,7 +121,7 @@ public class TestImport extends BaseXnatRestTest {
 
         final ImagingSession session = new MRSession(project, subject, sessionFromTestZip);
 
-        mainCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
+        mainCredentials().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
 
         mainInterface().deleteSubjectAssessor(session);
     }
@@ -139,7 +140,7 @@ public class TestImport extends BaseXnatRestTest {
                 post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200);
 
-        mainCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
+        mainCredentials().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
 
         mainInterface().deleteSubjectAssessor(session);
 
@@ -151,7 +152,7 @@ public class TestImport extends BaseXnatRestTest {
 
         final Subject subject = new Subject(project, "SUBJ_0002");
         final MRSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
-        final String resourceUrl = CommonStringUtils.formatUrl(restDriver.subjectAssessorUrl(session), "/resources/TEST/files/files.zip");
+        final String resourceUrl = CommonStringUtils.formatUrl(mainInterface().subjectAssessorUrl(session), "/resources/TEST/files/files.zip");
 
         // create subject & session with custom date
         mainInterface().createSubject(subject);
@@ -169,12 +170,12 @@ public class TestImport extends BaseXnatRestTest {
                 then().assertThat().statusCode(200);
 
         // test scan upload
-        mainCredentials().queryParam("format", "json").get(restDriver.sessionScansUrl(session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
+        mainCredentials().queryParam("format", "json").get(mainInterface().sessionScansUrl(session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
 
         // test session date, should *not* be overwritten
         assertEquals(
                 DateTimeFormatter.ISO_DATE.format(session.getDate()),
-                mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(restDriver.subjectUrl(subject), "experiments")).
+                mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(mainInterface().subjectUrl(subject), "experiments")).
                         jsonPath().getString(String.format("ResultSet.Result.find { it.label == '%s' }.date", session.getLabel()))
         );
 
@@ -359,7 +360,7 @@ public class TestImport extends BaseXnatRestTest {
         mainCredentials().
                 queryParam("format", "json").
                 queryParam("all", true).
-                get(CommonStringUtils.formatUrl(restDriver.scanUrl(scan), "files")).
+                get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan), "files")).
                 then().assertThat().body("ResultSet.Result", Matchers.hasSize(16)); // full scan1
     }
 
@@ -387,7 +388,7 @@ public class TestImport extends BaseXnatRestTest {
         mainCredentials().
                 queryParam("format", "json").
                 queryParam("all", true).
-                get(CommonStringUtils.formatUrl(restDriver.scanUrl(scan), "files")).
+                get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan), "files")).
                 then().assertThat().body("ResultSet.Result", Matchers.hasSize(16)); // full scan1
     }
 
@@ -520,10 +521,10 @@ public class TestImport extends BaseXnatRestTest {
         final String archiveUrl = mainCredentials().queryParam("action", "commit").queryParam("AA", true).post(restDriver.formatXnatUrl(newSessionUrl)).
                 then().assertThat().statusCode(301).and().extract().response().asString().trim();
 
-        assertFalse(unassignedUrl.equals(archiveUrl));
+        assertNotEquals(unassignedUrl, archiveUrl);
         assertTrue(archiveUrl.startsWith("/data/archive"));
 
-        restDriver.waitForAutoRun(mainInterface().readProject(project.getId()).getSubjects().get(0).getSessions().get(0));
+        mainInterface().waitForAutoRun(mainInterface().readProject(project.getId()).getSubjects().get(0).getSessions().get(0));
 
         for (int i = 1; i < 3; i++) {
             TestNgUtils.assertBinaryFilesEqual(
@@ -560,7 +561,7 @@ public class TestImport extends BaseXnatRestTest {
         final String archiveUrl = mainCredentials().queryParam("action", "commit").queryParam("AA", true).post(restDriver.formatXnatUrl(sessionUrl)).
                 then().assertThat().statusCode(301).and().extract().response().asString().trim();
 
-        assertFalse(sessionUrl.equals(archiveUrl));
+        assertNotEquals(sessionUrl, archiveUrl);
         assertTrue(archiveUrl.startsWith("/data/archive"));
 
         for (int i = 1; i < 3; i++) {
@@ -588,7 +589,7 @@ public class TestImport extends BaseXnatRestTest {
         final Scan expectedScan = new MRScan(session, "1");
         final Resource expectedScanResource = new ScanResource(project, subject, session, expectedScan).folder("DICOM");
 
-        final int scan1FileCount = mainCredentials().queryParam("format", "json").get(restDriver.resourceFilesUrl(expectedScanResource)).jsonPath().getInt("ResultSet.Result.size()");
+        final int scan1FileCount = mainCredentials().queryParam("format", "json").get(mainInterface().resourceFilesUrl(expectedScanResource)).jsonPath().getInt("ResultSet.Result.size()");
 
         mainCredentials().
                 queryParam("triggerPipelines", false).
@@ -598,9 +599,9 @@ public class TestImport extends BaseXnatRestTest {
                 post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200);
 
-        mainCredentials().queryParam("format", "json").get(restDriver.sessionScansUrl(session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
+        mainCredentials().queryParam("format", "json").get(mainInterface().sessionScansUrl(session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
 
-        mainCredentials().queryParam("format", "json").get(restDriver.resourceFilesUrl(expectedScanResource)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(scan1FileCount));
+        mainCredentials().queryParam("format", "json").get(mainInterface().resourceFilesUrl(expectedScanResource)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(scan1FileCount));
     }
 
     @Test
@@ -646,8 +647,8 @@ public class TestImport extends BaseXnatRestTest {
                 then().assertThat().statusCode(200);
 
         // confirm that the data went where we expected
-        mainCredentials().get(restDriver.scanUrl(scan1)).then().assertThat().statusCode(200);
-        mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(restDriver.scanUrl(scan1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
+        mainCredentials().get(mainInterface().scanUrl(scan1)).then().assertThat().statusCode(200);
+        mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
 
         // upload frame 2, should create scan 1-MR1
         waitForBackup();
@@ -660,8 +661,8 @@ public class TestImport extends BaseXnatRestTest {
                 then().assertThat().statusCode(200);
 
         // confirm that the data went where we expected
-        mainCredentials().get(restDriver.scanUrl(scan1MR1)).then().assertThat().statusCode(200);
-        mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(restDriver.scanUrl(scan1MR1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
+        mainCredentials().get(mainInterface().scanUrl(scan1MR1)).then().assertThat().statusCode(200);
+        mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1MR1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
 
         // upload frame 3, should be added to scan 1-MR1
         waitForBackup();
@@ -674,8 +675,8 @@ public class TestImport extends BaseXnatRestTest {
                 then().assertThat().statusCode(200);
 
         // confirm that the data went where we expected
-        mainCredentials().get(restDriver.scanUrl(scan1MR1)).then().assertThat().statusCode(200);
-        mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(restDriver.scanUrl(scan1MR1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
+        mainCredentials().get(mainInterface().scanUrl(scan1MR1)).then().assertThat().statusCode(200);
+        mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1MR1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
 
         // upload frame 4 & 5, should be added to scan 1
         waitForBackup();
@@ -688,19 +689,19 @@ public class TestImport extends BaseXnatRestTest {
                 then().assertThat().statusCode(200);
 
         // confirm that the data went where we expected
-        mainCredentials().get(restDriver.scanUrl(scan1)).then().assertThat().statusCode(200);
-        mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(restDriver.scanUrl(scan1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(3));
+        mainCredentials().get(mainInterface().scanUrl(scan1)).then().assertThat().statusCode(200);
+        mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(3));
 
         // test scan creations: should be 2 scans (1 and 1-MR1)
-        mainCredentials().queryParam("format", "json").get(restDriver.sessionScansUrl(session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
+        mainCredentials().queryParam("format", "json").get(mainInterface().sessionScansUrl(session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
 
-        final JsonPath scan1MR1JsonPath = mainCredentials().queryParam("stats", true).queryParam("format", "json").get(CommonStringUtils.formatUrl(restDriver.scanUrl(scan1MR1), "resources")).
+        final JsonPath scan1MR1JsonPath = mainCredentials().queryParam("stats", true).queryParam("format", "json").get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1MR1), "resources")).
                 then().assertThat().statusCode(200).and().extract().jsonPath().setRoot("ResultSet.Result");
 
         assertEquals("Should have 1 catalog (DICOM).", 1, scan1MR1JsonPath.getInt("size()"));
         assertEquals("Should have 2 files.", 2, scan1MR1JsonPath.getInt("get(0).file_count"));
 
-        final JsonPath scan1JsonPath = mainCredentials().queryParam("stats", true).queryParam("format", "json").get(CommonStringUtils.formatUrl(restDriver.scanUrl(scan1), "resources")).
+        final JsonPath scan1JsonPath = mainCredentials().queryParam("stats", true).queryParam("format", "json").get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1), "resources")).
                 then().assertThat().statusCode(200).and().extract().jsonPath().setRoot("ResultSet.Result");
 
         assertEquals("Should have 1 catalog (DICOM).", 1, scan1JsonPath.getInt("size()"));
@@ -769,7 +770,7 @@ public class TestImport extends BaseXnatRestTest {
         } while (System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(20));
 
         assertTrue(completed);
-        restDriver.waitForAutoRun(session);
+        mainInterface().waitForAutoRun(session);
         mainInterface().deleteProject(project);
     }
 
@@ -816,7 +817,7 @@ public class TestImport extends BaseXnatRestTest {
                 .get(restDriver.formatXapiUrl("event_tracking", listener))
                 .then().assertThat().statusCode(404);
 
-        restDriver.waitForAutoRun(session);
+        mainInterface().waitForAutoRun(session);
         mainInterface().deleteProject(project);
     }
 

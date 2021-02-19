@@ -57,7 +57,7 @@ public class TestRename extends BaseXnatRestTest {
         final String newLabel = "MOD1";
 
         mainAdminInterface().createSubject(subject);
-        mainAdminCredentials().given().queryParam("label", newLabel).put(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
+        mainAdminCredentials().given().queryParam("label", newLabel).put(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
         session.setLabel(newLabel);
 
         restDriver.validateResource(mainAdminUser, sessionResource);
@@ -79,7 +79,7 @@ public class TestRename extends BaseXnatRestTest {
         final String newLabel = "MOD2";
 
         mainAdminInterface().createSubject(subject);
-        mainAdminCredentials().given().queryParam("label", newLabel).put(restDriver.subjectUrl(subject));
+        mainAdminCredentials().given().queryParam("label", newLabel).put(mainInterface().subjectUrl(subject));
         subject.setLabel(newLabel);
 
         restDriver.validateResource(mainAdminUser, subjectResource);
@@ -110,19 +110,19 @@ public class TestRename extends BaseXnatRestTest {
 
         // user with no access to source project should not be able to relabel
         mainCredentials().given().queryParam("label", newLabel).
-                put(restDriver.subjectAssessorUrl(renameProject1, subject, session)).
+                put(mainInterface().subjectAssessorUrl(renameProject1, subject, session)).
                 then().assertThat().statusCode(404);
 
         mainAdminInterface().addUserToProject(mainUser, renameProject1, UserGroups.COLLABORATOR);
 
         // user with collaborator to source project should not be able to relabel
-        mainCredentials().given().queryParam("label", newLabel).put(restDriver.subjectAssessorUrl(renameProject1, subject, session)).then().assertThat().statusCode(Matchers.isOneOf(403, 417));
+        mainCredentials().given().queryParam("label", newLabel).put(mainInterface().subjectAssessorUrl(renameProject1, subject, session)).then().assertThat().statusCode(Matchers.isOneOf(403, 417));
         restDriver.validateResource(mainUser, sessionResource);
 
         mainAdminInterface().addUserToProject(mainUser, renameProject1, UserGroups.MEMBER);
         TimeUtils.sleep(1000); // let cache update
 
-        mainCredentials().given().queryParam("label", newLabel).put(restDriver.subjectAssessorUrl(renameProject1, subject, session)).then().assertThat().statusCode(200);
+        mainCredentials().given().queryParam("label", newLabel).put(mainInterface().subjectAssessorUrl(renameProject1, subject, session)).then().assertThat().statusCode(200);
         session.setLabel(newLabel);
 
         restDriver.validateResource(mainUser, sessionResource);

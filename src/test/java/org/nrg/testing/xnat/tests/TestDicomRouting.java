@@ -172,7 +172,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
         final Subject subject = new Subject(project, expectedSub);
         final ImagingSession session = new MRSession(project, subject, expectedSes);
         verifyImport(session);
-        restDriver.waitForAutoRun(session);
+        mainInterface().waitForAutoRun(session);
         restDriver.deleteProjectSilently(mainUser, project);
     }
 
@@ -329,7 +329,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
         verifyImport(session);
 
         // cleanup
-        restDriver.waitForAutoRun(session);
+        mainInterface().waitForAutoRun(session);
         restDriver.deleteProjectSilently(mainUser, project);
     }
 
@@ -422,7 +422,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
         final Subject subject = new Subject(p, subjectFromTestZip);
         final ImagingSession session = new MRSession(p, subject, sessionFromTestZip);
         verifyImport(session);
-        restDriver.waitForAutoRun(session);
+        mainInterface().waitForAutoRun(session);
         restDriver.deleteProjectSilently(mainUser, p);
     }
 
@@ -430,7 +430,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
         final Subject subject = new Subject(project, expected);
         final ImagingSession session = new MRSession(project, subject, sessionFromTestZip);
         verifyImport(session);
-        restDriver.waitForAutoRun(session);
+        mainInterface().waitForAutoRun(session);
         mainInterface().deleteSubjectAssessor(session);
     }
 
@@ -438,7 +438,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
         final Subject subject = new Subject(project, subjectFromTestZip);
         final ImagingSession session = new MRSession(project, subject, expected);
         verifyImport(session);
-        restDriver.waitForAutoRun(session);
+        mainInterface().waitForAutoRun(session);
         mainInterface().deleteSubjectAssessor(session);
     }
 
@@ -476,7 +476,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
     private void verifyImport(SubjectAssessor session) {
         // if session can be retrieved at this URL, then project, subject, session are all labelled properly
         TimeUtils.sleep(1000); // sleep for 1s to accommodate a little gap between prearchive being empty and session being accessible
-        mainCredentials().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
+        mainCredentials().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
     }
 
     @FunctionalInterface

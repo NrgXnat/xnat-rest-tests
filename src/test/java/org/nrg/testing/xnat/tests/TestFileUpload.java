@@ -112,7 +112,7 @@ public class TestFileUpload extends BaseXnatRestTest {
 
         for (Resource resource : new Resource[]{sessionResource, subjectResource, projectResource}) {
             final ResourceFile file = resource.getResourceFiles().get(0);
-            mainCredentials().multiPart(file.getExtension().getJavaFile()).put(restDriver.resourceFileUrl(resource, file)).then().assertThat().statusCode(200);
+            mainCredentials().multiPart(file.getExtension().getJavaFile()).put(mainInterface().resourceFileUrl(resource, file)).then().assertThat().statusCode(200);
         }
 
         restDriver.validateResource(mainUser, sessionResource);
@@ -121,7 +121,7 @@ public class TestFileUpload extends BaseXnatRestTest {
 
         final File downloadedZip = restDriver.saveBinaryResponseToFile(
                 mainCredentials().queryParam("format", "zip").queryParam("compression", 0).
-                        get(restDriver.resourceFilesUrl(sessionResource)).then().assertThat().statusCode(200).and().extract().response()
+                        get(mainInterface().resourceFilesUrl(sessionResource)).then().assertThat().statusCode(200).and().extract().response()
         );
 
         final Path unzippedFolder = Paths.get(Settings.TEMP_SUBDIR, "resourcesUpload");
@@ -141,7 +141,7 @@ public class TestFileUpload extends BaseXnatRestTest {
         final String oneSubdir = "sub/2.dcm";
         final String twoSubdirs = "sub/folder/3.dcm";
         final Resource subdirResource = new ProjectResource(project, "TEST2");
-        final String subdirFilesUrl = restDriver.resourceFilesUrl(subdirResource);
+        final String subdirFilesUrl = mainInterface().resourceFilesUrl(subdirResource);
 
         for (String path : new String[]{noSubdir, oneSubdir, twoSubdirs}) {
             mainCredentials().multiPart(dicomFile3).put(CommonStringUtils.formatUrl(subdirFilesUrl, path)).then().assertThat().statusCode(200);
@@ -159,7 +159,7 @@ public class TestFileUpload extends BaseXnatRestTest {
 
     @Test
     public void testReconstructionUpload() {
-        final String reconUrl = CommonStringUtils.formatUrl(restDriver.subjectAssessorUrl(session), "reconstructions/1_MR1_2");
+        final String reconUrl = CommonStringUtils.formatUrl(mainInterface().subjectAssessorUrl(session), "reconstructions/1_MR1_2");
         mainCredentials().queryParam("format", "xml").queryParam("req_format", "qs").queryParam("type", "LOCALIZER").put(reconUrl).then().assertThat().statusCode(200);
         mainCredentials().multiPart(dicomFile3).put(CommonStringUtils.formatUrl(reconUrl, "resources/TEST/files/3.dcm")).then().assertThat().statusCode(200);
 
@@ -173,7 +173,7 @@ public class TestFileUpload extends BaseXnatRestTest {
         final Scan scan2 = new MRScan(session, "2").seriesDescription("localizer").quality("questionable");
         mainInterface().createScan(project, subject, session, scan1);
         mainInterface().createScan(project, subject, session, scan2);
-        final String scanUrl = restDriver.scanUrl(scan1);
+        final String scanUrl = mainInterface().scanUrl(scan1);
 
         mainCredentials().multiPart(dicomFile2).put(CommonStringUtils.formatUrl(scanUrl, "resources/TEST/files/3.dcm")).then().assertThat().statusCode(200);
         restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(scanUrl, "resources/TEST/files/3.dcm"), dicomFile2);
@@ -183,7 +183,7 @@ public class TestFileUpload extends BaseXnatRestTest {
 
     @Test
     public void testManQCUpload() {
-        final String assessorUrl = restDriver.sessionAssessorUrl(new ManualQC(project, subject, session, "MR1_ManualQC"));
+        final String assessorUrl = mainInterface().sessionAssessorUrl(new ManualQC(project, subject, session, "MR1_ManualQC"));
         mainCredentials().queryParam("xsiType", DataType.MANUAL_QC.getXsiType()).queryParam("xnat:qcManualAssessorData/pass", true).put(assessorUrl).then().assertThat().statusCode(201);
         mainCredentials().multiPart(dicomFile1).put(CommonStringUtils.formatUrl(assessorUrl, "out/resources/DICOM/files/1.dcm")).then().assertThat().statusCode(200);
 
@@ -195,7 +195,7 @@ public class TestFileUpload extends BaseXnatRestTest {
     public void testScanUpload() {
         final Scan scan = new MRScan(session, "MR1_scan1");
         mainInterface().createScan(project, subject, session, scan);
-        final String scanUrl = restDriver.scanUrl(scan);
+        final String scanUrl = mainInterface().scanUrl(scan);
 
         mainCredentials().multiPart(dicomFile1).put(CommonStringUtils.formatUrl(scanUrl, "resources/DICOM/files/1.dcm")).then().assertThat().statusCode(200);
 
@@ -205,7 +205,7 @@ public class TestFileUpload extends BaseXnatRestTest {
 
     @Test
     public void testReconUpload() {
-        final String reconUrl = CommonStringUtils.formatUrl(restDriver.subjectAssessorUrl(session), "reconstructions/MR1_recon1");
+        final String reconUrl = CommonStringUtils.formatUrl(mainInterface().subjectAssessorUrl(session), "reconstructions/MR1_recon1");
         mainCredentials().put(reconUrl).then().assertThat().statusCode(200);
         mainCredentials().multiPart(dicomFile1).put(CommonStringUtils.formatUrl(reconUrl, "resources/DICOM/files/1.dcm")).then().assertThat().statusCode(200);
 
@@ -215,7 +215,7 @@ public class TestFileUpload extends BaseXnatRestTest {
 
     @Test
     public void testMRResourceUpload() {
-        final String sessionUrl = restDriver.subjectAssessorUrl(session);
+        final String sessionUrl = mainInterface().subjectAssessorUrl(session);
         mainCredentials().multiPart(dicomFile2).put(CommonStringUtils.formatUrl(sessionUrl, "resources/DICOM/files/1.dcm"));
 
         restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(sessionUrl, "resources/DICOM/files/1.dcm"), dicomFile2);
@@ -224,7 +224,7 @@ public class TestFileUpload extends BaseXnatRestTest {
 
     @Test
     public void testSubjectResourceUpload() {
-        final String subjectUrl = restDriver.subjectUrl(subject);
+        final String subjectUrl = mainInterface().subjectUrl(subject);
         mainCredentials().multiPart(dicomFile3).put(CommonStringUtils.formatUrl(subjectUrl, "resources/TEST1/files/1.dcm"));
 
         restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(subjectUrl, "resources/TEST1/files/1.dcm"), dicomFile3);
@@ -233,7 +233,7 @@ public class TestFileUpload extends BaseXnatRestTest {
 
     @Test
     public void testProjectResourceUpload() {
-        final String projectUrl = restDriver.projectUrl(project);
+        final String projectUrl = mainInterface().projectUrl(project);
         mainCredentials().multiPart(dicomFile3).put(CommonStringUtils.formatUrl(projectUrl, "resources/TEST1/files/1.dcm"));
 
         restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(projectUrl, "resources/TEST1/files/1.dcm"), dicomFile3);
@@ -335,22 +335,22 @@ public class TestFileUpload extends BaseXnatRestTest {
     private void uploadAndExtractToScan(File compressedFile) {
         final Scan scan = new MRScan(session, "MR1_scan1");
         mainInterface().createScan(project, subject, session, scan);
-        final String scanUrl = restDriver.scanUrl(scan);
+        final String scanUrl = mainInterface().scanUrl(scan);
         uploadAndExtract(scanUrl, compressedFile);
     }
 
     private void uploadAndExtractToSession(File compressedFile) {
-        final String sessionUrl = restDriver.subjectAssessorUrl(session);
+        final String sessionUrl = mainInterface().subjectAssessorUrl(session);
         uploadAndExtract(sessionUrl, compressedFile);
     }
 
     private void uploadAndExtractToSubject(File compressedFile) {
-        final String subjectUrl = restDriver.subjectUrl(subject);
+        final String subjectUrl = mainInterface().subjectUrl(subject);
         uploadAndExtract(subjectUrl, compressedFile);
     }
 
     private void uploadAndExtractToProject(File compressedFile) {
-        final String projectUrl = restDriver.projectUrl(project);
+        final String projectUrl = mainInterface().projectUrl(project);
         uploadAndExtract(projectUrl, compressedFile);
     }
     
@@ -375,7 +375,7 @@ public class TestFileUpload extends BaseXnatRestTest {
      */
     @Test
     public void testMRResourcesTotalRecordsCount() {
-        final String sessionUrl = restDriver.subjectAssessorUrl(session);
+        final String sessionUrl = mainInterface().subjectAssessorUrl(session);
 
         // Test Records Count with ?file_stats=true
         assertEquals(0, getTotalRecords(mainCredentials().queryParam("format", "json").queryParam("file_stats", true).get(CommonStringUtils.formatUrl(sessionUrl, "resources"))));
@@ -405,7 +405,7 @@ public class TestFileUpload extends BaseXnatRestTest {
 
     private XnatMrsessiondataBean readMrBean() {
         try {
-            return (XnatMrsessiondataBean)LegacyComparison.readElementFromReponse(mainCredentials().queryParam("format", "xml").get(restDriver.subjectAssessorUrl(session)).asInputStream());
+            return (XnatMrsessiondataBean)LegacyComparison.readElementFromReponse(mainCredentials().queryParam("format", "xml").get(mainInterface().subjectAssessorUrl(session)).asInputStream());
         } catch (Exception e) {
             fail("Failed to read MR bean: " + e);
             return null;

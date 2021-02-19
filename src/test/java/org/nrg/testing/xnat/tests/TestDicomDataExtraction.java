@@ -92,7 +92,7 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
     }
 
     private void checkStudyMatchesAttributes(ImagingSession session, String attributesFile) throws IOException {
-        final JsonPath studyJsonPath = restDriver.mainInterface().jsonQuery().get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200).and().extract().jsonPath();
+        final JsonPath studyJsonPath = restDriver.mainInterface().jsonQuery().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200).and().extract().jsonPath();
         final Map<String, Object> expectedStudyFields = readAttributes(attributesFile);
         if (expectedStudyFields.containsKey(STUDY_COMMENTS)) {
             final Map<String, Object> studyCommentDataFields = studyJsonPath.getMap("items[0].children.find { it.field == 'fields/field' }.items[0].data_fields");
@@ -110,7 +110,7 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
 
     private void checkSeriesMatchesAttributes(Scan scan, String attributesFile) throws IOException {
         final Map<String, Object> expectedSeriesFields = readAttributes(attributesFile);
-        final Map<String, Object> actualSeriesDataFields = restDriver.mainInterface().jsonQuery().get(restDriver.scanUrl(scan)).then().assertThat().statusCode(200).and().extract().path("items[0].data_fields");
+        final Map<String, Object> actualSeriesDataFields = restDriver.mainInterface().jsonQuery().get(mainInterface().scanUrl(scan)).then().assertThat().statusCode(200).and().extract().path("items[0].data_fields");
         assertEquals(scan.getSession().getAccessionNumber(), actualSeriesDataFields.get("image_session_ID"));
         assertTrue(actualSeriesDataFields.entrySet().containsAll(expectedSeriesFields.entrySet()));
     }

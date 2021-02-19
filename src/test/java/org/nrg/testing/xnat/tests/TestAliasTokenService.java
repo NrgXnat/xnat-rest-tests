@@ -99,8 +99,8 @@ public class TestAliasTokenService extends BaseXnatRestTest {
     }
 
     private void checkAliasToken(XnatAliasToken aliasToken, int mainUserProjectStatusCode, int otherUserProjectStatusCode) {
-        build(aliasToken).get(restDriver.projectUrl(project)).then().assertThat().statusCode(mainUserProjectStatusCode);
-        build(aliasToken).get(restDriver.projectUrl(otherUserProject)).then().assertThat().statusCode(otherUserProjectStatusCode);
+        build(aliasToken).get(mainInterface().projectUrl(project)).then().assertThat().statusCode(mainUserProjectStatusCode);
+        build(aliasToken).get(mainInterface().projectUrl(otherUserProject)).then().assertThat().statusCode(otherUserProjectStatusCode);
     }
 
     private XnatAliasToken selfAliasTokenTest() {

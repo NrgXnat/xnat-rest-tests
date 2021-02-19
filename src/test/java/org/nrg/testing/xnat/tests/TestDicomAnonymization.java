@@ -132,7 +132,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
 
         final ImagingSession session = importAnonSession();
         validateAnon(session, null, Arrays.asList(projectScript, siteScript));
-        restDriver.waitForAutoRun(session);
+        mainInterface().waitForAutoRun(session);
 
         mainInterface().enableProjectAnonScript(anonProject);
 
@@ -148,7 +148,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
 
         final ImagingSession session = importAnonSession();
         validateAnon(session, null, Arrays.asList(projectScript, siteScript));
-        restDriver.waitForAutoRun(session);
+        mainInterface().waitForAutoRun(session);
 
         mainInterface().enableProjectAnonScript(anonProject);
 
@@ -179,9 +179,9 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         final List<File> dicomFiles = new ArrayList<>();
         final List<Scan> scans = mainInterface().readScans(anonProject, session.getSubject(), session);
         for (Scan scan : scans) {
-            final Resource dicom = restDriver.findResource(scan.getScanResources(), "DICOM");
+            final Resource dicom = mainInterface().findResource(scan.getScanResources(), "DICOM");
             for (ResourceFile file : dicom.getResourceFiles()) {
-                dicomFiles.add(restDriver.saveBinaryResponseToFile(restDriver.interfaceFor(mainUser).queryBase().get(restDriver.resourceFileUrl(dicom, file))));
+                dicomFiles.add(restDriver.saveBinaryResponseToFile(restDriver.interfaceFor(mainUser).queryBase().get(mainInterface().resourceFileUrl(dicom, file))));
             }
         }
         return dicomFiles;

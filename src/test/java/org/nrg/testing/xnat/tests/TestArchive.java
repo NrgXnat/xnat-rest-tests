@@ -69,7 +69,7 @@ public class TestArchive extends BaseXnatRestTest {
         mainInterface().waitForAutoRun(session, 60);
 
         mainCredentials().queryParam("file_content", "ORIGINAL").queryParam("index", 0).
-                get(restDriver.resourceFilesUrl(new ScanResource(project, subject, session, scan1).folder("SNAPSHOTS"))).
+                get(mainInterface().resourceFilesUrl(new ScanResource(project, subject, session, scan1).folder("SNAPSHOTS"))).
                 then().assertThat().statusCode(200);
     }
 
@@ -94,7 +94,7 @@ public class TestArchive extends BaseXnatRestTest {
         // all other $commonSeriesDescription scans in this project have been labeled as '$scanType', so these should be too.
         mainQueryBase().queryParam("fixScanTypes", true).put(mainInterface().subjectAssessorUrl(mr1)).then().assertThat().statusCode(200);
 
-        final Scan[] readScans = mainCredentials().given().queryParam("format", "json").get(restDriver.sessionScansUrl(mr1)).jsonPath().getObject("ResultSet.Result", Scan[].class);
+        final Scan[] readScans = mainCredentials().given().queryParam("format", "json").get(mainInterface().sessionScansUrl(mr1)).jsonPath().getObject("ResultSet.Result", Scan[].class);
         assertEquals(mr1.getScans().size(), readScans.length);
 
         for (Scan scan : readScans) {

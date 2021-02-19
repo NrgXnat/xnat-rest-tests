@@ -61,42 +61,42 @@ public class TestExptAssessmentResources extends BaseXnatRestTest {
 
         LegacyComparison.compareBeanXML(
                 assessorV1,
-                restDriver.saveBinaryResponseToFile(mainAdminCredentials().given().queryParam("format", "xml").get(restDriver.sessionAssessorUrl(assessor))),
+                restDriver.saveBinaryResponseToFile(mainAdminCredentials().given().queryParam("format", "xml").get(mainInterface().sessionAssessorUrl(assessor))),
                 Collections.singletonMap(XnatQcmanualassessordataBean.class, Collections.singletonList("project"))
         );
 
-        mainCredentials().given().queryParam("format", "html").get(restDriver.assessorsUrl(project2, subject, session)).then().assertThat().statusCode(200);
+        mainCredentials().given().queryParam("format", "html").get(mainInterface().assessorsUrl(project2, subject, session)).then().assertThat().statusCode(200);
 
         // modify assessment
         mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIOUtils.readFile(assessorV2)).
-                put(restDriver.sessionAssessorUrl(assessor)).then().assertThat().statusCode(200);
+                put(mainInterface().sessionAssessorUrl(assessor)).then().assertThat().statusCode(200);
 
         // confirm listing still works
-        mainCredentials().given().queryParam("format", "html").get(restDriver.assessorsUrl(project2, subject, session)).then().assertThat().statusCode(200);
+        mainCredentials().given().queryParam("format", "html").get(mainInterface().assessorsUrl(project2, subject, session)).then().assertThat().statusCode(200);
 
         LegacyComparison.compareBeanXML(
                 assessorV2,
-                restDriver.saveBinaryResponseToFile(mainAdminCredentials().given().queryParam("format", "xml").get(restDriver.sessionAssessorUrl(assessor))),
+                restDriver.saveBinaryResponseToFile(mainAdminCredentials().given().queryParam("format", "xml").get(mainInterface().sessionAssessorUrl(assessor))),
                 Collections.singletonMap(XnatQcmanualassessordataBean.class, Collections.singletonList("project"))
         );
 
-        mainCredentials().given().queryParam("format", "json").get(CommonStringUtils.formatUrl(restDriver.sessionAssessorUrl(assessor), "projects")).
+        mainCredentials().given().queryParam("format", "json").get(CommonStringUtils.formatUrl(mainInterface().sessionAssessorUrl(assessor), "projects")).
                 then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
 
         mainInterface().deleteSessionAssessor(assessor);
 
-        mainCredentials().given().queryParam("format", "json").get(restDriver.assessorsUrl(project2, subject, session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(0));
-        mainCredentials().given().queryParam("format", "json").get(restDriver.assessorsByAccessionNumber(session)).
+        mainCredentials().given().queryParam("format", "json").get(mainInterface().assessorsUrl(project2, subject, session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(0));
+        mainCredentials().given().queryParam("format", "json").get(mainInterface().assessorsUrlByAccessionNumber(session)).
                 then().assertThat().body("ResultSet.Result", Matchers.hasSize(0));
 
-        mainCredentials().given().queryParam("format", "xml").get(restDriver.sessionAssessorUrl(assessor)).then().assertThat().statusCode(404);
+        mainCredentials().given().queryParam("format", "xml").get(mainInterface().sessionAssessorUrl(assessor)).then().assertThat().statusCode(404);
 
         mainInterface().createSessionAssessor(assessor); // reupload
 
-        mainCredentials().given().queryParam("format", "json").get(restDriver.assessorsByAccessionNumber(session)).
+        mainCredentials().given().queryParam("format", "json").get(mainInterface().assessorsUrlByAccessionNumber(session)).
                 then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
 
-        mainCredentials().given().queryParam("format", "xml").get(restDriver.assessorByAccessionNumber(session, assessor)).then().assertThat().statusCode(200);
+        mainCredentials().given().queryParam("format", "xml").get(mainInterface().assessorUrlByAccessionNumber(session, assessor)).then().assertThat().statusCode(200);
 
         // check no sharing
         mainCredentials().given().queryParam("format", "json").get(formatRestUrl("experiments", session.getAccessionNumber(), "assessors", assessor.getAccessionNumber(), "projects")).
@@ -118,18 +118,18 @@ public class TestExptAssessmentResources extends BaseXnatRestTest {
         mainCredentials().given().queryParam("format", "json").get(formatRestUrl("experiments", session.getAccessionNumber(), "assessors", assessor.getAccessionNumber(), "projects")).
                 then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
 
-        mainCredentials().given().queryParam("format", "xml").get(restDriver.assessorByAccessionNumber(session, assessor)).then().assertThat().statusCode(200);
+        mainCredentials().given().queryParam("format", "xml").get(mainInterface().assessorUrlByAccessionNumber(session, assessor)).then().assertThat().statusCode(200);
 
-        mainCredentials().given().queryParam("format", "json").get(restDriver.assessorsByAccessionNumber(session)).
+        mainCredentials().given().queryParam("format", "json").get(mainInterface().assessorsUrlByAccessionNumber(session)).
                 then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
 
-        mainCredentials().given().queryParam("format", "xml").delete(restDriver.assessorByAccessionNumber(session, assessor)).then().assertThat().statusCode(200);
+        mainCredentials().given().queryParam("format", "xml").delete(mainInterface().assessorUrlByAccessionNumber(session, assessor)).then().assertThat().statusCode(200);
 
-        mainCredentials().given().queryParam("format", "json").get(restDriver.assessorsByAccessionNumber(session)).
+        mainCredentials().given().queryParam("format", "json").get(mainInterface().assessorsUrlByAccessionNumber(session)).
                 then().assertThat().body("ResultSet.Result", Matchers.hasSize(0));
 
         // deleted session assessor should 404
-        mainCredentials().given().queryParam("format", "xml").delete(restDriver.assessorByAccessionNumber(session, assessor)).then().assertThat().statusCode(404);
+        mainCredentials().given().queryParam("format", "xml").delete(mainInterface().assessorUrlByAccessionNumber(session, assessor)).then().assertThat().statusCode(404);
     }
 
 }

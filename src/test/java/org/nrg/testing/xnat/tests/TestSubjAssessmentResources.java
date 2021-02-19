@@ -98,24 +98,24 @@ public class TestSubjAssessmentResources extends BaseXnatRestTest {
 
         LegacyComparison.compareBeanXML(
                 experimentV1,
-                restDriver.saveBinaryResponseToFile(mainCredentials().queryParam("format", "xml").get(restDriver.subjectAssessorUrl(session))),
+                restDriver.saveBinaryResponseToFile(mainCredentials().queryParam("format", "xml").get(mainInterface().subjectAssessorUrl(session))),
                 fieldsToIgnore
         );
 
         mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(FileIOUtils.readFile(experimentV2)).
-                put(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(200);
+                put(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
 
         mainCredentials().given().queryParam("format", "html").get(experimentsUrl()).then().assertThat().statusCode(200);
 
         LegacyComparison.compareBeanXML(
                 experimentV2,
-                restDriver.saveBinaryResponseToFile(mainCredentials().queryParam("format", "xml").get(restDriver.subjectAssessorUrl(session))),
+                restDriver.saveBinaryResponseToFile(mainCredentials().queryParam("format", "xml").get(mainInterface().subjectAssessorUrl(session))),
                 fieldsToIgnore
         );
 
         final LegacyComparison comparison = LegacyComparison.compareObjectsFromFile(
                 experimentV1,
-                restDriver.saveBinaryResponseToFile(mainCredentials().queryParam("format", "xml").get(restDriver.subjectAssessorUrl(session))),
+                restDriver.saveBinaryResponseToFile(mainCredentials().queryParam("format", "xml").get(mainInterface().subjectAssessorUrl(session))),
                 fieldsToIgnore
         );
 
@@ -127,7 +127,7 @@ public class TestSubjAssessmentResources extends BaseXnatRestTest {
 
         mainCredentials().given().queryParam("format", "html").get(experimentsUrl()).then().assertThat().statusCode(200);
 
-        mainCredentials().given().queryParam("format", "xml").get(restDriver.subjectAssessorUrl(session)).then().assertThat().statusCode(404);
+        mainCredentials().given().queryParam("format", "xml").get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(404);
     }
 
     private String experimentsUrl() {

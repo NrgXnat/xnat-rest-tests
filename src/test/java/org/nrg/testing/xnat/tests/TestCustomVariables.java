@@ -39,16 +39,16 @@ public class TestCustomVariables extends BaseXnatRestTest {
         final SubjectAssessor subjectAssessor = new MRSession(project, subject).date(LocalDate.parse("1999-12-31"));
         mainInterface().createProject(project);
 
-        mainCredentials().given().queryParam(testField, originalFieldValue).put(restDriver.subjectAssessorUrl(subjectAssessor)).then().statusCode(200);
+        mainCredentials().given().queryParam(testField, originalFieldValue).put(mainInterface().subjectAssessorUrl(subjectAssessor)).then().statusCode(200);
         readCustomVariables(subjectAssessor).then().assertThat().body(customVariableJsonPath(originalFieldValue, fieldName), Matchers.notNullValue());
 
         final String newValue = "14";
-        mainCredentials().given().queryParam(testField, newValue).put(restDriver.subjectAssessorUrl(subjectAssessor)).then().statusCode(200);
+        mainCredentials().given().queryParam(testField, newValue).put(mainInterface().subjectAssessorUrl(subjectAssessor)).then().statusCode(200);
         readCustomVariables(subjectAssessor).then().assertThat().body(customVariableJsonPath(newValue, fieldName), Matchers.notNullValue()); // new value set
         readCustomVariables(subjectAssessor).then().assertThat().body(customVariableJsonPath(originalFieldValue, fieldName), Matchers.nullValue()); // old value gone
 
         final String finalValue = "15";
-        mainCredentials().given().contentType(ContentType.URLENC).formParam(testField, finalValue).put(restDriver.subjectAssessorUrl(subjectAssessor)).then().statusCode(200); // modify via form post
+        mainCredentials().given().contentType(ContentType.URLENC).formParam(testField, finalValue).put(mainInterface().subjectAssessorUrl(subjectAssessor)).then().statusCode(200); // modify via form post
         readCustomVariables(subjectAssessor).then().assertThat().body(customVariableJsonPath(finalValue, fieldName), Matchers.notNullValue()); // new value set
         readCustomVariables(subjectAssessor).then().assertThat().body(customVariableJsonPath(newValue, fieldName), Matchers.nullValue()); // old value gone
     }
