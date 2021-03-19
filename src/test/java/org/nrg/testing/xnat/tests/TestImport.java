@@ -17,7 +17,6 @@ import org.nrg.testing.xnat.versions.*;
 import org.nrg.xnat.enums.PrearchiveCode;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
-import org.nrg.xnat.pogo.SiteConfig;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.Scan;
@@ -93,7 +92,7 @@ public class TestImport extends BaseXnatRestTest {
 
         mainCredentials().
                 queryParam("triggerPipelines", false).
-                queryParam("dest", "/archive/projects/" + project.getId()).
+                queryParam("dest", project.getUri()).
                 multiPart(testZip).
                 post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200);
@@ -114,7 +113,7 @@ public class TestImport extends BaseXnatRestTest {
 
         mainCredentials().
                 queryParam("triggerPipelines", false).
-                queryParam("dest", String.format("/archive/projects/%s/subjects/%s", project.getId(), subject.getLabel())).
+                queryParam("dest", subject.getUri()).
                 multiPart(testZip).
                 post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200);
@@ -135,7 +134,7 @@ public class TestImport extends BaseXnatRestTest {
 
         mainCredentials().
                 queryParam("triggerPipelines", false).
-                queryParam("dest", String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel())).
+                queryParam("dest", session.getUri()).
                 multiPart(testZip).
                 post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200);
@@ -164,7 +163,7 @@ public class TestImport extends BaseXnatRestTest {
         mainCredentials().
                 queryParam("triggerPipelines", false).
                 queryParam("overwrite", "append").
-                queryParam("dest", String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel())).
+                queryParam("dest", session.getUri()).
                 multiPart(testZip).
                 post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200);
@@ -197,7 +196,7 @@ public class TestImport extends BaseXnatRestTest {
 
         mainCredentials().
                 queryParam("triggerPipelines", false).
-                queryParam("dest", String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel())).
+                queryParam("dest", session.getUri()).
                 multiPart(testZip).
                 post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(409);
@@ -220,7 +219,7 @@ public class TestImport extends BaseXnatRestTest {
         mainCredentials().
                 queryParam("triggerPipelines", false).
                 queryParam("overwrite", "delete").
-                queryParam("dest", String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel())).
+                queryParam("dest", session.getUri()).
                 multiPart(testZip).
                 post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(409);
@@ -230,7 +229,7 @@ public class TestImport extends BaseXnatRestTest {
             mainCredentials().
                     queryParam("triggerPipelines", false).
                     queryParam("overwrite", "delete").
-                    queryParam("dest", String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel())).
+                    queryParam("dest", session.getUri()).
                     multiPart(testZip).
                     post(formatRestUrl("services/import")).
                     then().assertThat().statusCode(200);
@@ -256,7 +255,7 @@ public class TestImport extends BaseXnatRestTest {
         for (int i = 0; i < 2; i++) {
             mainCredentials().
                     queryParam("triggerPipelines", false).
-                    queryParam("dest", String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel())).
+                    queryParam("dest", session.getUri()).
                     multiPart(testZip).
                     post(formatRestUrl("services/import")).
                     then().assertThat().statusCode((i == 0) ? 200 : 409); // Should work only the first time
@@ -273,7 +272,7 @@ public class TestImport extends BaseXnatRestTest {
         for (int i = 0; i < 2; i++) {
             final Map<String, Object> params = new HashMap<>();
             params.put("triggerPipelines", false);
-            params.put("dest", String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel()));
+            params.put("dest", session.getUri());
             if (i == 1) params.put("overwrite", "append");
 
             mainCredentials().
@@ -297,7 +296,7 @@ public class TestImport extends BaseXnatRestTest {
         for (int i = 0; i < 2; i++) {
             final Map<String, Object> params = new HashMap<>();
             params.put("triggerPipelines", false);
-            params.put("dest", String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel()));
+            params.put("dest", session.getUri());
             if (i == 1) {
                 params.put("overwrite", "append");
                 params.put("overwrite_files", true);
@@ -321,7 +320,7 @@ public class TestImport extends BaseXnatRestTest {
         for (int i = 0; i < 2; i++) {
             final Map<String, Object> params = new HashMap<>();
             params.put("triggerPipelines", false);
-            params.put("dest", String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel()));
+            params.put("dest", session.getUri());
             if (i == 1) {
                 params.put("overwrite", "delete");
             }
@@ -345,7 +344,7 @@ public class TestImport extends BaseXnatRestTest {
         for (int i = 0; i < 2; i++) {
             final Map<String, Object> params = new HashMap<>();
             params.put("triggerPipelines", false);
-            params.put("dest", String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel()));
+            params.put("dest", session.getUri());
             if (i == 1) {
                 params.put("overwrite", "append");
             }
@@ -373,7 +372,7 @@ public class TestImport extends BaseXnatRestTest {
         for (int i = 0; i < 2; i++) {
             final Map<String, Object> params = new HashMap<>();
             params.put("triggerPipelines", false);
-            params.put("dest", String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel()));
+            params.put("dest", session.getUri());
             if (i == 1) {
                 params.put("overwrite", "delete");
             }
@@ -400,7 +399,7 @@ public class TestImport extends BaseXnatRestTest {
         for (int i = 0; i < 2; i++) {
             final Map<String, Object> params = new HashMap<>();
             params.put("triggerPipelines", false);
-            params.put("dest", String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel()));
+            params.put("dest", session.getUri());
             if (i == 1) {
                 params.put("overwrite", "append");
             }
@@ -478,12 +477,12 @@ public class TestImport extends BaseXnatRestTest {
 
         assertEquals(responseUri, responseUris.get(1));
 
-        assertEquals(responseUri, mainCredentials().queryParam("action", "commit").post(restDriver.formatXnatUrl(responseUris.get(0))).asString());
+        assertEquals(responseUri, mainCredentials().queryParam("action", "commit").post(formatXnatUrl(responseUris.get(0))).asString());
 
         for (int i = 1; i < 3; i++) {
             TestNgUtils.assertBinaryFilesEqual(
                     getDataFile(String.format("scan%d/000000.dcm", i)),
-                    restDriver.saveBinaryResponseToFile(mainCredentials().get(restDriver.formatXnatUrl(responseUri, "scans", Integer.toString(i), "resources/DICOM/files/000000.dcm")))
+                    restDriver.saveBinaryResponseToFile(mainCredentials().get(formatXnatUrl(responseUri, "scans", Integer.toString(i), "resources/DICOM/files/000000.dcm")))
             );
         }
     }
@@ -512,13 +511,13 @@ public class TestImport extends BaseXnatRestTest {
 
         assertEquals(unassignedUrl, sessionUris.get(1));
 
-        mainAdminCredentials().queryParam("action", "build").post(restDriver.formatXnatUrl(unassignedUrl)).then().assertThat().statusCode(200);
+        mainAdminCredentials().queryParam("action", "build").post(formatXnatUrl(unassignedUrl)).then().assertThat().statusCode(200);
 
-        mainAdminCredentials().queryParam("action", "move").queryParam("newProject", project.getId()).post(restDriver.formatXnatUrl(unassignedUrl)).then().assertThat().statusCode(301);
+        mainAdminCredentials().queryParam("action", "move").queryParam("newProject", project.getId()).post(formatXnatUrl(unassignedUrl)).then().assertThat().statusCode(301);
 
         final String newSessionUrl = unassignedUrl.replace("Unassigned", project.getId());
 
-        final String archiveUrl = mainCredentials().queryParam("action", "commit").queryParam("AA", true).post(restDriver.formatXnatUrl(newSessionUrl)).
+        final String archiveUrl = mainCredentials().queryParam("action", "commit").queryParam("AA", true).post(formatXnatUrl(newSessionUrl)).
                 then().assertThat().statusCode(301).and().extract().response().asString().trim();
 
         assertNotEquals(unassignedUrl, archiveUrl);
@@ -529,7 +528,7 @@ public class TestImport extends BaseXnatRestTest {
         for (int i = 1; i < 3; i++) {
             TestNgUtils.assertBinaryFilesEqual(
                     getDataFile(String.format("scan%d/000000.dcm", i)),
-                    restDriver.saveBinaryResponseToFile(mainCredentials().get(restDriver.formatXnatUrl(archiveUrl, "scans", Integer.toString(i), "resources/DICOM/files/000000.dcm")))
+                    restDriver.saveBinaryResponseToFile(mainCredentials().get(formatXnatUrl(archiveUrl, "scans", Integer.toString(i), "resources/DICOM/files/000000.dcm")))
             );
         }
     }
@@ -558,7 +557,7 @@ public class TestImport extends BaseXnatRestTest {
 
         assertEquals(sessionUrl, sessionUris.get(1));
 
-        final String archiveUrl = mainCredentials().queryParam("action", "commit").queryParam("AA", true).post(restDriver.formatXnatUrl(sessionUrl)).
+        final String archiveUrl = mainCredentials().queryParam("action", "commit").queryParam("AA", true).post(formatXnatUrl(sessionUrl)).
                 then().assertThat().statusCode(301).and().extract().response().asString().trim();
 
         assertNotEquals(sessionUrl, archiveUrl);
@@ -567,7 +566,7 @@ public class TestImport extends BaseXnatRestTest {
         for (int i = 1; i < 3; i++) {
             TestNgUtils.assertBinaryFilesEqual(
                     getDataFile(String.format("scan%d/000000.dcm", i)),
-                    restDriver.saveBinaryResponseToFile(mainCredentials().get(restDriver.formatXnatUrl(archiveUrl, "scans", Integer.toString(i), "resources/DICOM/files/000000.dcm")))
+                    restDriver.saveBinaryResponseToFile(mainCredentials().get(formatXnatUrl(archiveUrl, "scans", Integer.toString(i), "resources/DICOM/files/000000.dcm")))
             );
         }
     }
@@ -581,7 +580,7 @@ public class TestImport extends BaseXnatRestTest {
         mainCredentials().
                 queryParam("triggerPipelines", false).
                 queryParam("overwrite", "append").
-                queryParam("dest", String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel())).
+                queryParam("dest", session.getUri()).
                 multiPart(scan1).
                 post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200);
@@ -594,7 +593,7 @@ public class TestImport extends BaseXnatRestTest {
         mainCredentials().
                 queryParam("triggerPipelines", false).
                 queryParam("overwrite", "append").
-                queryParam("dest", String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel())).
+                queryParam("dest", session.getUri()).
                 multiPart(scan2).
                 post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200);
@@ -636,7 +635,7 @@ public class TestImport extends BaseXnatRestTest {
         final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
         final Scan scan1 = new MRScan(session, "1");
         final Scan scan1MR1 = new MRScan(session, "1-MR1");
-        final String archiveUrl = String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel());
+        final String archiveUrl = session.getUri();
 
         // upload frame 1, should create scan 1
         mainCredentials().
@@ -719,7 +718,7 @@ public class TestImport extends BaseXnatRestTest {
         final Project project = new Project().prearchiveCode(PrearchiveCode.AUTO_ARCHIVE);
         final Subject subject = new Subject(project, "Sample_Patient");
         final MRSession session = new MRSession(project, subject, "Sample_ID");
-        new SessionImportExtension(restDriver.interfaceFor(mainUser), session, TestData.SAMPLE_1_SCAN_4.toFile());
+        new SessionImportExtension(session, TestData.SAMPLE_1_SCAN_4.toFile());
         mainInterface().createProject(project);
         new XnatCStore().data(TestData.SAMPLE_1_SCAN_5).sendDICOMToProject(project);
         new XnatCStore().data(TestData.SAMPLE_1_SCAN_6).sendDICOMToProject(project);
@@ -753,7 +752,7 @@ public class TestImport extends BaseXnatRestTest {
         do {
             final JsonPath json = RestAssured.given().sessionId(jsessionId)
                     .queryParam("format", "json")
-                    .get(restDriver.formatRestUrl("status", listener))
+                    .get(formatRestUrl("status", listener))
                     .then().assertThat().statusCode(200).and().extract().jsonPath().setRoot("msgs.get(0)");
             final int len = json.getInt("size()") - 1;
             if (len >= 0) {
@@ -791,7 +790,7 @@ public class TestImport extends BaseXnatRestTest {
         do {
             final JsonPath json = mainQueryBase()
                     .queryParam("format", "json")
-                    .get(restDriver.formatXapiUrl("event_tracking", listener))
+                    .get(formatXapiUrl("event_tracking", listener))
                     .then().assertThat().statusCode(200).and().extract().jsonPath();
 
             try {
@@ -814,7 +813,7 @@ public class TestImport extends BaseXnatRestTest {
         User genericUser = getGenericUser();
         restDriver.queryBaseFor(genericUser)
                 .queryParam("format", "json")
-                .get(restDriver.formatXapiUrl("event_tracking", listener))
+                .get(formatXapiUrl("event_tracking", listener))
                 .then().assertThat().statusCode(404);
 
         mainInterface().waitForAutoRun(session);
@@ -829,18 +828,18 @@ public class TestImport extends BaseXnatRestTest {
         final Subject   subject = new Subject(project, "subject" + listener);
         final MRSession session = new MRSession(project, subject, "session" + listener);
 
-        final String archiveUrl = String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel());
+        final String archiveUrl = session.getUri();
 
         // Upload to user cache
         final String cacheUrl = String.format("/user/cache/resources/%s/files/%s", listener, testZip.getName());
-        mainCredentials().multiPart(testZip).put(restDriver.formatRestUrl(cacheUrl)).then().assertThat().statusCode(200);
+        mainCredentials().multiPart(testZip).put(formatRestUrl(cacheUrl)).then().assertThat().statusCode(200);
 
         // Upload from user cache to project
         reqSpec.contentType("multipart/form-data")
                 .multiPart("src", cacheUrl)
                 .multiPart("http-session-listener", listener)
                 .multiPart("dest", archiveUrl)
-                .post(restDriver.formatRestUrl("services", "import")).then().assertThat().statusCode(200);
+                .post(formatRestUrl("services", "import")).then().assertThat().statusCode(200);
 
         return new Object[]{listener, project, subject, session, archiveUrl};
     }
@@ -851,7 +850,7 @@ public class TestImport extends BaseXnatRestTest {
 
     private void setCrossModalityMergePrevention(boolean state) {
         if (XnatTestingVersionManager.testedVersionFollows(Xnat_1_7_6.class)) {
-            mainAdminInterface().postToSiteConfig(Collections.singletonMap(SiteConfig.PREVENT_CROSS_MODALITY_MERGE, state));
+            mainAdminInterface().setCrossModalityMergePreventionFlag(state);
         }
     }
 

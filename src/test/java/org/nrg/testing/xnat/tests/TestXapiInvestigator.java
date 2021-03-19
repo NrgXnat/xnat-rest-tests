@@ -90,7 +90,7 @@ public class TestXapiInvestigator extends BaseXnatRestTest {
     }
 
     private String investigatorUrl(int investigatorId) {
-        return restDriver.formatXapiUrl("investigators", String.valueOf(investigatorId));
+        return formatXapiUrl("investigators", String.valueOf(investigatorId));
     }
 
 }

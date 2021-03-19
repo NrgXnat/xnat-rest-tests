@@ -86,9 +86,9 @@ public class TestDicomRouting extends BaseXnatRestTest {
             LOGGER.warn(throwable);
         }
         try {
-            restDriver.disableProjectDicomRoutingConfig();
-            restDriver.disableSubjectDicomRoutingConfig();
-            restDriver.disableSessionDicomRoutingConfig();
+            mainAdminInterface().disableProjectDicomRoutingConfig();
+            mainAdminInterface().disableSubjectDicomRoutingConfig();
+            mainAdminInterface().disableSessionDicomRoutingConfig();
         } catch (Throwable throwable) {
             LOGGER.warn(throwable);
         }
@@ -157,9 +157,9 @@ public class TestDicomRouting extends BaseXnatRestTest {
         String expectedSes = "20061214";
 
         // set routing cfg
-        restDriver.setProjectDicomRoutingConfig(projectCfg);
-        restDriver.setSubjectDicomRoutingConfig("(0010,0010):Sample.*?([\\w]+)");
-        restDriver.setSessionDicomRoutingConfig("(0008,0020):(.*)");
+        mainAdminInterface().setProjectDicomRoutingConfig(projectCfg);
+        mainAdminInterface().setSubjectDicomRoutingConfig("(0010,0010):Sample.*?([\\w]+)");
+        mainAdminInterface().setSessionDicomRoutingConfig("(0008,0020):(.*)");
 
         // create destination project
         final Project project = new Project(expectedProject).prearchiveCode(PrearchiveCode.AUTO_ARCHIVE_OVERWRITE);
@@ -448,7 +448,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
         String rand = Integer.toString(new Random().nextInt(100));
         for (String key : cfgMapProject.keySet()) {
             String cfg = cfgMapProject.get(key).replaceAll(REPLACE_STR, rand);
-            restDriver.setProjectDicomRoutingConfig(cfg);
+            mainAdminInterface().setProjectDicomRoutingConfig(cfg);
             String expected = key.replaceAll(REPLACE_STR, rand);
             Project p = new Project(expected);
             mainInterface().createProject(p);
@@ -459,7 +459,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
 
     private void testSubjectRouting(ApiUploadFn uploadFn, String handler) {
         for (String expected : cfgMap.keySet()) {
-            restDriver.setSubjectDicomRoutingConfig(cfgMap.get(expected));
+            mainAdminInterface().setSubjectDicomRoutingConfig(cfgMap.get(expected));
             uploadFn.accept(project, handler, true);
             verifySubject(expected);
         }
@@ -467,7 +467,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
 
     private void testSessionRouting(ApiUploadFn uploadFn, String handler) {
         for (String expected : cfgMap.keySet()) {
-            restDriver.setSessionDicomRoutingConfig(cfgMap.get(expected));
+            mainAdminInterface().setSessionDicomRoutingConfig(cfgMap.get(expected));
             uploadFn.accept(project, handler, true);
             verifySession(expected);
         }

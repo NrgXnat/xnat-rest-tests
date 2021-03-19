@@ -164,7 +164,7 @@ public class TestSharing extends BaseXnatRestTest {
         mainCredentials().delete(reconUrl(mr5, recon)).then().assertThat().statusCode(403);
 
         // remove user from shared project
-        mainAdminCredentials().delete(restDriver.formatRestUrl("projects", adminProject.getId(), "users/member", mainUser.getUsername())).then().assertThat().statusCode(200);
+        mainAdminCredentials().delete(formatRestUrl("projects", adminProject.getId(), "users/member", mainUser.getUsername())).then().assertThat().statusCode(200);
         TimeUtils.sleep(1000); // let cache update
 
         // recheck that this user cannot access the project resources

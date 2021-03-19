@@ -146,13 +146,13 @@ public class BasePermissionComparisonTest extends BaseXnatRestTest {
 
     private MRSession shareSafeMR(Project project, Subject subject) {
         final MRSession session = new MRSession(project, subject);
-        new ShareSafeSubjectAssessorExtension(mainAdminInterface(), session);
+        new ShareSafeSubjectAssessorExtension(session);
         return session;
     }
 
     private QC shareSafeQC(Project project, Subject subject, ImagingSession session) {
         final QC qc = new QC(project, subject, session);
-        new ShareSafeSessionAssessorExtension(mainAdminInterface(), qc);
+        new ShareSafeSessionAssessorExtension(qc);
         return qc;
     }
 
@@ -217,7 +217,7 @@ public class BasePermissionComparisonTest extends BaseXnatRestTest {
                 urlComponents.add(experiment);
             }
             urlComponents.add(operation.urlString());
-            return restDriver.formatXapiUrl(urlComponents.toArray(new String[0]));
+            return formatXapiUrl(urlComponents.toArray(new String[0]));
         }
     }
 

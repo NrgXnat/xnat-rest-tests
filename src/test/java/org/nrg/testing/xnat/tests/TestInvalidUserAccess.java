@@ -31,9 +31,9 @@ public class TestInvalidUserAccess extends BaseXnatRestTest {
     @BeforeMethod
     public void setupInvalidUserAccessTest() {
         testProject = new Project();
-        testSubject = new Subject(testProject).extension(new SubjectXMLPutExtension(mainAdminInterface(), getDataFile("test_subject_v1.xml")));
-        testSession = new MRSession(testProject, testSubject).extension(new SubjectAssessorXMLExtension(mainAdminInterface(), getDataFile("test_expt_v1.xml")));
-        testSessionAssessor = new ManualQC(testProject, testSubject, testSession).extension(new SessionAssessorXMLExtension(mainAdminInterface(), getDataFile("test_asst_v1.xml")));
+        testSubject = new Subject(testProject).extension(new SubjectXMLPutExtension(getDataFile("test_subject_v1.xml")));
+        testSession = new MRSession(testProject, testSubject).extension(new SubjectAssessorXMLExtension(getDataFile("test_expt_v1.xml")));
+        testSessionAssessor = new ManualQC(testProject, testSubject, testSession).extension(new SessionAssessorXMLExtension(getDataFile("test_asst_v1.xml")));
 
         mainAdminInterface().createProject(testProject);
     }

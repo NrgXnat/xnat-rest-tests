@@ -72,7 +72,7 @@ public class TestSubjectResources extends BaseXnatRestTest {
         // listing should work even if no subjects
         mainCredentials().given().queryParam("format", "html").get(formatRestUrl("projects", project.getId(), "subjects")).then().assertThat().statusCode(200);
 
-        final Subject subject = new Subject(project).extension(new SubjectXMLPutExtension(mainInterface(), subjectXML1));
+        final Subject subject = new Subject(project).extension(new SubjectXMLPutExtension(subjectXML1));
         mainInterface().createSubject(subject);
 
         compareBeanXML(subjectXML1, subject, ignoredFields);

@@ -25,13 +25,13 @@ public class TestUserAccess extends BaseXnatRestTest {
 
     @Test
     public void testValidAccess() {
-        final Response response = Settings.mainCredentials().expect().statusCode(200).given().queryParam("format", "xml").get(restDriver.formatRestUrl("projects"));
+        final Response response = Settings.mainCredentials().expect().statusCode(200).given().queryParam("format", "xml").get(formatRestUrl("projects"));
         TestNgUtils.assertNonempty(response.asString());
     }
 
     @Test
     public void testInvalidAccess() {
-        restDriver.invalidCredentials().expect().statusCode(401).given().queryParam("format", "xml").get(restDriver.formatRestUrl("projects"));
+        restDriver.invalidCredentials().expect().statusCode(401).given().queryParam("format", "xml").get(formatRestUrl("projects"));
     }
 
     @Test
@@ -67,7 +67,7 @@ public class TestUserAccess extends BaseXnatRestTest {
     }
 
     private void invalidateJsessions(User testUser, Set<String> expectedJsessions) {
-        assertEquals(expectedJsessions, restDriver.interfaceFor(mainAdminUser).queryBase().delete(restDriver.formatXapiUrl("users/active", testUser.getUsername())).then().assertThat().statusCode(200).and().extract().response().as(Set.class));
+        assertEquals(expectedJsessions, restDriver.interfaceFor(mainAdminUser).queryBase().delete(formatXapiUrl("users/active", testUser.getUsername())).then().assertThat().statusCode(200).and().extract().response().as(Set.class));
     }
 
     private void assertJsessionInvalidated(Project project, String jsession) {
@@ -85,7 +85,7 @@ public class TestUserAccess extends BaseXnatRestTest {
     }
 
     private String generateJsession(User user) {
-        final Response response = Credentials.build(user).get(restDriver.formatRestUrl("auth"));
+        final Response response = Credentials.build(user).get(formatRestUrl("auth"));
         if (response.statusCode() != 200) fail("Login attempt failed.");
         return response.getSessionId();
     }

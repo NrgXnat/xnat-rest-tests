@@ -99,18 +99,18 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     @Test
     public void testPrearchiveProjectZipUpload() throws IOException {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
-        mainCredentials().
+        mainQueryBase().
                 queryParam("triggerPipelines", false).
                 queryParam("dest", currentProject.getUri()).
                 multiPart(testZip).
-                post(restDriver.formatRestUrl("services/import")).
+                post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200);
 
         final Subject newSubject = new Subject(currentProject, dicomPatName);
         final MRSession newSession = new MRSession(currentProject, newSubject, dicomPatId);
         final String expectedDest = mainInterface().subjectAssessorUrl(newSession);
 
-        mainCredentials().get(expectedDest).then().assertThat().statusCode(200);
+        mainQueryBase().get(expectedDest).then().assertThat().statusCode(200);
 
         final File downloadedDicom = saveDicomFile(mainUser, expectedDest);
 
@@ -129,19 +129,18 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
 
         // upload DICOM to the experiment
-        mainCredentials().
+        mainQueryBase().
                 queryParam("triggerPipelines", false).
                 queryParam("overwrite", true).
                 queryParam("dest", session.getUri()).
                 multiPart(testZip).
-                post(restDriver.formatRestUrl("services/import")).
+                post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200);
-
 
 
         final String expectedDest = mainInterface().subjectAssessorUrl(session);
 
-        mainCredentials().get(expectedDest).then().assertThat().statusCode(200);
+        mainQueryBase().get(expectedDest).then().assertThat().statusCode(200);
 
         final File downloadedDicom = saveDicomFile(mainUser, mainInterface().subjectAssessorUrl(session));
 
@@ -158,22 +157,19 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     @Test
     public void testSessionLabelInHeader() throws IOException {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
-
-
+        
         // upload DICOM to the experiment
-        mainCredentials().
+        mainQueryBase().
                 queryParam("triggerPipelines", false).
                 queryParam("overwrite", true).
                 queryParam("dest", session.getUri()).
                 multiPart(testZip).
-                post(restDriver.formatRestUrl("services/import")).
+                post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200);
-
-
 
         final String expectedDest = mainInterface().subjectAssessorUrl(session);
 
-        mainCredentials().get(expectedDest).then().assertThat().statusCode(200);
+        mainQueryBase().get(expectedDest).then().assertThat().statusCode(200);
 
         final File downloadedDicom = saveDicomFile(mainUser, mainInterface().subjectAssessorUrl(session));
 
@@ -181,8 +177,6 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
         final DicomObject dicomObject = dis.readDicomObject();
         assertEquals(session.getLabel(), dicomObject.getString(Tag.PatientID));
     }
-
-
 
     /**
      * Test that uploading a script to a project and then disabling it
@@ -194,17 +188,17 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
         mainInterface().disableProjectAnonScript(currentProject);
 
         // upload DICOM to the experiment
-        mainCredentials().
+        mainQueryBase().
                 queryParam("triggerPipelines", false).
                 queryParam("overwrite", true).
                 queryParam("dest", session.getUri()).
                 multiPart(testZip).
-                post(restDriver.formatRestUrl("services/import")).
+                post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200);
 
         final String expectedDest = mainInterface().subjectAssessorUrl(session);
 
-        mainCredentials().get(expectedDest).then().assertThat().statusCode(200);
+        mainQueryBase().get(expectedDest).then().assertThat().statusCode(200);
 
         final File downloadedDicom = saveDicomFile(mainUser, mainInterface().subjectAssessorUrl(session));
 
@@ -223,17 +217,17 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
         mainAdminInterface().disableSiteAnonScript();
 
         // upload DICOM to the experiment
-        mainCredentials().
+        mainQueryBase().
                 queryParam("triggerPipelines", false).
                 queryParam("overwrite", true).
                 queryParam("dest", session.getUri()).
                 multiPart(testZip).
-                post(restDriver.formatRestUrl("services/import")).
+                post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200);
 
         final String expectedDest = mainInterface().subjectAssessorUrl(session);
 
-        mainCredentials().get(expectedDest).then().assertThat().statusCode(200);
+        mainQueryBase().get(expectedDest).then().assertThat().statusCode(200);
 
         final File downloadedDicom = saveDicomFile(mainUser, mainInterface().subjectAssessorUrl(session));
 
@@ -250,14 +244,14 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     public void testDefaultAnonZipUploadSiteWide() throws IOException {
         restDriver.clearUnassignedPrearchiveSessions(mainAdminUser, UIDList.uids);
 
-        final String sessionUri = mainCredentials().
+        final String sessionUri = mainQueryBase().
                 queryParam("triggerPipelines", false).
                 multiPart(testZip).
-                post(restDriver.formatRestUrl("services/import")).
+                post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200).
                 and().extract().response().asString().trim();
 
-        final File downloadedDicom = saveDicomFile(mainAdminUser, restDriver.formatXnatUrl(sessionUri));
+        final File downloadedDicom = saveDicomFile(mainAdminUser, formatXnatUrl(sessionUri));
 
         final Code[] codes = getCodes(downloadedDicom);
         assertEquals(1, codes.length);
@@ -271,7 +265,6 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     @Test
     public void testResourceUpload() throws IOException {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
-
         mainInterface().setProjectAnonScript(currentProject, anonScript2);
 
         final Scan scan = new MRScan(session, "1");
@@ -294,7 +287,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     public void testDefaultAnonGradualDicomUpload() throws IOException {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
 
-        final String uri = mainCredentials().
+        final String uri = mainQueryBase().
                 queryParam("triggerPipelines", false).
                 queryParam("import-handler", "DICOM-zip").
                 queryParam("dest", "/prearchive/projects/" + currentProject.getId()).
@@ -303,9 +296,9 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
                 then().assertThat().statusCode(200).
                 and().extract().response().asString().trim();
 
-        assertEquals(uri, mainCredentials().queryParam("action", "commit").post(restDriver.formatXnatUrl(uri)).then().extract().response().asString().trim());
+        assertEquals(uri, mainQueryBase().queryParam("action", "commit").post(formatXnatUrl(uri)).then().extract().response().asString().trim());
 
-        final File downloadedDicom = saveDicomFile(mainUser, restDriver.formatXnatUrl(uri));
+        final File downloadedDicom = saveDicomFile(mainUser, formatXnatUrl(uri));
 
         // Since the files are sitting in the prearchive the project specific script should not have applied
         final Code[] codes = getCodes(downloadedDicom);
@@ -316,17 +309,17 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     @Test
     public void testNoProjectScript() throws IOException {
         // upload DICOM to the experiment
-        mainCredentials().
+        mainQueryBase().
                 queryParam("triggerPipelines", false).
                 queryParam("overwrite", true).
                 queryParam("dest", session.getUri()).
                 multiPart(testZip).
-                post(restDriver.formatRestUrl("services/import")).
+                post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200);
 
         final String expectedDest = mainInterface().subjectAssessorUrl(session);
 
-        mainCredentials().get(expectedDest).then().assertThat().statusCode(200);
+        mainQueryBase().get(expectedDest).then().assertThat().statusCode(200);
 
         final File downloadedDicom = saveDicomFile(mainUser, mainInterface().subjectAssessorUrl(session));
 
@@ -343,20 +336,20 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     public void testDefaultProjectGradualDicomUpload() throws IOException {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
 
-        final String uri = mainCredentials().
+        final String uri = mainQueryBase().
                 queryParam("triggerPipelines", false).
                 queryParam("import-handler", "DICOM-zip").
                 queryParam("dest", "/prearchive/projects/" + currentProject.getId()).
                 multiPart(testZip).
-                post(restDriver.formatRestUrl("services/import")).
+                post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200).
                 and().extract().response().asString().trim();
 
         // commit it
-        final String uri2 = mainCredentials().queryParam("action", "commit").queryParam("auto-archive", true).post(restDriver.formatXnatUrl(uri)).
+        final String uri2 = mainQueryBase().queryParam("action", "commit").queryParam("auto-archive", true).post(formatXnatUrl(uri)).
                 then().assertThat().statusCode(Matchers.isOneOf(200, 301)).and().extract().response().asString();
 
-        final File downloadedDicom = saveDicomFile(mainUser, restDriver.formatXnatUrl(uri2));
+        final File downloadedDicom = saveDicomFile(mainUser, formatXnatUrl(uri2));
 
         final Code[] codes = getCodes(downloadedDicom);
         assertEquals(2, codes.length);
@@ -376,6 +369,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     @Test
     public void testSubjectChange() throws IOException {
         final Subject testSubject = new Subject(currentProject, "00001");
+        final Subject destinationSubject = new Subject(currentProject, "subj_mod");
         final ImagingSession testSession = new MRSession(currentProject, testSubject, "case01");
 
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
@@ -383,9 +377,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
         restDriver.uploadToSessionZipImporter(testZip, testSession);
         mainInterface().waitForAutoRun(testSession);
 
-        final String newLabel = "subj_mod";
-        mainCredentials().queryParam("subject_ID", newLabel).put(mainInterface().subjectAssessorUrl(testSession)).then().assertThat().statusCode(200);
-        testSubject.setLabel(newLabel);
+        mainInterface().moveSubjectAssessorToOtherSubject(testSession, destinationSubject);
 
         final File downloadedDicom = saveDicomFile(mainUser, mainInterface().subjectAssessorUrl(testSession));
 
@@ -414,17 +406,15 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
 
         mainInterface().setProjectAnonScript(currentProject, anonScript3);
 
-        mainCredentials().
+        mainQueryBase().
                 queryParam("triggerPipelines", false).
                 queryParam("dest", testSession.getUri()).
                 multiPart(testZip).
-                post(restDriver.formatRestUrl("services/import")).
+                post(formatRestUrl("services/import")).
                 then().assertThat().statusCode(200);
 
         final String newSessionLabel = "new_MR1";
-
-        mainCredentials().queryParam("label", newSessionLabel).put(mainInterface().subjectAssessorUrl(testSession)).then().assertThat().statusCode(200);
-        testSession.setLabel(newSessionLabel);
+        mainInterface().relabelSubjectAssessor(testSession, newSessionLabel);
 
         final File downloadedDicom = saveDicomFile(mainUser, mainInterface().subjectAssessorUrl(testSession));
 
@@ -464,11 +454,11 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
         mainInterface().waitForAutoRun(testSession);
 
         // move the subject to the new project
-        mainCredentials().queryParam("primary", true).put(CommonStringUtils.formatUrl(mainInterface().subjectUrl(testSubject), "projects", otherProject.getId())).
+        mainQueryBase().queryParam("primary", true).put(CommonStringUtils.formatUrl(mainInterface().subjectUrl(testSubject), "projects", otherProject.getId())).
                 then().assertThat().statusCode(200);
 
         // move the session too
-        mainCredentials().queryParam("primary", true).put(CommonStringUtils.formatUrl(mainInterface().subjectAssessorUrl(testSession), "projects", otherProject.getId())).
+        mainQueryBase().queryParam("primary", true).put(CommonStringUtils.formatUrl(mainInterface().subjectAssessorUrl(testSession), "projects", otherProject.getId())).
                 then().assertThat().statusCode(200);
 
         testSubject.setProject(otherProject);

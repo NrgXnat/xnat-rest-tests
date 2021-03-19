@@ -72,8 +72,7 @@ public class TestContainerService extends BaseXnatRestTest {
 
         // setup assessor
         assessor = new ManualQC(project, subject, session)
-                .extension(new SessionAssessorXMLExtension(restDriver.interfaceFor(mainUser),
-                        getDataFile("test_asst_v1.xml")));
+                .extension(new SessionAssessorXMLExtension(getDataFile("test_asst_v1.xml")));
 
         // add file to assessor so there's something to mount
         final File dummyFile = getDataFile("dummy.txt");
@@ -298,7 +297,7 @@ public class TestContainerService extends BaseXnatRestTest {
             TimeUtils.sleep(1000); // give the thread time to submit these
             workflowId = mainQueryBase().body(params)
                     .contentType(ContentType.JSON)
-                    .post(restDriver.formatXapiUrl("workflows"))
+                    .post(formatXapiUrl("workflows"))
                     .then().assertThat().statusCode(200).and().extract().jsonPath().getInt("wfid.get(0)");
         } while (workflowId == 0 && System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(5));
 
@@ -324,7 +323,7 @@ public class TestContainerService extends BaseXnatRestTest {
     @Deprecated
     private void verifyOutputs(String uri) {
         byte[] zipBytes = mainQueryBase().queryParam("format", "zip")
-                .get(restDriver.formatRestUrl(uri, "resources", "DEBUG_OUTPUT", "files"))
+                .get(formatRestUrl(uri, "resources", "DEBUG_OUTPUT", "files"))
                 .then().assertThat().statusCode(200).and().extract().asByteArray();
 
         try {

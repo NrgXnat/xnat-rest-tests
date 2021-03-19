@@ -55,10 +55,10 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
     @BeforeClass
     public void disableAnonAndSetupProject() {
         mainAdminInterface().disableSiteAnonScript();
-        new SessionImportExtension(mainInterface(), standardMRSession, TestData.EXTRACTION_MR.toFile());
-        new SessionImportExtension(mainInterface(), diffusionMR, TestData.EXTRACTION_DIFFUSION.toFile());
-        new SessionImportExtension(mainInterface(), standardCTSession, TestData.EXTRACTION_CT.toFile());
-        new SessionImportExtension(mainInterface(), optSession, TestData.EXTRACTION_OPT.toFile());
+        new SessionImportExtension(standardMRSession, TestData.EXTRACTION_MR.toFile());
+        new SessionImportExtension(diffusionMR, TestData.EXTRACTION_DIFFUSION.toFile());
+        new SessionImportExtension(standardCTSession, TestData.EXTRACTION_CT.toFile());
+        new SessionImportExtension(optSession, TestData.EXTRACTION_OPT.toFile());
         mainInterface().createProject(testProject);
     }
 

@@ -34,9 +34,9 @@ public class TestExptAssessmentResources extends BaseXnatRestTest {
 
     @BeforeClass
     public void setExtensions() {
-        project2.extension(new ProjectXMLPutExtension(restDriver.interfaceFor(mainUser), getDataFile("test_project_v1.xml")));
-        subject.extension(new SubjectXMLPutExtension(restDriver.interfaceFor(mainUser), getDataFile("test_subject_v1.xml")));
-        session.extension(new SubjectAssessorXMLExtension(restDriver.interfaceFor(mainUser), getDataFile("test_expt_v1.xml")));
+        project2.extension(new ProjectXMLPutExtension(getDataFile("test_project_v1.xml")));
+        subject.extension(new SubjectXMLPutExtension(getDataFile("test_subject_v1.xml")));
+        session.extension(new SubjectAssessorXMLExtension(getDataFile("test_expt_v1.xml")));
     }
 
     @BeforeMethod
@@ -56,7 +56,7 @@ public class TestExptAssessmentResources extends BaseXnatRestTest {
         final File assessorV1 = getDataFile("test_asst_v1.xml");
         final File assessorV2 = getDataFile("test_asst_v2.xml");
 
-        final SessionAssessor assessor = new ManualQC(project2, subject, session).extension(new SessionAssessorXMLExtension(restDriver.interfaceFor(mainUser), assessorV1));
+        final SessionAssessor assessor = new ManualQC(project2, subject, session).extension(new SessionAssessorXMLExtension(assessorV1));
         mainInterface().createSessionAssessor(assessor);
 
         LegacyComparison.compareBeanXML(

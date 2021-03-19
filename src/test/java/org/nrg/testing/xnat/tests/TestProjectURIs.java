@@ -16,7 +16,7 @@ public class TestProjectURIs extends BaseXnatRestTest {
             mainInterface().createProject(testSpecificProject);
 
             for (int code : new int[]{4, 0, 11}) {
-                mainCredentials().expect().statusCode(200).when().put(restDriver.formatRestUrl("projects", testSpecificProject.getId(), "prearchive_code", Integer.toString(code)));
+                mainCredentials().expect().statusCode(200).when().put(formatRestUrl("projects", testSpecificProject.getId(), "prearchive_code", Integer.toString(code)));
             }
         } catch (Exception | Error throwable) {
             restDriver.deleteProjectSilently(mainUser, testSpecificProject);

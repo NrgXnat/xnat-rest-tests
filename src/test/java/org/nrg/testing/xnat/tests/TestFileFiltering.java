@@ -43,7 +43,7 @@ public class TestFileFiltering extends BaseXnatRestTest {
         resource.addResourceFile(resourceFile("Louie4.jpg", content2));
         resource.addResourceFile(resourceFile("Louie5.jpg", content3));
 
-        final String resourceFilesUrl = restDriver.formatXnatUrl(resource.resourceUrl(), "resources", resource.getFolder(), "files");
+        final String resourceFilesUrl = formatXnatUrl(resource.resourceUrl(), "resources", resource.getFolder(), "files");
 
         mainAdminInterface().createSubjectAssessor(testSpecificProject, testSpecificSubject, session);
 

@@ -170,7 +170,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     private ImagingSession importSession(File testData) {
         final Subject subject = new Subject(anonProject);
         final ImagingSession session = new ImagingSession(anonProject, subject);
-        session.extension(new SessionImportExtension(restDriver.interfaceFor(mainUser), session, testData));
+        session.extension(new SessionImportExtension(session, testData));
         mainInterface().createSubject(subject);
         return session;
     }

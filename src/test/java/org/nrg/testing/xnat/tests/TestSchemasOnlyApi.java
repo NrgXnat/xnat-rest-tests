@@ -14,8 +14,8 @@ public class TestSchemasOnlyApi extends BaseXnatRestTest {
             "/xapi/schemas/{schema}"
     })
     public void testSchemasSchemaGet() {
-        for (String schema : mainCredentials().get(restDriver.formatXapiUrl("schemas")).as(String[].class)) {
-            mainCredentials().get(restDriver.formatXnatUrl("schemas", schema + ".xsd")).then().assertThat().statusCode(200).and().body(ValidSchemaMatcher.INSTANCE);
+        for (String schema : mainCredentials().get(formatXapiUrl("schemas")).as(String[].class)) {
+            mainCredentials().get(formatXnatUrl("schemas", schema + ".xsd")).then().assertThat().statusCode(200).and().body(ValidSchemaMatcher.INSTANCE);
         }
     }
 

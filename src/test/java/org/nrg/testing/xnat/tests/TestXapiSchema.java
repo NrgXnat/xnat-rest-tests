@@ -25,7 +25,7 @@ public class TestXapiSchema extends BaseXnatRestTest {
     @Test
     @TestedApiSpec(method = Method.GET, url = "/xapi/schemas")
     public void testSchemas() {
-        final ValidatableResponse schemas = mainCredentials().get(restDriver.formatXapiUrl("schemas")).then().assertThat().statusCode(200).and();
+        final ValidatableResponse schemas = mainCredentials().get(formatXapiUrl("schemas")).then().assertThat().statusCode(200).and();
         schemas.body("$", hasSize(greaterThan(SCHEMA_COUNT_LOWER_BOUND)));
         schemas.body("$", hasItems("xnat", "xdat", "assessments", "pipeline/workflow"));
     }
@@ -33,7 +33,7 @@ public class TestXapiSchema extends BaseXnatRestTest {
     @Test
     @TestedApiSpec(method = Method.GET, url = "/xapi/schemas/datatypes")
     public void testSchemasDatatypes() {
-        final ValidatableResponse datatypesResponse = mainCredentials().get(restDriver.formatXapiUrl("schemas/datatypes")).then().assertThat().statusCode(200).and();
+        final ValidatableResponse datatypesResponse = mainCredentials().get(formatXapiUrl("schemas/datatypes")).then().assertThat().statusCode(200).and();
         datatypesResponse.body("$", hasSize(greaterThan(DATATYPE_COUNT_LOWER_BOUND)));
         datatypesResponse.body("$", hasItems("arc:ArchiveSpecification", "arc:pipelineData", "prov:processStep", "val:protocolData", "val:protocolData_scan_check_comment", "wrk:workflowData", "xdat:element_access", "xdat:user", "xnat:imageScanData", "xnat:mrSessionData"));
     }
@@ -42,7 +42,7 @@ public class TestXapiSchema extends BaseXnatRestTest {
     @TestedApiSpec(method = Method.POST, url = "/xapi/schemas/datatypes/elements")
     public void testSchemasDatatypesElements() {
         final ValidatableResponse response = mainCredentials().contentType(ContentType.JSON).
-                body(Collections.singletonMap("dataTypes", Arrays.asList(DataType.MR_SESSION.getXsiType(), DataType.PET_SESSION.getXsiType()))).post(restDriver.formatXapiUrl("schemas/datatypes/elements")).
+                body(Collections.singletonMap("dataTypes", Arrays.asList(DataType.MR_SESSION.getXsiType(), DataType.PET_SESSION.getXsiType()))).post(formatXapiUrl("schemas/datatypes/elements")).
                 then().assertThat().statusCode(200).and();
         response.body("keySet().size()", is(2));
         for (String modality : Arrays.asList("MR", "PET")) {
@@ -53,7 +53,7 @@ public class TestXapiSchema extends BaseXnatRestTest {
     @Test
     @TestedApiSpec(method = Method.GET, url ="/xapi/schemas/datatypes/elements/all")
     public void testSchemasDatatypesElementsAll() {
-        final ValidatableResponse response = mainCredentials().get(restDriver.formatXapiUrl("schemas/datatypes/elements/all")).then().assertThat().statusCode(200).and();
+        final ValidatableResponse response = mainCredentials().get(formatXapiUrl("schemas/datatypes/elements/all")).then().assertThat().statusCode(200).and();
         response.body("keySet().size()", greaterThan(DATATYPE_COUNT_LOWER_BOUND));
         for (String modality : Arrays.asList("MR", "PET")) {
             validateSessionDatatype(modality, response);
@@ -63,7 +63,7 @@ public class TestXapiSchema extends BaseXnatRestTest {
     @Test
     @TestedApiSpec(method = Method.GET, url = "/schemas/datatypes/elements/{dataType}")
     public void testSchemasDatatypesElementsDatatype() {
-        final ValidatableResponse response = mainCredentials().get(restDriver.formatXapiUrl("schemas/datatypes/elements", DataType.MR_SESSION.getXsiType())).then().assertThat().statusCode(200).and();
+        final ValidatableResponse response = mainCredentials().get(formatXapiUrl("schemas/datatypes/elements", DataType.MR_SESSION.getXsiType())).then().assertThat().statusCode(200).and();
         response.body("keySet().size()", is(1));
         validateSessionDatatype("MR", response);
     }
@@ -72,7 +72,7 @@ public class TestXapiSchema extends BaseXnatRestTest {
     @TestedApiSpec(method = Method.POST, url = "/xapi/schemas/datatypes/names")
     public void testSchemasDatatypesNames() {
         final ValidatableResponse response = mainCredentials().formParam("dataTypes", DataType.MR_SESSION.getXsiType(), DataType.PET_SESSION.getXsiType()).
-                post(restDriver.formatXapiUrl("schemas/datatypes/names")).
+                post(formatXapiUrl("schemas/datatypes/names")).
                 then().assertThat().statusCode(200).and();
         response.body("keySet().size()", is(2));
         for (DataType dataType : Arrays.asList(DataType.MR_SESSION, DataType.PET_SESSION)) {
@@ -83,7 +83,7 @@ public class TestXapiSchema extends BaseXnatRestTest {
     @Test
     @TestedApiSpec(method = Method.GET, url = "/xapi/schemas/datatypes/names/all")
     public void testSchemasDatatypesNamesAll() {
-        final ValidatableResponse response = mainCredentials().get(restDriver.formatXapiUrl("schemas/datatypes/names/all")).then().assertThat().statusCode(200).and();
+        final ValidatableResponse response = mainCredentials().get(formatXapiUrl("schemas/datatypes/names/all")).then().assertThat().statusCode(200).and();
         response.body("keySet().size()", greaterThan(DATATYPE_COUNT_LOWER_BOUND));
         for (DataType dataType : Arrays.asList(DataType.MR_SESSION, DataType.PET_SESSION, DataType.CT_SESSION)) {
             validateDatatypeName(dataType, response);
@@ -93,7 +93,7 @@ public class TestXapiSchema extends BaseXnatRestTest {
     @Test
     @TestedApiSpec(method = Method.GET, url = "/xapi/schemas/datatypes/names/{dataType}")
     public void testSchemasDatatypesNamesDataType() {
-        final ValidatableResponse response = mainCredentials().get(restDriver.formatXapiUrl("schemas/datatypes/names", DataType.MR_SESSION.getXsiType())).then().assertThat().statusCode(200).and();
+        final ValidatableResponse response = mainCredentials().get(formatXapiUrl("schemas/datatypes/names", DataType.MR_SESSION.getXsiType())).then().assertThat().statusCode(200).and();
         response.body("keySet().size()", is(1));
         validateDatatypeName(DataType.MR_SESSION, response);
     }
@@ -104,10 +104,10 @@ public class TestXapiSchema extends BaseXnatRestTest {
             "/xapi/schemas/{schema}"
     })
     public void testSchemasSchema() {
-        final ValidatableResponse schemas = mainCredentials().get(restDriver.formatXapiUrl("schemas")).then().assertThat().statusCode(200).and();
+        final ValidatableResponse schemas = mainCredentials().get(formatXapiUrl("schemas")).then().assertThat().statusCode(200).and();
         schemas.body("$", hasSize(greaterThan(SCHEMA_COUNT_LOWER_BOUND)));
         for (String schema : schemas.extract().as(String[].class)) {
-            mainCredentials().get(restDriver.formatXapiUrl("schemas", schema)).then().assertThat().statusCode(200).and().body(ValidSchemaMatcher.INSTANCE);
+            mainCredentials().get(formatXapiUrl("schemas", schema)).then().assertThat().statusCode(200).and().body(ValidSchemaMatcher.INSTANCE);
         }
     }
 

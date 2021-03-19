@@ -1,25 +1,23 @@
 package org.nrg.testing.xnat.tests;
 
-import com.jayway.restassured.response.Response;
-import com.jayway.restassured.response.ValidatableResponse;
-import org.hamcrest.Matchers;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
+import org.nrg.xnat.XnatConnectionConfig;
+import org.nrg.xnat.interfaces.XnatInterface;
+import org.nrg.xnat.rest.PermissionsException;
 import org.nrg.xnat.versions.Xnat_1_7_4;
-import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.enums.Accessibility;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.users.User;
-import org.nrg.xnat.rest.Credentials;
 import org.nrg.xnat.rest.XnatAliasToken;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import static org.nrg.xnat.rest.Credentials.build;
 import static com.jayway.restassured.RestAssured.given;
-import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.*;
 
 @TestRequires(users = 1)
 public class TestAliasTokenService extends BaseXnatRestTest {
@@ -78,18 +76,6 @@ public class TestAliasTokenService extends BaseXnatRestTest {
         validationAliasTokenTest();
     }
 
-    private Response proxyAliasTokenCall(User authUser, User targetUser) {
-        return (authUser == null ? given() : build(authUser)).get(formatRestUrl("/services/tokens/issue/user/", targetUser.getUsername()));
-    }
-
-    private XnatAliasToken readTokenFromResponse(Response response) {
-        if (XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_8_0.class)) { // see: XNAT-5498
-            return response.then().assertThat().statusCode(200).and().extract().jsonPath().getObject("", XnatAliasToken.class);
-        } else {
-            return response.then().assertThat().statusCode(200).and().extract().as(XnatAliasToken.class);
-        }
-    }
-
     private void checkAliasTokenForMainUser(XnatAliasToken aliasToken) {
         checkAliasToken(aliasToken, 200, 404);
     }
@@ -99,8 +85,9 @@ public class TestAliasTokenService extends BaseXnatRestTest {
     }
 
     private void checkAliasToken(XnatAliasToken aliasToken, int mainUserProjectStatusCode, int otherUserProjectStatusCode) {
-        build(aliasToken).get(mainInterface().projectUrl(project)).then().assertThat().statusCode(mainUserProjectStatusCode);
-        build(aliasToken).get(mainInterface().projectUrl(otherUserProject)).then().assertThat().statusCode(otherUserProjectStatusCode);
+        final XnatInterface aliasTokenAuth = authFromToken(aliasToken);
+        aliasTokenAuth.queryBase().get(aliasTokenAuth.projectUrl(project)).then().assertThat().statusCode(mainUserProjectStatusCode);
+        aliasTokenAuth.queryBase().get(aliasTokenAuth.projectUrl(otherUserProject)).then().assertThat().statusCode(otherUserProjectStatusCode);
     }
 
     private XnatAliasToken selfAliasTokenTest() {
@@ -110,43 +97,43 @@ public class TestAliasTokenService extends BaseXnatRestTest {
     }
 
     private void proxyAliasTokenTest(boolean openXnat) {
-        final XnatAliasToken selfProxyToken = readTokenFromResponse(proxyAliasTokenCall(mainAdminUser, mainAdminUser)); // only admins can do proxy token generation
+        final XnatAliasToken selfProxyToken = mainAdminInterface().generateAliasToken(mainAdminUser); // only admins can do proxy token generation
         checkAliasTokenForAdmin(selfProxyToken);
 
-        proxyAliasTokenCall(null, mainUser).then().assertThat().statusCode(projectCodeBadToken(openXnat));
-        proxyAliasTokenCall(otherUser, mainUser).then().assertThat().statusCode(403).and().body(Matchers.containsString("admin"));
+        given().get(mainInterface().issueAliasTokenUrl(mainUser)).then().assertThat().statusCode(openXnat ? 403 : 401);
+        try {
+            final XnatInterface otherInterface = interfaceFor(otherUser);
+            otherInterface.generateAliasToken(mainUser);
+            fail("Proxy alias token generation as a non-admin should have failed");
+        } catch (PermissionsException ignored) {}
 
-        final XnatAliasToken proxyToken = readTokenFromResponse(proxyAliasTokenCall(mainAdminUser, mainUser));
+        final XnatAliasToken proxyToken = mainAdminInterface().generateAliasToken(mainUser);
         checkAliasTokenForMainUser(proxyToken);
     }
 
     private void validationAliasTokenTest() {
         final XnatAliasToken aliasToken = selfAliasTokenTest();
-        assertEquals(mainUser.getUsername(), responseForValidate(aliasToken).then().assertThat().statusCode(200).and().extract().jsonPath().getString("valid"));
-
+        final XnatInterface tokenAuth = authFromToken(aliasToken);
         final XnatAliasToken bogusToken = new XnatAliasToken("1-2-3-4-5-6-7-8", "hidden secret number");
-        final ValidatableResponse response = responseForValidate(bogusToken).then().assertThat();
-        if (XnatTestingVersionManager.testedVersionFollows(Xnat_1_7_4.class)) {
-            response.statusCode(404);
-        } else {
-            response.statusCode(200).and().assertThat().body(Matchers.equalTo("{}"));
+        for (XnatInterface xnatInterface : new XnatInterface[]{tokenAuth, mainInterface()}) {
+            assertTrue(xnatInterface.validateAliasToken(aliasToken, mainUser.getUsername()));
+            assertFalse(xnatInterface.validateAliasToken(bogusToken, mainUser.getUsername()));
         }
         checkAliasToken(bogusToken, 401, 401);
 
-        Credentials.build(aliasToken).get(formatRestUrl("/services/tokens/invalidate", aliasToken.getAlias(), aliasToken.getSecret())).then().assertThat().statusCode(200);
+        tokenAuth.invalidateAliasToken(aliasToken);
         checkAliasToken(aliasToken, invalidatedTokenCode(), invalidatedTokenCode());
-    }
-
-    private Response responseForValidate(XnatAliasToken aliasToken) {
-        return Credentials.build(mainUser).get(formatRestUrl("services/tokens/validate", aliasToken.getAlias(), aliasToken.getSecret()));
-    }
-
-    private int projectCodeBadToken(boolean openXnat) {
-        return openXnat ? 403 : 401;
     }
 
     private int invalidatedTokenCode() {
         return XnatTestingVersionManager.testedVersionFollows(Xnat_1_7_4.class) ? 401 : 403;
+    }
+
+    private XnatInterface authFromToken(XnatAliasToken aliasToken) {
+        final XnatConnectionConfig connectionConfig = new XnatConnectionConfig();
+        connectionConfig.setVersionClass(Settings.XNAT_VERSION);
+        connectionConfig.setSkipAuth(true);
+        return XnatInterface.authenticate(Settings.BASEURL, aliasToken, connectionConfig);
     }
 
 }

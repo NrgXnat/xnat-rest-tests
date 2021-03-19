@@ -38,24 +38,24 @@ public class TestWorkflows extends BaseXnatRestTest {
     public void testModifyWorkflowStatus() {
         putWorkflow("Queued", true);
         putWorkflow("Complete", false); // Change the status to "Complete"
-        assertEquals("Complete", mainAdminCredentials().given().queryParams(workflowGetParams()).get(restDriver.formatRestUrl("workflows")).jsonPath().getString("items.get(0).data_fields.status")); // Verify that the status was successfully changed
+        assertEquals("Complete", mainAdminCredentials().given().queryParams(workflowGetParams()).get(formatRestUrl("workflows")).jsonPath().getString("items.get(0).data_fields.status")); // Verify that the status was successfully changed
     }
 
     @Test
     public void testGetWorkflowByWorkflowId() {
         putWorkflow("Queued", true);
-        final String workflowId = mainAdminCredentials().given().queryParams(workflowGetParams()).get(restDriver.formatRestUrl("workflows")).jsonPath().getString("items.get(0).data_fields.wrk_workflowData_id");
-        mainAdminCredentials().expect().statusCode(200).when().get(restDriver.formatRestUrl("workflows", workflowId));
+        final String workflowId = mainAdminCredentials().given().queryParams(workflowGetParams()).get(formatRestUrl("workflows")).jsonPath().getString("items.get(0).data_fields.wrk_workflowData_id");
+        mainAdminCredentials().expect().statusCode(200).when().get(formatRestUrl("workflows", workflowId));
     }
 
     @Test
     public void testWorkflowUserPrivileges() {
         putWorkflow("Queued", true);
-        mainCredentials().expect().statusCode(403).given().queryParams(workflowQueryParams("Complete", false)).when().put(restDriver.formatRestUrl("workflows"));
+        mainCredentials().expect().statusCode(403).given().queryParams(workflowQueryParams("Complete", false)).when().put(formatRestUrl("workflows"));
     }
 
     private void putWorkflow(String status, boolean includeDataType) {
-        mainAdminCredentials().expect().statusCode(200).given().queryParams(workflowQueryParams(status, includeDataType)).put(restDriver.formatRestUrl("workflows"));
+        mainAdminCredentials().expect().statusCode(200).given().queryParams(workflowQueryParams(status, includeDataType)).put(formatRestUrl("workflows"));
     }
 
     private Map<String, Object> workflowQueryParams(String status, boolean includeDataType) {

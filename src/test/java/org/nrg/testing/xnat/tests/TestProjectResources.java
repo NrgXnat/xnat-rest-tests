@@ -47,11 +47,11 @@ public class TestProjectResources extends BaseXnatRestTest {
         final File original = getDataFile("test_project_v1.xml");
         final File updated  = getDataFile("test_project_v2.xml");
 
-        final Project project = registerProject().extension(new ProjectXMLPutExtension(restDriver.interfaceFor(mainUser), original));
+        final Project project = registerProject().extension(new ProjectXMLPutExtension(original));
 
         mainInterface().createProject(project);
         compare(project, original);
-        mainInterface().createProject(project.extension(new ProjectXMLPutExtension(mainInterface(), updated))); // update project
+        mainInterface().createProject(project.extension(new ProjectXMLPutExtension(updated))); // update project
         TimeUtils.sleep(1000); // cache update
         compare(project, updated);
         mainInterface().createProject(project); // resubmit (no change)

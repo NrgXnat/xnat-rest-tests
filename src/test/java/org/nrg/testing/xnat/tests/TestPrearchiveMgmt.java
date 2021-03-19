@@ -76,7 +76,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
                 then().assertThat().statusCode(200).
                 and().extract().response().asString().trim();
 
-        final String sessionUrl = restDriver.formatXnatUrl(sessionUri);
+        final String sessionUrl = formatXnatUrl(sessionUri);
 
         mainAdminCredentials().queryParam("action", "commit").post(sessionUrl).then().assertThat().statusCode(200);
 
@@ -104,7 +104,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
         final String finalUri = getSessionPrearcUri(project2, subjectName, sessionName);
 
-        mainCredentials().delete(restDriver.formatRestUrl(finalUri)).then().assertThat().statusCode(200);
+        mainCredentials().delete(formatRestUrl(finalUri)).then().assertThat().statusCode(200);
     }
 
     @Test
@@ -118,7 +118,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
                                 param("subj", subject.getLabel()).
                                 param("session", session.getLabel()).
                                 getString("find { it.subject == subj && it.name == session && it.status == 'READY' }.url");
-                mainCredentials().get(restDriver.formatRestUrl(sessionUri)).then().assertThat().statusCode(200);
+                mainCredentials().get(formatRestUrl(sessionUri)).then().assertThat().statusCode(200);
             }
         }
     }
@@ -145,7 +145,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
         final String uri = getSessionPrearcUri(project2, subject, session);
 
-        mainCredentials().delete(restDriver.formatRestUrl(uri)).then().assertThat().statusCode(200);
+        mainCredentials().delete(formatRestUrl(uri)).then().assertThat().statusCode(200);
 
         assertSessionsInProjectPrearc(project2, 0);
     }
@@ -172,7 +172,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
         assertSessionsInProjectPrearc(project2, 1);
 
-        mainCredentials().delete(restDriver.formatRestUrl(destination)).then().assertThat().statusCode(200);
+        mainCredentials().delete(formatRestUrl(destination)).then().assertThat().statusCode(200);
 
         assertSessionsInProjectPrearc(project2, 0);
     }
@@ -219,7 +219,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
         assertSessionsInProjectPrearc(project2, 1);
 
         final String finalUri = getSessionPrearcUri(project2, subject, session);
-        mainCredentials().delete(restDriver.formatRestUrl(finalUri)).then().assertThat().statusCode(200);
+        mainCredentials().delete(formatRestUrl(finalUri)).then().assertThat().statusCode(200);
     }
 
     private void assertSessionsInProjectPrearc(Project project, int numSessions) {
