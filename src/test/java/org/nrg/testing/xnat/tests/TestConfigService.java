@@ -16,6 +16,7 @@ import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.users.User;
 import org.nrg.xnat.rest.Credentials;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -30,9 +31,14 @@ public class TestConfigService extends BaseXnatRestTest {
 
     private final List<Project> projects = new ArrayList<>();
     private final Matcher<Integer> isOk = Matchers.isOneOf(200, 201);
-    private final String testConfigUrl = formatRestUrl("config/test/newPath/goes/here");
     private final File dummy = getDataFile("dummy.txt");
     private final String dummyContents = FileIOUtils.readFile(dummy);
+    private String testConfigUrl;
+
+    @BeforeClass
+    public void initConfigUrl() {
+        testConfigUrl = formatRestUrl("config/test/newPath/goes/here");
+    }
 
     @AfterClass(alwaysRun = true)
     public void removeConfigServiceProjects() {
