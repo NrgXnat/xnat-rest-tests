@@ -523,7 +523,9 @@ public class TestImport extends BaseXnatRestTest {
         assertNotEquals(unassignedUrl, archiveUrl);
         assertTrue(archiveUrl.startsWith("/data/archive"));
 
-        mainInterface().waitForAutoRun(mainInterface().readProject(project.getId()).getSubjects().get(0).getSessions().get(0));
+        mainInterface().waitForAutoRun(
+                mainInterface().readProject(project.getId()).getSubjects().get(0).getSessions().get(0).project(project)
+        );
 
         for (int i = 1; i < 3; i++) {
             TestNgUtils.assertBinaryFilesEqual(
