@@ -1,12 +1,10 @@
 package org.nrg.testing.xnat.tests;
 
-import com.jayway.restassured.http.ContentType;
 import org.apache.commons.io.IOUtils;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.*;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
-import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
 import org.nrg.xnat.versions.Xnat_1_7_7;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.enums.Gender;
@@ -32,7 +30,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -272,7 +269,7 @@ public class TestContainerService extends BaseXnatRestTest {
 
         // Determine workflow ID, wait for complete, verify outputs
         for (Map.Entry<String, String> uriAndId : urisAndIds.entrySet()) {
-            final int workflowId = determineWorkflowId(dataType, uriAndId.getValue(), wrapper);
+            final int workflowId = mainInterface().determineWorkflowId(dataType, uriAndId.getValue(), wrapper);
             waitForWorkflowComplete(workflowId, swarm);
             verifyOutputs(uriAndId.getKey());
         }
@@ -280,40 +277,6 @@ public class TestContainerService extends BaseXnatRestTest {
 
     private CommandSummaryForContext readWrapper(DataType dataType) {
         return mainInterface().readAvailableCommands(dataType, project).get(0);
-    }
-
-    private int determineWorkflowId(DataType dataType, String id, CommandSummaryForContext wrapper) {
-        final Map<String, Object> params = new HashMap<>();
-        params.put("data_type", dataType.getXsiType());
-        params.put("id", id);
-        params.put("sort_col", "launchTime");
-        params.put("sort_dir", "desc");
-        params.put("page", "1");
-        params.put("filters", makeFilterMap(wrapper.getWrapperName()));
-
-        final long start = System.currentTimeMillis();
-        int workflowId;
-        do {
-            TimeUtils.sleep(1000); // give the thread time to submit these
-            workflowId = mainQueryBase().body(params)
-                    .contentType(ContentType.JSON)
-                    .post(formatXapiUrl("workflows"))
-                    .then().assertThat().statusCode(200).and().extract().jsonPath().getInt("wfid.get(0)");
-        } while (workflowId == 0 && System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(5));
-
-        assertTrue(workflowId > 0);
-        return workflowId;
-    }
-
-    private Map<String, Object> makeFilterMap(String wrapperName) {
-        final Map<String, String> filterVals = new HashMap<>();
-        filterVals.put("like", wrapperName);
-        if (XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_8_0.class)) {
-            filterVals.put("type", "string");
-        } else {
-            filterVals.put("backend", "sql_string");
-        }
-        return Collections.singletonMap("pipelineName", filterVals);
     }
 
     private void waitForWorkflowComplete(int workflowId, boolean swarm) {
