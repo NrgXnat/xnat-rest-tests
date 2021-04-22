@@ -1,0 +1,1 @@
+(0010,1000) := getURL["http://www.mocky.io/v2/577eb33e100000c217f261ce"]
