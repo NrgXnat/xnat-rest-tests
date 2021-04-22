@@ -42,12 +42,6 @@ public class DuplicatedInvalidPrivateTagRemoval extends ScriptValidation {
     }
 
     @Override
-    protected void extendScriptRanForDE6(DicomObject dicomObject) {}
-
-    @Override
-    protected void extendScriptDidntRunForDE6(DicomObject dicomObject) {}
-
-    @Override
     protected List<InterfileDicomValidation> interfileChecksWhen(boolean scriptRan) {
         return new ArrayList<>();
     }

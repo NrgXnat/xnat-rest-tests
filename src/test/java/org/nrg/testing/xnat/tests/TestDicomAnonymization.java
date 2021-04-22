@@ -8,6 +8,7 @@ import org.nrg.testing.dicom.ScriptValidation;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.XnatObjectUtils;
+import org.nrg.xnat.enums.DicomEditVersion;
 import org.nrg.xnat.versions.Xnat_1_7_7;
 import org.nrg.xnat.pogo.AnonScript;
 import org.nrg.xnat.pogo.Project;
@@ -17,6 +18,7 @@ import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
 import org.nrg.xnat.pogo.resources.Resource;
 import org.nrg.xnat.pogo.resources.ResourceFile;
+import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
@@ -36,8 +38,6 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     private final AnonScript projectAnonDE6 = XnatObjectUtils.anonScriptFromFile(DE_6, "projectAnon.das");
     private final AnonScript siteAnonDE4 = XnatObjectUtils.anonScriptFromFile(DE_4, "siteAnon.das");
     private final AnonScript siteAnonDE6 = XnatObjectUtils.anonScriptFromFile(DE_6, "siteAnon.das");
-    private final AnonScript removeAllPrivateTags = XnatObjectUtils.anonScriptFromFile(DE_6, "removeAllPrivateTags.das");
-    private final AnonScript duplicatedPrivateTagRemoval = XnatObjectUtils.anonScriptFromFile(DE_6, "de21.das");
     private final Map<AnonScript, ScriptValidation> scriptValidationMap = new HashMap<>();
     boolean projectCreated = false;
 
@@ -45,13 +45,11 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     public void createProject() {
         mainInterface().createProject(anonProject);
         projectCreated = true;
-        restDriver.interfaceFor(mainUser).regenerateUserSession(); // hack for XNAT-5187
-        scriptValidationMap.put(projectAnonDE4, new ProjectDE4Script());
-        scriptValidationMap.put(projectAnonDE6, new ProjectDE6Script());
-        scriptValidationMap.put(siteAnonDE4, new SiteDE4Script());
-        scriptValidationMap.put(siteAnonDE6, new SiteDE6Script());
-        scriptValidationMap.put(removeAllPrivateTags, new RemoveAllPrivateTags());
-        scriptValidationMap.put(duplicatedPrivateTagRemoval, new DuplicatedInvalidPrivateTagRemoval());
+        mainInterface().regenerateUserSession(); // hack for XNAT-5187
+        scriptValidationMap.put(projectAnonDE4, new ProjectScript());
+        scriptValidationMap.put(projectAnonDE6, new ProjectScript());
+        scriptValidationMap.put(siteAnonDE4, new SiteScript());
+        scriptValidationMap.put(siteAnonDE6, new SiteScript());
     }
 
     @AfterMethod(alwaysRun = true)
@@ -79,13 +77,11 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "DE-7")
     public void testSubjectRelabel_6P_4S() {
         performSubjectRelabelAnonTest(projectAnonDE6, siteAnonDE4);
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "DE-7")
     public void testSubjectRelabel_6P_6S() {
         performSubjectRelabelAnonTest(projectAnonDE6, siteAnonDE6);
     }
@@ -101,27 +97,233 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "DE-7")
     public void testSessionRelabel_6P_4S() {
         performSessionRelabelAnonTest(projectAnonDE6, siteAnonDE4);
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "DE-7")
     public void testSessionRelabel_6P_6S() {
         performSessionRelabelAnonTest(projectAnonDE6, siteAnonDE6);
     }
 
     @Test
+    public void testStandardElementRemovalDE4() {
+        performBasicScriptTest(DE_4, "standardDelete.das", new StandardDeleteScript());
+    }
+
+    @Test
+    public void testStandardElementRemovalDE6() {
+        performBasicScriptTest(DE_6, "standardDelete.das", new StandardDeleteScript());
+    }
+
+    @Test
+    public void testStandardAssignmentDE4() {
+        performBasicScriptTest(DE_4, "standardAssignment.das", new StandardAssignmentScript());
+    }
+
+    @Test
+    public void testStandardAssignmentDE6() {
+        performBasicScriptTest(DE_6, "standardAssignment.das", new StandardAssignmentScript());
+    }
+
+    @Test
+    public void testAssignToNullDE4() {
+        performBasicScriptTest(DE_4, "assignToNull.das", new AssignToNullScript());
+    }
+
+    @Test
+    @ExpectedFailure(jiraIssue = "DE-47")
+    public void testAssignToNullDE6() {
+        performBasicScriptTest(DE_6, "assignToNull.das", new AssignToNullScript());
+    }
+
+    @Test
+    public void testStringFunctionsDE4() {
+        performBasicScriptTest(DE_4, "stringFunctions.das", new StringFunctionsScript());
+    }
+
+    @Test
+    public void testStringFunctionsDE6() {
+        performBasicScriptTest(DE_6, "stringFunctions.das", new StringFunctionsScript());
+    }
+
+    @Test
+    public void testUrlEncodeDE4() {
+        performBasicScriptTest(DE_4, "urlEncode.das", new UrlEncodeScript());
+    }
+
+    @Test
+    @ExpectedFailure(jiraIssue = "DE-7")
+    public void testUrlEncodeDE6() {
+        performBasicScriptTest(DE_6, "urlEncode.das", new UrlEncodeScript());
+    }
+
+    @Test
     @AddedIn(Xnat_1_7_7.class) // this technically could probably be earlier, but this is fine
     public void testRemoveAllPrivateTagsDE6() {
-        performBasicScriptTest(anonData, removeAllPrivateTags);
+        performBasicScriptTest(DE_6, "removeAllPrivateTags.das", new RemoveAllPrivateTags());
     }
 
     @Test // Tests DE-21
     @AddedIn(Xnat_1_7_7.class) // this technically could probably be earlier, but this is fine
     public void testInvalidDuplicatedPrivateTagRemovalDE6() {
-        performBasicScriptTest(TestData.ANON_DUPLICATE_PRIVATE_TAG.toFile(), duplicatedPrivateTagRemoval);
+        performBasicScriptTest(DE_6, "de21.das", new DuplicatedInvalidPrivateTagRemoval(), TestData.ANON_DUPLICATE_PRIVATE_TAG.toFile());
+    }
+
+    @Test
+    public void testGetURLDE4() {
+        performBasicScriptTest(DE_4, "getURL.das", new GetURLScript());
+    }
+
+    @Test
+    public void testGetURLDE6() {
+        performBasicScriptTest(DE_6, "getURL.das", new GetURLScript());
+    }
+
+    @Test
+    public void testMatchDE4() {
+        performBasicScriptTest(DE_4, "match.das", new MatchScript());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testMatchDE6() {
+        performBasicScriptTest(DE_6, "match.das", new MatchScript());
+    }
+
+    @Test
+    public void testUIDModsDE6() {
+        performBasicScriptTest(DE_6, "uidMod.das", new UIDModScript());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testGroup2SyncDE6() {
+        performBasicScriptTest(DE_6, "group2Sync.das", new Group2SyncScript());
+    }
+
+    @Test
+    public void testStandardWildcardedDeleteDE4() {
+        performBasicScriptTest(DE_4, "standardWildcardedDelete.das", new StandardWildcardedDeleteScript());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testStandardWildcardedDeleteDE6() {
+        performBasicScriptTest(DE_6, "standardWildcardedDelete.das", new StandardWildcardedDeleteScript());
+    }
+
+    @Test
+    public void testStandardConditionalsDE4() {
+        performBasicScriptTest(DE_4, "standardConditionals.das", new StandardConditionalsScript());
+    }
+
+    @Test
+    public void testStandardConditionalsDE6() {
+        performBasicScriptTest(DE_6, "standardConditionals.das", new StandardConditionalsScript());
+    }
+
+    @Test
+    public void testPrivateConditionalsDE4() {
+        performBasicScriptTest(DE_4, "privateConditionals.das", new PrivateConditionalsScript());
+    }
+
+    @Test
+    public void testPrivateConditionalsDE6() {
+        performBasicScriptTest(DE_6, "privateConditionals.das", new PrivateConditionalsScript());
+    }
+
+    @Test
+    public void testPrivateDeleteDE4() {
+        performBasicScriptTest(DE_4, "privateDelete.das", new PrivateDeleteScript());
+    }
+
+    @Test
+    public void testPrivateDeleteDE6() {
+        performBasicScriptTest(DE_6, "privateDelete.das", new PrivateDeleteScript());
+    }
+
+    @Test
+    @ExpectedFailure(jiraIssue = "DE-14")
+    public void testPrivateAssignmentDE6() {
+        performBasicScriptTest(DE_6, "privateAssignment.das", new PrivateAssignmentScript());
+    }
+
+    @Test
+    public void testStandardSequenceAssignmentDE6() {
+        performBasicScriptTest(DE_6, "standardSequenceAssignment.das", new StandardSequenceAssignmentScript());
+    }
+
+    @Test
+    public void testStandardSequenceDeleteDE6() {
+        performBasicScriptTest(DE_6, "standardSequenceDelete.das", new StandardSequenceDeleteScript());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testLevelWildcardsDE6() {
+        performBasicScriptTest(DE_6, "levelWildcard.das", new LevelWildcardScript());
+    }
+
+    @Test
+    public void testSequenceItemWildcard() {
+        performBasicScriptTest(DE_6, "sequenceItemWildcard.das", new SequenceItemWildcardScript());
+    }
+
+    @Test
+    public void testMixedPrivateStandardSequence() {
+        performBasicScriptTest(DE_6, "mixedPrivateStandardSequence.das", new MixedPrivateStandardSequenceScript());
+    }
+
+    @Test
+    public void testTrailingCommentDE4() {
+        performBasicScriptTest(DE_4, "trailingComment.das", new TrailingCommentScript());
+    }
+
+    @Test
+    public void testTrailingCommentDE6() {
+        performBasicScriptTest(DE_6, "trailingComment.das", new TrailingCommentScript());
+    }
+
+    @Test
+    public void testXnatVariablesDE4() {
+        performXnatVariableScriptTest(DE_4);
+    }
+
+    @Test
+    public void testXnatVariablesDE6() {
+        performXnatVariableScriptTest(DE_6);
+    }
+
+    @Test
+    public void testAssignFloatDE4() {
+        performBasicScriptTest(DE_4, "assignFloat.das", new AssignFloatScript());
+    }
+
+    @Test
+    @ExpectedFailure(jiraIssue = "DE-46")
+    public void testAssignFloatDE6() {
+        performBasicScriptTest(DE_6, "assignFloat.das", new AssignFloatScript());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testStandardAssignIfExists() {
+        performBasicScriptTest(DE_6, "standardAssignIfExists.das", new StandardAssignIfExistsScript());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    @ExpectedFailure(jiraIssue = "DE-14")
+    public void testPrivateAssignIfExists() {
+        performBasicScriptTest(DE_6, "privateAssignIfExists.das", new PrivateAssignIfExistsScript());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    @ExpectedFailure(jiraIssue = "DE-49") // (and DE-48)
+    public void testSequenceAssignIfExists() {
+        performBasicScriptTest(DE_6, "sequenceAssignIfExists.das", new SequenceAssignIfExistsScript());
     }
 
     private void performSubjectRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
@@ -156,11 +358,28 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         validateAnon(session, Collections.singletonList(projectScript), Collections.singletonList(siteScript));
     }
 
-    private void performBasicScriptTest(File testData, AnonScript script) {
+    private void performBasicScriptTest(DicomEditVersion deVersion, String scriptName, ScriptValidation scriptValidation, File testData) {
+        final AnonScript script = XnatObjectUtils.anonScriptFromFile(deVersion, scriptName);
+        scriptValidationMap.put(script, scriptValidation);
         mainInterface().setProjectAnonScript(anonProject, script);
         mainAdminInterface().disableSiteAnonScript();
 
         validateAnon(importSession(testData), Collections.singletonList(script), null);
+    }
+
+    private void performBasicScriptTest(DicomEditVersion deVersion, String scriptName, ScriptValidation scriptValidation) {
+        performBasicScriptTest(deVersion, scriptName, scriptValidation, anonData);
+    }
+
+    private void performXnatVariableScriptTest(DicomEditVersion deVersion) {
+        final AnonScript script = XnatObjectUtils.anonScriptFromFile(deVersion, "xnatVariables.das");
+        final XnatVariablesScript scriptValidation = new XnatVariablesScript();
+        scriptValidationMap.put(script, scriptValidation);
+        mainInterface().setProjectAnonScript(anonProject, script);
+        mainAdminInterface().disableSiteAnonScript();
+        final ImagingSession session = importSession(anonData);
+        scriptValidation.session(session);
+        validateAnon(session, Collections.singletonList(script), null);
     }
 
     private ImagingSession importAnonSession() {
