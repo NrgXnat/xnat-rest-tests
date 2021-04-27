@@ -1,6 +1,5 @@
 package org.nrg.testing.xnat.tests;
 
-import org.nrg.framework.constants.Scope;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
@@ -12,6 +11,7 @@ import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.containers.CommandSummaryForContext;
 import org.nrg.xnat.pogo.containers.Image;
 import org.nrg.xnat.pogo.containers.Orchestration;
+import org.nrg.xnat.pogo.containers.OrchestrationProject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.SubjectAssessor;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
@@ -25,6 +25,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @TestRequires(plugins = {"containers", "batchLaunchPlugin"})
 @AddedIn(Xnat_1_8_2.class)
@@ -83,7 +84,8 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
 
     @Test
     public void testOrchestrationSession() {
-        setupOrchestration();
+        Orchestration o = setupOrchestration();
+        setProjectOrchestration(o);
         final int workflowId = mainInterface().launchContainer(project, wrapperSummaries.get(0), session.getUri());
         mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
         final int nextWorkflowId = mainInterface().determineWorkflowId(DataType.MR_SESSION, session.getAccessionNumber(),
@@ -99,8 +101,8 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
                 .orElseThrow(Exception::new).getWrapperId());
         wrapperIds.addAll(wrapperSummaries.stream().map(CommandSummaryForContext::getWrapperId)
                 .filter(wrapperId -> !wrapperIds.contains(wrapperId)).collect(Collectors.toList()));
-        Orchestration orchestration = new Orchestration("test", Scope.Project.name(), project.getId(), wrapperIds);
-        mainAdminInterface().createOrUpdateOrchestration(orchestration);
+        Orchestration orchestration = mainAdminInterface().createOrUpdateOrchestration(new Orchestration("test", wrapperIds));
+        setProjectOrchestration(orchestration);
 
         // Ensure the workflow fails
         final Map<String, String> queryParams = new HashMap<>();
@@ -116,6 +118,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
     @Test
     public void testOrchestrationSessionReverseOrder() {
         Orchestration orchestration = setupOrchestration();
+        setProjectOrchestration(orchestration);
         Collections.reverse(orchestration.getWrapperIds());
         mainAdminInterface().createOrUpdateOrchestration(orchestration);
 
@@ -130,7 +133,43 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
     @Test
     public void testOrchestrationDisable() {
         Orchestration orchestration = setupOrchestration();
-        mainAdminInterface().disableOrchestration(orchestration);
+        setProjectOrchestration(orchestration);
+        mainAdminInterface().enableOrDisableOrchestration(orchestration, false);
+
+        OrchestrationProject op = mainInterface().getProjectOrchestrationConfig(project);
+        assertNull(op.getSelectedOrchestrationId());
+
+        final int workflowId = mainInterface().launchContainer(project, wrapperSummaries.get(0), session.getUri());
+        mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
+
+        // verify next command doesn't run
+        mainInterface().verifyNoWorkflow(session, wrapperSummaries.get(1).getWrapperName());
+    }
+
+    @Test
+    public void testOrchestrationDisableThruCommandProject() {
+        Orchestration orchestration = setupOrchestration();
+        setProjectOrchestration(orchestration);
+        mainInterface().setWrapperStatusOnProject(wrapperSummaries.get(0), project, false);
+
+        OrchestrationProject op = mainInterface().getProjectOrchestrationConfig(project);
+        assertNull(op.getSelectedOrchestrationId());
+
+        final int workflowId = mainInterface().launchContainer(project, wrapperSummaries.get(0), session.getUri());
+        mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
+
+        // verify next command doesn't run
+        mainInterface().verifyNoWorkflow(session, wrapperSummaries.get(1).getWrapperName());
+    }
+
+    @Test
+    public void testOrchestrationDisableThruCommandSite() {
+        Orchestration orchestration = setupOrchestration();
+        setProjectOrchestration(orchestration);
+        mainAdminInterface().setWrapperStatusOnSite(wrapperSummaries.get(0), project, false);
+
+        OrchestrationProject op = mainInterface().getProjectOrchestrationConfig(project);
+        assertNull(op.getSelectedOrchestrationId());
 
         final int workflowId = mainInterface().launchContainer(project, wrapperSummaries.get(0), session.getUri());
         mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
@@ -142,6 +181,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
     @Test
     public void testOrchestrationDelete() {
         Orchestration orchestration = setupOrchestration();
+        setProjectOrchestration(orchestration);
         mainAdminInterface().deleteOrchestration(orchestration);
 
         final int workflowId = mainInterface().launchContainer(project, wrapperSummaries.get(0), session.getUri());
@@ -152,10 +192,48 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
     }
 
     @Test
-    public void testOrchestrationFind() {
+    public void testOrchestrationNotSetupOnProject() {
+        setupOrchestration();
+
+        final int workflowId = mainInterface().launchContainer(project, wrapperSummaries.get(0), session.getUri());
+        mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
+
+        // verify next command doesn't run
+        mainInterface().verifyNoWorkflow(session, wrapperSummaries.get(1).getWrapperName());
+    }
+
+    @Test
+    public void testOrchestrationRemovedFromProject() {
+        Orchestration orchestration = setupOrchestration();
+        setProjectOrchestration(orchestration);
+        removeProjectOrchestration();
+
+        final int workflowId = mainInterface().launchContainer(project, wrapperSummaries.get(0), session.getUri());
+        mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
+
+        // verify next command doesn't run
+        mainInterface().verifyNoWorkflow(session, wrapperSummaries.get(1).getWrapperName());
+    }
+
+    @Test
+    public void testProjectOrchestrationConfig() {
         Orchestration o = setupOrchestration();
-        Orchestration o2 = mainAdminInterface().findOrchestration(project);
-        assertEquals(o, o2);
+        OrchestrationProject op = mainInterface().getProjectOrchestrationConfig(project);
+        assertEquals(op.getAvailableOrchestrations().size(), 1);
+        assertEquals(o, op.getAvailableOrchestrations().get(0));
+        assertNull(op.getSelectedOrchestrationId());
+
+        setProjectOrchestration(o);
+        op = mainInterface().getProjectOrchestrationConfig(project);
+        assertEquals(op.getAvailableOrchestrations().size(), 1);
+        assertEquals(o, op.getAvailableOrchestrations().get(0));
+        assertEquals((Long) o.getId(), op.getSelectedOrchestrationId());
+
+        removeProjectOrchestration();
+        op = mainInterface().getProjectOrchestrationConfig(project);
+        assertEquals(op.getAvailableOrchestrations().size(), 1);
+        assertEquals(o, op.getAvailableOrchestrations().get(0));
+        assertNull(op.getSelectedOrchestrationId());
     }
 
     @Test
@@ -166,7 +244,8 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
         mainInterface().getAccessionNumber(session2);
         final List<ImagingSession> sessions = Arrays.asList(session, session2);
 
-        setupOrchestration();
+        Orchestration orchestration = setupOrchestration();
+        setProjectOrchestration(orchestration);
 
         mainInterface().bulkLaunchContainers(project, wrapperSummaries.get(0),
                 sessions.stream().map(SubjectAssessor::getUri).collect(Collectors.toList()));
@@ -194,7 +273,15 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
     private Orchestration setupOrchestration() {
         List<Long> wrapperIds = wrapperSummaries.stream().map(CommandSummaryForContext::getWrapperId)
                 .collect(Collectors.toList());
-        Orchestration orchestration = new Orchestration("test", Scope.Project.name(), project.getId(), wrapperIds);
+        Orchestration orchestration = new Orchestration("test", wrapperIds);
         return mainAdminInterface().createOrUpdateOrchestration(orchestration);
+    }
+
+    private void setProjectOrchestration(Orchestration orchestration) {
+        mainInterface().setProjectOrchestration(project, orchestration);
+    }
+
+    private void removeProjectOrchestration() {
+        mainInterface().removeProjectOrchestration(project);
     }
 }
