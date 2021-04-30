@@ -19,6 +19,7 @@ import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
 import org.nrg.xnat.pogo.resources.Resource;
 import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.nrg.xnat.versions.Xnat_1_8_0;
+import org.nrg.xnat.versions.Xnat_1_8_1;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
@@ -324,6 +325,30 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     @ExpectedFailure(jiraIssue = "DE-49") // (and DE-48)
     public void testSequenceAssignIfExists() {
         performBasicScriptTest(DE_6, "sequenceAssignIfExists.das", new SequenceAssignIfExistsScript());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testShiftDateByIncrement() {
+        performBasicScriptTest(DE_6, "shiftDate.das", new ShiftDateScript());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_1.class)
+    public void testShiftDateTimeByIncrement() {
+        performBasicScriptTest(DE_6, "shiftDateTime.das", new ShiftDateTimeScript());
+    }
+
+    @Test
+    @ExpectedFailure(jiraIssue = "DE-42")
+    public void testShiftDateTimeByIncrementWithTimezone() {
+        performBasicScriptTest(DE_6, "shiftDateTimeWithTimezone.das", new ShiftDateTimeWithTimezoneScript());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_1.class)
+    public void testShiftDateTimeSequenceByIncrement() {
+        performBasicScriptTest(DE_6, "shiftDateTimeSequence.das", new ShiftDateTimeSequenceScript());
     }
 
     private void performSubjectRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
