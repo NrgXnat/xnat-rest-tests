@@ -351,6 +351,25 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         performBasicScriptTest(DE_6, "shiftDateTimeSequence.das", new ShiftDateTimeSequenceScript());
     }
 
+    /*
+      This test is rather complex, so even if DE-51 is fixed, I'm not sure this test will work. Unfortunately,
+      DE-51 is preventing me from really testing it. Another problem that may arise is whether the blackout regions
+      have value=0 in every single image. There may be some W/L considerations that make the blackout regions a solid,
+      but non-zero value region, so I would need to modify the check to use a possibly different value for each image.
+     */
+    @Test
+    @AddedIn(Xnat_1_8_1.class)
+    @ExpectedFailure(jiraIssue = "DE-51")
+    public void testAlterPixels() {
+        performBasicScriptTest(DE_6, "alterPixels.das", new AlterPixelsScript(), TestData.SAMPLE_1.toFile());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_1.class)
+    public void testIsMatch() {
+        performBasicScriptTest(DE_6, "isMatch.das", new IsMatchScript());
+    }
+
     private void performSubjectRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
         mainAdminInterface().setSiteAnonScript(siteScript);
         mainInterface().setProjectAnonScript(anonProject, projectScript);
