@@ -351,6 +351,22 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         performBasicScriptTest(DE_6, "shiftDateTimeSequence.das", new ShiftDateTimeSequenceScript());
     }
 
+    @Test
+    @AddedIn(Xnat_1_8_0.class)
+    public void testMapReferencedUIDs() {
+        performBasicScriptTest(DE_6, "mapReferencedUIDs.das", new MapReferencedUIDsScript());
+    }
+
+    /*
+      Also relies on the set function to fix missing private creator ID
+     */
+    @Test
+    @AddedIn(Xnat_1_8_1.class)
+    @TestRequires(data = TestData.SIMPLE_PET)
+    public void testPrivateMapReferencedUIDs() {
+        performBasicScriptTest(DE_6, "privateMapReferencedUIDs.das", new PrivateMapReferencedUIDsScript(), TestData.SIMPLE_PET.toFile());
+    }
+
     /*
       This test is rather complex, so even if DE-51 is fixed, I'm not sure this test will work. Unfortunately,
       DE-51 is preventing me from really testing it. Another problem that may arise is whether the blackout regions
@@ -371,6 +387,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @Test
+    @ExpectedFailure(jiraIssue = "DE-52")
     @AddedIn(Xnat_1_8_1.class)
     public void testSet() {
         performBasicScriptTest(DE_6, "set.das", new SetScript());

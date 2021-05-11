@@ -1,5 +1,6 @@
 package org.nrg.testing.dicom;
 
+import org.dcm4che3.data.VR;
 import org.nrg.testing.dicom.values.DicomSequence;
 
 public class SetScript extends SimplestDicomScriptValidation {
@@ -10,7 +11,7 @@ public class SetScript extends SimplestDicomScriptValidation {
 
         root.putValueEqualCheck("(0045,0010)", "PCI");
         root.putValueEqualCheck("(0045,1045)", "PRIVATEVALUE");
-        root.putValueEqualCheck("(0028,0008)", "10");
+        root.putValueEqualCheck("(0028,0008)", "10", VR.IS);
 
         final DicomObject dimensionIndexSeqItem0 = new DicomObject();
         dimensionIndexSeqItem0.putValueEqualCheck("(0020,9164)", "1.2.3.4");
