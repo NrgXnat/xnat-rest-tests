@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xnat:Subject ID="" project="$PROJECT" label="$SUBJECT_LABEL" xmlns:xnat="http://nrg.wustl.edu/xnat" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <xnat:demographics xsi:type="xnat:demographicData">
+        <xnat:gender>unknown</xnat:gender>
+        <xnat:handedness>unknown</xnat:handedness>
+    </xnat:demographics>
+</xnat:Subject>
