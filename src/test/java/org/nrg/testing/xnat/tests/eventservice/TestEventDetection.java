@@ -13,6 +13,7 @@ import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.xnat.enums.Accessibility;
 import org.nrg.xnat.enums.PetMrProcessingSetting;
 import org.nrg.xnat.enums.PrearchiveCode;
+import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.events.*;
@@ -130,9 +131,9 @@ public class TestEventDetection extends BaseEventServiceTest {
         final Map<String, String> mrSessionFormData = new HashMap<>();
         mrSessionFormData.put("xnat:mrSessionData/project", turbineProject.getId());
         mrSessionFormData.put("xnat:mrSessionData/subject_id", restXmlSubject.getAccessionNumber());
-        mrSessionFormData.put("xnat:mrSessionData/label:", turbineSession.getLabel());
+        mrSessionFormData.put("xnat:mrSessionData/label", turbineSession.getLabel());
+        mrSessionFormData.put("ELEMENT_0", DataType.MR_SESSION.getXsiType());
         mainInterface().requestWithCsrfToken().formParams(mrSessionFormData).post(formatXnatUrl("/app/action/EditImageSessionAction")).then().assertThat().statusCode(200);
-
     }
 
     @Test
