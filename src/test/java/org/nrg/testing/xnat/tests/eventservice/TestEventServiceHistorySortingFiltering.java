@@ -2,7 +2,8 @@ package org.nrg.testing.xnat.tests.eventservice;
 
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.util.RandomHelper;
-import org.nrg.xnat.enums.PaginatedApiSortDirection;
+import org.nrg.xnat.pogo.HibernateFilter;
+import org.nrg.xnat.pogo.PaginatedRequest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.events.*;
@@ -69,18 +70,14 @@ public class TestEventServiceHistorySortingFiltering extends BaseEventServiceTes
         assertEquals(subject1.getLabel(), subject1Event.getTrigger().getLabel());
 
         final List<DeliveredEvent> sortedEvents = mainAdminInterface().queryDeliveredEvents(
-                new DeliveredEventQueryBuilder().
-                        filter(subjectSubscription).
-                        sort(DeliveredEventQuerySortColumn.TIMESTAMP, PaginatedApiSortDirection.ASCENDING).
-                        build()
+                buildDeliveredEventQueryForSubscription(subjectSubscription).
+                        sort(DeliveredEventQuerySortColumn.TIMESTAMP, PaginatedRequest.SortDir.ASC)
         );
         assertEquals(Arrays.asList(subject1Event, subject2Event, subject3Event, subject4Event), sortedEvents);
 
         final List<DeliveredEvent> userSortedEvents = mainAdminInterface().queryDeliveredEvents(
-                new DeliveredEventQueryBuilder().
-                        filter(subjectSubscription).
-                        sort(DeliveredEventQuerySortColumn.USER, PaginatedApiSortDirection.DESCENDING).
-                        build()
+                buildDeliveredEventQueryForSubscription(subjectSubscription).
+                        sort(DeliveredEventQuerySortColumn.USER, PaginatedRequest.SortDir.DESC)
         );
         assertEquals(subject4Event, userSortedEvents.get(usernameCompare ? 0 : 3));
     }
@@ -88,21 +85,25 @@ public class TestEventServiceHistorySortingFiltering extends BaseEventServiceTes
     @Test
     public void testSiteDeliveredEventFiltering() {
         assertEquals(Arrays.asList(subject2Event, subject1Event), mainAdminInterface().queryDeliveredEvents(
-                new DeliveredEventQueryBuilder().filter(subjectSubscription).filter(DeliveredEventQueryFilterKey.PROJECT, project1.getId()).filter(DeliveredEventQueryFilterKey.EVENTTYPE, "Subject :").build()
+                buildDeliveredEventQueryForSubscription(subjectSubscription)
+                        .filter(DeliveredEventQueryFilterKey.PROJECT, new HibernateFilter(project1.getId()))
+                        .filter(DeliveredEventQueryFilterKey.EVENTTYPE, new HibernateFilter("Subject :"))
         ));
 
         assertEquals(subjectEvents, mainAdminInterface().queryDeliveredEvents(
-                new DeliveredEventQueryBuilder().filter(DeliveredEventQueryFilterKey.STATUS, "Logging action completed").filter(subjectSubscription).build()
+                buildDeliveredEventQueryForSubscription(subjectSubscription)
+                        .filter(DeliveredEventQueryFilterKey.STATUS, new HibernateFilter("Logging action completed"))
         ));
 
         assertEquals(Collections.singletonList(subject4Event), mainAdminInterface().queryDeliveredEvents(
-                new DeliveredEventQueryBuilder().filter(DeliveredEventQueryFilterKey.USER, mainAdminUser.getUsername()).filter(subjectSubscription).build()
+                buildDeliveredEventQueryForSubscription(subjectSubscription).
+                        filter(DeliveredEventQueryFilterKey.USER, new HibernateFilter(mainAdminUser.getUsername()))
         ));
     }
 
     @Test
     public void testSiteDeliveredEventPagination() {
-        final DeliveredEventQueryRequest query = new DeliveredEventQueryBuilder().filter(subjectSubscription).size(2).build();
+        final PaginatedRequest query = buildDeliveredEventQueryForSubscription(subjectSubscription).size(2);
         assertEquals(Arrays.asList(subject4Event, subject3Event), mainAdminInterface().queryDeliveredEvents(query));
         query.setPage(2);
         assertEquals(Arrays.asList(subject2Event, subject1Event), mainAdminInterface().queryDeliveredEvents(query));

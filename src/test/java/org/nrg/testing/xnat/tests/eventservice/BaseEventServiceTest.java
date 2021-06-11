@@ -1,9 +1,10 @@
 package org.nrg.testing.xnat.tests.eventservice;
 
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.xnat.pogo.HibernateFilter;
+import org.nrg.xnat.pogo.PaginatedRequest;
 import org.nrg.xnat.pogo.Project;
-import org.nrg.xnat.pogo.events.DeliveredEventQueryBuilder;
-import org.nrg.xnat.pogo.events.DeliveredEventQueryRequest;
+import org.nrg.xnat.pogo.events.DeliveredEventQueryFilterKey;
 import org.nrg.xnat.pogo.events.Subscription;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -50,8 +51,8 @@ public class BaseEventServiceTest extends BaseXnatRestTest {
         }
     }
 
-    protected DeliveredEventQueryRequest buildDeliveredEventQueryForSubscription(Subscription subscription) {
-        return new DeliveredEventQueryBuilder().filter(subscription).build();
+    protected PaginatedRequest buildDeliveredEventQueryForSubscription(Subscription subscription) {
+        return new PaginatedRequest().filter(DeliveredEventQueryFilterKey.SUBSCRIPTION,
+                new HibernateFilter(subscription.getName()));
     }
-
 }
