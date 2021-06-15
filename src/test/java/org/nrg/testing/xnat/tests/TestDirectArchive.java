@@ -118,9 +118,9 @@ public class TestDirectArchive extends BaseXnatRestTest {
             TimeUtils.checkStopWatch(stopWatch, 300,
                     "Expected a prearchive conflict, but status is " + status);
             if (status != null) TimeUtils.sleep(1000);
-            SessionData[] sessions = mainInterface().getPrearchiveEntriesForProjectWithSessionLabel(project, scpSession);
-            assertEquals(1, sessions.length);
-            status = sessions[0].getStatus();
+            final List<SessionData> sessions = mainInterface().getPrearchiveEntriesForProjectWithSessionLabel(project, scpSession);
+            assertEquals(1, sessions.size());
+            status = sessions.get(0).getStatus();
         } while (!status.equals(PrearcUtils.PrearcStatus.CONFLICT.toString()));
     }
 
@@ -135,13 +135,13 @@ public class TestDirectArchive extends BaseXnatRestTest {
         restDriver.waitForDirectArchiveEmpty(mainUser, project, 300);
 
         // verify session is in prearchive in error state
-        SessionData[] sessions = mainInterface().getPrearchiveEntriesForProjectWithSessionLabel(project, scpSession);
-        assertEquals(1, sessions.length);
-        SessionData session = sessions[0];
+        final List<SessionData> sessions = mainInterface().getPrearchiveEntriesForProjectWithSessionLabel(project, scpSession);
+        assertEquals(1, sessions.size());
+        final SessionData session = sessions.get(0);
         assertEquals(PrearcUtils.PrearcStatus.ERROR.toString(), session.getStatus());
 
         // verify prearchive error message about direct archive failure
-        List<String> logs = mainInterface().getPrearchiveLogMessages(project, session);
+        final List<String> logs = mainInterface().getPrearchiveLogMessages(project, session);
         assertTrue(logs.stream().anyMatch(log -> log.contains("Attempt to direct-archive failed")));
     }
 
@@ -154,14 +154,14 @@ public class TestDirectArchive extends BaseXnatRestTest {
         hdr.put(Tag.StudyDescription, altProject.getId());
         uploadViaCStore(hdr, false);
 
-        SessionData[] sessions = mainInterface().getDirectArchiveEntriesForProject(project);
-        assertEquals(1, sessions.length);
+        final List<SessionData> sessions = mainInterface().getDirectArchiveEntriesForProject(project);
+        assertEquals(1, sessions.size());
 
-        SessionData[] altSessions = mainInterface().getDirectArchiveEntriesForProject(altProject);
-        assertEquals(1, altSessions.length);
+        final List<SessionData> altSessions = mainInterface().getDirectArchiveEntriesForProject(altProject);
+        assertEquals(1, altSessions.size());
 
-        SessionData[] all = mainInterface().getDirectArchiveEntries();
-        assertEquals(2, all.length);
+        final List<SessionData> all = mainInterface().getDirectArchiveEntries();
+        assertEquals(2, all.size());
     }
 
     private void uploadViaCStore() {

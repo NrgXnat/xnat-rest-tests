@@ -2,12 +2,12 @@ package org.nrg.testing.xnat.tests.eventservice;
 
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.util.RandomHelper;
-import org.nrg.xnat.pogo.HibernateFilter;
-import org.nrg.xnat.pogo.PaginatedRequest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.events.*;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
+import org.nrg.xnat.pogo.paginated_api.HibernateFilter;
+import org.nrg.xnat.pogo.paginated_api.PaginatedRequest;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;

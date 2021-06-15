@@ -1,11 +1,11 @@
 package org.nrg.testing.xnat.tests.eventservice;
 
 import org.nrg.testing.xnat.BaseXnatRestTest;
-import org.nrg.xnat.pogo.HibernateFilter;
-import org.nrg.xnat.pogo.PaginatedRequest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.events.DeliveredEventQueryFilterKey;
 import org.nrg.xnat.pogo.events.Subscription;
+import org.nrg.xnat.pogo.paginated_api.HibernateFilter;
+import org.nrg.xnat.pogo.paginated_api.PaginatedRequest;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;

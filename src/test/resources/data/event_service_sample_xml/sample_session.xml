@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xnat:MRSession ID="" project="$PROJECT" label="$SESSION_LABEL" study_id="1" xmlns:xnat="http://nrg.wustl.edu/xnat" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <xnat:subject_ID>$SUBJECT_ID</xnat:subject_ID>
+    <xnat:scans>
+        <xnat:scan ID="1" xsi:type="xnat:mrScanData" type="LOCALIZER">
+            <xnat:quality>usable</xnat:quality>
+        </xnat:scan>
+        <xnat:scan ID="2" xsi:type="xnat:mrScanData">
+            <xnat:quality>usable</xnat:quality>
+        </xnat:scan>
+        <xnat:scan ID="3-OT" xsi:type="xnat:otherDicomScanData" type="SCANNED DOCUMENT">
+            <xnat:quality>usable</xnat:quality>
+        </xnat:scan>
+    </xnat:scans>
+</xnat:MRSession>

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xnat_a:YGTSS ID="" project="$PROJECT" label="$SUBJECT_ASSESSOR_LABEL" xmlns:xnat="http://nrg.wustl.edu/xnat" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xnat_a="http://nrg.wustl.edu/xnat_assessments">
+    <xnat:subject_ID>$SUBJECT_ID</xnat:subject_ID>
+</xnat_a:YGTSS>
