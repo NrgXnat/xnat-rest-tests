@@ -606,7 +606,7 @@ public class TestImport extends BaseXnatRestTest {
             TestData.SAMPLE_1_SCAN_4,
             TestData.SAMPLE_1_SCAN_5,
             TestData.SAMPLE_1_SCAN_6
-    }, ssh = true)
+    }, dicomScp = true)
     public void simpleAutoarchiveMerge() {
         mainAdminInterface().setSessionXmlRebuilderTimes(1, 10000);
         final Project project = new Project().prearchiveCode(PrearchiveCode.AUTO_ARCHIVE);
