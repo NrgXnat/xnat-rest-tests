@@ -201,7 +201,6 @@ public class TestEventDetection extends BaseEventServiceTest {
         restXmlScan1 = new MRScan(restXmlSession, "1").type(XML_SERIES_DESC1);
         restXmlScan2 = new MRScan(restXmlSession, "2");
         restXmlScan3 = new Scan(restXmlSession, "3-OT").type(XML_SERIES_DESC3);
-        // turbineScan1, turbineScan2;
     }
 
     @Test

@@ -2,6 +2,8 @@ package org.nrg.testing.xnat.tests;
 
 import org.nrg.testing.annotations.DeprecatedIn;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.xnat.enums.MergeBehavior;
+import org.nrg.xnat.importer.importers.DefaultImporterRequest;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -64,11 +66,11 @@ public class TestArchive extends BaseXnatRestTest {
 
         mainInterface().createSubject(subject);
 
-        mainCredentials().given().queryParam("triggerPipelines", true).put(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
+        mainQueryBase().queryParam("triggerPipelines", true).put(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
 
         mainInterface().waitForAutoRun(session, 60);
 
-        mainCredentials().queryParam("file_content", "ORIGINAL").queryParam("index", 0).
+        mainQueryBase().queryParam("file_content", "ORIGINAL").queryParam("index", 0).
                 get(mainInterface().resourceFilesUrl(new ScanResource(project, subject, session, scan1).folder("SNAPSHOTS"))).
                 then().assertThat().statusCode(200);
     }
@@ -94,7 +96,7 @@ public class TestArchive extends BaseXnatRestTest {
         // all other $commonSeriesDescription scans in this project have been labeled as '$scanType', so these should be too.
         mainQueryBase().queryParam("fixScanTypes", true).put(mainInterface().subjectAssessorUrl(mr1)).then().assertThat().statusCode(200);
 
-        final Scan[] readScans = mainCredentials().given().queryParam("format", "json").get(mainInterface().sessionScansUrl(mr1)).jsonPath().getObject("ResultSet.Result", Scan[].class);
+        final Scan[] readScans = mainInterface().jsonQuery().get(mainInterface().sessionScansUrl(mr1)).jsonPath().getObject("ResultSet.Result", Scan[].class);
         assertEquals(mr1.getScans().size(), readScans.length);
 
         for (Scan scan : readScans) {
@@ -106,16 +108,16 @@ public class TestArchive extends BaseXnatRestTest {
     public void testImportToArchive() {
         final ImagingSession session = readMr1("1", "MR1");
 
-        mainCredentials().given().
-                queryParam("triggerPipelines", false).
-                queryParam("dest", "/archive").
-                queryParam("project", project.getId()).
-                queryParam("subject", session.getSubject().getLabel()).
-                queryParam("session", session.getLabel()).
-                queryParam("overwrite", "append").
-                multiPart(sessionZip).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200);
+        mainInterface().callImporter(
+                new DefaultImporterRequest().
+                        triggerPipelines(false).
+                        destArchive().
+                        param("project", project.getId()). // want to explicitly test this parameter
+                        param("subject", session.getSubject().getLabel()).
+                        session(session.getLabel()).
+                        overwrite(MergeBehavior.APPEND).
+                        file(sessionZip)
+        );
 
         restDriver.validateResource(mainUser, session.getScans().get(0).getScanResources().get(0)); // should have been created by session importer
     }
@@ -124,19 +126,17 @@ public class TestArchive extends BaseXnatRestTest {
     public void testBasicArchiveFromPrearc() {
         final ImagingSession session = readMr1("SPP_0x220790", "SPP_0x220790_MR2");
 
-        final String prearcUrl = mainCredentials().given().
-                queryParam("triggerPipelines", false).
-                queryParam("dest", "/prearchive/projects/" + project.getId()).
-                queryParam("overwrite", "append").
-                multiPart(sessionZip).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200).
-                and().extract().body().asString().trim();
+        final String prearcUrl = mainInterface().callImporter(new DefaultImporterRequest().
+                triggerPipelines(false).
+                destPrearchive(project).
+                overwrite(MergeBehavior.APPEND).
+                file(sessionZip)
+        );
 
-        mainCredentials().given().
+        mainQueryBase().
                 queryParam("triggerPipelines", false).
                 queryParam("src", prearcUrl).
-                queryParam("overwrite", "append").
+                queryParam("overwrite", MergeBehavior.APPEND.toString()).
                 post(formatRestUrl("services/archive")).
                 then().assertThat().statusCode(200);
 
@@ -148,18 +148,17 @@ public class TestArchive extends BaseXnatRestTest {
         final ImagingSession session = readMr1("1", "MR1");
         session.getScans().get(0).setId("ARC_TEST");
 
-        final String prearcUrl = mainCredentials().given().
-                queryParam("triggerPipelines", false).
-                queryParam("dest", "/prearchive/projects/" + project.getId()).
-                queryParam("overwrite", "append").
-                multiPart(sessionZip).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200).
-                and().extract().body().asString().trim();
+        final String prearcUrl = mainInterface().callImporter(
+                new DefaultImporterRequest().
+                        triggerPipelines(false).
+                        destPrearchive(project).
+                        overwrite(MergeBehavior.APPEND).
+                        file(sessionZip)
+        );
 
-        mainCredentials().given().
+        mainQueryBase().
                 queryParam("triggerPipelines", false).
-                queryParam("overwrite", "append").
+                queryParam("overwrite", MergeBehavior.APPEND.toString()).
                 queryParam("src", prearcUrl).
                 queryParam("xnat:mrSessionData/project", project.getId()).
                 queryParam("xnat:mrSessionData/subject_id", session.getSubject().getLabel()).

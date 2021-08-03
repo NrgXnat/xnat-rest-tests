@@ -1,8 +1,10 @@
 package org.nrg.testing.xnat.tests;
 
-import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.path.json.JsonPath;
-import com.jayway.restassured.specification.RequestSpecification;
+
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.model.ZipParameters;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.hamcrest.Matchers;
 import org.nrg.testing.CommonStringUtils;
@@ -13,8 +15,15 @@ import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.versions.*;
+import org.nrg.xnat.enums.MergeBehavior;
 import org.nrg.xnat.enums.PrearchiveCode;
+import org.nrg.xnat.importer.ImportException;
+import org.nrg.xnat.importer.importers.DefaultImporterRequest;
+import org.nrg.xnat.importer.importers.DicomZipRequest;
+import org.nrg.xnat.importer.importers.SessionImporterRequest;
+import org.nrg.xnat.interfaces.XnatInterface;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -24,16 +33,22 @@ import org.nrg.xnat.pogo.experiments.SubjectAssessor;
 import org.nrg.xnat.pogo.experiments.scans.MRScan;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.experiments.sessions.PETSession;
+import org.nrg.xnat.pogo.extensions.SimpleResourceFileExtension;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
 import org.nrg.xnat.pogo.resources.Resource;
+import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.nrg.xnat.pogo.resources.ScanResource;
+import org.nrg.xnat.pogo.resources.SubjectAssessorResource;
 import org.nrg.xnat.pogo.users.User;
-import org.nrg.xnat.versions.Xnat_1_7_6;
-import org.nrg.xnat.versions.Xnat_1_7_7;
-import org.nrg.xnat.versions.Xnat_1_8_0;
+import org.nrg.xnat.versions.*;
 import org.testng.annotations.*;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -46,6 +61,7 @@ public class TestImport extends BaseXnatRestTest {
 
     private final Project project = new Project().prearchiveCode(PrearchiveCode.MANUAL);
     private final File testZip = getDataFile("mr_1.zip");
+    @SuppressWarnings("FieldCanBeLocal")
     private final String subjectFromTestZip = "SPP_0x220790";
     private final String sessionFromTestZip = "SPP_0x220790_MR2";
     private final File scan1First11Files = getDataFile("scan1_first_11_files.zip");
@@ -54,6 +70,8 @@ public class TestImport extends BaseXnatRestTest {
     private final File scan1 = getDataFile("scan1.zip");
     private final File scan2 = getDataFile("scan2.zip"); // same study instance UID as scan1
     private final File scan2DiffUID = getDataFile("scan2_diffUID.zip"); // same as scan2, but with different study instance UID
+    private final File zipContainingNonDicom = getDataFile("mr_1_with_txt.zip");
+    private final String nonDicomFilename = "non_dicom_text_file.dcm";
     private int mrCount = 0;
     private static final Logger LOGGER = Logger.getLogger(TestImport.class);
 
@@ -61,6 +79,22 @@ public class TestImport extends BaseXnatRestTest {
     public void setupImportProject() {
         mainInterface().createProject(project);
         mainAdminInterface().disableSiteAnonScript();
+    }
+
+    @BeforeClass
+    public void setupZip() throws IOException {
+        if (zipContainingNonDicom.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            zipContainingNonDicom.delete();
+        }
+        if (!zipContainingNonDicom.exists()) {
+            FileUtils.copyFile(testZip, zipContainingNonDicom);
+            final Path tempStagingDir = Files.createTempDirectory(Paths.get(Settings.TEMP_SUBDIR), "mr_1_nondcm");
+            final File tempFile = tempStagingDir.resolve(nonDicomFilename).toFile();
+            FileUtils.write(tempStagingDir.resolve(nonDicomFilename).toFile(), "I'm actually a text file!", StandardCharsets.UTF_8);
+            final ZipFile zipFile = new ZipFile(zipContainingNonDicom);
+            zipFile.addFile(tempFile, new ZipParameters());
+        }
     }
 
     @BeforeMethod(alwaysRun = true) // clear out prearchive/archive for each test
@@ -82,25 +116,23 @@ public class TestImport extends BaseXnatRestTest {
     @AfterClass(alwaysRun = true)
     public void tearDownImportTests() {
         restDriver.deleteProjectSilently(mainAdminUser, project);
-        mainAdminInterface().enableSiteAnonScript();
-        setCrossModalityMergePrevention(true);
     }
 
     @Test
     public void testDataProject() {
         // services/import?dest=/archive/projects/{PROJECT} POST
 
-        mainCredentials().
-                queryParam("triggerPipelines", false).
-                queryParam("dest", project.getUri()).
-                multiPart(testZip).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200);
+        mainInterface().callImporter(
+                new DefaultImporterRequest().
+                        triggerPipelines(false).
+                        dest(project.getUri()).
+                        file(testZip)
+        );
 
         final Subject subject = new Subject(project, subjectFromTestZip);
         final ImagingSession session = new MRSession(project, subject, sessionFromTestZip);
 
-        mainCredentials().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
+        mainQueryBase().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
 
         mainInterface().deleteSubjectAssessor(session);
     }
@@ -111,16 +143,16 @@ public class TestImport extends BaseXnatRestTest {
 
         final Subject subject = new Subject(project, "SUBJ1");
 
-        mainCredentials().
-                queryParam("triggerPipelines", false).
-                queryParam("dest", subject.getUri()).
-                multiPart(testZip).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200);
+        mainInterface().callImporter(
+                new DefaultImporterRequest().
+                        triggerPipelines(false).
+                        dest(subject.getUri()).
+                        file(testZip)
+        );
 
         final ImagingSession session = new MRSession(project, subject, sessionFromTestZip);
 
-        mainCredentials().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
+        mainQueryBase().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
 
         mainInterface().deleteSubjectAssessor(session);
     }
@@ -132,14 +164,11 @@ public class TestImport extends BaseXnatRestTest {
         final Subject subject = new Subject(project, "SUBJ2");
         final ImagingSession session = new MRSession(project, subject, newLabel());
 
-        mainCredentials().
-                queryParam("triggerPipelines", false).
-                queryParam("dest", session.getUri()).
-                multiPart(testZip).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200);
+        mainInterface().callImporter(
+                defaultRequestFor(session).file(testZip)
+        );
 
-        mainCredentials().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
+        mainQueryBase().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
 
         mainInterface().deleteSubjectAssessor(session);
 
@@ -151,34 +180,29 @@ public class TestImport extends BaseXnatRestTest {
 
         final Subject subject = new Subject(project, "SUBJ_0002");
         final MRSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
-        final String resourceUrl = CommonStringUtils.formatUrl(mainInterface().subjectAssessorUrl(session), "/resources/TEST/files/files.zip");
+        final Resource sessionResource = new SubjectAssessorResource(project, subject, session, "TEST");
+        final ResourceFile resourceFile = new ResourceFile().extension(new SimpleResourceFileExtension(testZip));
+        sessionResource.addResourceFile(new ResourceFile().extension(new SimpleResourceFileExtension(testZip)));
 
-        // create subject & session with custom date
+        // create subject & session with custom date and misc resource
         mainInterface().createSubject(subject);
 
-        // add misc resource
-        mainCredentials().multiPart(testZip).put(resourceUrl).then().assertThat().statusCode(200);
-
         // upload scan
-        mainCredentials().
-                queryParam("triggerPipelines", false).
-                queryParam("overwrite", "append").
-                queryParam("dest", session.getUri()).
-                multiPart(testZip).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200);
+        mainInterface().callImporter(
+                defaultRequestFor(session).overwrite(MergeBehavior.APPEND).file(testZip)
+        );
 
         // test scan upload
-        mainCredentials().queryParam("format", "json").get(mainInterface().sessionScansUrl(session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
+        mainInterface().jsonQuery().get(mainInterface().sessionScansUrl(session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
 
         // test session date, should *not* be overwritten
         assertEquals(
                 DateTimeFormatter.ISO_DATE.format(session.getDate()),
-                mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(mainInterface().subjectUrl(subject), "experiments")).
+                mainInterface().jsonQuery().get(CommonStringUtils.formatUrl(mainInterface().subjectUrl(subject), "experiments")).
                         jsonPath().getString(String.format("ResultSet.Result.find { it.label == '%s' }.date", session.getLabel()))
         );
 
-        restDriver.validateUpload(mainUser, resourceUrl, testZip);
+        restDriver.validateUpload(mainUser, mainInterface().resourceFileUrl(sessionResource, resourceFile), testZip);
         mainInterface().deleteSubjectAssessor(session);
     }
 
@@ -194,12 +218,12 @@ public class TestImport extends BaseXnatRestTest {
 
         mainInterface().createSubject(subject);
 
-        mainCredentials().
-                queryParam("triggerPipelines", false).
-                queryParam("dest", session.getUri()).
-                multiPart(testZip).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(409);
+        try {
+            mainInterface().callImporter(defaultRequestFor(session).file(testZip));
+            failOnImproperSuccess();
+        } catch (ImportException importException) {
+            assertEquals(409, importException.getStatusCode());
+        }
 
         mainInterface().deleteSubjectAssessor(session);
     }
@@ -213,26 +237,20 @@ public class TestImport extends BaseXnatRestTest {
 
         final Subject subject = new Subject(project, "SUBJ_03");
         final ImagingSession session = new PETSession(project, subject).date(LocalDate.parse("2000-01-01"));
+        final SessionImporterRequest overwriteRequest = defaultRequestFor(session).overwrite(MergeBehavior.DELETE).file(testZip);
 
         mainInterface().createSubject(subject);
 
-        mainCredentials().
-                queryParam("triggerPipelines", false).
-                queryParam("overwrite", "delete").
-                queryParam("dest", session.getUri()).
-                multiPart(testZip).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(409);
+        try {
+            mainInterface().callImporter(overwriteRequest);
+            failOnImproperSuccess();
+        } catch (ImportException importException) {
+            assertEquals(409, importException.getStatusCode());
+        }
 
         if (XnatTestingVersionManager.testedVersionFollows(Xnat_1_7_6.class)) {
             setCrossModalityMergePrevention(false);
-            mainCredentials().
-                    queryParam("triggerPipelines", false).
-                    queryParam("overwrite", "delete").
-                    queryParam("dest", session.getUri()).
-                    multiPart(testZip).
-                    post(formatRestUrl("services/import")).
-                    then().assertThat().statusCode(200);
+            mainInterface().callImporter(overwriteRequest);
 
             final List<SubjectAssessor> subjectAssessors = mainInterface().readSubjectAssessors(project, subject);
             assertEquals(1, subjectAssessors.size());
@@ -251,14 +269,14 @@ public class TestImport extends BaseXnatRestTest {
     public void testDataDuplicateScanFilesOverwriteFDeleteF() {
         final Subject subject = new Subject(project, "SUBJ5");
         final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
+        final SessionImporterRequest repeatedRequest = defaultRequestFor(session).file(testZip);
 
-        for (int i = 0; i < 2; i++) {
-            mainCredentials().
-                    queryParam("triggerPipelines", false).
-                    queryParam("dest", session.getUri()).
-                    multiPart(testZip).
-                    post(formatRestUrl("services/import")).
-                    then().assertThat().statusCode((i == 0) ? 200 : 409); // Should work only the first time
+        mainInterface().callImporter(repeatedRequest);
+        try {
+            mainInterface().callImporter(repeatedRequest);
+            failOnImproperSuccess();
+        } catch (ImportException importException) {
+            assertEquals(409, importException.getStatusCode());
         }
 
         mainInterface().deleteSubjectAssessor(session);
@@ -268,18 +286,14 @@ public class TestImport extends BaseXnatRestTest {
     public void testDataDuplicateScanFilesOverwriteTDeleteF() {
         final Subject subject = new Subject(project, "SUBJ_5");
         final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
+        final SessionImporterRequest request = defaultRequestFor(session).file(testZip);
 
-        for (int i = 0; i < 2; i++) {
-            final Map<String, Object> params = new HashMap<>();
-            params.put("triggerPipelines", false);
-            params.put("dest", session.getUri());
-            if (i == 1) params.put("overwrite", "append");
-
-            mainCredentials().
-                    queryParams(params).
-                    multiPart(testZip).
-                    post(formatRestUrl("services/import")).
-                    then().assertThat().statusCode((i == 0) ? 200 : 409); // Should work only the first time
+        mainInterface().callImporter(request);
+        try {
+            mainInterface().callImporter(request.overwrite(MergeBehavior.APPEND));
+            failOnImproperSuccess();
+        } catch (ImportException importException) {
+            assertEquals(409, importException.getStatusCode());
         }
 
         mainInterface().deleteSubjectAssessor(session);
@@ -292,22 +306,9 @@ public class TestImport extends BaseXnatRestTest {
     public void testDataDuplicateScanFilesOverwriteTDeleteFWithFileFlag() {
         final Subject subject = new Subject(project, "SUBJ_05");
         final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
-
-        for (int i = 0; i < 2; i++) {
-            final Map<String, Object> params = new HashMap<>();
-            params.put("triggerPipelines", false);
-            params.put("dest", session.getUri());
-            if (i == 1) {
-                params.put("overwrite", "append");
-                params.put("overwrite_files", true);
-            }
-
-            mainCredentials().
-                    queryParams(params).
-                    multiPart(testZip).
-                    post(formatRestUrl("services/import")).
-                    then().assertThat().statusCode(200); // Should work either time
-        }
+        final SessionImporterRequest importerRequest = defaultRequestFor(session).file(testZip);
+        mainInterface().callImporter(importerRequest);
+        mainInterface().callImporter(importerRequest.overwrite(MergeBehavior.APPEND).overwriteFiles());
 
         mainInterface().deleteSubjectAssessor(session);
     }
@@ -316,21 +317,9 @@ public class TestImport extends BaseXnatRestTest {
     public void testDataDuplicateScanFilesOverwriteTDeleteT() {
         final Subject subject = new Subject(project, "SUBJ_005");
         final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
-
-        for (int i = 0; i < 2; i++) {
-            final Map<String, Object> params = new HashMap<>();
-            params.put("triggerPipelines", false);
-            params.put("dest", session.getUri());
-            if (i == 1) {
-                params.put("overwrite", "delete");
-            }
-
-            mainCredentials().
-                    queryParams(params).
-                    multiPart(testZip).
-                    post(formatRestUrl("services/import")).
-                    then().assertThat().statusCode(200); // Should work either time
-        }
+        final SessionImporterRequest importerRequest = defaultRequestFor(session).file(testZip);
+        mainInterface().callImporter(importerRequest);
+        mainInterface().callImporter(importerRequest.overwrite(MergeBehavior.DELETE));
 
         mainInterface().deleteSubjectAssessor(session);
     }
@@ -340,24 +329,12 @@ public class TestImport extends BaseXnatRestTest {
         final Subject subject = new Subject(project, "SUBJ5");
         final ImagingSession session = new MRSession(project, subject, newLabel());
         final Scan scan = new MRScan(session, "1");
+        final SessionImporterRequest importerRequest = defaultRequestFor(session);
+        mainInterface().callImporter(importerRequest.file(scan1First11Files));
+        mainInterface().callImporter(importerRequest.overwrite(MergeBehavior.APPEND).file(scan1Last5Files));
 
-        for (int i = 0; i < 2; i++) {
-            final Map<String, Object> params = new HashMap<>();
-            params.put("triggerPipelines", false);
-            params.put("dest", session.getUri());
-            if (i == 1) {
-                params.put("overwrite", "append");
-            }
-
-            mainCredentials().
-                    queryParams(params).
-                    multiPart((i == 0) ? scan1First11Files : scan1Last5Files).
-                    post(formatRestUrl("services/import")).
-                    then().assertThat().statusCode(200); // Should work either time
-        }
-
-        mainCredentials().
-                queryParam("format", "json").
+        mainInterface().
+                jsonQuery().
                 queryParam("all", true).
                 get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan), "files")).
                 then().assertThat().body("ResultSet.Result", Matchers.hasSize(16)); // full scan1
@@ -368,24 +345,12 @@ public class TestImport extends BaseXnatRestTest {
         final Subject subject = new Subject(project, "SUBJ5");
         final ImagingSession session = new MRSession(project, subject, newLabel());
         final Scan scan = new MRScan(session, "1");
+        final SessionImporterRequest importerRequest = defaultRequestFor(session);
+        mainInterface().callImporter(importerRequest.file(scan1First11Files));
+        mainInterface().callImporter(importerRequest.overwrite(MergeBehavior.DELETE).file(scan1Last6Files));
 
-        for (int i = 0; i < 2; i++) {
-            final Map<String, Object> params = new HashMap<>();
-            params.put("triggerPipelines", false);
-            params.put("dest", session.getUri());
-            if (i == 1) {
-                params.put("overwrite", "delete");
-            }
-
-            mainCredentials().
-                    queryParams(params).
-                    multiPart((i == 0) ? scan1First11Files : scan1Last6Files).
-                    post(formatRestUrl("services/import")).
-                    then().assertThat().statusCode(200); // Should work either time
-        }
-
-        mainCredentials().
-                queryParam("format", "json").
+        mainInterface().
+                jsonQuery().
                 queryParam("all", true).
                 get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan), "files")).
                 then().assertThat().body("ResultSet.Result", Matchers.hasSize(16)); // full scan1
@@ -395,20 +360,13 @@ public class TestImport extends BaseXnatRestTest {
     public void testDataScan2partsOverlapFilesOverwriteTDeleteF() {
         final Subject subject = new Subject(project, "SUBJ5");
         final ImagingSession session = new MRSession(project, subject, newLabel());
-
-        for (int i = 0; i < 2; i++) {
-            final Map<String, Object> params = new HashMap<>();
-            params.put("triggerPipelines", false);
-            params.put("dest", session.getUri());
-            if (i == 1) {
-                params.put("overwrite", "append");
-            }
-
-            mainCredentials().
-                    queryParams(params).
-                    multiPart((i == 0) ? scan1First11Files : scan1Last6Files).
-                    post(formatRestUrl("services/import")).
-                    then().assertThat().statusCode((i == 0) ? 200 : 409); // fails with overwrite=append and duplicate files
+        final SessionImporterRequest importerRequest = defaultRequestFor(session);
+        mainInterface().callImporter(importerRequest.file(scan1First11Files));
+        try {
+            mainInterface().callImporter(importerRequest.file(scan1Last6Files).overwrite(MergeBehavior.APPEND));
+            failOnImproperSuccess(); // fails with overwrite=append and duplicate files
+        } catch (ImportException importException) {
+            assertEquals(409, importException.getStatusCode());
         }
     }
 
@@ -416,16 +374,12 @@ public class TestImport extends BaseXnatRestTest {
     public void testPrearcMergeNewScan() {
         final String timestamp = "20000101_100001";
         final String session = newLabel();
-
-        for (int i = 0; i < 2; i++) {
-            mainCredentials().
-                    queryParam("triggerPipelines", false).
-                    queryParam("overwrite", "append").
-                    queryParam("dest", String.format("/prearchive/projects/%s/%s/%s", project.getId(), timestamp, session)).
-                    multiPart((i == 0) ? scan1 : scan2).
-                    post(formatRestUrl("services/import")).
-                    then().assertThat().statusCode(200);
-        }
+        final SessionImporterRequest importerRequest = new DefaultImporterRequest().
+                triggerPipelines(false).
+                overwrite(MergeBehavior.APPEND).
+                destPrearchive(project, timestamp, session);
+        mainInterface().callImporter(importerRequest.file(scan1));
+        mainInterface().callImporter(importerRequest.file(scan2));
 
         for (int i = 1; i <= 2; i++) {
             restDriver.validateUpload(mainUser, formatRestUrl("prearchive/projects", project.getId(), timestamp, session, "scans", Integer.toString(i), "resources/DICOM/files/000000.dcm"), getDataFile(String.format("scan%d/000000.dcm", i)));
@@ -436,16 +390,12 @@ public class TestImport extends BaseXnatRestTest {
     public void testPrearcMergeDiffUID() {
         final String timestamp = "20000101_100001";
         final String session = newLabel();
-
-        for (int i = 0; i < 2; i++) {
-            mainCredentials().
-                    queryParam("triggerPipelines", false).
-                    queryParam("overwrite", "append").
-                    queryParam("dest", String.format("/prearchive/projects/%s/%s/%s", project.getId(), timestamp, session)).
-                    multiPart((i == 0) ? scan1 : scan2DiffUID).
-                    post(formatRestUrl("services/import")).
-                    then().assertThat().statusCode(200);
-        }
+        final SessionImporterRequest importerRequest = new DefaultImporterRequest().
+                triggerPipelines(false).
+                overwrite(MergeBehavior.APPEND).
+                destPrearchive(project, timestamp, session);
+        mainInterface().callImporter(importerRequest.file(scan1));
+        mainInterface().callImporter(importerRequest.file(scan2DiffUID));
 
         for (int i = 1; i <= 2; i++) {
             restDriver.validateUpload(mainUser, formatRestUrl("prearchive/projects", project.getId(), timestamp, session, "scans", Integer.toString(i), "resources/DICOM/files/000000.dcm"),
@@ -459,30 +409,20 @@ public class TestImport extends BaseXnatRestTest {
     @Test
     public void testPrearcGradualImport() {
         final List<String> responseUris = new ArrayList<>();
-
-        for (int i = 0; i < 2; i++) {
-            responseUris.add(
-                    mainCredentials().
-                            queryParam("triggerPipelines", false).
-                            queryParam("import-handler", "DICOM-zip").
-                            queryParam("dest", "/prearchive/projects/" + project.getId()).
-                            multiPart((i == 0) ? scan1 : scan2).
-                            post(formatRestUrl("services/import")).
-                            then().assertThat().statusCode(200).
-                            and().extract().response().asString().trim()
-            );
-        }
+        final DicomZipRequest importerRequest = new DicomZipRequest().destPrearchive(project);
+        responseUris.add(mainInterface().callImporter(importerRequest.file(scan1)));
+        responseUris.add(mainInterface().callImporter(importerRequest.file(scan2)));
 
         final String responseUri = responseUris.get(0);
 
         assertEquals(responseUri, responseUris.get(1));
 
-        assertEquals(responseUri, mainCredentials().queryParam("action", "commit").post(formatXnatUrl(responseUris.get(0))).asString());
+        assertEquals(responseUri, mainQueryBase().queryParam("action", "commit").post(formatXnatUrl(responseUris.get(0))).asString());
 
         for (int i = 1; i < 3; i++) {
             TestNgUtils.assertBinaryFilesEqual(
                     getDataFile(String.format("scan%d/000000.dcm", i)),
-                    restDriver.saveBinaryResponseToFile(mainCredentials().get(formatXnatUrl(responseUri, "scans", Integer.toString(i), "resources/DICOM/files/000000.dcm")))
+                    restDriver.saveBinaryResponseToFile(mainQueryBase().get(formatXnatUrl(responseUri, "scans", Integer.toString(i), "resources/DICOM/files/000000.dcm")))
             );
         }
     }
@@ -493,31 +433,21 @@ public class TestImport extends BaseXnatRestTest {
     @Test
     public void testUnassignedManualArchiveGradualImport() {
         final List<String> sessionUris = new ArrayList<>();
-
-        for (int i = 0; i < 2; i++) {
-            sessionUris.add(
-                    mainCredentials().
-                            queryParam("triggerPipelines", false).
-                            queryParam("import-handler", "DICOM-zip").
-                            queryParam("dest", "/prearchive").
-                            multiPart((i == 0) ? scan1 : scan2).
-                            post(formatRestUrl("services/import")).
-                            then().assertThat().statusCode(200).
-                            and().extract().response().asString().trim()
-            );
-        }
+        final DicomZipRequest importerRequest = new DicomZipRequest().destPrearchive();
+        sessionUris.add(mainInterface().callImporter(importerRequest.file(scan1)));
+        sessionUris.add(mainInterface().callImporter(importerRequest.file(scan2)));
 
         final String unassignedUrl = sessionUris.get(0);
 
         assertEquals(unassignedUrl, sessionUris.get(1));
 
-        mainAdminCredentials().queryParam("action", "build").post(formatXnatUrl(unassignedUrl)).then().assertThat().statusCode(200);
+        mainQueryBase().queryParam("action", "build").post(formatXnatUrl(unassignedUrl)).then().assertThat().statusCode(200);
 
-        mainAdminCredentials().queryParam("action", "move").queryParam("newProject", project.getId()).post(formatXnatUrl(unassignedUrl)).then().assertThat().statusCode(301);
+        mainQueryBase().queryParam("action", "move").queryParam("newProject", project.getId()).post(formatXnatUrl(unassignedUrl)).then().assertThat().statusCode(301);
 
         final String newSessionUrl = unassignedUrl.replace("Unassigned", project.getId());
 
-        final String archiveUrl = mainCredentials().queryParam("action", "commit").queryParam("AA", true).post(formatXnatUrl(newSessionUrl)).
+        final String archiveUrl = mainQueryBase().queryParam("action", "commit").queryParam("AA", true).post(formatXnatUrl(newSessionUrl)).
                 then().assertThat().statusCode(301).and().extract().response().asString().trim();
 
         assertNotEquals(unassignedUrl, archiveUrl);
@@ -530,7 +460,7 @@ public class TestImport extends BaseXnatRestTest {
         for (int i = 1; i < 3; i++) {
             TestNgUtils.assertBinaryFilesEqual(
                     getDataFile(String.format("scan%d/000000.dcm", i)),
-                    restDriver.saveBinaryResponseToFile(mainCredentials().get(formatXnatUrl(archiveUrl, "scans", Integer.toString(i), "resources/DICOM/files/000000.dcm")))
+                    restDriver.saveBinaryResponseToFile(mainQueryBase().get(formatXnatUrl(archiveUrl, "scans", Integer.toString(i), "resources/DICOM/files/000000.dcm")))
             );
         }
     }
@@ -541,25 +471,15 @@ public class TestImport extends BaseXnatRestTest {
     @Test
     public void testManualArchiveGradualImport() {
         final List<String> sessionUris = new ArrayList<>();
-
-        for (int i = 0; i < 2; i++) {
-            sessionUris.add(
-                    mainCredentials().
-                            queryParam("triggerPipelines", false).
-                            queryParam("import-handler", "DICOM-zip").
-                            queryParam("dest", "/prearchive/projects/" + project.getId()).
-                            multiPart((i == 0) ? scan1 : scan2).
-                            post(formatRestUrl("services/import")).
-                            then().assertThat().statusCode(200).
-                            and().extract().response().asString().trim()
-            );
-        }
+        final DicomZipRequest importerRequest = new DicomZipRequest().destPrearchive(project);
+        sessionUris.add(mainInterface().callImporter(importerRequest.file(scan1)));
+        sessionUris.add(mainInterface().callImporter(importerRequest.file(scan2)));
 
         final String sessionUrl = sessionUris.get(0);
 
         assertEquals(sessionUrl, sessionUris.get(1));
 
-        final String archiveUrl = mainCredentials().queryParam("action", "commit").queryParam("AA", true).post(formatXnatUrl(sessionUrl)).
+        final String archiveUrl = mainQueryBase().queryParam("action", "commit").queryParam("AA", true).post(formatXnatUrl(sessionUrl)).
                 then().assertThat().statusCode(301).and().extract().response().asString().trim();
 
         assertNotEquals(sessionUrl, archiveUrl);
@@ -568,7 +488,7 @@ public class TestImport extends BaseXnatRestTest {
         for (int i = 1; i < 3; i++) {
             TestNgUtils.assertBinaryFilesEqual(
                     getDataFile(String.format("scan%d/000000.dcm", i)),
-                    restDriver.saveBinaryResponseToFile(mainCredentials().get(formatXnatUrl(archiveUrl, "scans", Integer.toString(i), "resources/DICOM/files/000000.dcm")))
+                    restDriver.saveBinaryResponseToFile(mainQueryBase().get(formatXnatUrl(archiveUrl, "scans", Integer.toString(i), "resources/DICOM/files/000000.dcm")))
             );
         }
     }
@@ -578,50 +498,39 @@ public class TestImport extends BaseXnatRestTest {
         final Subject subject = new Subject(project, "SUBJ_0009");
         mainInterface().createSubject(subject);
         final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
-
-        mainCredentials().
-                queryParam("triggerPipelines", false).
-                queryParam("overwrite", "append").
-                queryParam("dest", session.getUri()).
-                multiPart(scan1).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200);
+        final SessionImporterRequest importerRequest = defaultRequestFor(session).overwrite(MergeBehavior.APPEND);
+        mainInterface().callImporter(importerRequest.file(scan1));
 
         final Scan expectedScan = new MRScan(session, "1");
         final Resource expectedScanResource = new ScanResource(project, subject, session, expectedScan).folder("DICOM");
 
-        final int scan1FileCount = mainCredentials().queryParam("format", "json").get(mainInterface().resourceFilesUrl(expectedScanResource)).jsonPath().getInt("ResultSet.Result.size()");
+        final int scan1FileCount = mainInterface().jsonQuery().get(mainInterface().resourceFilesUrl(expectedScanResource)).jsonPath().getInt("ResultSet.Result.size()");
 
-        mainCredentials().
-                queryParam("triggerPipelines", false).
-                queryParam("overwrite", "append").
-                queryParam("dest", session.getUri()).
-                multiPart(scan2).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200);
+        mainInterface().callImporter(importerRequest.file(scan2));
 
-        mainCredentials().queryParam("format", "json").get(mainInterface().sessionScansUrl(session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
+        mainInterface().jsonQuery().get(mainInterface().sessionScansUrl(session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
 
-        mainCredentials().queryParam("format", "json").get(mainInterface().resourceFilesUrl(expectedScanResource)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(scan1FileCount));
+        mainInterface().jsonQuery().get(mainInterface().resourceFilesUrl(expectedScanResource)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(scan1FileCount));
     }
 
     @Test
     public void testNonPathBasedImport() {
-        final String jsessionId = mainCredentials().get(formatRestUrl("JSESSION")).then().assertThat().statusCode(200).and().extract().response().asString();
         final String transactionId = "s" + Calendar.getInstance().getTimeInMillis();
 
-        RestAssured.given().sessionId(jsessionId).
-                queryParam("overwrite", "append").
-                queryParam("http-session-listener", transactionId).
-                queryParam("triggerPipelines", false).
-                queryParam("project", project.getId()).
-                queryParam("subject", "SUBJ_0010").
-                queryParam("session", newLabel()).
-                multiPart(testZip).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200);
+        mainInterface().regenerateUserSession(); // make sure we have a good JSESSIONID
 
-        RestAssured.given().sessionId(jsessionId).queryParam("format", "json").get(formatRestUrl("status", transactionId)).then().
+        mainInterface().callImporter(
+                new DefaultImporterRequest().
+                        overwrite(MergeBehavior.APPEND).
+                        httpSessionListener(transactionId).
+                        triggerPipelines(false).
+                        project(project).
+                        subject("SUBJ_0010").
+                        session(newLabel()).
+                        file(testZip)
+        );
+
+        mainInterface().jsonQuery().get(formatRestUrl("status", transactionId)).then().
                 assertThat().body("msgs.get(0).last().status", Matchers.equalTo("COMPLETED"));
     }
 
@@ -637,72 +546,55 @@ public class TestImport extends BaseXnatRestTest {
         final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
         final Scan scan1 = new MRScan(session, "1");
         final Scan scan1MR1 = new MRScan(session, "1-MR1");
-        final String archiveUrl = session.getUri();
+        final SessionImporterRequest requestBase = defaultRequestFor(session);
 
         // upload frame 1, should create scan 1
-        mainCredentials().
-                queryParam("triggerPipelines", false).
-                queryParam("dest", archiveUrl).
-                multiPart(getDataFile("scan_mod/000001.dcm.zip")).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200);
+        mainInterface().callImporter(
+                requestBase.file(getDataFile("scan_mod/000001.dcm.zip"))
+        );
 
         // confirm that the data went where we expected
-        mainCredentials().get(mainInterface().scanUrl(scan1)).then().assertThat().statusCode(200);
-        mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
+        mainQueryBase().get(mainInterface().scanUrl(scan1)).then().assertThat().statusCode(200);
+        mainInterface().jsonQuery().get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
 
         // upload frame 2, should create scan 1-MR1
         waitForBackup();
-        mainCredentials().
-                queryParam("triggerPipelines", false).
-                queryParam("dest", archiveUrl).
-                queryParam("overwrite", "delete").
-                multiPart(getDataFile("scan_mod/000002.dcm.zip")).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200);
+        mainInterface().callImporter(
+                requestBase.overwrite(MergeBehavior.DELETE).file(getDataFile("scan_mod/000002.dcm.zip"))
+        );
 
         // confirm that the data went where we expected
-        mainCredentials().get(mainInterface().scanUrl(scan1MR1)).then().assertThat().statusCode(200);
-        mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1MR1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
+        mainQueryBase().get(mainInterface().scanUrl(scan1MR1)).then().assertThat().statusCode(200);
+        mainInterface().jsonQuery().get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1MR1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(1));
 
         // upload frame 3, should be added to scan 1-MR1
         waitForBackup();
-        mainCredentials().
-                queryParam("triggerPipelines", false).
-                queryParam("dest", archiveUrl).
-                queryParam("overwrite", "delete").
-                multiPart(getDataFile("scan_mod/000003.dcm.zip")).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200);
+        mainInterface().callImporter(requestBase.overwrite(MergeBehavior.DELETE).file(getDataFile("scan_mod/000003.dcm.zip")));
 
         // confirm that the data went where we expected
-        mainCredentials().get(mainInterface().scanUrl(scan1MR1)).then().assertThat().statusCode(200);
-        mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1MR1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
+        mainQueryBase().get(mainInterface().scanUrl(scan1MR1)).then().assertThat().statusCode(200);
+        mainInterface().jsonQuery().get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1MR1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
 
         // upload frame 4 & 5, should be added to scan 1
         waitForBackup();
-        mainCredentials().
-                queryParam("triggerPipelines", false).
-                queryParam("dest", archiveUrl).
-                queryParam("overwrite", "delete").
-                multiPart(getDataFile("scan_mod/000004_000005.zip")).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200);
+        mainInterface().callImporter(
+                requestBase.overwrite(MergeBehavior.DELETE).file(getDataFile("scan_mod/000004_000005.zip"))
+        );
 
         // confirm that the data went where we expected
-        mainCredentials().get(mainInterface().scanUrl(scan1)).then().assertThat().statusCode(200);
-        mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(3));
+        mainQueryBase().get(mainInterface().scanUrl(scan1)).then().assertThat().statusCode(200);
+        mainInterface().jsonQuery().get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1), "files")).then().assertThat().body("ResultSet.Result", Matchers.hasSize(3));
 
         // test scan creations: should be 2 scans (1 and 1-MR1)
-        mainCredentials().queryParam("format", "json").get(mainInterface().sessionScansUrl(session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
+        mainInterface().jsonQuery().get(mainInterface().sessionScansUrl(session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
 
-        final JsonPath scan1MR1JsonPath = mainCredentials().queryParam("stats", true).queryParam("format", "json").get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1MR1), "resources")).
+        final JsonPath scan1MR1JsonPath = mainInterface().jsonQuery().queryParam("stats", true).get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1MR1), "resources")).
                 then().assertThat().statusCode(200).and().extract().jsonPath().setRoot("ResultSet.Result");
 
         assertEquals("Should have 1 catalog (DICOM).", 1, scan1MR1JsonPath.getInt("size()"));
         assertEquals("Should have 2 files.", 2, scan1MR1JsonPath.getInt("get(0).file_count"));
 
-        final JsonPath scan1JsonPath = mainCredentials().queryParam("stats", true).queryParam("format", "json").get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1), "resources")).
+        final JsonPath scan1JsonPath = mainInterface().jsonQuery().queryParam("stats", true).get(CommonStringUtils.formatUrl(mainInterface().scanUrl(scan1), "resources")).
                 then().assertThat().statusCode(200).and().extract().jsonPath().setRoot("ResultSet.Result");
 
         assertEquals("Should have 1 catalog (DICOM).", 1, scan1JsonPath.getInt("size()"));
@@ -714,9 +606,9 @@ public class TestImport extends BaseXnatRestTest {
             TestData.SAMPLE_1_SCAN_4,
             TestData.SAMPLE_1_SCAN_5,
             TestData.SAMPLE_1_SCAN_6
-    })
+    }, ssh = true)
     public void simpleAutoarchiveMerge() {
-        restDriver.interfaceFor(mainAdminUser).setSessionXmlRebuilderTimes(1, 10000);
+        mainAdminInterface().setSessionXmlRebuilderTimes(1, 10000);
         final Project project = new Project().prearchiveCode(PrearchiveCode.AUTO_ARCHIVE);
         final Subject subject = new Subject(project, "Sample_Patient");
         final MRSession session = new MRSession(project, subject, "Sample_ID");
@@ -726,12 +618,12 @@ public class TestImport extends BaseXnatRestTest {
         new XnatCStore().data(TestData.SAMPLE_1_SCAN_6).sendDICOMToProject(project);
         TimeUtils.sleep(60000);
         restDriver.waitForPrearchiveEmpty(mainUser, project, 120);
-        restDriver.mainInterface().waitForPipelineCompletion(session, "Merged");
+        mainInterface().waitForPipelineCompletion(session, "Merged");
         final List<Scan> allScans = mainInterface().readScans(project, subject, session);
         assertEquals(3, allScans.size());
         for (Scan scan : allScans) {
             final List<Resource> scanResources = scan.getScanResources();
-            assertEquals(176, restDriver.interfaceFor(mainUser).findResource(scanResources, "DICOM").getFileCount());
+            assertEquals(176, mainInterface().findResource(scanResources, "DICOM").getFileCount());
         }
         mainInterface().deleteProject(project);
     }
@@ -739,22 +631,16 @@ public class TestImport extends BaseXnatRestTest {
     @Test // Test content donated by Kate at Radiologics
     @AddedIn(Xnat_1_7_7.class)
     public void testUserCacheUploadAndImportLegacy() {
-        final String jsessionId = mainCredentials().get(formatRestUrl("JSESSION")).then()
-                .assertThat().statusCode(200).and().extract().response().asString();
+        mainInterface().regenerateUserSession();
 
-        final Object[] testObjects = setupForUserCacheUpload(RestAssured.given().sessionId(jsessionId));
-        final String    listener = (String) testObjects[0];
-        final Project   project  = (Project) testObjects[1];
-        final Subject   subject  = (Subject) testObjects[2];
-        final MRSession session  = (MRSession) testObjects[3];
-        final String archiveUrl  = (String) testObjects[4];
+        final UserCacheTestObject testObject = setupForUserCacheUpload(mainInterface());
 
         final long start = System.currentTimeMillis();
         boolean completed = false;
         do {
-            final JsonPath json = RestAssured.given().sessionId(jsessionId)
-                    .queryParam("format", "json")
-                    .get(formatRestUrl("status", listener))
+            final JsonPath json = mainInterface()
+                    .jsonQuery()
+                    .get(formatRestUrl("status", testObject.listener))
                     .then().assertThat().statusCode(200).and().extract().jsonPath().setRoot("msgs.get(0)");
             final int len = json.getInt("size()") - 1;
             if (len >= 0) {
@@ -762,7 +648,7 @@ public class TestImport extends BaseXnatRestTest {
                 final boolean terminal = json.getBoolean("get(" + len + ").terminal");
                 if (terminal) {
                     assertEquals("COMPLETED", json.get("get(" + len + ").status"));
-                    assertEquals("Archive:" + archiveUrl, msg);
+                    assertEquals("Archive:" + testObject.session.getUri(), msg);
                     completed = true;
                     break;
                 }
@@ -771,28 +657,25 @@ public class TestImport extends BaseXnatRestTest {
         } while (System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(20));
 
         assertTrue(completed);
-        mainInterface().waitForAutoRun(session);
-        mainInterface().deleteProject(project);
+        mainInterface().waitForAutoRun(testObject.session);
+        mainInterface().deleteProject(testObject.session.getPrimaryProject());
     }
 
     @Test // Test content donated by Kate at Radiologics
     @TestRequires(users = 1)
     @AddedIn(Xnat_1_7_7.class)
     public void testUserCacheUploadAndImport() {
-        final Object[] testObjects = setupForUserCacheUpload(mainQueryBase());
-        final String    listener = (String) testObjects[0];
-        final Project   project  = (Project) testObjects[1];
-        final Subject   subject  = (Subject) testObjects[2];
-        final MRSession session  = (MRSession) testObjects[3];
-        final String archiveUrl  = (String) testObjects[4];
+        mainInterface().regenerateUserSession();
+
+        final UserCacheTestObject testObjects = setupForUserCacheUpload(mainInterface());
 
         final long start = System.currentTimeMillis();
         boolean succeeded = false;
         String finalMsg = null;
         do {
-            final JsonPath json = mainQueryBase()
-                    .queryParam("format", "json")
-                    .get(formatXapiUrl("event_tracking", listener))
+            final JsonPath json = mainInterface()
+                    .jsonQuery()
+                    .get(formatXapiUrl("event_tracking", testObjects.listener))
                     .then().assertThat().statusCode(200).and().extract().jsonPath();
 
             try {
@@ -809,20 +692,37 @@ public class TestImport extends BaseXnatRestTest {
         } while (System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(20));
 
         assertTrue(succeeded);
-        assertEquals("Archive:" + archiveUrl, finalMsg);
+        assertEquals("Archive:" + testObjects.session.getUri(), finalMsg);
 
         // Validate that other users cannot poll the progress of this event
         User genericUser = getGenericUser();
         restDriver.queryBaseFor(genericUser)
                 .queryParam("format", "json")
-                .get(formatXapiUrl("event_tracking", listener))
+                .get(formatXapiUrl("event_tracking", testObjects.listener))
                 .then().assertThat().statusCode(404);
 
-        mainInterface().waitForAutoRun(session);
-        mainInterface().deleteProject(project);
+        mainInterface().waitForAutoRun(testObjects.session);
+        mainInterface().deleteProject(testObjects.session.getPrimaryProject());
     }
 
-    private Object[] setupForUserCacheUpload(RequestSpecification reqSpec) {
+    @Test
+    public void testUploadIgnoreUnparsableMissingParam() {
+        runUnparsableTest(false, false);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_3.class)
+    public void testUploadIgnoreUnparsableFalse() {
+        runUnparsableTest(true, false);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_3.class)
+    public void testUploadIgnoreUnparsableTrue() {
+        runUnparsableTest(true, true);
+    }
+
+    private UserCacheTestObject setupForUserCacheUpload(XnatInterface xnatInterface) {
         final String listener = Long.toString(System.currentTimeMillis());
 
         final Project project = new Project("project" + listener).prearchiveCode(PrearchiveCode.MANUAL);
@@ -830,20 +730,19 @@ public class TestImport extends BaseXnatRestTest {
         final Subject   subject = new Subject(project, "subject" + listener);
         final MRSession session = new MRSession(project, subject, "session" + listener);
 
-        final String archiveUrl = session.getUri();
-
         // Upload to user cache
         final String cacheUrl = String.format("/user/cache/resources/%s/files/%s", listener, testZip.getName());
-        mainCredentials().multiPart(testZip).put(formatRestUrl(cacheUrl)).then().assertThat().statusCode(200);
+        mainQueryBase().multiPart(testZip).put(formatRestUrl(cacheUrl)).then().assertThat().statusCode(200);
 
         // Upload from user cache to project
-        reqSpec.contentType("multipart/form-data")
-                .multiPart("src", cacheUrl)
-                .multiPart("http-session-listener", listener)
-                .multiPart("dest", archiveUrl)
-                .post(formatRestUrl("services", "import")).then().assertThat().statusCode(200);
+        xnatInterface.callImporter(
+                new DefaultImporterRequest().
+                        src(cacheUrl).
+                        httpSessionListener(listener).
+                        dest(session.getUri())
+        );
 
-        return new Object[]{listener, project, subject, session, archiveUrl};
+        return new UserCacheTestObject(listener, session);
     }
 
     private String newLabel() {
@@ -859,6 +758,49 @@ public class TestImport extends BaseXnatRestTest {
     private void waitForBackup() { // see https://issues.xnat.org/browse/XNAT-6424
         if (XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_8_0.class)) {
             TimeUtils.sleep(1000); // wait for 1s so cache backup dir is distinct
+        }
+    }
+
+    private void runUnparsableTest(boolean includeParam, boolean paramValue) {
+        final DicomZipRequest importerRequest = new DicomZipRequest().project(project).file(zipContainingNonDicom);
+        if (includeParam) {
+            importerRequest.ignoreUnparsable(paramValue);
+        }
+        if (paramValue) {
+            final String prearcUriFragment = mainInterface().callImporter(importerRequest);
+            mainQueryBase().queryParam("action", "commit").queryParam("AA", true).post(formatXnatUrl(prearcUriFragment)).then().assertThat().statusCode(301);
+
+            final MRSession session = mainInterface().readProject(project.getId()).getSubjects().get(0).getSessions().get(0).project(project);
+            mainInterface().waitForAutoRun(session);
+            assertEquals(6, mainInterface().findResource(session.getScans().get(0).getScanResources(), "DICOM").getFileCount());
+        } else {
+            try {
+                mainInterface().callImporter(importerRequest);
+                failOnImproperSuccess();
+            } catch (ImportException importException) {
+                assertEquals(400, importException.getStatusCode());
+                assertTrue(importException.getMessage().contains("unable to read DICOM object " + nonDicomFilename));
+            }
+        }
+    }
+
+    private void failOnImproperSuccess() {
+        fail("Attempted import invocation should have failed");
+    }
+
+    private SessionImporterRequest defaultRequestFor(ImagingSession session) {
+        return new DefaultImporterRequest().
+                triggerPipelines(false).
+                dest(session.getUri());
+    }
+
+    private static class UserCacheTestObject {
+        String listener;
+        ImagingSession session;
+
+        UserCacheTestObject(String listener, ImagingSession session) {
+            this.listener = listener;
+            this.session = session;
         }
     }
 
