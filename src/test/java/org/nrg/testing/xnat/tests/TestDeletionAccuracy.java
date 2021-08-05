@@ -9,6 +9,8 @@ import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
+import org.nrg.xnat.pogo.experiments.SessionAssessor;
+import org.nrg.xnat.pogo.experiments.assessors.QC;
 import org.nrg.xnat.pogo.experiments.scans.MRScan;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
@@ -51,6 +53,53 @@ public class TestDeletionAccuracy extends BaseXnatRestTest {
     @AddedIn(Xnat_1_8_2_2.class)
     public void testDeleteResourcelessSessionWithScans() {
         runDeleteResourcelssSessionTest(true);
+    }
+
+    @Test
+    public void testDeleteEmptySessionAssessor() {
+        final Subject subject = new Subject(project);
+        final MRSession mainSession = new MRSession(project, subject);
+        new SessionImportExtension(mainSession, TestData.SAMPLE_1.toFile());
+        final SessionAssessor qc = new QC(project, subject, mainSession);
+        mainInterface().createSubject(subject);
+        mainInterface().deleteSessionAssessor(qc);
+        validateSample1(mainSession);
+    }
+
+    @Test
+    public void testDeleteNeighboringSession() {
+        final Subject subject = new Subject(project);
+        final MRSession mainSession = new MRSession(project, subject);
+        new SessionImportExtension(mainSession, TestData.SAMPLE_1.toFile());
+        final MRSession otherSession = new MRSession(project, subject);
+        new SessionImportExtension(otherSession, TestData.SAMPLE_1.toFile());
+        mainInterface().createSubject(subject);
+        mainInterface().deleteSubjectAssessor(otherSession);
+        validateSample1(mainSession);
+    }
+
+    @Test
+    public void testDeleteNeighboringSubject() {
+        final Subject subject = new Subject(project);
+        final MRSession mainSession = new MRSession(project, subject);
+        new SessionImportExtension(mainSession, TestData.SAMPLE_1.toFile());
+        final Subject emptySubject = new Subject(project);
+        mainInterface().createSubject(subject);
+        mainInterface().createSubject(emptySubject);
+        mainInterface().deleteSubject(emptySubject);
+        validateSample1(mainSession);
+    }
+
+    @Test
+    public void testDeleteNeighboringProject() {
+        final Subject subject = new Subject(project);
+        final MRSession mainSession = new MRSession(project, subject);
+        new SessionImportExtension(mainSession, TestData.SAMPLE_1.toFile());
+        final Project emptyProject = new Project();
+        mainInterface().createSubject(subject);
+        mainInterface().createProject(emptyProject);
+        mainInterface().deleteProject(emptyProject);
+        validateSample1(mainSession);
     }
 
     /*
