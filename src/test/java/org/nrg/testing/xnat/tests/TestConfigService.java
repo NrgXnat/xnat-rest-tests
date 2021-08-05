@@ -12,6 +12,7 @@ import org.nrg.testing.annotations.SoftDependency;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.Users;
 import org.nrg.xnat.enums.Accessibility;
+import org.nrg.xnat.importer.importers.GradualDicomRequest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.users.User;
 import org.nrg.xnat.rest.Credentials;

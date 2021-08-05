@@ -1,5 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
 import org.dcm4che2.data.Tag;
@@ -10,6 +11,7 @@ import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
+import org.nrg.xnat.importer.importers.DicomZipRequest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.dicom.DicomScpReceiver;
@@ -24,6 +26,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,13 +85,12 @@ public class TestDirectArchive extends BaseXnatRestTest {
 
     @Test
     public void testDirectArchiveAPI() {
-        mainQueryBase()
-                .queryParam("Direct-Archive", "true")
-                .queryParam("import-handler", "DICOM-zip")
-                .queryParam("PROJECT_ID", project.getId())
-                .multiPart(testZip)
-                .post(formatRestUrl("services/import"))
-                .then().assertThat().statusCode(200);
+        mainInterface().callImporter(
+                new DicomZipRequest().
+                        directArchive().
+                        project(project).
+                        file(testZip)
+        );
 
         waitForDirectArchive(apiSession);
     }
@@ -129,8 +131,8 @@ public class TestDirectArchive extends BaseXnatRestTest {
         // To force an archival error, set institution name to have 300 chars. XNAT allows 256 (string) for the db field,
         // but even this is actually invalid DICOM (LO is 64 chars). So, postgres won’t like it, but XNAT will happily
         // write it to xml. And XNAT would never be updated to support this bc it isn’t valid DICOM.
-        Map<Integer, String> hdr = new HashMap<>();
-        hdr.put(Tag.InstitutionName, new String(new char[300]).replace("\0", "A"));
+        final Map<Integer, String> hdr = new HashMap<>();
+        hdr.put(Tag.InstitutionName, StringUtils.repeat("A", 300));
         uploadViaCStore(hdr, true);
         restDriver.waitForDirectArchiveEmpty(mainUser, project, 300);
 
@@ -150,9 +152,7 @@ public class TestDirectArchive extends BaseXnatRestTest {
         mainInterface().createProject(altProject);
         mainAdminInterface().setSessionXmlRebuilderTimes(5, 60000);
         uploadViaCStore();
-        Map<Integer, String> hdr = new HashMap<>();
-        hdr.put(Tag.StudyDescription, altProject.getId());
-        uploadViaCStore(hdr, false);
+        uploadViaCStore(Collections.singletonMap(Tag.StudyDescription, altProject.getId()), false);
 
         final List<SessionData> sessions = mainInterface().getDirectArchiveEntriesForProject(project);
         assertEquals(1, sessions.size());
@@ -161,12 +161,11 @@ public class TestDirectArchive extends BaseXnatRestTest {
         assertEquals(1, altSessions.size());
 
         final List<SessionData> all = mainInterface().getDirectArchiveEntries();
-        assertEquals(2, all.size());
+        assertEquals(2, all.size()); // TODO: technically this can fail if other sessions are also in the direct-archive table
     }
 
     private void uploadViaCStore() {
-        Map<Integer, String> hdr = new HashMap<>();
-        uploadViaCStore(hdr, true);
+        uploadViaCStore(new HashMap<>(), true);
     }
 
     private void uploadViaCStore(Map<Integer, String> hdr, boolean addProject) {

@@ -5,7 +5,10 @@ import org.hamcrest.Matchers;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.UIDList;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.xnat.enums.MergeBehavior;
 import org.nrg.xnat.enums.PrearchiveCode;
+import org.nrg.xnat.importer.importers.DefaultImporterRequest;
+import org.nrg.xnat.importer.importers.GradualDicomRequest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
@@ -41,16 +44,15 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
         for (Subject subject : project1.getSubjects()) {
             for (SubjectAssessor session : subject.getExperiments()) {
-                mainCredentials().
-                        queryParam("triggerPipelines", false).
-                        queryParam("project", project1.getId()).
-                        queryParam("subject", subject.getLabel()).
-                        queryParam("session", session.getLabel()).
-                        queryParam("overwrite", "append").
-                        queryParam("prearchive", true).
-                        multiPart(sessionZip).
-                        post(formatRestUrl("services/import")).
-                        then().assertThat().statusCode(200);
+                mainInterface().callImporter(
+                        new DefaultImporterRequest().
+                                triggerPipelines(false).
+                                project(project1).
+                                subject(subject).
+                                session(session.getLabel()).
+                                overwrite(MergeBehavior.APPEND).
+                                file(sessionZip)
+                );
             }
         }
     }
@@ -60,29 +62,26 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
         for (Project project : new Project[]{project1, project2, project3}) {
             restDriver.deleteProjectSilently(mainUser, project);
         }
-        mainAdminCredentials().put(formatRestUrl("prearchive"));
+        mainAdminQueryBase().put(formatRestUrl("prearchive"));
     }
 
     @Test
     public void testGradualCommitUnassignedMove() {
         restDriver.clearUnassignedPrearchiveSessions(mainAdminUser, UIDList.uids);
 
-        final String sessionUri = mainCredentials().
-                queryParam("import-handler", "gradual-DICOM").
-                queryParam("triggerPipelines", false).
-                queryParam("dest", "/prearchive").
-                multiPart(getDataFile("mr_1/1.dcm")).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200).
-                and().extract().response().asString().trim();
+        final String sessionUri = mainInterface().callImporter(
+                new GradualDicomRequest().
+                        destPrearchive().
+                        file(getDataFile("mr_1/1.dcm"))
+        );
 
         final String sessionUrl = formatXnatUrl(sessionUri);
 
-        mainAdminCredentials().queryParam("action", "commit").post(sessionUrl).then().assertThat().statusCode(200);
+        mainAdminQueryBase().queryParam("action", "commit").post(sessionUrl).then().assertThat().statusCode(200);
 
-        mainAdminCredentials().get(sessionUrl).then().assertThat().statusCode(200);
+        mainAdminQueryBase().get(sessionUrl).then().assertThat().statusCode(200);
 
-        mainAdminCredentials().
+        mainAdminQueryBase().
                 queryParam("src", sessionUri).
                 queryParam("newProject", project3.getId()).
                 queryParam("async", false).
@@ -93,7 +92,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
         final String newUri = getSessionPrearcUri(project3, subjectName, sessionName);
 
-        mainAdminCredentials().
+        mainAdminQueryBase().
                 queryParam("src", newUri).
                 queryParam("newProject", project2.getId()).
                 queryParam("async", false).
@@ -104,12 +103,12 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
         final String finalUri = getSessionPrearcUri(project2, subjectName, sessionName);
 
-        mainCredentials().delete(formatRestUrl(finalUri)).then().assertThat().statusCode(200);
+        mainQueryBase().delete(formatRestUrl(finalUri)).then().assertThat().statusCode(200);
     }
 
     @Test
     public void testPrearchiveListing() {
-        final JsonPath project1Sessions = mainCredentials().queryParam("format", "json").get(formatRestUrl("prearchive/projects", project1.getId())).
+        final JsonPath project1Sessions = mainInterface().jsonQuery().get(formatRestUrl("prearchive/projects", project1.getId())).
                 then().assertThat().statusCode(200).and().extract().jsonPath().setRoot("ResultSet.Result");
 
         for (Subject subject : project1.getSubjects()) {
@@ -118,7 +117,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
                                 param("subj", subject.getLabel()).
                                 param("session", session.getLabel()).
                                 getString("find { it.subject == subj && it.name == session && it.status == 'READY' }.url");
-                mainCredentials().get(formatRestUrl(sessionUri)).then().assertThat().statusCode(200);
+                mainQueryBase().get(formatRestUrl(sessionUri)).then().assertThat().statusCode(200);
             }
         }
     }
@@ -130,22 +129,21 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
         assertSessionsInProjectPrearc(project2, 0);
 
-        mainCredentials().
-                queryParam("triggerPipelines", false).
-                queryParam("project", project2.getId()).
-                queryParam("subject", subject).
-                queryParam("session", session).
-                queryParam("overwrite", "append").
-                queryParam("prearchive", true).
-                multiPart(sessionZip).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200);
+        mainInterface().callImporter(
+                new DefaultImporterRequest().
+                        triggerPipelines(false).
+                        param("project", project2.getId()).
+                        param("subject", subject).
+                        session(session).
+                        overwrite(MergeBehavior.APPEND).
+                        file(sessionZip)
+        );
 
         assertSessionsInProjectPrearc(project2, 1);
 
         final String uri = getSessionPrearcUri(project2, subject, session);
 
-        mainCredentials().delete(formatRestUrl(uri)).then().assertThat().statusCode(200);
+        mainQueryBase().delete(formatRestUrl(uri)).then().assertThat().statusCode(200);
 
         assertSessionsInProjectPrearc(project2, 0);
     }
@@ -159,20 +157,19 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
         assertSessionsInProjectPrearc(project2, 0);
 
-        mainCredentials().
-                queryParam("triggerPipelines", false).
-                queryParam("dest", destination).
-                queryParam("subject", subject).
-                queryParam("session", session).
-                queryParam("overwrite", "append").
-                queryParam("prearchive", true).
-                multiPart(sessionZip).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200);
+        mainInterface().callImporter(
+                new DefaultImporterRequest().
+                        triggerPipelines(false).
+                        dest(destination).
+                        param("subject", subject).
+                        session(session).
+                        overwrite(MergeBehavior.APPEND).
+                        file(sessionZip)
+        );
 
         assertSessionsInProjectPrearc(project2, 1);
 
-        mainCredentials().delete(formatRestUrl(destination)).then().assertThat().statusCode(200);
+        mainQueryBase().delete(formatRestUrl(destination)).then().assertThat().statusCode(200);
 
         assertSessionsInProjectPrearc(project2, 0);
     }
@@ -184,18 +181,18 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
         restDriver.clearUnassignedPrearchiveSessions(mainAdminUser, UIDList.uids);
 
-        mainCredentials().
-                queryParam("triggerPipelines", false).
-                queryParam("dest", "/prearchive").
-                queryParam("subject", subject).
-                multiPart(sessionZip).
-                post(formatRestUrl("services/import")).
-                then().assertThat().statusCode(200);
+        mainInterface().callImporter(
+                new DefaultImporterRequest().
+                        triggerPipelines(false).
+                        destPrearchive().
+                        param("subject", subject).
+                        file(sessionZip)
+        );
 
-        final String uri = mainAdminCredentials().given().queryParam("format", "json").get(formatRestUrl("prearchive/projects/Unassigned")).
+        final String uri = mainAdminInterface().jsonQuery().get(formatRestUrl("prearchive/projects/Unassigned")).
                 jsonPath().getString(String.format("ResultSet.Result.find { it.subject == '%s' && it.name == '%s' && it.status == 'READY' }.url", subject, session));
 
-        mainAdminCredentials().
+        mainAdminQueryBase().
                 queryParam("src", uri).
                 queryParam("newProject", project3.getId()).
                 post(formatRestUrl("services/prearchive/move")).
@@ -207,7 +204,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
         final String newUri = getSessionPrearcUri(project3, subject, session);
 
-        mainCredentials().
+        mainQueryBase().
                 queryParam("src", newUri).
                 queryParam("newProject", project2.getId()).
                 post(formatRestUrl("services/prearchive/move")).
@@ -219,16 +216,16 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
         assertSessionsInProjectPrearc(project2, 1);
 
         final String finalUri = getSessionPrearcUri(project2, subject, session);
-        mainCredentials().delete(formatRestUrl(finalUri)).then().assertThat().statusCode(200);
+        mainQueryBase().delete(formatRestUrl(finalUri)).then().assertThat().statusCode(200);
     }
 
     private void assertSessionsInProjectPrearc(Project project, int numSessions) {
-        mainCredentials().queryParam("format", "json").get(formatRestUrl("prearchive/projects", project.getId())).
+        mainInterface().jsonQuery().get(formatRestUrl("prearchive/projects", project.getId())).
                 then().assertThat().body("ResultSet.Result", Matchers.hasSize(numSessions));
     }
 
     private String getSessionPrearcUri(Project project, String subjectLabel, String sessionLabel) {
-        return mainCredentials().given().queryParam("format", "json").get(formatRestUrl("prearchive/projects", project.getId())).
+        return mainInterface().jsonQuery().get(formatRestUrl("prearchive/projects", project.getId())).
                 jsonPath().getString(String.format("ResultSet.Result.find { it.subject == '%s' && it.name == '%s' }.url", subjectLabel, sessionLabel));
     }
 
