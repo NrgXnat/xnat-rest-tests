@@ -443,7 +443,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
     }
 
     private void testProjectRouting(ApiUploadFn uploadFn, String handler) {
-        // Because XNAT cannot delete and readd a project with the same ID, we have to include a random component in
+        // Because XNAT cannot delete and read a project with the same ID, we have to include a random component in
         // the project id. Hopefully 0-99 is sufficient to ensure no conflicts within a given test run/rerun.
         String rand = Integer.toString(new Random().nextInt(100));
         for (String key : cfgMapProject.keySet()) {

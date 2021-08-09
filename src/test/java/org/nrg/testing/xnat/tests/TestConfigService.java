@@ -9,10 +9,10 @@ import org.nrg.testing.FileIOUtils;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.HardDependency;
 import org.nrg.testing.annotations.SoftDependency;
+import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.Users;
 import org.nrg.xnat.enums.Accessibility;
-import org.nrg.xnat.importer.importers.GradualDicomRequest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.users.User;
 import org.nrg.xnat.rest.Credentials;
@@ -21,9 +21,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertNotNull;
@@ -54,7 +52,7 @@ public class TestConfigService extends BaseXnatRestTest {
 		 * Do a put and a get. make sure what you put is what you get...
 		 */
 
-        mainAdminCredentials().contentType(ContentType.TEXT).body(dummyContents).put(testConfigUrl).then().assertThat().statusCode(isOk);
+        mainAdminQueryBase().contentType(ContentType.TEXT).body(dummyContents).put(testConfigUrl).then().assertThat().statusCode(isOk);
 
         final JsonPath configResponse = getConfigJsonPath(testConfigUrl);
 
@@ -67,7 +65,7 @@ public class TestConfigService extends BaseXnatRestTest {
     public void testConfigServiceGetContents() {
         // read contents from previous test
 
-        assertEquals(dummyContents, mainCredentials().queryParam("contents", true).get(testConfigUrl).body().asString());
+        assertEquals(dummyContents, mainQueryBase().queryParam("contents", true).get(testConfigUrl).body().asString());
     }
 
     @Test
@@ -78,7 +76,7 @@ public class TestConfigService extends BaseXnatRestTest {
 
         final String newContents = readDataFile("test_asst_v1.xml");
 
-        mainAdminCredentials().contentType(ContentType.TEXT).body(newContents).put(testConfigUrl).then().assertThat().statusCode(isOk);
+        mainAdminQueryBase().contentType(ContentType.TEXT).body(newContents).put(testConfigUrl).then().assertThat().statusCode(isOk);
 
         final JsonPath configResponse = getConfigJsonPath(testConfigUrl);
 
@@ -102,7 +100,7 @@ public class TestConfigService extends BaseXnatRestTest {
 
         // make up a unique URL
         final String toolName = UUID.randomUUID().toString();
-        final String path = UUID.randomUUID().toString() + "/" + UUID.randomUUID().toString();
+        final String path = UUID.randomUUID() + "/" + UUID.randomUUID();
         final Project project = registerProject();
         final String contents = readDataFile("test_asst_v1.xml");
 
@@ -156,7 +154,7 @@ public class TestConfigService extends BaseXnatRestTest {
 
         // make up a unique URL
         final String toolName = UUID.randomUUID().toString();
-        final String path = UUID.randomUUID().toString() + "/" + UUID.randomUUID().toString();
+        final String path = UUID.randomUUID() + "/" + UUID.randomUUID();
         final Project project = registerProject();
         final String v1 = readDataFile("test_subject_v1.xml");
         final String v2 = readDataFile("test_subject_v2.xml");
@@ -184,7 +182,7 @@ public class TestConfigService extends BaseXnatRestTest {
 
             Credentials.build(putUser).given().contentType(ContentType.TEXT).body(v3).put(url).then().assertThat().statusCode(isOk); // PUT V3
 
-            final JsonPath laterV2ConfigResponse = mainCredentials().queryParam("format", "json").queryParam("version", version2).get(url).
+            final JsonPath laterV2ConfigResponse = mainInterface().jsonQuery().queryParam("version", version2).get(url).
                     then().assertThat().statusCode(200).and().extract().jsonPath().setRoot("ResultSet.Result"); // GET V2
 
             assertEquals(1, laterV2ConfigResponse.getList("").size());
@@ -211,7 +209,7 @@ public class TestConfigService extends BaseXnatRestTest {
 
         // make up a unique URL
         final String toolNameToAdd = UUID.randomUUID().toString();
-        final String path = UUID.randomUUID().toString() + "/" + UUID.randomUUID().toString();
+        final String path = UUID.randomUUID() + "/" + UUID.randomUUID();
         final Project project = registerProject();
         final String contents = readDataFile("test_subject_v1.xml");
 
@@ -228,12 +226,12 @@ public class TestConfigService extends BaseXnatRestTest {
             Credentials.build(putUser).contentType(ContentType.TEXT).body(contents).
                     put(CommonStringUtils.formatUrl(url, "baselineTool", path)).then().assertThat().statusCode(isOk); // add a baseline tool
 
-            final int baselineSize = mainCredentials().queryParam("format", "json").get(url).jsonPath().getList("ResultSet.Result").size(); // GET baseline tools
+            final int baselineSize = mainInterface().jsonQuery().get(url).jsonPath().getList("ResultSet.Result").size(); // GET baseline tools
 
             Credentials.build(putUser).contentType(ContentType.TEXT).body(contents).
                     put(CommonStringUtils.formatUrl(url, toolNameToAdd, path)).then().assertThat().statusCode(isOk); // add new random tool
 
-            final JsonPath updatedTools = mainCredentials().queryParam("format", "json").get(url).jsonPath().setRoot("ResultSet.Result"); // GET updated tools
+            final JsonPath updatedTools = mainInterface().jsonQuery().get(url).jsonPath().setRoot("ResultSet.Result"); // GET updated tools
 
             assertEquals(baselineSize + 1, updatedTools.getList("").size());
             assertNotNull(updatedTools.param("name", toolNameToAdd).get("find { it.tool == name } "));
@@ -243,7 +241,7 @@ public class TestConfigService extends BaseXnatRestTest {
     @Test
     public void testConfigServiceProjectLevelSecurityLegacy() {
         final Project project = registerProject();
-        final String path = UUID.randomUUID().toString() + "/" + UUID.randomUUID().toString();
+        final String path = UUID.randomUUID() + "/" + UUID.randomUUID();
         final String urlToTest = formatRestUrl("projects", project.getId(), "config", path);
         final String contents = dummyContents;
 
@@ -251,11 +249,11 @@ public class TestConfigService extends BaseXnatRestTest {
         mainAdminInterface().createProject(project);
 
         // put a config in that project
-        mainAdminCredentials().contentType(ContentType.TEXT).body(contents).put(urlToTest).then().assertThat().statusCode(isOk);
+        mainAdminQueryBase().contentType(ContentType.TEXT).body(contents).put(urlToTest).then().assertThat().statusCode(isOk);
 
-        assertEquals(contents, mainAdminCredentials().queryParam("contents", true).get(urlToTest).then().assertThat().statusCode(200).and().extract().response().asString());
+        assertEquals(contents, mainAdminQueryBase().queryParam("contents", true).get(urlToTest).then().assertThat().statusCode(200).and().extract().response().asString());
 
-        mainCredentials().queryParam("contents", true).get(urlToTest).then().assertThat().statusCode(404); // user can't see project, so 404 instead of 403
+        mainQueryBase().queryParam("contents", true).get(urlToTest).then().assertThat().statusCode(404); // user can't see project, so 404 instead of 403
     }
 
     @Test // TODO: QA-504 requires 3 users
@@ -276,7 +274,7 @@ public class TestConfigService extends BaseXnatRestTest {
         final String tracers = "PIB FDG";
         final String tracerUrl = formatRestUrl("projects", project.getId(), "config", path);
 
-        mainAdminCredentials().contentType(ContentType.TEXT).body(tracers).put(tracerUrl).then().assertThat().statusCode(isOk);
+        mainAdminQueryBase().contentType(ContentType.TEXT).body(tracers).put(tracerUrl).then().assertThat().statusCode(isOk);
 
         TimeUtils.sleep(1000); // let cache update
 
@@ -290,6 +288,18 @@ public class TestConfigService extends BaseXnatRestTest {
         assertEquals(tracers, configResponse.getString("get(0).contents"));
     }
 
+    @Test // Verify XNAT-6870
+    public void testConfigServiceCreateWithStatus() {
+        final String contents = "contents";
+        final String contentsValue = "ABC123";
+        final String newConfigPath = formatRestUrl("config", RandomHelper.randomID(10), RandomHelper.randomID(10));
+        final Map<String, String> jsonContent = new HashMap<>();
+        jsonContent.put("status", "enabled");
+        jsonContent.put(contents, contentsValue);
+        mainAdminQueryBase().contentType(ContentType.JSON).body(jsonContent).put(newConfigPath).then().assertThat().statusCode(isOk);
+        mainAdminQueryBase().get(newConfigPath).then().assertThat().statusCode(200).and().body("ResultSet.Result[0]." + contents, Matchers.equalTo(contentsValue));
+    }
+
     private Project registerProject() {
         final Project project = new Project();
         projects.add(project);
@@ -297,7 +307,7 @@ public class TestConfigService extends BaseXnatRestTest {
     }
 
     private JsonPath getConfigJsonPath(String url) {
-        return mainCredentials().queryParam("format", "json").get(url).then().assertThat().statusCode(200).and().extract().jsonPath().setRoot("ResultSet.Result");
+        return mainInterface().jsonQuery().get(url).then().assertThat().statusCode(200).and().extract().jsonPath().setRoot("ResultSet.Result");
     }
 
 }
