@@ -1,8 +1,10 @@
 package org.nrg.testing.xnat.tests.eventservice;
 
 import com.google.common.collect.Sets;
+import com.jayway.restassured.http.ContentType;
 import org.apache.commons.io.FileUtils;
 import org.dcm4che3.data.Tag;
+import org.nrg.testing.FileIOUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.testing.annotations.TestRequires;
@@ -25,6 +27,7 @@ import org.nrg.xnat.pogo.experiments.scans.MRScan;
 import org.nrg.xnat.pogo.experiments.scans.PETScan;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.experiments.sessions.PETSession;
+import org.nrg.xnat.pogo.extensions.project.ProjectXMLPostExtension;
 import org.nrg.xnat.pogo.extensions.project.ProjectXMLPutExtension;
 import org.nrg.xnat.pogo.extensions.subject.SubjectXMLPutExtension;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SubjectAssessorXMLExtension;
@@ -82,6 +85,7 @@ public class TestEventDetection extends BaseEventServiceTest {
     private final SubjectAssessor restSubjectAssessor = new NonimagingAssessor(restProject, restSubject, RandomHelper.randomID()).dataType(subjectAssessorDataType);
     private final Project turbineProject = new Project();
     private final Project restXmlProject = new Project();
+    private final Project restXmlPostProject = new Project();
     private final Project xmlUploadProject = new Project();
     private Subject aaSubject, turbineSubject, xmlUploadSubject, importerSubject, restXmlSubject, petMrSubject;
     private MRSession aaSession, importerSession, splitMr, turbineSession, xmlUploadSession, restXmlSession;
@@ -129,6 +133,9 @@ public class TestEventDetection extends BaseEventServiceTest {
         projectsToCleanup.add(restXmlProject);
         postXml(generateProjectXml(xmlUploadProject));
         projectsToCleanup.add(xmlUploadProject);
+        new ProjectXMLPostExtension(restXmlPostProject, generateProjectXml(restXmlPostProject)).create(mainInterface());
+        projectsToCleanup.add(restXmlPostProject);
+
         xmlUploadSubject = new Subject(turbineProject);
         postXml(generateSubjectXml(xmlUploadSubject));
 
@@ -206,7 +213,7 @@ public class TestEventDetection extends BaseEventServiceTest {
     @Test
     @ExpectedFailure(jiraIssue = "XNAT-6807")
     public void testProjectCreateEvent() {
-        final Set<Project> created = Sets.newHashSet(restProject, turbineProject, restXmlProject, xmlUploadProject);
+        final Set<Project> created = Sets.newHashSet(restProject, turbineProject, restXmlProject, xmlUploadProject, restXmlPostProject);
         final List<DeliveredEvent> projectEvents = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(projectCreate), created.size()
         );

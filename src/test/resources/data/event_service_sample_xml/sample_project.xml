@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <xnat:Project ID="$PROJECT" secondary_ID="$PROJECT" xmlns:xnat="http://nrg.wustl.edu/xnat" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <xnat:name>$PROJECT</xnat:name>
     <xnat:description>This is a project created via TestNG tests through the REST API.</xnat:description>
