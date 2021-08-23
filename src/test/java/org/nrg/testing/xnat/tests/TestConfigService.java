@@ -7,6 +7,7 @@ import org.hamcrest.Matchers;
 import org.nrg.testing.CommonStringUtils;
 import org.nrg.testing.FileIOUtils;
 import org.nrg.testing.TimeUtils;
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.HardDependency;
 import org.nrg.testing.annotations.SoftDependency;
 import org.nrg.testing.util.RandomHelper;
@@ -17,6 +18,7 @@ import org.nrg.xnat.pogo.ConfigServiceObject;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.users.User;
 import org.nrg.xnat.rest.Credentials;
+import org.nrg.xnat.versions.Xnat_1_8_3;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -288,6 +290,7 @@ public class TestConfigService extends BaseXnatRestTest {
     }
 
     @Test // Verify XNAT-6870
+    @AddedIn(Xnat_1_8_3.class)
     public void testConfigServiceCreateWithStatus() {
         final String contents = "contents";
         final String contentsValue = "ABC123";
