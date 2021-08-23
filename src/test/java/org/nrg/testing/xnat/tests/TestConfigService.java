@@ -13,6 +13,7 @@ import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.Users;
 import org.nrg.xnat.enums.Accessibility;
+import org.nrg.xnat.pogo.ConfigServiceObject;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.users.User;
 import org.nrg.xnat.rest.Credentials;
@@ -33,6 +34,8 @@ public class TestConfigService extends BaseXnatRestTest {
     private final File dummy = getDataFile("dummy.txt");
     private final String dummyContents = FileIOUtils.readFile(dummy);
     private String testConfigUrl;
+    private final String TEST_TOOL = "test";
+    private final String TEST_PATH = "newPath/goes/here";
 
     @BeforeClass
     public void initConfigUrl() {
@@ -52,12 +55,8 @@ public class TestConfigService extends BaseXnatRestTest {
 		 * Do a put and a get. make sure what you put is what you get...
 		 */
 
-        mainAdminQueryBase().contentType(ContentType.TEXT).body(dummyContents).put(testConfigUrl).then().assertThat().statusCode(isOk);
-
-        final JsonPath configResponse = getConfigJsonPath(testConfigUrl);
-
-        assertEquals(1, configResponse.getList("").size());
-        assertEquals(dummyContents, configResponse.getString("get(0).contents"));
+        mainAdminInterface().putConfig(TEST_TOOL, TEST_PATH, dummyContents);
+        assertEquals(dummyContents, mainInterface().readConfigToolPath(TEST_TOOL, TEST_PATH).getContents());
     }
 
     @Test

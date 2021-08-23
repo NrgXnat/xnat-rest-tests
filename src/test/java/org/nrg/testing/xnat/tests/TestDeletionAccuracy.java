@@ -4,6 +4,7 @@ import org.dcm4che3.data.Tag;
 import org.nrg.testing.DicomUtils;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
+import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.Project;
@@ -27,6 +28,7 @@ import static org.testng.AssertJUnit.assertEquals;
  * This whole test class is to check various types of deletes to confirm that they don't remove unintended data, such as in
  * XNAT-6852
  */
+@TestRequires(data = {TestData.SAMPLE_1})
 public class TestDeletionAccuracy extends BaseXnatRestTest {
 
     private static final int FILES_PER_SCAN = 176;

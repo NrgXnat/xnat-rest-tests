@@ -3,6 +3,7 @@ package org.nrg.testing.xnat.tests;
 import org.nrg.testing.annotations.DeprecatedIn;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.MergeBehavior;
+import org.nrg.xnat.importer.XnatArchivalRequest;
 import org.nrg.xnat.importer.importers.DefaultImporterRequest;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.pogo.Project;
@@ -133,12 +134,12 @@ public class TestArchive extends BaseXnatRestTest {
                 file(sessionZip)
         );
 
-        mainQueryBase().
-                queryParam("triggerPipelines", false).
-                queryParam("src", prearcUrl).
-                queryParam("overwrite", MergeBehavior.APPEND.toString()).
-                post(formatRestUrl("services/archive")).
-                then().assertThat().statusCode(200);
+        mainInterface().requestArchival(
+                new XnatArchivalRequest().
+                        triggerPipelines(false).
+                        src(prearcUrl).
+                        overwrite(MergeBehavior.APPEND)
+        );
 
         restDriver.validateResource(mainUser, session.getScans().get(0).getScanResources().get(0)); // should have been created by session importer
     }
@@ -156,16 +157,16 @@ public class TestArchive extends BaseXnatRestTest {
                         file(sessionZip)
         );
 
-        mainQueryBase().
-                queryParam("triggerPipelines", false).
-                queryParam("overwrite", MergeBehavior.APPEND.toString()).
-                queryParam("src", prearcUrl).
-                queryParam("xnat:mrSessionData/project", project.getId()).
-                queryParam("xnat:mrSessionData/subject_id", session.getSubject().getLabel()).
-                queryParam("xnat:mrSessionData/label", session.getLabel()).
-                queryParam("xnat:mrSessionData/scans/scan[0][@xsi:type=xnat:mrScanData]/type", session.getScans().get(0).getId()).
-                post(formatRestUrl("services/archive")).
-                then().assertThat().statusCode(200);
+        mainInterface().requestArchival(
+                new XnatArchivalRequest().
+                        triggerPipelines(false).
+                        overwrite(MergeBehavior.APPEND).
+                        src(prearcUrl).
+                        param("xnat:mrSessionData/project", project.getId()).
+                        param("xnat:mrSessionData/subject_id", session.getSubject().getLabel()).
+                        param("xnat:mrSessionData/label", session.getLabel()).
+                        param("xnat:mrSessionData/scans/scan[0][@xsi:type=xnat:mrScanData]/type", session.getScans().get(0).getId())
+        );
 
         restDriver.validateResource(mainUser, session.getScans().get(0).getScanResources().get(0)); // should have been created by session importer
     }
