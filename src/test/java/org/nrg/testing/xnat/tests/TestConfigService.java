@@ -1,48 +1,35 @@
 package org.nrg.testing.xnat.tests;
 
 import com.jayway.restassured.http.ContentType;
-import com.jayway.restassured.path.json.JsonPath;
-import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
-import org.nrg.testing.CommonStringUtils;
 import org.nrg.testing.FileIOUtils;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.HardDependency;
 import org.nrg.testing.annotations.SoftDependency;
+import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseXnatRestTest;
-import org.nrg.testing.xnat.Users;
 import org.nrg.xnat.enums.Accessibility;
+import org.nrg.xnat.interfaces.XnatInterface;
 import org.nrg.xnat.pogo.ConfigServiceObject;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.users.User;
-import org.nrg.xnat.rest.Credentials;
 import org.nrg.xnat.versions.Xnat_1_8_3;
 import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.File;
 import java.util.*;
 
-import static org.testng.AssertJUnit.assertEquals;
-import static org.testng.AssertJUnit.assertNotNull;
+import static org.testng.AssertJUnit.*;
 
 public class TestConfigService extends BaseXnatRestTest {
 
     private final List<Project> projects = new ArrayList<>();
-    private final Matcher<Integer> isOk = Matchers.isOneOf(200, 201);
     private final File dummy = getDataFile("dummy.txt");
     private final String dummyContents = FileIOUtils.readFile(dummy);
-    private String testConfigUrl;
     private final String TEST_TOOL = "test";
     private final String TEST_PATH = "newPath/goes/here";
-
-    @BeforeClass
-    public void initConfigUrl() {
-        testConfigUrl = formatRestUrl("config/test/newPath/goes/here");
-    }
 
     @AfterClass(alwaysRun = true)
     public void removeConfigServiceProjects() {
@@ -66,7 +53,7 @@ public class TestConfigService extends BaseXnatRestTest {
     public void testConfigServiceGetContents() {
         // read contents from previous test
 
-        assertEquals(dummyContents, mainQueryBase().queryParam("contents", true).get(testConfigUrl).body().asString());
+        assertEquals(dummyContents, mainInterface().readConfigToolPathContents(TEST_TOOL, TEST_PATH));
     }
 
     @Test
@@ -77,12 +64,8 @@ public class TestConfigService extends BaseXnatRestTest {
 
         final String newContents = readDataFile("test_asst_v1.xml");
 
-        mainAdminQueryBase().contentType(ContentType.TEXT).body(newContents).put(testConfigUrl).then().assertThat().statusCode(isOk);
-
-        final JsonPath configResponse = getConfigJsonPath(testConfigUrl);
-
-        assertEquals(1, configResponse.getList("").size());
-        assertEquals(newContents, configResponse.getString("get(0).contents"));
+        mainAdminInterface().putConfig(TEST_TOOL, TEST_PATH, newContents);
+        assertEquals(newContents, mainInterface().readConfigToolPath(TEST_TOOL, TEST_PATH).getContents());
     }
 
     @Test
@@ -107,34 +90,18 @@ public class TestConfigService extends BaseXnatRestTest {
 
         mainInterface().createProject(project);
 
-        final List<String> urlsToTest = new ArrayList<>();
+        for (Project proj : Arrays.asList(null, project)) {
+            final XnatInterface auth = interfaceFor(proj == null ? mainAdminUser : mainUser);
 
-        urlsToTest.add(formatRestUrl("config", toolName, path));
-        urlsToTest.add(formatRestUrl("projects", project.getId(), "config", toolName, path));
-
-        for (String url : urlsToTest) {
-            final User putUser = (url.contains("/projects/") ? mainUser : mainAdminUser);
-
-            Credentials.build(putUser).given().contentType(ContentType.TEXT).body(contents).put(url).then().assertThat().statusCode(isOk); // PUT
-
-            final JsonPath configResponse = getConfigJsonPath(url); // GET
-            assertEquals(1, configResponse.getList("").size());
-
-            Credentials.build(putUser).queryParam("status", "disabled").put(url).then().assertThat().statusCode(200); // DISABLE
-
-            final JsonPath responseAfterDisable = getConfigJsonPath(url); // GET
-            assertEquals(1, responseAfterDisable.getList("").size());
-            assertEquals("disabled", responseAfterDisable.getString("get(0).status"));
-
-            Credentials.build(putUser).queryParam("status", "badstring").put(url).then().assertThat().statusCode(400);
-
-            Credentials.build(putUser).queryParam("status", "enabled").put(url).then().assertThat().statusCode(200); // ENABLE
-
-            final JsonPath responseAfterEnable = getConfigJsonPath(url); // GET
-            assertEquals(1, responseAfterEnable.getList("").size());
-            assertEquals("enabled", responseAfterEnable.getString("get(0).status"));
-            // make sure the contents are equal to the originally uploaded config.
-            assertEquals(contents, responseAfterEnable.getString("get(0).contents"));
+            auth.putConfig(proj, toolName, path, contents);
+            auth.readConfigToolPath(proj, toolName, path);
+            auth.setConfigStatus(proj, toolName, path, ConfigServiceObject.Status.DISABLED);
+            assertEquals(ConfigServiceObject.Status.DISABLED, auth.readConfigToolPath(proj, toolName, path).getStatus());
+            auth.queryBase().queryParam("status", "badstring").put(auth.configServiceUrl(proj, toolName, path)).then().assertThat().statusCode(400);
+            auth.setConfigStatus(proj, toolName, path, ConfigServiceObject.Status.ENABLED);
+            final ConfigServiceObject finalObjectState = auth.readConfigToolPath(proj, toolName, path);
+            assertEquals(ConfigServiceObject.Status.ENABLED, finalObjectState.getStatus());
+            assertEquals(contents, finalObjectState.getContents());
         }
     }
 
@@ -163,31 +130,19 @@ public class TestConfigService extends BaseXnatRestTest {
 
         mainInterface().createProject(project);
 
-        final List<String> urlsToTest = new ArrayList<>();
-
-        urlsToTest.add(formatRestUrl("config", toolName, path));
-        urlsToTest.add(formatRestUrl("projects", project.getId(), "config", toolName, path));
-
-        for (String url : urlsToTest) {
+        for (Project proj : Arrays.asList(null, project)) {
             // If this is a project URL, then the standard user should be able to put. Otherwise, the admin has to put.
-            final User putUser = (url.contains("/projects/") ? mainUser : mainAdminUser);
+            final XnatInterface auth = interfaceFor(proj == null ? mainAdminUser : mainUser);
 
-            Credentials.build(putUser).given().contentType(ContentType.TEXT).body(v1).put(url).then().assertThat().statusCode(isOk); // PUT V1
-            Credentials.build(putUser).given().contentType(ContentType.TEXT).body(v2).put(url).then().assertThat().statusCode(isOk); // PUT V2
-
-            final JsonPath v2ConfigResponse = getConfigJsonPath(url);
-
-            assertEquals(1, v2ConfigResponse.getList("").size());
-
-            final String version2 = v2ConfigResponse.getString("get(0).version");
-
-            Credentials.build(putUser).given().contentType(ContentType.TEXT).body(v3).put(url).then().assertThat().statusCode(isOk); // PUT V3
-
-            final JsonPath laterV2ConfigResponse = mainInterface().jsonQuery().queryParam("version", version2).get(url).
-                    then().assertThat().statusCode(200).and().extract().jsonPath().setRoot("ResultSet.Result"); // GET V2
-
-            assertEquals(1, laterV2ConfigResponse.getList("").size());
-            assertEquals(v2, laterV2ConfigResponse.getString("get(0).contents"));
+            auth.putConfig(proj, toolName, path, v1);
+            auth.putConfig(proj, toolName, path, v2);
+            final ConfigServiceObject initialV2Retrieve = auth.readConfigToolPath(proj, toolName, path);
+            assertEquals(v2, initialV2Retrieve.getContents());
+            assertEquals(2, initialV2Retrieve.getVersion());
+            auth.putConfig(proj, toolName, path, v3);
+            final ConfigServiceObject historicalV2Retrieve = auth.readConfigToolPath(proj, toolName, path, 2);
+            assertEquals(v2, historicalV2Retrieve.getContents());
+            assertEquals(2, historicalV2Retrieve.getVersion());
         }
     }
 
@@ -216,100 +171,78 @@ public class TestConfigService extends BaseXnatRestTest {
 
         mainInterface().createProject(project);
 
-        final List<String> urlsToTest = new ArrayList<>();
-
-        urlsToTest.add(formatRestUrl("config"));
-        urlsToTest.add(formatRestUrl("projects", project.getId(), "config"));
-
-        for (String url : urlsToTest){
+        for (Project proj : Arrays.asList(null, project)) {
             // If this is a project URL, then the standard user should be able to put. Otherwise, the admin has to put.
-            final User putUser = (url.contains("/projects/") ? mainUser : mainAdminUser);
-            Credentials.build(putUser).contentType(ContentType.TEXT).body(contents).
-                    put(CommonStringUtils.formatUrl(url, "baselineTool", path)).then().assertThat().statusCode(isOk); // add a baseline tool
+            final XnatInterface auth = interfaceFor(proj == null ? mainAdminUser : mainUser);
 
-            final int baselineSize = mainInterface().jsonQuery().get(url).jsonPath().getList("ResultSet.Result").size(); // GET baseline tools
+            auth.putConfig(proj, "baselineTool", path, contents); // add a baseline tool
+            final int baselineSize = auth.listConfigTools(proj).size(); // GET baseline tools
 
-            Credentials.build(putUser).contentType(ContentType.TEXT).body(contents).
-                    put(CommonStringUtils.formatUrl(url, toolNameToAdd, path)).then().assertThat().statusCode(isOk); // add new random tool
-
-            final JsonPath updatedTools = mainInterface().jsonQuery().get(url).jsonPath().setRoot("ResultSet.Result"); // GET updated tools
-
-            assertEquals(baselineSize + 1, updatedTools.getList("").size());
-            assertNotNull(updatedTools.param("name", toolNameToAdd).get("find { it.tool == name } "));
+            auth.putConfig(proj, toolNameToAdd, path, contents); // add new random tool
+            final List<String> updatedTools = auth.listConfigTools(proj);
+            assertEquals(baselineSize + 1, updatedTools.size());
+            assertTrue(updatedTools.contains(toolNameToAdd));
         }
     }
 
     @Test
     public void testConfigServiceProjectLevelSecurityLegacy() {
         final Project project = registerProject();
-        final String path = UUID.randomUUID() + "/" + UUID.randomUUID();
-        final String urlToTest = formatRestUrl("projects", project.getId(), "config", path);
+        final String tool = UUID.randomUUID().toString();
+        final String path = UUID.randomUUID().toString();
         final String contents = dummyContents;
 
-        // create a new project as admin.
         mainAdminInterface().createProject(project);
-
-        // put a config in that project
-        mainAdminQueryBase().contentType(ContentType.TEXT).body(contents).put(urlToTest).then().assertThat().statusCode(isOk);
-
-        assertEquals(contents, mainAdminQueryBase().queryParam("contents", true).get(urlToTest).then().assertThat().statusCode(200).and().extract().response().asString());
-
-        mainQueryBase().queryParam("contents", true).get(urlToTest).then().assertThat().statusCode(404); // user can't see project, so 404 instead of 403
+        mainAdminInterface().putConfig(project, tool, path, contents);
+        assertEquals(contents, mainAdminInterface().readConfigToolPathContents(project, tool, path));
+        mainQueryBase().queryParam("contents", true).get(mainInterface().configServiceUrl(project, tool, path)).
+                then().assertThat().statusCode(404); // user can't see project, so 404 instead of 403
     }
 
-    @Test // TODO: QA-504 requires 3 users
+    @Test
+    @TestRequires(users = 3)
     public void testConfigServiceProjectLevelEditSecurity() {
         final Project project = registerProject().accessibility(Accessibility.PRIVATE);
-        final User member = Users.genericAccount();
-        final User collaborator = Users.genericAccount();
-        final User unauthorizedUser = Users.genericAccount();
-        mainAdminInterface().createUser(member);
-        mainAdminInterface().createUser(collaborator);
-        mainAdminInterface().createUser(unauthorizedUser);
+        final User member = getGenericUser();
+        final User collaborator = getGenericUser();
+        final User unauthorizedUser = getGenericUser();
         project.addOwner(mainUser);
         project.addMember(member);
         project.addCollaborator(collaborator);
         mainAdminInterface().createProject(project);
 
-        final String path = "tracers/tracers";
+        final String tool = "tracers";
+        final String path = "tracers";
         final String tracers = "PIB FDG";
-        final String tracerUrl = formatRestUrl("projects", project.getId(), "config", path);
 
-        mainAdminQueryBase().contentType(ContentType.TEXT).body(tracers).put(tracerUrl).then().assertThat().statusCode(isOk);
+        mainAdminInterface().putConfig(project, tool, path, tracers);
 
         TimeUtils.sleep(1000); // let cache update
 
-        for (User user : new User[]{member, collaborator, unauthorizedUser}) {
-            Credentials.build(user).contentType(ContentType.TEXT).body("junk string").put(tracerUrl).then().assertThat().statusCode(403);
+        for (User user : Arrays.asList(member, collaborator, unauthorizedUser)) {
+            interfaceFor(user).queryBase().contentType(ContentType.TEXT).body("junk string").put(mainInterface().configServiceUrl(project, tool, path)).
+                    then().assertThat().statusCode(403);
         }
 
-        final JsonPath configResponse = getConfigJsonPath(tracerUrl);
-
-        assertEquals(1, configResponse.getList("").size());
-        assertEquals(tracers, configResponse.getString("get(0).contents"));
+        assertEquals(tracers, mainInterface().readConfigToolPath(project, tool, path).getContents());
     }
 
     @Test // Verify XNAT-6870
     @AddedIn(Xnat_1_8_3.class)
     public void testConfigServiceCreateWithStatus() {
-        final String contents = "contents";
-        final String contentsValue = "ABC123";
-        final String newConfigPath = formatRestUrl("config", RandomHelper.randomID(10), RandomHelper.randomID(10));
-        final Map<String, String> jsonContent = new HashMap<>();
-        jsonContent.put("status", "enabled");
-        jsonContent.put(contents, contentsValue);
-        mainAdminQueryBase().contentType(ContentType.JSON).body(jsonContent).put(newConfigPath).then().assertThat().statusCode(isOk);
-        mainAdminQueryBase().get(newConfigPath).then().assertThat().statusCode(200).and().body("ResultSet.Result[0]." + contents, Matchers.equalTo(contentsValue));
+        final String tool = RandomHelper.randomID(10);
+        final String path = RandomHelper.randomID(10);
+        final ConfigServiceObject configServiceObject = new ConfigServiceObject();
+        configServiceObject.setContents("ABC123");
+        configServiceObject.setStatus(ConfigServiceObject.Status.ENABLED);
+        mainAdminInterface().putConfig(tool, path, configServiceObject);
+        assertEquals(configServiceObject.getContents(), mainAdminInterface().readConfigToolPath(tool, path).getContents());
     }
 
     private Project registerProject() {
         final Project project = new Project();
         projects.add(project);
         return project;
-    }
-
-    private JsonPath getConfigJsonPath(String url) {
-        return mainInterface().jsonQuery().get(url).then().assertThat().statusCode(200).and().extract().jsonPath().setRoot("ResultSet.Result");
     }
 
 }
