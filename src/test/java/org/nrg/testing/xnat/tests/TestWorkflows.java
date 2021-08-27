@@ -3,6 +3,7 @@ package org.nrg.testing.xnat.tests;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
+import org.nrg.xnat.pogo.Workflow;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.testng.AssertJUnit.assertEquals;
+import static org.nrg.xnat.pogo.Workflow.*;
 
 public class TestWorkflows extends BaseXnatRestTest {
 
@@ -49,7 +51,7 @@ public class TestWorkflows extends BaseXnatRestTest {
     }
 
     @Test
-    public void testWorkflowUserPrivileges() {
+    public void testWputorkflowUserPrivileges() {
         putWorkflow("Queued", true);
         mainCredentials().expect().statusCode(403).given().queryParams(workflowQueryParams("Complete", false)).when().put(formatRestUrl("workflows"));
     }
@@ -68,6 +70,18 @@ public class TestWorkflows extends BaseXnatRestTest {
         params.put("wrk:workflowData/launch_time", "2013-05-20%2013:51:25.089");
         params.put("wrk:workflowData/id", adminExp.getAccessionNumber());
         return params;
+    }
+
+    private Workflow generateWorkflow(String status, boolean includeDataType) {
+        final Workflow workflow = new Workflow();
+        if (includeDataType) {
+            workflow.setDataType(adminExp.getDataType().getXsiType());
+        }
+        workflow.setStatus(status);
+        workflow.setPipelineName("WORKFLOW_TEST");
+        workflow.setLaunchTime("2013-05-20 13:51:25.089");
+        workflow.setId(adminExp.getAccessionNumber());
+        return workflow;
     }
 
     private Map<String, Object> workflowGetParams() {

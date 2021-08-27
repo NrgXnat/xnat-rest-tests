@@ -1,12 +1,11 @@
 package org.nrg.testing.xnat.tests;
 
-import com.jayway.restassured.path.json.JsonPath;
-import org.hamcrest.Matchers;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.UIDList;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.MergeBehavior;
 import org.nrg.xnat.enums.PrearchiveCode;
+import org.nrg.xnat.enums.PrearchiveStatus;
 import org.nrg.xnat.importer.importers.DefaultImporterRequest;
 import org.nrg.xnat.importer.importers.GradualDicomRequest;
 import org.nrg.xnat.pogo.Project;
@@ -14,11 +13,16 @@ import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.SubjectAssessor;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
+import org.nrg.xnat.prearchive.PrearchiveResultFilter;
+import org.nrg.xnat.prearchive.SessionData;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.File;
+import java.util.List;
+
+import static org.testng.AssertJUnit.assertEquals;
 
 public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
@@ -81,23 +85,13 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
         mainAdminQueryBase().get(sessionUrl).then().assertThat().statusCode(200);
 
-        mainAdminQueryBase().
-                queryParam("src", sessionUri).
-                queryParam("newProject", project3.getId()).
-                queryParam("async", false).
-                post(formatRestUrl("services/prearchive/move")).
-                then().assertThat().statusCode(200);
+        mainAdminInterface().movePrearchiveSession(sessionUri, project3, false);
 
         TimeUtils.sleep(3000);
 
         final String newUri = getSessionPrearcUri(project3, subjectName, sessionName);
 
-        mainAdminQueryBase().
-                queryParam("src", newUri).
-                queryParam("newProject", project2.getId()).
-                queryParam("async", false).
-                post(formatRestUrl("services/prearchive/move")).
-                then().assertThat().statusCode(200);
+        mainAdminInterface().movePrearchiveSession(newUri, project2, false);
 
         TimeUtils.sleep(3000);
 
@@ -108,15 +102,15 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
     @Test
     public void testPrearchiveListing() {
-        final JsonPath project1Sessions = mainInterface().jsonQuery().get(formatRestUrl("prearchive/projects", project1.getId())).
-                then().assertThat().statusCode(200).and().extract().jsonPath().setRoot("ResultSet.Result");
-
+        final List<SessionData> projectPrearc = mainInterface().getPrearchiveEntriesForProject(project1);
         for (Subject subject : project1.getSubjects()) {
             for (SubjectAssessor session : subject.getExperiments()) {
-                final String sessionUri = project1Sessions.
-                                param("subj", subject.getLabel()).
-                                param("session", session.getLabel()).
-                                getString("find { it.subject == subj && it.name == session && it.status == 'READY' }.url");
+                final String sessionUri = new PrearchiveResultFilter().
+                        subject(subject.getLabel()).
+                        name(session.getLabel()).
+                        status(PrearchiveStatus.READY).
+                        findUniqueResult(projectPrearc).
+                        getUrl();
                 mainQueryBase().get(formatRestUrl(sessionUri)).then().assertThat().statusCode(200);
             }
         }
@@ -189,14 +183,14 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
                         file(sessionZip)
         );
 
-        final String uri = mainAdminInterface().jsonQuery().get(formatRestUrl("prearchive/projects/Unassigned")).
-                jsonPath().getString(String.format("ResultSet.Result.find { it.subject == '%s' && it.name == '%s' && it.status == 'READY' }.url", subject, session));
+        final String uri = new PrearchiveResultFilter().
+                subject(subject).
+                name(session).
+                status(PrearchiveStatus.READY).
+                findUniqueResult(mainAdminInterface().getUnassignedPrearchiveEntries()).
+                getUrl();
 
-        mainAdminQueryBase().
-                queryParam("src", uri).
-                queryParam("newProject", project3.getId()).
-                post(formatRestUrl("services/prearchive/move")).
-                then().assertThat().statusCode(200);
+        mainAdminInterface().movePrearchiveSession(uri, project3);
 
         TimeUtils.sleep(3000);
 
@@ -204,11 +198,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
         final String newUri = getSessionPrearcUri(project3, subject, session);
 
-        mainQueryBase().
-                queryParam("src", newUri).
-                queryParam("newProject", project2.getId()).
-                post(formatRestUrl("services/prearchive/move")).
-                then().assertThat().statusCode(200);
+        mainInterface().movePrearchiveSession(newUri, project2);
 
         TimeUtils.sleep(3000);
 
@@ -220,13 +210,15 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
     }
 
     private void assertSessionsInProjectPrearc(Project project, int numSessions) {
-        mainInterface().jsonQuery().get(formatRestUrl("prearchive/projects", project.getId())).
-                then().assertThat().body("ResultSet.Result", Matchers.hasSize(numSessions));
+        assertEquals(numSessions, mainInterface().getPrearchiveEntryCountForProject(project));
     }
 
     private String getSessionPrearcUri(Project project, String subjectLabel, String sessionLabel) {
-        return mainInterface().jsonQuery().get(formatRestUrl("prearchive/projects", project.getId())).
-                jsonPath().getString(String.format("ResultSet.Result.find { it.subject == '%s' && it.name == '%s' }.url", subjectLabel, sessionLabel));
+        return new PrearchiveResultFilter().
+                subject(subjectLabel).
+                name(sessionLabel).
+                findUniqueResult(mainInterface().getPrearchiveEntriesForProject(project)).
+                getUrl();
     }
 
 }

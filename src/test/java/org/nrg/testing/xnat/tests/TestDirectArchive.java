@@ -10,15 +10,15 @@ import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
-import org.nrg.xnat.helpers.prearchive.PrearcUtils;
+import org.nrg.xnat.enums.PrearchiveStatus;
 import org.nrg.xnat.importer.importers.DicomZipRequest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.dicom.DicomScpReceiver;
-import org.nrg.xnat.pogo.dicom.SessionData;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.SubjectAssessor;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
+import org.nrg.xnat.prearchive.SessionData;
 import org.nrg.xnat.versions.Xnat_1_8_3;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -115,7 +115,7 @@ public class TestDirectArchive extends BaseXnatRestTest {
 
         // verify session in prearchive in conflict state
         final StopWatch stopWatch = TimeUtils.launchStopWatch();
-        String status = null;
+        PrearchiveStatus status = null;
         do {
             TimeUtils.checkStopWatch(stopWatch, 300,
                     "Expected a prearchive conflict, but status is " + status);
@@ -123,7 +123,7 @@ public class TestDirectArchive extends BaseXnatRestTest {
             final List<SessionData> sessions = mainInterface().getPrearchiveEntriesForProjectWithSessionLabel(project, scpSession);
             assertEquals(1, sessions.size());
             status = sessions.get(0).getStatus();
-        } while (!status.equals(PrearcUtils.PrearcStatus.CONFLICT.toString()));
+        } while (status != PrearchiveStatus.CONFLICT);
     }
 
     @Test
@@ -140,7 +140,7 @@ public class TestDirectArchive extends BaseXnatRestTest {
         final List<SessionData> sessions = mainInterface().getPrearchiveEntriesForProjectWithSessionLabel(project, scpSession);
         assertEquals(1, sessions.size());
         final SessionData session = sessions.get(0);
-        assertEquals(PrearcUtils.PrearcStatus.ERROR.toString(), session.getStatus());
+        assertEquals(PrearchiveStatus.ERROR, session.getStatus());
 
         // verify prearchive error message about direct archive failure
         final List<String> logs = mainInterface().getPrearchiveLogMessages(project, session);
