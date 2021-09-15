@@ -31,7 +31,9 @@ import static org.junit.Assert.assertNull;
 @AddedIn(Xnat_1_8_2.class)
 public class TestContainerOrchestration extends BaseXnatRestTest {
     private static final Image DEBUG_IMG = new Image("xnat", "debug-command", "latest");
+    private static final String DEBUG_WRAPPER_NAME = "debug-session";
     private static final Image ALT_IMG = new Image("xnat", "generate-test-qc-assessor", "latest");
+    private static final String ALT_WRAPPER_NAME = "generate-test-qc-assessor-from-session";
     private static final String IMAGES_WITH_COMMANDS_JSON_PATH = "findAll { it.commands.size() > 0 }";
 
     private Project project;
@@ -84,140 +86,124 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
 
     @Test
     public void testOrchestrationSession() {
-        Orchestration o = setupOrchestration();
-        setProjectOrchestration(o);
-        final int workflowId = mainInterface().launchContainer(project, wrapperSummaries.get(0), session.getUri());
+        setProjectOrchestration(setupOrchestration());
+        final int workflowId = mainInterface().launchContainer(project, findSummary(DEBUG_WRAPPER_NAME), session.getUri());
         mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
-        final int nextWorkflowId = mainInterface().determineWorkflowId(DataType.MR_SESSION, session.getAccessionNumber(),
-                wrapperSummaries.get(1));
+        final int nextWorkflowId = mainInterface().determineWorkflowId(DataType.MR_SESSION, session.getAccessionNumber(), findSummary(ALT_WRAPPER_NAME));
         mainInterface().waitForWorkflowComplete(nextWorkflowId, 60 * 5);
     }
 
     @Test
-    public void testOrchestrationSessionFailure() throws Exception {
+    public void testOrchestrationSessionFailure() {
         // Setup orchestration ensuring debug-session is first
-        List<Long> wrapperIds = new ArrayList<>();
-        wrapperIds.add(wrapperSummaries.stream().filter(s -> s.getWrapperName().equals("debug-session")).findFirst()
-                .orElseThrow(Exception::new).getWrapperId());
-        wrapperIds.addAll(wrapperSummaries.stream().map(CommandSummaryForContext::getWrapperId)
-                .filter(wrapperId -> !wrapperIds.contains(wrapperId)).collect(Collectors.toList()));
-        Orchestration orchestration = mainAdminInterface().createOrUpdateOrchestration(new Orchestration("test", wrapperIds));
-        setProjectOrchestration(orchestration);
+        setProjectOrchestration(setupOrchestration());
 
         // Ensure the workflow fails
         final Map<String, String> queryParams = new HashMap<>();
         queryParams.put("command", "exit 1");
 
-        final int workflowId = mainInterface().launchContainer(project, wrapperSummaries.get(0), session.getUri(), queryParams);
+        final int workflowId = mainInterface().launchContainer(project, findSummary(DEBUG_WRAPPER_NAME), session.getUri(), queryParams);
         mainInterface().waitForWorkflowFailed(workflowId, 60 * 5);
 
         // verify next command doesn't run
-        mainInterface().verifyNoWorkflow(session, wrapperSummaries.get(1).getWrapperName());
+        mainInterface().verifyNoWorkflow(session, ALT_WRAPPER_NAME);
     }
 
     @Test
     public void testOrchestrationSessionReverseOrder() {
-        Orchestration orchestration = setupOrchestration();
+        final Orchestration orchestration = setupOrchestration();
         setProjectOrchestration(orchestration);
         Collections.reverse(orchestration.getWrapperIds());
         mainAdminInterface().createOrUpdateOrchestration(orchestration);
 
-        final int workflowId = mainInterface().launchContainer(project, wrapperSummaries.get(wrapperSummaries.size()-1),
-                session.getUri());
+        final int workflowId = mainInterface().launchContainer(project, findSummary(ALT_WRAPPER_NAME), session.getUri());
         mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
-        final int nextWorkflowId = mainInterface().determineWorkflowId(DataType.MR_SESSION, session.getAccessionNumber(),
-                wrapperSummaries.get(0));
+        final int nextWorkflowId = mainInterface().determineWorkflowId(DataType.MR_SESSION, session.getAccessionNumber(), findSummary(DEBUG_WRAPPER_NAME));
         mainInterface().waitForWorkflowComplete(nextWorkflowId, 60 * 5);
     }
 
     @Test
     public void testOrchestrationDisable() {
-        Orchestration orchestration = setupOrchestration();
+        final Orchestration orchestration = setupOrchestration();
         setProjectOrchestration(orchestration);
         mainAdminInterface().enableOrDisableOrchestration(orchestration, false);
 
-        OrchestrationProject op = mainInterface().getProjectOrchestrationConfig(project);
-        assertNull(op.getSelectedOrchestrationId());
+        assertNull(mainInterface().getProjectOrchestrationConfig(project).getSelectedOrchestrationId());
 
-        final int workflowId = mainInterface().launchContainer(project, wrapperSummaries.get(0), session.getUri());
+        final int workflowId = mainInterface().launchContainer(project, findSummary(DEBUG_WRAPPER_NAME), session.getUri());
         mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
 
         // verify next command doesn't run
-        mainInterface().verifyNoWorkflow(session, wrapperSummaries.get(1).getWrapperName());
+        mainInterface().verifyNoWorkflow(session, ALT_WRAPPER_NAME);
     }
 
     @Test
     public void testOrchestrationDisableThruCommandProject() {
-        Orchestration orchestration = setupOrchestration();
-        setProjectOrchestration(orchestration);
-        mainInterface().setWrapperStatusOnProject(wrapperSummaries.get(0), project, false);
+        setProjectOrchestration(setupOrchestration());
+        mainInterface().setWrapperStatusOnProject(findSummary(DEBUG_WRAPPER_NAME), project, false);
 
-        OrchestrationProject op = mainInterface().getProjectOrchestrationConfig(project);
-        assertNull(op.getSelectedOrchestrationId());
+        assertNull(mainInterface().getProjectOrchestrationConfig(project).getSelectedOrchestrationId());
 
-        final int workflowId = mainInterface().launchContainer(project, wrapperSummaries.get(0), session.getUri());
+        final int workflowId = mainInterface().launchContainer(project, findSummary(DEBUG_WRAPPER_NAME), session.getUri());
         mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
 
         // verify next command doesn't run
-        mainInterface().verifyNoWorkflow(session, wrapperSummaries.get(1).getWrapperName());
+        mainInterface().verifyNoWorkflow(session, ALT_WRAPPER_NAME);
     }
 
     @Test
     public void testOrchestrationDisableThruCommandSite() {
-        Orchestration orchestration = setupOrchestration();
-        setProjectOrchestration(orchestration);
-        mainAdminInterface().setWrapperStatusOnSite(wrapperSummaries.get(0), project, false);
+        setProjectOrchestration(setupOrchestration());
+        mainAdminInterface().setWrapperStatusOnSite(findSummary(DEBUG_WRAPPER_NAME), project, false);
 
-        OrchestrationProject op = mainInterface().getProjectOrchestrationConfig(project);
-        assertNull(op.getSelectedOrchestrationId());
+        assertNull(mainInterface().getProjectOrchestrationConfig(project).getSelectedOrchestrationId());
 
-        final int workflowId = mainInterface().launchContainer(project, wrapperSummaries.get(0), session.getUri());
+        final int workflowId = mainInterface().launchContainer(project, findSummary(DEBUG_WRAPPER_NAME), session.getUri());
         mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
 
         // verify next command doesn't run
-        mainInterface().verifyNoWorkflow(session, wrapperSummaries.get(1).getWrapperName());
+        mainInterface().verifyNoWorkflow(session, ALT_WRAPPER_NAME);
     }
 
     @Test
     public void testOrchestrationDelete() {
-        Orchestration orchestration = setupOrchestration();
+        final Orchestration orchestration = setupOrchestration();
         setProjectOrchestration(orchestration);
         mainAdminInterface().deleteOrchestration(orchestration);
 
-        final int workflowId = mainInterface().launchContainer(project, wrapperSummaries.get(0), session.getUri());
+        final int workflowId = mainInterface().launchContainer(project, findSummary(DEBUG_WRAPPER_NAME), session.getUri());
         mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
 
         // verify next command doesn't run
-        mainInterface().verifyNoWorkflow(session, wrapperSummaries.get(1).getWrapperName());
+        mainInterface().verifyNoWorkflow(session, ALT_WRAPPER_NAME);
     }
 
     @Test
     public void testOrchestrationNotSetupOnProject() {
         setupOrchestration();
 
-        final int workflowId = mainInterface().launchContainer(project, wrapperSummaries.get(0), session.getUri());
+        final int workflowId = mainInterface().launchContainer(project, findSummary(DEBUG_WRAPPER_NAME), session.getUri());
         mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
 
         // verify next command doesn't run
-        mainInterface().verifyNoWorkflow(session, wrapperSummaries.get(1).getWrapperName());
+        mainInterface().verifyNoWorkflow(session, ALT_WRAPPER_NAME);
     }
 
     @Test
     public void testOrchestrationRemovedFromProject() {
-        Orchestration orchestration = setupOrchestration();
-        setProjectOrchestration(orchestration);
+        setProjectOrchestration(setupOrchestration());
         removeProjectOrchestration();
 
-        final int workflowId = mainInterface().launchContainer(project, wrapperSummaries.get(0), session.getUri());
+        final int workflowId = mainInterface().launchContainer(project, findSummary(DEBUG_WRAPPER_NAME), session.getUri());
         mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
 
         // verify next command doesn't run
-        mainInterface().verifyNoWorkflow(session, wrapperSummaries.get(1).getWrapperName());
+        mainInterface().verifyNoWorkflow(session, ALT_WRAPPER_NAME);
     }
 
     @Test
     public void testProjectOrchestrationConfig() {
-        Orchestration o = setupOrchestration();
+        final Orchestration o = setupOrchestration();
         OrchestrationProject op = mainInterface().getProjectOrchestrationConfig(project);
         assertEquals(op.getAvailableOrchestrations().size(), 1);
         assertEquals(o, op.getAvailableOrchestrations().get(0));
@@ -244,21 +230,20 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
         mainInterface().getAccessionNumber(session2);
         final List<ImagingSession> sessions = Arrays.asList(session, session2);
 
-        Orchestration orchestration = setupOrchestration();
-        setProjectOrchestration(orchestration);
+        setProjectOrchestration(setupOrchestration());
 
-        mainInterface().bulkLaunchContainers(project, wrapperSummaries.get(0),
+        mainInterface().bulkLaunchContainers(project, findSummary(DEBUG_WRAPPER_NAME),
                 sessions.stream().map(SubjectAssessor::getUri).collect(Collectors.toList()));
 
         // Determine workflow ID, wait for complete
         for (ImagingSession ses : sessions) {
-            final int workflowId = mainInterface().determineWorkflowId(DataType.MR_SESSION, ses.getAccessionNumber(), wrapperSummaries.get(0));
+            final int workflowId = mainInterface().determineWorkflowId(DataType.MR_SESSION, ses.getAccessionNumber(), findSummary(DEBUG_WRAPPER_NAME));
             mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
         }
 
         // Determine workflow ID for next command, wait for complete
         for (ImagingSession ses : sessions) {
-            final int workflowId = mainInterface().determineWorkflowId(DataType.MR_SESSION, ses.getAccessionNumber(), wrapperSummaries.get(1));
+            final int workflowId = mainInterface().determineWorkflowId(DataType.MR_SESSION, ses.getAccessionNumber(), findSummary(ALT_WRAPPER_NAME));
             mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
         }
     }
@@ -271,10 +256,15 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
     }
 
     private Orchestration setupOrchestration() {
-        List<Long> wrapperIds = wrapperSummaries.stream().map(CommandSummaryForContext::getWrapperId)
-                .collect(Collectors.toList());
-        Orchestration orchestration = new Orchestration("test", wrapperIds);
-        return mainAdminInterface().createOrUpdateOrchestration(orchestration);
+        return setupOrchestration(DEBUG_WRAPPER_NAME, ALT_WRAPPER_NAME);
+    }
+
+    private Orchestration setupOrchestration(String... wrapperNames) {
+        return mainAdminInterface().createOrUpdateOrchestration(
+                new Orchestration("test",
+                        Arrays.stream(wrapperNames).map(name -> findSummary(name).getWrapperId()).collect(Collectors.toList())
+                )
+        );
     }
 
     private void setProjectOrchestration(Orchestration orchestration) {
@@ -284,4 +274,9 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
     private void removeProjectOrchestration() {
         mainInterface().removeProjectOrchestration(project);
     }
+
+    private CommandSummaryForContext findSummary(String wrapperName) {
+        return wrapperSummaries.stream().filter(summary -> wrapperName.equals(summary.getWrapperName())).findFirst().orElse(null);
+    }
+
 }
