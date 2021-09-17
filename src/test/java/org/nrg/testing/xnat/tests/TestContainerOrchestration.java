@@ -201,6 +201,16 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
         mainInterface().verifyNoWorkflow(session, ALT_WRAPPER_NAME);
     }
 
+    @Test // tests CS-663
+    public void testOrchestrationOverwrite() {
+        setProjectOrchestration(setupOrchestration());
+        setProjectOrchestration(setupOrchestrationWithName("second-orchestration", ALT_WRAPPER_NAME, DEBUG_WRAPPER_NAME));
+        final int workflowId = mainInterface().launchContainer(project, findSummary(ALT_WRAPPER_NAME), session.getUri());
+        mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
+        final int nextWorkflowId = mainInterface().determineWorkflowId(DataType.MR_SESSION, session.getAccessionNumber(), findSummary(DEBUG_WRAPPER_NAME));
+        mainInterface().waitForWorkflowComplete(nextWorkflowId, 60 * 5);
+    }
+
     @Test
     public void testProjectOrchestrationConfig() {
         final Orchestration o = setupOrchestration();
@@ -260,8 +270,12 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
     }
 
     private Orchestration setupOrchestration(String... wrapperNames) {
+        return setupOrchestrationWithName("test", wrapperNames);
+    }
+
+    private Orchestration setupOrchestrationWithName(String orchestrationName, String... wrapperNames) {
         return mainAdminInterface().createOrUpdateOrchestration(
-                new Orchestration("test",
+                new Orchestration(orchestrationName,
                         Arrays.stream(wrapperNames).map(name -> findSummary(name).getWrapperId()).collect(Collectors.toList())
                 )
         );
