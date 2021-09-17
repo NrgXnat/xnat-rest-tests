@@ -1,7 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
-import com.jayway.restassured.http.ContentType;
-import com.jayway.restassured.response.Response;
+import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 import org.hamcrest.Matchers;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.Gender;

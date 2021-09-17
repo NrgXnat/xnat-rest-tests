@@ -1,8 +1,8 @@
 package org.nrg.testing.xnat.tests;
 
 import com.google.common.collect.Sets;
-import com.jayway.restassured.RestAssured;
-import com.jayway.restassured.response.Response;
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
 import org.nrg.testing.TestNgUtils;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;

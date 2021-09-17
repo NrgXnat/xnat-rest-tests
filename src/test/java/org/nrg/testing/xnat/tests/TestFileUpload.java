@@ -1,6 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
-import com.jayway.restassured.response.Response;
+import io.restassured.response.Response;
 import org.nrg.testing.*;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.xnat.BaseXnatRestTest;

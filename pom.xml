@@ -73,6 +73,12 @@
             <groupId>org.nrg</groupId>
             <artifactId>nrg_test</artifactId>
             <version>${nrg_test.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.codehaus.groovy</groupId>
+                    <artifactId>groovy-all</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>

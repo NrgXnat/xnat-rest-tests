@@ -1,6 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
-import com.jayway.restassured.specification.RequestSpecification;
+import io.restassured.specification.RequestSpecification;
 import org.apache.log4j.Logger;
 import org.dcm4che2.data.Tag;
 import org.dcm4che3.data.Attributes;

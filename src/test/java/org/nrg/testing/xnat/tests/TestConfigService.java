@@ -1,6 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
-import com.jayway.restassured.http.ContentType;
+import io.restassured.http.ContentType;
 import org.nrg.testing.FileIOUtils;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;

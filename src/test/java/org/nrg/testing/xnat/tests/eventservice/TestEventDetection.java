@@ -1,7 +1,7 @@
 package org.nrg.testing.xnat.tests.eventservice;
 
 import com.google.common.collect.Sets;
-import com.jayway.restassured.http.ContentType;
+import io.restassured.http.ContentType;
 import org.apache.commons.io.FileUtils;
 import org.dcm4che3.data.Tag;
 import org.nrg.testing.FileIOUtils;
@@ -79,14 +79,14 @@ public class TestEventDetection extends BaseEventServiceTest {
     private final Subscription projectAssetCreated = buildLoggingEvent(Event.PROJECT_ASSET_TYPE, EventStatus.CREATED);
     private final Subscription imageAssessorCreated = buildLoggingEvent(Event.IMAGE_ASSESSOR_TYPE, EventStatus.CREATED);
     private final Subscription imageAssessorUpdated = buildLoggingEvent(Event.IMAGE_ASSESSOR_TYPE, EventStatus.UPDATED);
-    private final Project restProject = new Project().prearchiveCode(PrearchiveCode.MANUAL);
-    private final Subject restSubject = new Subject(restProject);
-    private final MRSession restSession = new MRSession(restProject, restSubject);
-    private final SubjectAssessor restSubjectAssessor = new NonimagingAssessor(restProject, restSubject, RandomHelper.randomID()).dataType(subjectAssessorDataType);
-    private final Project turbineProject = new Project();
-    private final Project restXmlProject = new Project();
-    private final Project restXmlPostProject = new Project();
-    private final Project xmlUploadProject = new Project();
+    private final Project restProject = new Project(appendRandom("REST")).prearchiveCode(PrearchiveCode.MANUAL);
+    private final Subject restSubject = new Subject(restProject, appendRandom("REST"));
+    private final MRSession restSession = new MRSession(restProject, restSubject, appendRandom("REST"));
+    private final SubjectAssessor restSubjectAssessor = new NonimagingAssessor(restProject, restSubject, appendRandom("REST")).dataType(subjectAssessorDataType);
+    private final Project turbineProject = new Project(appendRandom("TURBINE"));
+    private final Project restXmlProject = new Project(appendRandom("REST_XML"));
+    private final Project restXmlPostProject = new Project(appendRandom("REST_XML_POST"));
+    private final Project xmlUploadProject = new Project(appendRandom("XML_UPLOAD"));
     private Subject aaSubject, turbineSubject, xmlUploadSubject, importerSubject, restXmlSubject, petMrSubject;
     private MRSession aaSession, importerSession, splitMr, turbineSession, xmlUploadSession, restXmlSession;
     private PETSession splitPet;
@@ -114,13 +114,13 @@ public class TestEventDetection extends BaseEventServiceTest {
         projectsToCleanup.add(turbineProject);
         mainInterface().setProjectPetMrSetting(turbineProject, PetMrProcessingSetting.SPLIT);
 
-        aaSubject = new Subject(turbineProject);
-        aaSession = new MRSession(turbineProject, aaSubject);
+        aaSubject = new Subject(turbineProject, appendRandom("AA"));
+        aaSession = new MRSession(turbineProject, aaSubject, appendRandom("AA"));
         final Map<Integer, String> aaHeaders = new HashMap<>();
         aaHeaders.put(Tag.PatientName, aaSubject.getLabel());
         aaHeaders.put(Tag.PatientID, aaSession.getLabel());
         new XnatCStore().data(TestData.SAMPLE_1).overwrittenHeaders(aaHeaders).sendDICOMToProject(turbineProject);
-        final String splitSubjectBase = RandomHelper.randomID();
+        final String splitSubjectBase = appendRandom("SPLIT");
         petMrSubject = new Subject(turbineProject, splitSubjectBase);
         final Map<Integer, String> petMrHeaders = new HashMap<>();
         petMrHeaders.put(Tag.PatientName, splitSubjectBase);
@@ -335,6 +335,10 @@ public class TestEventDetection extends BaseEventServiceTest {
         params.put(baseXmlPath + "/project", project.getId());
         params.put(baseXmlPath + "/type", scan.getType());
         params.put(baseXmlPath + "/quality", "usable");
+    }
+
+    private String appendRandom(String baseName) {
+        return baseName + RandomHelper.randomID(10);
     }
 
 }

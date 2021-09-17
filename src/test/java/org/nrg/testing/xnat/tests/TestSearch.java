@@ -1,6 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
-import com.jayway.restassured.path.json.JsonPath;
+import io.restassured.path.json.JsonPath;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.testng.annotations.Test;
 

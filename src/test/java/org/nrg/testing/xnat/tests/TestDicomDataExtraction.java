@@ -1,7 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.restassured.path.json.JsonPath;
+import io.restassured.path.json.JsonPath;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.util.RandomHelper;

@@ -1,8 +1,8 @@
 package org.nrg.testing.xnat.tests;
 
-import com.jayway.restassured.http.ContentType;
-import com.jayway.restassured.internal.http.Method;
-import com.jayway.restassured.response.ValidatableResponse;
+import io.restassured.http.ContentType;
+import io.restassured.http.Method;
+import io.restassured.response.ValidatableResponse;
 import org.nrg.testing.annotations.TestedApiSpec;
 import org.nrg.testing.matchers.ValidSchemaMatcher;
 import org.nrg.testing.annotations.DisallowXnatVersion;

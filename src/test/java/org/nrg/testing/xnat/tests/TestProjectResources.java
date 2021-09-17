@@ -25,7 +25,7 @@ public class TestProjectResources extends BaseXnatRestTest {
 
     @Test
     public void testProjectList() {
-        mainCredentials().given().queryParam("format", "html").get(formatRestUrl("projects")).then().statusCode(200);
+        mainQueryBase().given().queryParam("format", "html").get(formatRestUrl("projects")).then().statusCode(200);
     }
 
     @Test
@@ -34,12 +34,12 @@ public class TestProjectResources extends BaseXnatRestTest {
         final String alias = project.getId() + "_ALIAS";
         project.addAlias(alias);
 
-        mainCredentials().given().queryParam("format", "xml").queryParam("req_format", "qs").queryParam("alias", alias).
+        mainQueryBase().queryParam("format", "xml").queryParam("req_format", "qs").queryParam("alias", alias).
                 put(mainInterface().projectUrl(project)).
                 then().statusCode(200);
 
-        mainCredentials().given().queryParam("format", "xml").get(mainInterface().projectUrl(project)).then().statusCode(200);
-        mainCredentials().given().queryParam("format", "xml").get(mainInterface().projectUrl(new Project(alias))).then().statusCode(200);
+        mainQueryBase().queryParam("format", "xml").get(mainInterface().projectUrl(project)).then().statusCode(200);
+        mainQueryBase().queryParam("format", "xml").get(mainInterface().projectUrl(new Project(alias))).then().statusCode(200);
     }
 
     @Test
@@ -59,7 +59,7 @@ public class TestProjectResources extends BaseXnatRestTest {
         compare(project, updated);
         mainInterface().deleteProject(project);
         TimeUtils.sleep(1000); // cache update
-        mainCredentials().given().queryParam("format", "xml").get(mainInterface().projectUrl(project)).then().statusCode(404); // confirm deleted
+        mainQueryBase().queryParam("format", "xml").get(mainInterface().projectUrl(project)).then().statusCode(404); // confirm deleted
     }
 
     private Project registerProject() {
@@ -69,7 +69,7 @@ public class TestProjectResources extends BaseXnatRestTest {
     }
 
     private void compare(Project project, File expectedProjectXml) {
-        final File actualXml = restDriver.saveBinaryResponseToFile(mainCredentials().given().queryParam("format", "xml").get(mainInterface().projectUrl(project)));
+        final File actualXml = restDriver.saveBinaryResponseToFile(mainQueryBase().queryParam("format", "xml").get(mainInterface().projectUrl(project)));
 
         LegacyComparison.compareBeanXML(actualXml, expectedProjectXml,
                 Collections.singletonMap(XnatProjectdataBean.class, Arrays.asList("ID", "studyProtocol", "secondary_ID", "active")));

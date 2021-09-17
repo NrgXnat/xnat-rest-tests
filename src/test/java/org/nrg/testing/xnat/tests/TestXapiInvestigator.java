@@ -1,7 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
-import com.jayway.restassured.http.ContentType;
-import com.jayway.restassured.internal.http.Method;
+import io.restassured.http.ContentType;
+import io.restassured.http.Method;
 import org.hamcrest.Matchers;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.TestedApiSpec;

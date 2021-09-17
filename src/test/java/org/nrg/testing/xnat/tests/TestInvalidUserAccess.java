@@ -48,46 +48,47 @@ public class TestInvalidUserAccess extends BaseXnatRestTest {
     public void testProtectedXMLCRUD() {
         mainAdminInterface().updateAccessibility(testProject, Accessibility.PROTECTED);
         restDriver.assertProjectAccessibility(mainAdminUser, testProject, Accessibility.PROTECTED);
-
-        restDriver.invalidCredentials().given().queryParam("format", "xml").expect().statusCode(401).get(mainInterface().accessibilityRestUrl(testProject));
+        
+        restDriver.invalidCredentials().queryParam("format", "xml").get(mainInterface().accessibilityRestUrl(testProject)).then().assertThat().statusCode(401);
         restDriver.assertProjectAccessibility(mainUser, testProject, Accessibility.PROTECTED); // foreign user should be able to read protected project's accessibility
 
-        restDriver.invalidCredentials().given().queryParam("format", "xml").expect().statusCode(401).
+        restDriver.invalidCredentials().queryParam("format", "xml").
                 put(mainInterface().accessibilityRestUrl(testProject, Accessibility.PUBLIC)).then().assertThat()
-                .body(Matchers.anyOf(Matchers.containsString("This request requires HTTP authentication."),
-                        Matchers.containsString("The request has not been applied because it lacks valid authentication credentials for the target resource")));
+                .body(Matchers.anyOf(
+                        Matchers.containsString("This request requires HTTP authentication."),
+                        Matchers.containsString("The request has not been applied because it lacks valid authentication credentials for the target resource")
+                )).assertThat().statusCode(401);
         
-        mainCredentials().given().queryParam("format", "xml").expect().statusCode(403).
-                put(mainInterface().accessibilityRestUrl(testProject, Accessibility.PUBLIC));
+        mainQueryBase().queryParam("format", "xml").put(mainInterface().accessibilityRestUrl(testProject, Accessibility.PUBLIC)).then().assertThat().statusCode(403);
         restDriver.assertProjectAccessibility(mainAdminUser, testProject, Accessibility.PROTECTED);
 
-        restDriver.invalidCredentials().given().queryParam("format", "xml").queryParam("removeFiles", true).expect().statusCode(401).
-                delete(mainInterface().projectUrl(testProject));
-        mainCredentials().given().queryParam("format", "xml").queryParam("removeFiles", true).expect().statusCode(403).
-                delete(mainInterface().projectUrl(testProject));
+        restDriver.invalidCredentials().queryParam("format", "xml").queryParam("removeFiles", true).
+                delete(mainInterface().projectUrl(testProject)).then().assertThat().statusCode(401);
+        mainQueryBase().queryParam("format", "xml").queryParam("removeFiles", true).
+                delete(mainInterface().projectUrl(testProject)).then().assertThat().statusCode(403);
 
         final String alias = RandomHelper.randomID();
-        restDriver.invalidCredentials().given().queryParam("format", "xml").queryParam("alias", alias).expect().statusCode(401).
-                put(formatRestUrl("projects", testProject.getId()));
-        mainCredentials().given().queryParam("format", "xml").queryParam("alias", alias).expect().statusCode(403).
-                put(formatRestUrl("projects", testProject.getId()));
+        restDriver.invalidCredentials().queryParam("format", "xml").queryParam("alias", alias).
+                put(formatRestUrl("projects", testProject.getId())).then().assertThat().statusCode(401);
+        mainQueryBase().queryParam("format", "xml").queryParam("alias", alias).
+                put(formatRestUrl("projects", testProject.getId())).then().assertThat().statusCode(403);
 
         final String subjectXml = readDataFile("iu_subject_v1.xml");
-        restDriver.invalidCredentials().given().queryParam("format", "xml").body(subjectXml).expect().statusCode(401).
-                post(formatRestUrl("projects", testProject.getId(), "subjects"));
-        restDriver.invalidCredentials().given().queryParam("format", "xml").body(subjectXml).expect().statusCode(401).
-                put(formatRestUrl("projects", testProject.getId(), "subjects", "2"));
-        mainCredentials().given().queryParam("format", "xml").body(subjectXml).expect().statusCode(403).
-                post(formatRestUrl("projects", testProject.getId(), "subjects"));
-        mainCredentials().given().queryParam("format", "xml").body(subjectXml).expect().statusCode(403).
-                put(formatRestUrl("projects", testProject.getId(), "subjects", "2"));
+        restDriver.invalidCredentials().given().queryParam("format", "xml").body(subjectXml).
+                post(formatRestUrl("projects", testProject.getId(), "subjects")).then().assertThat().statusCode(401);
+        restDriver.invalidCredentials().given().queryParam("format", "xml").body(subjectXml).
+                put(formatRestUrl("projects", testProject.getId(), "subjects", "2")).then().assertThat().statusCode(401);
+        mainQueryBase().queryParam("format", "xml").body(subjectXml).
+                post(formatRestUrl("projects", testProject.getId(), "subjects")).then().assertThat().statusCode(403);
+        mainQueryBase().queryParam("format", "xml").body(subjectXml).
+                put(formatRestUrl("projects", testProject.getId(), "subjects", "2")).then().assertThat().statusCode(403);
 
         final Map<String, String> queryParams = new HashMap<>();
         queryParams.put("format", "xml");
         queryParams.put("req_format", "qs");
         queryParams.put("gender", "female");
-        restDriver.invalidCredentials().given().queryParams(queryParams).expect().statusCode(401).put(formatRestUrl("projects", testProject.getId(), "subjects", "1"));
-        mainCredentials().given().queryParams(queryParams).expect().statusCode(403).put(formatRestUrl("projects", testProject.getId(), "subjects", "1"));
+        restDriver.invalidCredentials().queryParams(queryParams).put(formatRestUrl("projects", testProject.getId(), "subjects", "1")).then().assertThat().statusCode(401);
+        mainQueryBase().queryParams(queryParams).put(formatRestUrl("projects", testProject.getId(), "subjects", "1")).then().assertThat().statusCode(403);
     }
 
 }
