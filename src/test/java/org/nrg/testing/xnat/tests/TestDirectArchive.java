@@ -9,11 +9,14 @@ import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.enums.TestData;
+import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.xnat.enums.PrearchiveStatus;
 import org.nrg.xnat.importer.importers.DicomZipRequest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
+import org.nrg.xnat.pogo.dicom.DicomObjectIdentifier;
 import org.nrg.xnat.pogo.dicom.DicomScpReceiver;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.SubjectAssessor;
@@ -43,7 +46,7 @@ public class TestDirectArchive extends BaseXnatRestTest {
     final ImagingSession apiSession = new MRSession(project, apiSubject, "SPP_0x220790_MR2");
     final Subject scpSubject = new Subject(project, "Sample_Patient");
     final ImagingSession scpSession = new MRSession(project, scpSubject, "Sample_ID");
-    DicomScpReceiver directArchiveReceiver;
+    final DicomScpReceiver directArchiveReceiver = new DicomScpReceiver(RandomHelper.randomID(), Settings.DICOM_PORT, true, Settings.DICOM_HOST, DicomObjectIdentifier.DEFAULT.getId(), false, true);
     private static final Logger LOGGER = Logger.getLogger(TestDirectArchive.class);
 
     @BeforeClass
@@ -52,9 +55,7 @@ public class TestDirectArchive extends BaseXnatRestTest {
         mainAdminInterface().disableSiteAnonScript();
         mainAdminInterface().setSessionXmlRebuilderTimes(1, 10000);
 
-        directArchiveReceiver = mainAdminInterface().getDefaultDicomSCPInstance();
-        directArchiveReceiver.directArchive(true);
-        mainAdminInterface().updateDefaultDicomSCPInstance(directArchiveReceiver);
+        mainAdminInterface().createDicomScpReceiver(directArchiveReceiver);
     }
 
     @BeforeMethod(alwaysRun = true) // clear out prearchive/archive for each test
@@ -79,8 +80,7 @@ public class TestDirectArchive extends BaseXnatRestTest {
     @AfterClass(alwaysRun = true)
     public void tearDown() {
         restDriver.deleteProjectSilently(mainAdminUser, project);
-        directArchiveReceiver.directArchive(false);
-        mainAdminInterface().updateDefaultDicomSCPInstance(directArchiveReceiver);
+        mainAdminInterface().deleteDicomScpReceiver(directArchiveReceiver);
     }
 
     @Test
@@ -172,7 +172,7 @@ public class TestDirectArchive extends BaseXnatRestTest {
         if (addProject) {
             hdr.put(Tag.StudyDescription, project.getId());
         }
-        new XnatCStore().data(TestData.SAMPLE_1_SCAN_4).overwrittenHeaders(hdr).sendDICOM();
+        new XnatCStore(directArchiveReceiver).data(TestData.SAMPLE_1_SCAN_4).overwrittenHeaders(hdr).sendDICOM();
     }
 
     private void waitForDirectArchive(ImagingSession session) {
