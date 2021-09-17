@@ -393,6 +393,11 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         performBasicScriptTest(DE_6, "set.das", new SetScript());
     }
 
+    @Test
+    public void testDeleteFunction() {
+        performBasicScriptTest(DE_6, "deleteFunction.das", new DeleteFunctionScript());
+    }
+
     private void performSubjectRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
         mainAdminInterface().setSiteAnonScript(siteScript);
         mainInterface().setProjectAnonScript(anonProject, projectScript);
