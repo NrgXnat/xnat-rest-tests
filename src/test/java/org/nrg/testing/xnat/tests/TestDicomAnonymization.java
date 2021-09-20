@@ -394,6 +394,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @Test
+    @AddedIn(Xnat_1_8_1.class)
     public void testDeleteFunction() {
         performBasicScriptTest(DE_6, "deleteFunction.das", new DeleteFunctionScript());
     }
