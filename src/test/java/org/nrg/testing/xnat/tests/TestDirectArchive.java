@@ -23,6 +23,7 @@ import org.nrg.xnat.pogo.experiments.SubjectAssessor;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.prearchive.SessionData;
 import org.nrg.xnat.versions.Xnat_1_8_3;
+import org.nrg.xnat.versions.Xnat_1_8_4;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -93,6 +94,20 @@ public class TestDirectArchive extends BaseXnatRestTest {
         );
 
         waitForDirectArchive(apiSession);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_4.class)
+    public void testDirectArchiveAPICommit() {
+        final String daResponseUrl = mainInterface().callImporter(
+                new DicomZipRequest().
+                        directArchive().
+                        project(project).
+                        file(testZip)
+        );
+        mainInterface().queryBase().post(formatXnatUrl(daResponseUrl)).then().assertThat().statusCode(200);
+        restDriver.waitForDirectArchiveEmpty(mainUser, project, 15);
+        verifyImport(apiSession);
     }
 
     @Test
