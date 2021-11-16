@@ -15,8 +15,17 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.testng.AssertJUnit.assertEquals;
 
 public class TestCustomVariables extends BaseXnatRestTest {
+
+    private static final String FIELD_NAME = "test01";
+    private static final String FIELD_VALUE = "12";
+    private static final Map<String, Object> FIELD_MAP = Collections.singletonMap(FIELD_NAME, FIELD_VALUE);
 
     @BeforeMethod
     public void createTestProject() {
@@ -26,6 +35,32 @@ public class TestCustomVariables extends BaseXnatRestTest {
     @AfterMethod(alwaysRun = true)
     public void deleteTestProject() {
         restDriver.deleteProjectSilently(mainUser, testSpecificProject);
+    }
+
+    @Test
+    public void testCustomVariableSubjectCreate() {
+        final Project project = new Project().addSubject(new Subject().fields(FIELD_MAP));
+        mainInterface().createProject(project);
+        assertEquals(FIELD_MAP, mainInterface().readProject(project.getId()).getSubjects().get(0).getFields());
+    }
+
+    @Test
+    public void testCustomVariableSubjectUpdate() {
+        final Project project = new Project();
+        final Subject subject = new Subject(project);
+        final Map<String, Object> currentExpectedFields = new HashMap<>(FIELD_MAP);
+        mainInterface().createProject(project);
+        mainInterface().createSubject(subject.fields(FIELD_MAP));
+        assertEquals(currentExpectedFields, mainInterface().readProject(project.getId()).getSubjects().get(0).getFields());
+        final String newFieldName = "best_cat";
+        final String newFieldVal = "Claudine";
+        mainInterface().createSubject(subject.fields(Collections.singletonMap(newFieldName, newFieldVal)));
+        currentExpectedFields.put(newFieldName, newFieldVal);
+        assertEquals(currentExpectedFields, mainInterface().readProject(project.getId()).getSubjects().get(0).getFields());
+        final String updatedFieldVal = "20";
+        mainInterface().createSubject(subject.fields(Collections.singletonMap(FIELD_NAME, updatedFieldVal)));
+        currentExpectedFields.put(FIELD_NAME, updatedFieldVal);
+        assertEquals(currentExpectedFields, mainInterface().readProject(project.getId()).getSubjects().get(0).getFields());
     }
 
     @Test

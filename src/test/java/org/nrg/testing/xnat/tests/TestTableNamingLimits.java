@@ -1,6 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
 import org.hamcrest.Matchers;
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseXnatRestTest;
@@ -13,6 +14,7 @@ import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.assessors.ManualQC;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.users.User;
+import org.nrg.xnat.versions.Xnat_1_8_4;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -41,7 +43,7 @@ public class TestTableNamingLimits extends BaseXnatRestTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "XNAT-6784")
+    @AddedIn(Xnat_1_8_4.class)
     public void testLongSiteSearch() {
         final String searchXML = longUserInterface.queryBase().urlEncodingEnabled(false).get(formatRestUrl("/search/saved/@" + DataType.MANUAL_QC.getXsiType())).
                 then().assertThat().statusCode(200).and().extract().response().asString();
@@ -52,6 +54,5 @@ public class TestTableNamingLimits extends BaseXnatRestTest {
         }
         longUserInterface.jsonQuery().get(formatRestUrl("/search", cachedSearchId)).then().assertThat().body("ResultSet.Result.label", Matchers.hasItem(manualQC.getLabel()));
     }
-
 
 }
