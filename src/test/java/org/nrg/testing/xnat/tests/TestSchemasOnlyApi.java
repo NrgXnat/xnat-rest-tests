@@ -10,12 +10,15 @@ public class TestSchemasOnlyApi extends BaseXnatRestTest {
 
     @Test
     @TestedApiSpec(method = Method.GET, url = {
-            "/xapi/schemas/{namespace}/{schema}",
-            "/xapi/schemas/{schema}"
+            "/schemas/{namespace}/{schema}",
+            "/schemas/{schema}",
+            "/xapi/{namespace}/{schema}",
+            "/xapi/{schema}"
     })
     public void testSchemasSchemaGet() {
         for (String schema : mainQueryBase().get(formatXapiUrl("schemas")).as(String[].class)) {
             mainQueryBase().get(formatXnatUrl("schemas", schema + ".xsd")).then().assertThat().statusCode(200).and().body(ValidSchemaMatcher.INSTANCE);
+            mainQueryBase().get(formatXapiUrl(schema + ".xsd")).then().assertThat().statusCode(200).and().body(ValidSchemaMatcher.INSTANCE);
         }
     }
 
