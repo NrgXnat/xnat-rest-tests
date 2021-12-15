@@ -33,6 +33,7 @@ import org.nrg.xnat.pogo.extensions.subject.SubjectXMLPutExtension;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SubjectAssessorXMLExtension;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.versions.Xnat_1_8_3;
+import org.nrg.xnat.versions.Xnat_1_8_4;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -211,7 +212,7 @@ public class TestEventDetection extends BaseEventServiceTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "XNAT-6807")
+    @AddedIn(Xnat_1_8_4.class) // XNAT-6807
     public void testProjectCreateEvent() {
         final Set<Project> created = Sets.newHashSet(restProject, turbineProject, restXmlProject, xmlUploadProject, restXmlPostProject);
         final List<DeliveredEvent> projectEvents = mainAdminInterface().queryDeliveredEvents(
