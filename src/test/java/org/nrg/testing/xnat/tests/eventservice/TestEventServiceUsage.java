@@ -11,9 +11,11 @@ import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.experiments.sessions.PETSession;
 import org.nrg.xnat.versions.Xnat_1_8_0;
+import org.nrg.xnat.versions.Xnat_1_8_5;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,6 +23,46 @@ import static org.testng.AssertJUnit.assertEquals;
 
 @AddedIn(Xnat_1_8_0.class)
 public class TestEventServiceUsage extends BaseEventServiceTest {
+
+    @Test
+    @AddedIn(Xnat_1_8_5.class)
+    public void testScheduledEvent(){
+        final Calendar time = Calendar.getInstance();
+        time.add(Calendar.MINUTE, 1);
+
+        final String cronExpression = String.format("%s %s %s * * *", time.get(Calendar.SECOND), time.get(Calendar.MINUTE), time.get(Calendar.HOUR_OF_DAY));
+        final String description    = String.format("Every day at %02d:%02d:%02d %s",
+                                            time.get(Calendar.HOUR) == 0 ? 12 : time.get(Calendar.HOUR), time.get(Calendar.MINUTE), time.get(Calendar.SECOND),
+                                            (time.get(Calendar.AM_PM) == Calendar.AM) ? "AM" : "PM");
+
+        final Project project = new Project();
+        final Subject subject = new Subject(project);
+        mainInterface().createProject(project);
+        projectsToCleanup.add(project);
+
+        final Subscription subscription = new SubscriptionBuilder()
+                .event(Event.SUBJECT_EVENT_TYPE, EventStatus.SCHEDULED)
+                .actionKey(Action.LOGGING_ACTION)
+                .eventSchedule(cronExpression)
+                .projectIds(Arrays.asList(project.getId()))
+                .scheduleDescription(description)
+                .build();
+
+        mainAdminInterface().createSubscription(subscription);
+        subscriptionsToCleanup.add(subscription);
+
+        try{
+            Thread.sleep(1 * 60000); // Give the cron trigger time to execute.
+        }catch (Exception e){ }
+
+        final List<DeliveredEvent> events = mainAdminInterface().queryDeliveredEvents(
+                buildDeliveredEventQueryForSubscription(subscription), 1
+        );
+
+        assertEquals(subject.getLabel(), events.get(0).getTrigger().getLabel());
+        assertEquals(cronExpression, events.get(0).getSubscription().getEventFilter().getSchedule());
+        assertEquals(description, events.get(0).getSubscription().getEventFilter().getScheduleDescription());
+    }
 
     @Test
     public void testSubscriptionUpdate() {
