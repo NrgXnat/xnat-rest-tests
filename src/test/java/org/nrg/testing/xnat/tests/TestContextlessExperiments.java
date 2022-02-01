@@ -1,6 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
-import org.nrg.testing.annotations.ExpectedFailure;
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -8,6 +8,7 @@ import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.SessionAssessor;
 import org.nrg.xnat.pogo.experiments.assessors.QC;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
+import org.nrg.xnat.versions.Xnat_1_8_5;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -29,7 +30,7 @@ public class TestContextlessExperiments extends BaseXnatRestTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "XNAT-6687")
+    @AddedIn(Xnat_1_8_5.class)
     public void testContextlessExptDelete() {
         final Subject subject = new Subject(testProject);
         final ImagingSession session = new MRSession(testProject, subject);
