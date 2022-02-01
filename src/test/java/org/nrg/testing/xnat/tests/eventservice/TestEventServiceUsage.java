@@ -1,6 +1,7 @@
 package org.nrg.testing.xnat.tests.eventservice;
 
 import com.google.common.collect.Sets;
+import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.enums.TestData;
@@ -16,6 +17,7 @@ import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,10 +32,8 @@ public class TestEventServiceUsage extends BaseEventServiceTest {
         final Calendar time = Calendar.getInstance();
         time.add(Calendar.MINUTE, 1);
 
-        final String cronExpression = String.format("%s %s %s * * *", time.get(Calendar.SECOND), time.get(Calendar.MINUTE), time.get(Calendar.HOUR_OF_DAY));
-        final String description    = String.format("Every day at %02d:%02d:%02d %s",
-                                            time.get(Calendar.HOUR) == 0 ? 12 : time.get(Calendar.HOUR), time.get(Calendar.MINUTE), time.get(Calendar.SECOND),
-                                            (time.get(Calendar.AM_PM) == Calendar.AM) ? "AM" : "PM");
+        final String cronExpression = String.format("%s %s * * * *", time.get(Calendar.SECOND), time.get(Calendar.MINUTE));
+        final String description    = String.format("Every hour at %02d minutes, %02d seconds", time.get(Calendar.MINUTE), time.get(Calendar.SECOND));
 
         final Project project = new Project();
         final Subject subject = new Subject(project);
@@ -44,16 +44,14 @@ public class TestEventServiceUsage extends BaseEventServiceTest {
                 .event(Event.SUBJECT_EVENT_TYPE, EventStatus.SCHEDULED)
                 .actionKey(Action.LOGGING_ACTION)
                 .eventSchedule(cronExpression)
-                .projectIds(Arrays.asList(project.getId()))
+                .forProject(project)
                 .scheduleDescription(description)
                 .build();
 
         mainAdminInterface().createSubscription(subscription);
         subscriptionsToCleanup.add(subscription);
 
-        try{
-            Thread.sleep(1 * 60000); // Give the cron trigger time to execute.
-        }catch (Exception e){ }
+        TimeUtils.sleep(60000); // Give the cron trigger time to execute.
 
         final List<DeliveredEvent> events = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(subscription), 1
