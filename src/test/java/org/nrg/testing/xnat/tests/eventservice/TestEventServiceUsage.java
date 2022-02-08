@@ -36,12 +36,11 @@ public class TestEventServiceUsage extends BaseEventServiceTest {
         final String description    = String.format("Every hour at %02d minutes, %02d seconds", time.get(Calendar.MINUTE), time.get(Calendar.SECOND));
 
         final Project project = new Project();
-        final Subject subject = new Subject(project);
         mainInterface().createProject(project);
         projectsToCleanup.add(project);
 
         final Subscription subscription = new SubscriptionBuilder()
-                .event(Event.SUBJECT_EVENT_TYPE, EventStatus.SCHEDULED)
+                .event(Event.SCHEDULED_EVENT, EventStatus.CRON)
                 .actionKey(Action.LOGGING_ACTION)
                 .eventSchedule(cronExpression)
                 .forProject(project)
@@ -57,7 +56,6 @@ public class TestEventServiceUsage extends BaseEventServiceTest {
                 buildDeliveredEventQueryForSubscription(subscription), 1
         );
 
-        assertEquals(subject.getLabel(), events.get(0).getTrigger().getLabel());
         assertEquals(cronExpression, events.get(0).getSubscription().getEventFilter().getSchedule());
         assertEquals(description, events.get(0).getSubscription().getEventFilter().getScheduleDescription());
     }
