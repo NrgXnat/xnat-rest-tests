@@ -5,6 +5,7 @@ import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.*;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
+import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
 import org.nrg.xnat.versions.Xnat_1_7_7;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.enums.Gender;
@@ -40,7 +41,8 @@ import static org.testng.AssertJUnit.*;
 public class TestContainerService extends BaseXnatRestTest {
     private static final String OUTPUT_CONTENT = "hello world";
     private static final String OUTPUT_FILENAME = "out.txt";
-    private static final Image DEBUG_IMG = new Image("xnat", "debug-command", "latest");
+    private static final Image DEBUG_IMG = new Image("xnat", "debug-command",
+            XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_8_0.class) ? "1.5" : "latest");
     private static final String OUTPUT_RESOURCE = "DEBUG_OUTPUT";
     private static final String IMAGES_WITH_COMMANDS_JSON_PATH = "findAll { it.commands.size() > 0 }";
     private static final Map<String, String> BASE_DEBUG_LAUNCH_PARAMS = makeContainerLaunchReqBody();
