@@ -8,6 +8,7 @@ import org.hamcrest.Matchers;
 import org.nrg.testing.CommonStringUtils;
 import org.nrg.testing.FileIOUtils;
 import org.nrg.testing.UIDList;
+import org.nrg.testing.annotations.Basic;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.XnatObjectUtils;
 import org.nrg.xnat.enums.Gender;
@@ -87,6 +88,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      * Test uploading and downloading multiple scripts to a project.
      */
     @Test
+    @Basic
     public void testUploadScriptToProject() {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
         assertEquals(FileIOUtils.readFile(anonScript1File), mainInterface().readProjectAnonScript(currentProject).getContents().trim());
@@ -100,6 +102,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      * has had both the site-wide and project specific anon scripts applied to it.
      */
     @Test
+    @Basic
     public void testPrearchiveProjectZipUpload() throws IOException {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
 
@@ -129,6 +132,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      * the site-wide and project specific scripts to the DICOM files.
      */
     @Test
+    @Basic
     public void testProjectZipUpload() throws IOException {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
 
@@ -244,6 +248,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      * site-wide script.
      */
     @Test
+    @Basic
     public void testDefaultAnonZipUploadSiteWide() throws IOException {
         restDriver.clearUnassignedPrearchiveSessions(mainAdminUser, UIDList.uids);
 
@@ -284,6 +289,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      * Test to see if a file uploaded via the Gradual DICOM importer is properly anonymized in reference to the site-wide script
      */
     @Test
+    @Basic
     public void testDefaultAnonGradualDicomUpload() throws IOException {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
 
@@ -328,6 +334,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      * applies the site-wide and project specific edit scripts to the DICOM files.
      */
     @Test
+    @Basic
     public void testDefaultProjectGradualDicomUpload() throws IOException {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
 
@@ -357,6 +364,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      * 3. Project specific
      */
     @Test
+    @Basic
     public void testSubjectChange() throws IOException {
         final Subject testSubject = new Subject(currentProject, "00001");
         final Subject destinationSubject = new Subject(currentProject, "subj_mod");
@@ -390,6 +398,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      *   - another project-specific script application
      */
     @Test
+    @Basic
     public void testLabelChange() throws IOException {
         final Subject testSubject = new Subject(currentProject, "00001");
         final ImagingSession testSession = new MRSession(currentProject, testSubject, "case01");
@@ -428,6 +437,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      * 3. new project script
      */
     @Test
+    @Basic
     public void testProjectChange() throws IOException {
         otherProject = new Project();
         final Subject otherSubject = new Subject(otherProject, "filler");

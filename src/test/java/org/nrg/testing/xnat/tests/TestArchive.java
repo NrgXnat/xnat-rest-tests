@@ -1,5 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
+import org.nrg.testing.annotations.Basic;
 import org.nrg.testing.annotations.DeprecatedIn;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.MergeBehavior;
@@ -106,6 +107,7 @@ public class TestArchive extends BaseXnatRestTest {
     }
 
     @Test
+    @Basic
     public void testImportToArchive() {
         final ImagingSession session = readMr1("1", "MR1");
 
@@ -145,6 +147,7 @@ public class TestArchive extends BaseXnatRestTest {
     }
 
     @Test
+    @Basic
     public void testBasicArchiveFromPrearcWParams() {
         final ImagingSession session = readMr1("1", "MR1");
         session.getScans().get(0).setId("ARC_TEST");

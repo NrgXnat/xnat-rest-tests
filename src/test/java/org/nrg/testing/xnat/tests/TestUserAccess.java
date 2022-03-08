@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.nrg.testing.TestNgUtils;
+import org.nrg.testing.annotations.Basic;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
@@ -24,12 +25,14 @@ import static org.testng.AssertJUnit.*;
 public class TestUserAccess extends BaseXnatRestTest {
 
     @Test
+    @Basic
     public void testValidAccess() {
         final Response response = Settings.mainCredentials().expect().statusCode(200).given().queryParam("format", "xml").get(formatRestUrl("projects"));
         TestNgUtils.assertNonempty(response.asString());
     }
 
     @Test
+    @Basic
     public void testInvalidAccess() {
         restDriver.invalidCredentials().expect().statusCode(401).given().queryParam("format", "xml").get(formatRestUrl("projects"));
     }
@@ -50,6 +53,7 @@ public class TestUserAccess extends BaseXnatRestTest {
 
     @Test
     @TestRequires(users = 1)
+    @Basic
     public void testUserSessionInvalidation() {
         final User testUser = getGenericUser();
         final Project project = new Project().accessibility(Accessibility.PRIVATE);

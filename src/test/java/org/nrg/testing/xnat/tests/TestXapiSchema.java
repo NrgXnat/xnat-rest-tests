@@ -3,6 +3,7 @@ package org.nrg.testing.xnat.tests;
 import io.restassured.http.ContentType;
 import io.restassured.http.Method;
 import io.restassured.response.ValidatableResponse;
+import org.nrg.testing.annotations.Basic;
 import org.nrg.testing.annotations.TestedApiSpec;
 import org.nrg.testing.matchers.ValidSchemaMatcher;
 import org.nrg.testing.annotations.DisallowXnatVersion;
@@ -70,6 +71,7 @@ public class TestXapiSchema extends BaseXnatRestTest {
 
     @Test
     @TestedApiSpec(method = Method.POST, url = "/xapi/schemas/datatypes/names")
+    @Basic
     public void testSchemasDatatypesNames() {
         final ValidatableResponse response = mainCredentials().formParam("dataTypes", DataType.MR_SESSION.getXsiType(), DataType.PET_SESSION.getXsiType()).
                 post(formatXapiUrl("schemas/datatypes/names")).
@@ -103,6 +105,7 @@ public class TestXapiSchema extends BaseXnatRestTest {
             "/xapi/schemas/{namespace}/{schema}",
             "/xapi/schemas/{schema}"
     })
+    @Basic
     public void testSchemasSchema() {
         final ValidatableResponse schemas = mainCredentials().get(formatXapiUrl("schemas")).then().assertThat().statusCode(200).and();
         schemas.body("$", hasSize(greaterThan(SCHEMA_COUNT_LOWER_BOUND)));

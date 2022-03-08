@@ -1,6 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
 import org.nrg.testing.annotations.AddedIn;
+import org.nrg.testing.annotations.Basic;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.*;
@@ -68,6 +69,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @Test
+    @Basic
     public void testSubjectRelabel_4P_4S() {
         performSubjectRelabelAnonTest(projectAnonDE4, siteAnonDE4);
     }
@@ -83,11 +85,13 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @Test
+    @Basic
     public void testSubjectRelabel_6P_6S() {
         performSubjectRelabelAnonTest(projectAnonDE6, siteAnonDE6);
     }
 
     @Test
+    @Basic
     public void testSessionRelabel_4P_4S() {
         performSessionRelabelAnonTest(projectAnonDE4, siteAnonDE4);
     }
@@ -103,16 +107,19 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @Test
+    @Basic
     public void testSessionRelabel_6P_6S() {
         performSessionRelabelAnonTest(projectAnonDE6, siteAnonDE6);
     }
 
     @Test
+    @Basic
     public void testStandardElementRemovalDE4() {
         performBasicScriptTest(DE_4, "standardDelete.das", new StandardDeleteScript());
     }
 
     @Test
+    @Basic
     public void testStandardElementRemovalDE6() {
         performBasicScriptTest(DE_6, "standardDelete.das", new StandardDeleteScript());
     }

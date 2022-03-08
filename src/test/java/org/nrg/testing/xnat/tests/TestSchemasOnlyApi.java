@@ -1,6 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
 import io.restassured.http.Method;
+import org.nrg.testing.annotations.Basic;
 import org.nrg.testing.annotations.TestedApiSpec;
 import org.nrg.testing.matchers.ValidSchemaMatcher;
 import org.nrg.testing.xnat.BaseXnatRestTest;
@@ -15,6 +16,7 @@ public class TestSchemasOnlyApi extends BaseXnatRestTest {
             "/xapi/{namespace}/{schema}",
             "/xapi/{schema}"
     })
+    @Basic
     public void testSchemasSchemaGet() {
         for (String schema : mainQueryBase().get(formatXapiUrl("schemas")).as(String[].class)) {
             mainQueryBase().get(formatXnatUrl("schemas", schema + ".xsd")).then().assertThat().statusCode(200).and().body(ValidSchemaMatcher.INSTANCE);

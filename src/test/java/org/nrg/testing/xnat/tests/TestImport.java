@@ -11,6 +11,7 @@ import org.nrg.testing.CommonStringUtils;
 import org.nrg.testing.TestNgUtils;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
+import org.nrg.testing.annotations.Basic;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.enums.TestData;
@@ -119,6 +120,7 @@ public class TestImport extends BaseXnatRestTest {
     }
 
     @Test
+    @Basic
     public void testDataProject() {
         // services/import?dest=/archive/projects/{PROJECT} POST
 
@@ -138,6 +140,7 @@ public class TestImport extends BaseXnatRestTest {
     }
 
     @Test
+    @Basic
     public void testDataSubject() {
         // services/import?dest=/archive/projects/{PROJECT}/subjects/SUBJECT POST
 
@@ -158,6 +161,7 @@ public class TestImport extends BaseXnatRestTest {
     }
 
     @Test
+    @Basic
     public void testDataProjectExperimentNew() {
         // services/import?dest=/archive/projects/{PROJECT}/subjects/SUBJECT/experiments/EXPERIMENT POST
 
@@ -431,6 +435,7 @@ public class TestImport extends BaseXnatRestTest {
      * This mimics a session sent from DICOM Browser into Unassigned, moved to a valid project, and archived.
      */
     @Test
+    @Basic
     public void testUnassignedManualArchiveGradualImport() {
         final List<String> sessionUris = new ArrayList<>();
         final DicomZipRequest importerRequest = new DicomZipRequest().destPrearchive();

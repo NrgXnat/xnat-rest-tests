@@ -2,6 +2,7 @@ package org.nrg.testing.xnat.tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.path.json.JsonPath;
+import org.nrg.testing.annotations.Basic;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.util.RandomHelper;
@@ -68,6 +69,7 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
     }
 
     @Test
+    @Basic
     public void testMRDicomExtraction() throws IOException {
         checkStudyMatchesAttributes(standardMRSession, "mrSessionAttributes.json");
         checkSeriesMatchesAttributes(new MRScan(standardMRSession, "4"), "mrSeriesAttributes.json");

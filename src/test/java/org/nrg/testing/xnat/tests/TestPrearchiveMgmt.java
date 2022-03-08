@@ -2,6 +2,7 @@ package org.nrg.testing.xnat.tests;
 
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.UIDList;
+import org.nrg.testing.annotations.Basic;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.MergeBehavior;
 import org.nrg.xnat.enums.PrearchiveCode;
@@ -143,6 +144,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
     }
 
     @Test
+    @Basic
     public void testPrearchiveWithDestination() {
         final String subject = "SUBJ9";
         final String session = "SUBJ9_MRI";

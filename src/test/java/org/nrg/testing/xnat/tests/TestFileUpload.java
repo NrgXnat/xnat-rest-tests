@@ -3,6 +3,7 @@ package org.nrg.testing.xnat.tests;
 import io.restassured.response.Response;
 import org.nrg.testing.*;
 import org.nrg.testing.annotations.AddedIn;
+import org.nrg.testing.annotations.Basic;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.xnat.versions.Xnat_1_8_0;
@@ -72,6 +73,7 @@ public class TestFileUpload extends BaseXnatRestTest {
     }
 
     @Test
+    @Basic
     public void testImageUploadWResourcePrecreate() {
         final Scan scan1 = new MRScan(session, "1").seriesDescription("LOCALIZER").quality("usable");
         new MRScan(session, "2").seriesDescription("localizer").quality("questionable");
@@ -192,6 +194,7 @@ public class TestFileUpload extends BaseXnatRestTest {
     }
 
     @Test
+    @Basic
     public void testScanUpload() {
         final Scan scan = new MRScan(session, "MR1_scan1");
         mainInterface().createScan(project, subject, session, scan);
@@ -232,6 +235,7 @@ public class TestFileUpload extends BaseXnatRestTest {
     }
 
     @Test
+    @Basic
     public void testProjectResourceUpload() {
         final String projectUrl = mainInterface().projectUrl(project);
         mainCredentials().multiPart(dicomFile3).put(CommonStringUtils.formatUrl(projectUrl, "resources/TEST1/files/1.dcm"));
@@ -264,6 +268,7 @@ public class TestFileUpload extends BaseXnatRestTest {
     }
 
     @Test
+    @Basic
     public void testScanResourceUploadZip() {
         uploadAndExtractToScan(testZip);
     }

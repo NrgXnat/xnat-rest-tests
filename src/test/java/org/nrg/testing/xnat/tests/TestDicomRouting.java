@@ -9,6 +9,7 @@ import org.dcm4che3.data.VR;
 import org.nrg.testing.DicomUtils;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
+import org.nrg.testing.annotations.Basic;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.XnatCStore;
@@ -109,36 +110,42 @@ public class TestDicomRouting extends BaseXnatRestTest {
 
     @Test
     @AddedIn(Xnat_1_8_0.class)
+    @Basic
     public void testProjectRoutingSessionImporter() {
         testProjectRouting(this::uploadViaImporter, null);
     }
 
     @Test
     @AddedIn(Xnat_1_8_0.class)
+    @Basic
     public void testProjectRoutingDicomZip() {
         testProjectRouting(this::uploadViaImporter, "DICOM-zip");
     }
 
     @Test
     @AddedIn(Xnat_1_8_0.class)
+    @Basic
     public void testSubjectRoutingSessionImporter() {
         testSubjectRouting(this::uploadViaImporter, null);
     }
 
     @Test
     @AddedIn(Xnat_1_8_0.class)
+    @Basic
     public void testSubjectRoutingDicomZip() {
         testSubjectRouting(this::uploadViaImporter, "DICOM-zip");
     }
 
     @Test
     @AddedIn(Xnat_1_8_0.class)
+    @Basic
     public void testSessionRoutingSessionImporter() {
         testSessionRouting(this::uploadViaImporter, null);
     }
 
     @Test
     @AddedIn(Xnat_1_8_0.class)
+    @Basic
     public void testSessionRoutingDicomZip() {
         testSessionRouting(this::uploadViaImporter, "DICOM-zip");
     }
