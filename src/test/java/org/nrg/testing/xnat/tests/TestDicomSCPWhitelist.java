@@ -148,7 +148,7 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
     @Test
     public void testWhitelistEnabledWithValidAEAndValidIp(){
         receiver.whitelistEnabled(true);
-        receiver.setWhitelist(Collections.singletonList("GRXNAT@" + myPublicIpAddress));
+        receiver.setWhitelist(Collections.singletonList(Settings.DICOM_AETITLE + "@" + myPublicIpAddress));
         mainAdminInterface().updateDicomScpReceiver(receiver);
 
         new XnatCStore(receiver)
