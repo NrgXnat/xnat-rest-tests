@@ -46,8 +46,8 @@ public class TestDicomSCPDisableAnon extends BaseXnatRestTest {
     private final String patientComments     = String.format("Project:%s Subject:%s Session:%s AA:true",
                                                                 project.getId(), subject.getLabel(), session.getLabel());
 
-    private final long FIVE_MINUTES   = 300000;
-    private final long THIRTY_SECONDS = 30000;
+    private final static long FIVE_MINUTES   = 300000;
+    private final static long THIRTY_SECONDS = 30000;
 
     private final DicomScpReceiver receiver
                     = new DicomScpReceiver().aeTitle(RandomHelper.randomID())
