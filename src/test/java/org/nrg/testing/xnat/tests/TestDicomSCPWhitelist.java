@@ -3,6 +3,7 @@ package org.nrg.testing.xnat.tests;
 import org.apache.log4j.Logger;
 import org.dcm4che2.data.Tag;
 import org.dcm4che3.net.pdu.AAssociateRJ;
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.enums.TestData;
@@ -12,6 +13,7 @@ import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.dicom.DicomObjectIdentifier;
 import org.nrg.xnat.pogo.dicom.DicomScpReceiver;
+import org.nrg.xnat.versions.Xnat_1_8_5;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -28,10 +30,17 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 
+@AddedIn(Xnat_1_8_5.class)
 @TestRequires(admin = true, data = TestData.SAMPLE_1_SCAN_4)
 public class TestDicomSCPWhitelist extends BaseXnatRestTest {
-    private static final Logger    log               = Logger.getLogger(TestDicomSCPWhitelist.class);
-    private final String           myPublicIpAddress = getPublicIpAddress();
+    private static final Logger       LOG            = Logger.getLogger(TestDicomSCPWhitelist.class);
+    private static final String       INVALID_AE     = "NOT_WHITELISTED";
+    private static final String       INVALID_IP     = "8.8.8.8";
+    private static final List<String> CHECK_IP_URLS  = Arrays.asList("http://checkip.amazonaws.com", "https://ipv4.icanhazip.com",
+                                                                     "https://myexternalip.com/raw", "http://ipecho.net/plain",
+                                                                     "http://www.trackip.net/ip");
+
+    private final String           publicIpAddress   = getPublicIpAddress();
     private final Project          project           = new Project();
     private final DicomScpReceiver receiver
                         = new DicomScpReceiver().aeTitle(RandomHelper.randomID())
@@ -55,7 +64,7 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
         try {
             restDriver.clearPrearchiveSessions(mainUser, project);
         } catch (Throwable throwable) {
-            log.warn(throwable);
+            LOG.warn(throwable);
         }
     }
 
@@ -71,7 +80,7 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
         receiver.setWhitelist(Collections.singletonList(Settings.CALLING_AE_TITLE));
         mainAdminInterface().updateDicomScpReceiver(receiver);
 
-        new XnatCStore(receiver, "INVALID_AE")
+        new XnatCStore(receiver, INVALID_AE)
                 .overwrittenHeaders(Collections.singletonMap(Tag.StudyDescription, project.getId()))
                 .data(TestData.SAMPLE_1_SCAN_4)
                 .sendDICOM();
@@ -98,13 +107,13 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
         mainAdminInterface().updateDicomScpReceiver(receiver);
 
         try{
-            new XnatCStore(receiver, "INVALID_AE")
+            new XnatCStore(receiver, INVALID_AE)
                     .overwrittenHeaders(Collections.singletonMap(Tag.StudyDescription, project.getId()))
                     .data(TestData.SAMPLE_1_SCAN_4)
                     .sendDICOM();
         }catch(Throwable e){
             if(! (e instanceof AAssociateRJ)){
-                log.error(e.getMessage(), e);
+                LOG.error(e.getMessage(), e);
                 throw e;
             }
         }
@@ -114,7 +123,7 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
     @Test
     public void testWhitelistEnabledWithInvalidIpAddress(){
         receiver.whitelistEnabled(true);
-        receiver.setWhitelist(Collections.singletonList("8.8.8.8"));
+        receiver.setWhitelist(Collections.singletonList(INVALID_IP));
         mainAdminInterface().updateDicomScpReceiver(receiver);
 
         try{
@@ -124,7 +133,7 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
                     .sendDICOM();
         }catch(Throwable e){
             if(! (e instanceof AAssociateRJ)){
-                log.error(e.getMessage(), e);
+                LOG.error(e.getMessage(), e);
                 throw e;
             }
         }
@@ -134,7 +143,7 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
     @Test
     public void testWhitelistEnabledWithValidIpAddress(){
         receiver.whitelistEnabled(true);
-        receiver.setWhitelist(Collections.singletonList(myPublicIpAddress));
+        receiver.setWhitelist(Collections.singletonList(publicIpAddress));
         mainAdminInterface().updateDicomScpReceiver(receiver);
 
         new XnatCStore(receiver)
@@ -148,7 +157,7 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
     @Test
     public void testWhitelistEnabledWithValidAEAndValidIp(){
         receiver.whitelistEnabled(true);
-        receiver.setWhitelist(Collections.singletonList(Settings.CALLING_AE_TITLE + "@" + myPublicIpAddress));
+        receiver.setWhitelist(Collections.singletonList(Settings.CALLING_AE_TITLE + "@" + publicIpAddress));
         mainAdminInterface().updateDicomScpReceiver(receiver);
 
         new XnatCStore(receiver)
@@ -162,7 +171,7 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
     @Test
     public void testWhitelistEnabledWithInvalidAEAndInvalidIp(){
         receiver.whitelistEnabled(true);
-        receiver.setWhitelist(Collections.singletonList("INVALID@" + myPublicIpAddress));
+        receiver.setWhitelist(Collections.singletonList(INVALID_AE + "@" + INVALID_IP));
         mainAdminInterface().updateDicomScpReceiver(receiver);
 
         try{
@@ -172,7 +181,7 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
                     .sendDICOM();
         }catch(Throwable e){
             if(! (e instanceof AAssociateRJ)){
-                log.error(e.getMessage(), e);
+                LOG.error(e.getMessage(), e);
                 throw e;
             }
         }
@@ -182,7 +191,7 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
     @Test
     public void testWhitelistEnabledWithValidAEAndInvalidIp(){
         receiver.whitelistEnabled(true);
-        receiver.setWhitelist(Collections.singletonList(Settings.CALLING_AE_TITLE + "@8.8.8.8"));
+        receiver.setWhitelist(Collections.singletonList(Settings.CALLING_AE_TITLE + "@" + INVALID_IP));
         mainAdminInterface().updateDicomScpReceiver(receiver);
 
         try{
@@ -192,7 +201,7 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
                     .sendDICOM();
         }catch(Throwable e){
             if(! (e instanceof AAssociateRJ)){
-                log.error(e.getMessage(), e);
+                LOG.error(e.getMessage(), e);
                 throw e;
             }
         }
@@ -202,7 +211,7 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
     @Test
     public void testWhitelistEnabledWithInvalidAEAndValidIp(){
         receiver.whitelistEnabled(true);
-        receiver.setWhitelist(Collections.singletonList("INVALID@" + myPublicIpAddress));
+        receiver.setWhitelist(Collections.singletonList(INVALID_AE + "@" + publicIpAddress));
         mainAdminInterface().updateDicomScpReceiver(receiver);
 
         try{
@@ -212,7 +221,7 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
                     .sendDICOM();
         }catch(Throwable e){
             if(! (e instanceof AAssociateRJ)){
-                log.error(e.getMessage(), e);
+                LOG.error(e.getMessage(), e);
                 throw e;
             }
         }
@@ -220,10 +229,7 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
     }
 
     private String getPublicIpAddress(){
-        final List<String> checkIpUrls = Arrays.asList("http://checkip.amazonaws.com", "https://ipv4.icanhazip.com",
-                                "https://myexternalip.com/raw", "http://ipecho.net/plain", "http://www.trackip.net/ip");
-
-        for(String urlStr : checkIpUrls){
+        for(String urlStr : CHECK_IP_URLS){
             try {
                 final URL url                    = new URL(urlStr);
                 final InputStreamReader inStream = new InputStreamReader(url.openStream());

@@ -2,6 +2,7 @@ package org.nrg.testing.xnat.tests;
 
 import org.apache.log4j.Logger;
 import org.dcm4che2.data.Tag;
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.ProjectScript;
 import org.nrg.testing.dicom.SiteScript;
@@ -22,6 +23,7 @@ import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.resources.Resource;
 import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.nrg.xnat.prearchive.SessionData;
+import org.nrg.xnat.versions.Xnat_1_8_5;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -34,20 +36,22 @@ import java.util.*;
 import static org.junit.Assert.assertEquals;
 import static org.nrg.xnat.enums.DicomEditVersion.DE_6;
 
+@AddedIn(Xnat_1_8_5.class)
 @TestRequires(admin = true, data = TestData.ANON_2)
 public class TestDicomSCPDisableAnon extends BaseXnatRestTest {
-    private static final Logger   log        = Logger.getLogger(TestDicomSCPDisableAnon.class);
+    private static final Logger LOG            = Logger.getLogger(TestDicomSCPDisableAnon.class);
+    private static final long   FIVE_MINUTES   = 300000;
+    private static final long   THIRTY_SECONDS = 30000;
+
     private final AnonScript      siteScript = XnatObjectUtils.anonScriptFromFile(DE_6, "siteAnon.das");
     private final AnonScript      projScript = XnatObjectUtils.anonScriptFromFile(DE_6, "projectAnon.das");
     private final Project         project    = new Project();
     private final Subject         subject    = new Subject(project, "Sample_Patient");
     private final ImagingSession  session    = new MRSession(project, subject, "Sample_ID");
 
-    private final String patientComments     = String.format("Project:%s Subject:%s Session:%s AA:true",
-                                                                project.getId(), subject.getLabel(), session.getLabel());
-
-    private final static long FIVE_MINUTES   = 300000;
-    private final static long THIRTY_SECONDS = 30000;
+    private final String patientComments
+                    = String.format("Project:%s Subject:%s Session:%s AA:true",
+                                    project.getId(), subject.getLabel(), session.getLabel());
 
     private final DicomScpReceiver receiver
                     = new DicomScpReceiver().aeTitle(RandomHelper.randomID())
@@ -78,7 +82,7 @@ public class TestDicomSCPDisableAnon extends BaseXnatRestTest {
         try {
             restDriver.clearPrearchiveSessions(mainUser, project);
         } catch (Throwable throwable) {
-            log.warn(throwable);
+            LOG.warn(throwable);
         }
     }
 
@@ -88,7 +92,7 @@ public class TestDicomSCPDisableAnon extends BaseXnatRestTest {
             mainInterface().deleteAllProjectData(project);
             TimeUtils.sleep(1000);
         } catch (Throwable throwable) {
-            log.warn(throwable);
+            LOG.warn(throwable);
         }
     }
 
@@ -136,7 +140,7 @@ public class TestDicomSCPDisableAnon extends BaseXnatRestTest {
             if(mainInterface().getPrearchiveEntriesForProject(project).size() == 0){
                 return;
             }
-            log.debug("Session not in archive. Waiting 30 seconds.");
+            LOG.debug("Session not in archive. Waiting 30 seconds.");
             TimeUtils.sleep(THIRTY_SECONDS);
         }
         throw new RuntimeException("Session never archived.");
