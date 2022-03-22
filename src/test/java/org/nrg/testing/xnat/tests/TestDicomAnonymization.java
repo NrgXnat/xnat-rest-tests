@@ -1,5 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
+import org.dcm4che3.data.UID;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.Basic;
 import org.nrg.testing.annotations.ExpectedFailure;
@@ -21,6 +22,7 @@ import org.nrg.xnat.pogo.resources.Resource;
 import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.versions.Xnat_1_8_1;
+import org.nrg.xnat.versions.Xnat_1_8_4;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
@@ -31,11 +33,14 @@ import java.util.*;
 
 import static org.nrg.xnat.enums.DicomEditVersion.*;
 
-@TestRequires(admin = true, data = {TestData.ANON_2, TestData.ANON_DUPLICATE_PRIVATE_TAG})
+@TestRequires(admin = true, data = {TestData.ANON_2, TestData.ANON_DUPLICATE_PRIVATE_TAG, TestData.DICOM_WEB_PETMR2_PT, TestData.JPEGLOSSLESS_2000})
 public class TestDicomAnonymization extends BaseXnatRestTest {
 
     private final Project anonProject = new Project();
     private final File anonData = getDataFile(TestData.ANON_2.getZipName());
+    private final File evleData = anonData;
+    private final File ivleData = getDataFile( TestData.DICOM_WEB_PETMR2_PT.getZipName());
+    private final File jpglosslessData = getDataFile( TestData.JPEGLOSSLESS_2000.getZipName());
     private final AnonScript projectAnonDE4 = XnatObjectUtils.anonScriptFromFile(DE_4, "projectAnon.das");
     private final AnonScript projectAnonDE6 = XnatObjectUtils.anonScriptFromFile(DE_6, "projectAnon.das");
     private final AnonScript siteAnonDE4 = XnatObjectUtils.anonScriptFromFile(DE_4, "siteAnon.das");
@@ -404,6 +409,23 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     @AddedIn(Xnat_1_8_1.class)
     public void testDeleteFunction() {
         performBasicScriptTest(DE_6, "deleteFunction.das", new DeleteFunctionScript());
+    }
+
+    /**
+     * Capture the effect of anon on transfer syntax.
+     * 1. Anon without pixel edits retains the original xfer syntax.
+     * 2. Anon with pixel edits always results in EVLE data.
+     * This test makes due with pre-existing data sets but flings about many images when a single image would do, thus taking much longer than necessary to run.
+     */
+    @Test
+    @AddedIn(Xnat_1_8_4.class)
+    public void testTransferSyntax() {
+        performBasicScriptTest(DE_6, "deleteFunction.das", new TransferSyntaxScript( UID.ExplicitVRLittleEndian), evleData);
+        performBasicScriptTest(DE_6, "deleteFunction.das", new TransferSyntaxScript( UID.ImplicitVRLittleEndian), ivleData);
+        performBasicScriptTest(DE_6, "deleteFunction.das", new TransferSyntaxScript( UID.JPEGLossless), jpglosslessData);
+        performBasicScriptTest(DE_6, "alterPixelsXferSyntax.das", new TransferSyntaxScript( UID.ExplicitVRLittleEndian), anonData);
+        performBasicScriptTest(DE_6, "alterPixelsXferSyntax.das", new TransferSyntaxScript( UID.ExplicitVRLittleEndian), ivleData);
+        performBasicScriptTest(DE_6, "alterPixelsXferSyntax.das", new TransferSyntaxScript( UID.ExplicitVRLittleEndian), jpglosslessData);
     }
 
     private void performSubjectRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
