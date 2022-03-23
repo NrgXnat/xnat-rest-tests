@@ -4,7 +4,7 @@ public class TransferSyntaxScript extends SimplestDicomScriptValidation {
 
     private String transferSyntaxUID;
 
-    public TransferSyntaxScript( String transferSyntaxUID) {
+    public TransferSyntaxScript(String transferSyntaxUID) {
         this.transferSyntaxUID = transferSyntaxUID;
     }
 

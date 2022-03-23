@@ -11,7 +11,7 @@ import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.XnatObjectUtils;
 import org.nrg.xnat.enums.DicomEditVersion;
-import org.nrg.xnat.versions.Xnat_1_7_7;
+import org.nrg.xnat.versions.*;
 import org.nrg.xnat.pogo.AnonScript;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -20,9 +20,6 @@ import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
 import org.nrg.xnat.pogo.resources.Resource;
 import org.nrg.xnat.pogo.resources.ResourceFile;
-import org.nrg.xnat.versions.Xnat_1_8_0;
-import org.nrg.xnat.versions.Xnat_1_8_1;
-import org.nrg.xnat.versions.Xnat_1_8_4;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
@@ -420,12 +417,36 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     @Test
     @AddedIn(Xnat_1_8_4.class)
     public void testTransferSyntax() {
-        performBasicScriptTest(DE_6, "deleteFunction.das", new TransferSyntaxScript( UID.ExplicitVRLittleEndian), evleData);
-        performBasicScriptTest(DE_6, "deleteFunction.das", new TransferSyntaxScript( UID.ImplicitVRLittleEndian), ivleData);
-        performBasicScriptTest(DE_6, "deleteFunction.das", new TransferSyntaxScript( UID.JPEGLossless), jpglosslessData);
-        performBasicScriptTest(DE_6, "alterPixelsXferSyntax.das", new TransferSyntaxScript( UID.ExplicitVRLittleEndian), anonData);
-        performBasicScriptTest(DE_6, "alterPixelsXferSyntax.das", new TransferSyntaxScript( UID.ExplicitVRLittleEndian), ivleData);
-        performBasicScriptTest(DE_6, "alterPixelsXferSyntax.das", new TransferSyntaxScript( UID.ExplicitVRLittleEndian), jpglosslessData);
+        performBasicScriptTest(DE_6, "deleteFunction.das", new TransferSyntaxScript(UID.ExplicitVRLittleEndian), evleData);
+        performBasicScriptTest(DE_6, "deleteFunction.das", new TransferSyntaxScript(UID.ImplicitVRLittleEndian), ivleData);
+        performBasicScriptTest(DE_6, "deleteFunction.das", new TransferSyntaxScript(UID.JPEGLossless), jpglosslessData);
+        performBasicScriptTest(DE_6, "alterPixelsXferSyntax.das", new TransferSyntaxScript(UID.ExplicitVRLittleEndian), anonData);
+        performBasicScriptTest(DE_6, "alterPixelsXferSyntax.das", new TransferSyntaxScript(UID.ExplicitVRLittleEndian), ivleData);
+        performBasicScriptTest(DE_6, "alterPixelsXferSyntax.das", new TransferSyntaxScript(UID.ExplicitVRLittleEndian), jpglosslessData);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_5.class)
+    public void testGroup2PreserveDE4() {
+        performBasicScriptTest(DE_4, "standardDelete.das", new Group2PreserveScript());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_5.class)
+    public void testGroup2PreserveDE6() {
+        performBasicScriptTest(DE_6, "standardDelete.das", new Group2PreserveScript());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_5.class)
+    public void testGroup2DeleteDE4() {
+        performBasicScriptTest(DE_4, "group2Delete.das", new Group2DeleteScript());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_5.class)
+    public void testGroup2DeleteDE6() {
+        performBasicScriptTest(DE_6, "group2Delete.das", new Group2DeleteScript());
     }
 
     private void performSubjectRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
