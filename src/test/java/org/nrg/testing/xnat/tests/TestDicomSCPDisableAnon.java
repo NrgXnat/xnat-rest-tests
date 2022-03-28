@@ -104,6 +104,7 @@ public class TestDicomSCPDisableAnon extends BaseXnatRestTest {
 
     @Test
     public void testAnonymizationEnabled() {
+        mainAdminInterface().updateDicomScpReceiver(receiver.anonymizationEnabled(true));
         new XnatCStore(receiver).overwrittenHeaders(Collections.singletonMap(Tag.PatientComments, patientComments))
                                 .data(TestData.ANON_2)
                                 .sendDICOM();
@@ -133,6 +134,32 @@ public class TestDicomSCPDisableAnon extends BaseXnatRestTest {
         new ProjectScript().validateScriptDidntRun(files);
     }
 
+    @Test
+    public void testDirectArchiveWithAnonymizationEnabled() {
+        mainAdminInterface().updateDicomScpReceiver(receiver.anonymizationEnabled(true).directArchive(true));
+        new XnatCStore(receiver).overwrittenHeaders(Collections.singletonMap(Tag.PatientComments, patientComments))
+                .data(TestData.ANON_2)
+                .sendDICOM();
+
+        waitForDirectArchive(session);
+        final List<File> files = downloadResourceFiles(session);
+        new SiteScript().validateScriptRan(files);
+        new ProjectScript().validateScriptRan(files);
+    }
+
+    @Test
+    public void testDirectArchiveWithAnonymizationDisabled() {
+        mainAdminInterface().updateDicomScpReceiver(receiver.anonymizationEnabled(false).directArchive(true));
+        new XnatCStore(receiver).overwrittenHeaders(Collections.singletonMap(Tag.PatientComments, patientComments))
+                .data(TestData.ANON_2)
+                .sendDICOM();
+
+        waitForDirectArchive(session);
+        final List<File> files = downloadResourceFiles(session);
+        new SiteScript().validateScriptDidntRun(files);
+        new ProjectScript().validateScriptDidntRun(files);
+    }
+
 
     private void waitForAutoArchive(){
         final long startTime      = System.currentTimeMillis();
@@ -144,6 +171,13 @@ public class TestDicomSCPDisableAnon extends BaseXnatRestTest {
             TimeUtils.sleep(THIRTY_SECONDS);
         }
         throw new RuntimeException("Session never archived.");
+    }
+
+    private void waitForDirectArchive(ImagingSession session) {
+        TimeUtils.sleep(60000);
+        restDriver.waitForDirectArchiveEmpty(mainUser, project, 300);
+        TimeUtils.sleep(1000); // sleep for 1s to accommodate a little gap between prearchive being empty and session being accessible
+        mainQueryBase().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
     }
 
     private List<File> downloadResourceFiles(ImagingSession session) {
