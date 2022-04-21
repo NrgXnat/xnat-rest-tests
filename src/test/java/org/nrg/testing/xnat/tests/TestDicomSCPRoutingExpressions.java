@@ -1,0 +1,340 @@
+package org.nrg.testing.xnat.tests;
+
+import org.apache.log4j.Logger;
+import org.nrg.testing.TimeUtils;
+import org.nrg.testing.annotations.AddedIn;
+import org.nrg.testing.annotations.TestRequires;
+import org.nrg.testing.dicom.XnatCStore;
+import org.nrg.testing.enums.TestData;
+import org.nrg.testing.util.RandomHelper;
+import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.conf.Settings;
+import org.nrg.xnat.pogo.Project;
+import org.nrg.xnat.pogo.Subject;
+import org.nrg.xnat.pogo.dicom.DicomObjectIdentifier;
+import org.nrg.xnat.pogo.dicom.DicomScpReceiver;
+import org.nrg.xnat.pogo.experiments.SubjectAssessor;
+import org.nrg.xnat.pogo.experiments.sessions.PETSession;
+import org.nrg.xnat.versions.Xnat_1_8_5;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.junit.Assert.*;
+
+
+/**
+ * Tests for XNAT-6990, per-receiver routing rules.
+ *
+ * (0014,0046) is MaterialNotes, VR=LT. Used for per-receiver routing rule.
+ */
+@AddedIn(Xnat_1_8_5.class)
+@TestRequires(admin = true, data = TestData.SIMPLE_PET)
+public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
+    private Project project;
+    private static final Logger LOG = Logger.getLogger(TestDicomSCPRoutingExpressions.class);
+
+    private final DicomScpReceiver allRouteReceiver
+            = new DicomScpReceiver().aeTitle(RandomHelper.randomID())
+            .host(Settings.DICOM_HOST)
+            .port(Settings.DICOM_PORT)
+            .identifier(DicomObjectIdentifier.DEFAULT.getId())
+            .enabled(true)
+            .customProcessing(false)
+            .directArchive(true)
+            .anonymizationEnabled(true)
+            .whitelistEnabled(false)
+            .routingExpressionsEnabled(false)
+            .projectRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):1")
+            .subjectRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):2")
+            .sessionRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):3");
+
+    private final DicomScpReceiver simpleRouteReceiver
+            = new DicomScpReceiver().aeTitle(RandomHelper.randomID())
+            .host(Settings.DICOM_HOST)
+            .port(Settings.DICOM_PORT)
+            .identifier( "dicomObjectIdentifier")
+            .enabled(true)
+            .customProcessing(false)
+            .directArchive(true)
+            .anonymizationEnabled(true)
+            .whitelistEnabled(false)
+            .routingExpressionsEnabled(false)
+            .projectRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):1")
+            .subjectRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):2")
+            .sessionRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):3");
+
+    private final DicomScpReceiver someRoutesReceiver
+            = new DicomScpReceiver().aeTitle(RandomHelper.randomID())
+            .host(Settings.DICOM_HOST)
+            .port(Settings.DICOM_PORT)
+            .identifier( "dicomObjectIdentifier")
+            .enabled(true)
+            .customProcessing(false)
+            .directArchive(true)
+            .anonymizationEnabled(true)
+            .whitelistEnabled(false)
+            .routingExpressionsEnabled(false)
+            .projectRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):1")
+            .subjectRoutingExpression( null)
+            .sessionRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):3");
+
+    @BeforeClass
+    public void setup() {
+        mainAdminInterface().createDicomScpReceiver( allRouteReceiver);
+        mainAdminInterface().createDicomScpReceiver( someRoutesReceiver);
+        mainAdminInterface().createDicomScpReceiver( simpleRouteReceiver);
+        mainAdminInterface().setSessionXmlRebuilderTimes(1, 10000);
+    }
+
+    @BeforeMethod(alwaysRun = true)
+    @AfterClass(alwaysRun = true)
+    public void clearPrearchive() {
+        try {
+            restDriver.clearPrearchiveSessions(mainUser, project);
+        } catch (Throwable throwable) {
+            LOG.warn(throwable);
+        }
+    }
+
+    @AfterClass(alwaysRun = true)
+    public void tearDown() {
+        mainAdminInterface().deleteProject( project);
+        mainAdminInterface().deleteDicomScpReceiver( allRouteReceiver);
+        mainAdminInterface().deleteDicomScpReceiver( someRoutesReceiver);
+        mainAdminInterface().deleteDicomScpReceiver( simpleRouteReceiver);
+    }
+
+    @Test
+    public void testRoutingExpressionsEnabled() {
+        allRouteReceiver.routingExpressionsEnabled(true);
+        mainAdminInterface().updateDicomScpReceiver(allRouteReceiver);
+
+        project = new Project();
+        String projectIdPre = project.getId();
+        String projectIdPost = String.format("%s_rtd", projectIdPre);
+        project.setId( projectIdPost);
+        mainInterface().createProject( project);
+
+        Map<Integer, String> hdr = Stream.of(new Object[][] {
+                { 0x00140046, String.format( "Project:%s Subject:subj_rtd Session:sess_rtd", projectIdPost) },
+                { 0x00104000, String.format( "Project:%s Subject:subj Session:sess", projectIdPre) },
+        }).collect(Collectors.toMap(data -> (Integer) data[0], data -> (String) data[1]));
+        uploadViaDicomScp( allRouteReceiver, hdr);
+        waitForDicomRecieve( project);
+
+        Project expectedProject = new Project( projectIdPost);
+        Subject subject = new Subject( expectedProject, "subj_rtd");
+        PETSession session = new PETSession( expectedProject, subject, "sess_rtd");
+        Project actualProject = mainAdminInterface().readProject( projectIdPost);
+
+        compareProjects( expectedProject, actualProject);
+    }
+
+    @Test
+    public void testRoutingExpressionsDisabled() {
+        allRouteReceiver.routingExpressionsEnabled(false);
+        mainAdminInterface().updateDicomScpReceiver(allRouteReceiver);
+
+        project = new Project();
+        String projectIdPre = project.getId();
+        String projectIdPost = String.format("%s_rtd", projectIdPre);
+        project.setId( projectIdPre);
+        mainInterface().createProject( project);
+        // the subject and session will be created by auto archiving.
+
+        Map<Integer, String> hdr = Stream.of(new Object[][] {
+                { 0x00140046, String.format( "Project:%s Subject:subj_rtd Session:sess_rtd", projectIdPost) },
+                { 0x00104000, String.format( "Project:%s Subject:subj Session:sess", projectIdPre) },
+        }).collect(Collectors.toMap(data -> (Integer) data[0], data -> (String) data[1]));
+        uploadViaDicomScp( allRouteReceiver, hdr);
+        waitForDicomRecieve( project);
+
+        Project expectedProject = new Project( projectIdPre);
+        Subject subject = new Subject( expectedProject, "subj");
+        PETSession session = new PETSession( expectedProject, subject, "sess");
+        Project actualProject = mainAdminInterface().readProject( projectIdPre);
+
+        compareProjects( expectedProject, actualProject);
+    }
+
+    /**
+     * Missing routes fall back to classic routing.
+     */
+    @Test
+    public void testSomeRoutingExpressionsBlank() {
+        someRoutesReceiver.routingExpressionsEnabled( true);
+        mainAdminInterface().updateDicomScpReceiver( someRoutesReceiver);
+
+        project = new Project();
+        String projectIdPre = project.getId();
+        String projectIdPost = projectIdPre + "_rtd";
+        project.setId( projectIdPost);
+        mainInterface().createProject( project);
+
+        Map<Integer, String> hdr = Stream.of(new Object[][] {
+                { 0x00140046, String.format( "Project:%s Subject:subj_rtd Session:sess_rtd", projectIdPost) },
+                { 0x00104000, String.format( "Project:%s Subject:subj Session:sess", projectIdPre) },
+        }).collect(Collectors.toMap(data -> (Integer) data[0], data -> (String) data[1]));
+        uploadViaDicomScp( someRoutesReceiver, hdr);
+        waitForDicomRecieve( project);
+
+        Project expectedProject = new Project( projectIdPost);
+        Subject subject = new Subject( expectedProject, "subj");
+        PETSession session = new PETSession( expectedProject, subject, "sess_rtd");
+        Project actualProject = mainAdminInterface().readProject( projectIdPost);
+
+        compareProjects( expectedProject, actualProject);
+    }
+
+    /**
+     * Per-receiver routing overrides any site-wide routing.
+     */
+    @Test
+    public void testSiteAndReceiverRoutingExpressionsEnabled() {
+        mainAdminInterface().setSubjectDicomRoutingConfig("(0010,4000):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):2 t:.+ r:sitewide\"");
+        simpleRouteReceiver.routingExpressionsEnabled( true);
+        mainAdminInterface().updateDicomScpReceiver( simpleRouteReceiver);
+
+        project = new Project();
+        String projectIdPre = project.getId();
+        String projectIdPost = projectIdPre + "_rtd";
+        project.setId( projectIdPost);
+        mainInterface().createProject( project);
+
+        Map<Integer, String> hdr = Stream.of(new Object[][] {
+                { 0x00140046, String.format( "Project:%s Subject:subj_rtd Session:sess_rtd", projectIdPost) },
+                { 0x00104000, String.format( "Project:%s Subject:subj Session:sess", projectIdPre) },
+        }).collect(Collectors.toMap(data -> (Integer) data[0], data -> (String) data[1]));
+        uploadViaDicomScp( simpleRouteReceiver, hdr);
+        waitForDicomRecieve( project);
+
+        Project expectedProject = new Project( projectIdPost);
+        Subject subject = new Subject( expectedProject, "subj_rtd");
+        PETSession session = new PETSession( expectedProject, subject, "sess_rtd");
+        Project actualProject = mainAdminInterface().readProject( projectIdPost);
+
+        compareProjects( expectedProject, actualProject);
+        mainAdminInterface().disableSubjectDicomRoutingConfig();
+    }
+
+    /**
+     * Test the ability to route any DICOM traffic to a single project.
+     *
+     * Series Instance UID should always exist so there should always be content to match on. Take that content
+     * and completely replace it with the ID of the project.
+     */
+    @Test
+    public void testRouteAllTraficToSpecifiedProject() {
+        project = new Project( );
+        String projectId = project.getId();
+        mainInterface().createProject( project);
+
+        String projectRoutingExpression = String.format("(0020,000E):(.*):1 t:.+ r:%s", projectId);
+        someRoutesReceiver.routingExpressionsEnabled( true);
+        someRoutesReceiver.setProjectRoutingExpression( projectRoutingExpression);
+        someRoutesReceiver.setSubjectRoutingExpression( null);
+        someRoutesReceiver.setSessionRoutingExpression( null);
+        mainAdminInterface().updateDicomScpReceiver( someRoutesReceiver);
+
+        new XnatCStore( someRoutesReceiver).data(TestData.SIMPLE_PET).sendDICOM();
+        waitForDicomRecieve( project);
+
+        Project actualProject = mainAdminInterface().readProject( projectId);
+
+        Subject subject = new Subject( project, "GSU001");
+        PETSession session = new PETSession( project, subject, "GSU001_v00_pet");
+
+        compareProjects( project, actualProject);
+    }
+
+    /**
+     * The subject routing contains two expressions. The second should take effect.
+     */
+    @Test
+    public void testMultiLineExpressions() {
+        project = new Project( );
+        String projectId = project.getId();
+        mainInterface().createProject( project);
+
+        String projectRoutingExpression = String.format("(0020,000E):(.*):1 t:.+ r:%s", projectId);
+        String subjectRoutingExpression = String.format("(0010,4001):(.*):1 t:.+ r:subj_rtd1\n(0020,000E):(.*):1 t:.+ r:subj_rtd2");
+        someRoutesReceiver.routingExpressionsEnabled( true);
+        someRoutesReceiver.setProjectRoutingExpression( projectRoutingExpression);
+        someRoutesReceiver.setSubjectRoutingExpression( subjectRoutingExpression);
+        someRoutesReceiver.setSessionRoutingExpression( null);
+        mainAdminInterface().updateDicomScpReceiver( someRoutesReceiver);
+
+        new XnatCStore( someRoutesReceiver).data(TestData.SIMPLE_PET).sendDICOM();
+        waitForDicomRecieve( project);
+
+        Project actualProject = mainAdminInterface().readProject( projectId);
+
+        Subject subject = new Subject( project, "subj_rtd2");
+        PETSession session = new PETSession( project, subject, "GSU001_v00_pet");
+
+        compareProjects( project, actualProject);
+    }
+
+    private void uploadViaDicomScp( DicomScpReceiver receiver, Map<Integer, String> hdr) {
+        new XnatCStore( receiver).data(TestData.SIMPLE_PET).overwrittenHeaders(hdr).sendDICOM();
+    }
+
+    private void waitForDicomRecieve(Project project) {
+        TimeUtils.sleep(10000);
+        restDriver.waitForDirectArchiveEmpty(mainUser, project, 300);
+    }
+
+    private void verifyImport(SubjectAssessor session) {
+        // if session can be retrieved at this URL, then project, subject, session are all labelled properly
+        TimeUtils.sleep(1000); // sleep for 1s to accommodate a little gap between prearchive being empty and session being accessible
+        mainCredentials().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
+    }
+
+    private void compareProjects( Project expectedProject, Project actualProject) {
+        assertNotNull( actualProject);
+        assertEquals( expectedProject.getId(), actualProject.getId());
+        assertEquals( expectedProject.getSubjects().size(), actualProject.getSubjects().size());
+        for( Subject expectedSubject: expectedProject.getSubjects()) {
+            Optional<Subject> actualSubject = getSubject( expectedSubject, actualProject);
+            if( actualSubject.isPresent()) {
+                compareSubjects( expectedSubject, actualSubject.get());
+            }
+            else {
+                fail( String.format("Project %s is missing subject %s", actualProject.getId(), expectedSubject.getLabel()));
+            }
+        }
+    }
+
+    private Optional<Subject> getSubject(Subject expectedSubject, Project actualProject) {
+        return actualProject.getSubjects().stream().filter(as -> as.getLabel().equals( expectedSubject.getLabel())).findAny();
+    }
+
+    private void compareSubjects( Subject expectedSubject, Subject actualSubject) {
+        assertEquals( expectedSubject.getLabel(), actualSubject.getLabel());
+        for( SubjectAssessor expectedExperiment: expectedSubject.getExperiments()) {
+            Optional<SubjectAssessor> actualExperiment = getExperiment( expectedExperiment, actualSubject);
+            if( actualExperiment.isPresent()) {
+                compareExperiments( expectedExperiment, actualExperiment.get());
+            }
+            else {
+                fail( String.format("Subject %s is missing expected Experiment %s", actualSubject.getLabel(), expectedExperiment.getLabel()));
+            }
+        }
+    }
+
+    private Optional<SubjectAssessor> getExperiment( SubjectAssessor expectedExperiment, Subject actualSubject) {
+        return actualSubject.getExperiments().stream().filter(e -> e.getLabel().equals( expectedExperiment.getLabel())).findAny();
+    }
+
+    private void compareExperiments( SubjectAssessor expectedExperiment, SubjectAssessor actualExperiment) {
+        assertEquals( expectedExperiment.getLabel(), actualExperiment.getLabel());
+    }
+
+}
