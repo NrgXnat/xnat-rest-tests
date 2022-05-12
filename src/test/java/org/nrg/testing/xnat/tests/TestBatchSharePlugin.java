@@ -30,6 +30,7 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -94,7 +95,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
 
     @Test
     public void testStandardShareFunctionality() {
-        performBasicShare(ShareMethod.STANDARD_SHARE);
+        performBatchShareAction(mainAdminUser, project2, ShareMethod.STANDARD_SHARE, subject, session);
 
         Project sharedProject = mainInterface().readProject(project2.getId());
         Subject sharedSubject = sharedProject.findSecondarySubject(subject.getLabel());
@@ -112,7 +113,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
 
     @Test
     public void testCopyFunctionality() {
-        performBasicShare(ShareMethod.COPY);
+        performBatchShareAction(mainAdminUser, project2, ShareMethod.COPY, subject, session);
 
         Project sharedProject = mainInterface().readProject(project2.getId());
         Subject sharedSubject = sharedProject.findSubject(subject.getLabel());
@@ -139,18 +140,10 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         mainAdminInterface().createProject(project3);
         assertTrue(project3.getSubjects().size() == 0);
 
-        List<ShareRequest> requestList = new ArrayList<>();
-
-        List<Object> elements = new ArrayList<>();
-        elements.add(subject);
-        elements.add(session);
-
-        addElementsToBatchShare(ShareMethod.STANDARD_SHARE, requestList, project2, elements);
-        performBatchShareAction(requestList, mainAdminUser);
+        performBatchShareAction(mainAdminUser, project2, ShareMethod.STANDARD_SHARE, subject, session);
 
         List <ShareRequest> copyRequestList = new ArrayList<>();
-        addElementsToBatchShare(ShareMethod.COPY, copyRequestList, project3, elements);
-        performBatchShareAction(copyRequestList, mainAdminUser);
+        performBatchShareAction(mainAdminUser, project3, ShareMethod.COPY, subject, subject);
 
         Project originalProject = mainInterface().readProject(project.getId());
         assertEquals(originalProject.getSubjects().size() + originalProject.getSecondarySubjects().size(), 1);
@@ -188,17 +181,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         mainInterface().getAccessionNumber(subject2);
         mainInterface().getAccessionNumber(session2);
 
-        List<ShareRequest> requestList = new ArrayList<>();
-
-        List<Object> elements = new ArrayList<>();
-        elements.add(subject);
-        elements.add(session);
-        elements.add(subject2);
-        elements.add(session2);
-
-        addElementsToBatchShare(ShareMethod.STANDARD_SHARE, requestList, project2, elements);
-
-        performBatchShareAction(requestList, mainAdminUser);
+        performBatchShareAction(mainAdminUser, project2, ShareMethod.STANDARD_SHARE, subject, session, subject2, session2);
 
         Project sharedProject = mainInterface().readProject(project2.getId());
         Subject sharedSubject = sharedProject.findSecondarySubject(subject.getLabel());
@@ -266,9 +249,9 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         elements.add(permissionsSubject);
         elements.add(permissionsSession);
 
-        runPermissionsChecksForUserType("owner", permissionsProject, receiverProject, requestList, elements, ownerUser);
-        runPermissionsChecksForUserType("member", permissionsProject, receiverProject, requestList, elements, memberUser);
-        runPermissionsChecksForUserType("collaborator", permissionsProject, receiverProject, requestList, elements, collaboratorUser);
+        runPermissionsChecksForUserType("owner", permissionsProject, receiverProject, ownerUser, permissionsSubject, permissionsSession);
+        runPermissionsChecksForUserType("member", permissionsProject, receiverProject, memberUser, permissionsSubject, permissionsSession);
+        runPermissionsChecksForUserType("collaborator", permissionsProject, receiverProject, collaboratorUser, permissionsSubject, permissionsSession);
 
         restDriver.deleteProjectSilently(mainAdminUser, permissionsProject);
         restDriver.deleteProjectSilently(mainAdminUser, receiverProject);
@@ -284,7 +267,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
             LOG.warn(throwable);
         }
 
-        performBasicShare(ShareMethod.COPY);
+        performBatchShareAction(mainAdminUser, project2, ShareMethod.COPY, subject, session);
 
         Project sharedProject = mainInterface().readProject(project2.getId());
         Subject sharedSubject = sharedProject.findSubject(subject.getLabel());
@@ -299,7 +282,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
     public void testResourceFileBatchShareEditing() {
         restDriver.validateResource(mainUser, subjectResource);
 
-        performBasicShare(ShareMethod.COPY);
+        performBatchShareAction(mainAdminUser, project2, ShareMethod.COPY, subject, session);
 
         restDriver.validateResource(mainUser, subjectResource);
 
@@ -315,22 +298,9 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         restDriver.validateResource(mainUser, sharedSubjectResource);
     }
 
-    public void performBasicShare(ShareMethod shareMethod) {
-        assertTrue(project2.getSubjects().size() == 0);
+    public List<ShareRequest> addElementsToBatchShare(ShareMethod shareMethod, Project sharedToProject, List<Object> elements) {
 
         List<ShareRequest> requestList = new ArrayList<>();
-
-        List<Object> elements = new ArrayList<>();
-        elements.add(subject);
-        elements.add(session);
-
-        addElementsToBatchShare(shareMethod, requestList, project2, elements);
-
-        performBatchShareAction(requestList, mainAdminUser);
-    }
-
-    public void addElementsToBatchShare(ShareMethod shareMethod, List<ShareRequest> requestList, Project sharedToProject, List<Object> elements) {
-
         for (Object element : elements) {
             ShareRequest request = new ShareRequest();
             request.setOperation(shareMethod);
@@ -342,21 +312,23 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
             }
             requestList.add(request);
         }
+
+        return requestList;
     }
 
-    public void runPermissionsChecksForUserType(String userType, Project permissionsProject, Project receiverProject, List<ShareRequest> requestList, List<Object> elements, User user) {
+    public void runPermissionsChecksForUserType(String userType, Project permissionsProject, Project receiverProject, User user, Object... elements) {
         mainQueryBase().contentType(ContentType.JSON).body(STOP_PROJECT_SHARING_STRING).post(formatXnatUrl("REST/services/features?group={group}_" + userType), permissionsProject.getId()).then().assertThat().statusCode(200);
 
-        addElementsToBatchShare(ShareMethod.STANDARD_SHARE, requestList, receiverProject, elements);
-
-        performBatchShareFailureAction(requestList, user);
+        performBatchShareFailureAction(user, receiverProject, ShareMethod.STANDARD_SHARE, elements);
 
         mainQueryBase().contentType(ContentType.JSON).body(RESTART_PROJECT_SHARING_STRING).post(formatXnatUrl("REST/services/features?group={group}_" + userType), permissionsProject.getId()).then().assertThat().statusCode(200);
 
-        performBatchShareAction(requestList, user);
+        performBatchShareAction(user, receiverProject, ShareMethod.STANDARD_SHARE, elements);
     }
 
-    public void performBatchShareAction(List<ShareRequest> requestList, User user) {
+    public void performBatchShareAction(User user, Project sharedToProject, ShareMethod shareMethod, Object... elements) {
+        List<ShareRequest> requestList = addElementsToBatchShare(shareMethod, sharedToProject, Arrays.asList(elements));
+
         String trackingId = interfaceFor(user).launchBatchShare(requestList);
 
         final long start = System.currentTimeMillis();
@@ -377,8 +349,9 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         } while (System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(20));
     }
 
-    public void performBatchShareFailureAction(List<ShareRequest> shareRequests, User user) {
-        interfaceFor(user).queryBase().contentType(ContentType.JSON).body(shareRequests).post(formatXapiUrl("batch_share")).then().assertThat().statusCode(400);
+    public void performBatchShareFailureAction(User user, Project sharedToProject, ShareMethod shareMethod, Object... elements) {
+        List<ShareRequest> requestList = addElementsToBatchShare(shareMethod, sharedToProject, Arrays.asList(elements));
+        interfaceFor(user).queryBase().contentType(ContentType.JSON).body(requestList).post(formatXapiUrl("batch_share")).then().assertThat().statusCode(400);
     }
 
     private List<File> downloadResourceFiles(ImagingSession session, Subject inputSubject, Project inputProject) {
