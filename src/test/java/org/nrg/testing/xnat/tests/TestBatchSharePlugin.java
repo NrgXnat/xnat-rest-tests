@@ -24,6 +24,7 @@ import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.nrg.xnat.pogo.resources.SubjectResource;
 import org.nrg.xnat.pogo.sharing.ShareRequest;
 import org.nrg.xnat.pogo.users.User;
+import org.python.antlr.op.Sub;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -39,7 +40,7 @@ import static org.testng.AssertJUnit.assertTrue;
 
 import static org.testng.AssertJUnit.assertEquals;
 
-@TestRequires(plugins = {"batchSharePlugin"}, data = {TestData.SAMPLE_1, TestData.SAMPLE_2})
+@TestRequires(plugins = {"batchSharePlugin"}, data = {TestData.SAMPLE_1, TestData.SAMPLE_2, TestData.ANON_2})
 public class TestBatchSharePlugin extends BaseXnatRestTest {
     private static final Logger LOG = Logger.getLogger(TestBatchSharePlugin.class);
 
@@ -95,7 +96,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
 
     @Test
     public void testStandardShareFunctionality() {
-        performBatchShareAction(mainAdminUser, project2, ShareMethod.STANDARD_SHARE, subject, session);
+        performBatchShareAction(mainUser, project2, ShareMethod.STANDARD_SHARE, subject, session);
 
         Project sharedProject = mainInterface().readProject(project2.getId());
         Subject sharedSubject = sharedProject.findSecondarySubject(subject.getLabel());
@@ -113,7 +114,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
 
     @Test
     public void testCopyFunctionality() {
-        performBatchShareAction(mainAdminUser, project2, ShareMethod.COPY, subject, session);
+        performBatchShareAction(mainUser, project2, ShareMethod.COPY, subject, session);
 
         Project sharedProject = mainInterface().readProject(project2.getId());
         Subject sharedSubject = sharedProject.findSubject(subject.getLabel());
@@ -140,10 +141,10 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         mainAdminInterface().createProject(project3);
         assertTrue(project3.getSubjects().size() == 0);
 
-        performBatchShareAction(mainAdminUser, project2, ShareMethod.STANDARD_SHARE, subject, session);
+        performBatchShareAction(mainUser, project2, ShareMethod.STANDARD_SHARE, subject, session);
 
         List <ShareRequest> copyRequestList = new ArrayList<>();
-        performBatchShareAction(mainAdminUser, project3, ShareMethod.COPY, subject, subject);
+        performBatchShareAction(mainUser, project3, ShareMethod.COPY, subject, subject);
 
         Project originalProject = mainInterface().readProject(project.getId());
         assertEquals(originalProject.getSubjects().size() + originalProject.getSecondarySubjects().size(), 1);
@@ -181,7 +182,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         mainInterface().getAccessionNumber(subject2);
         mainInterface().getAccessionNumber(session2);
 
-        performBatchShareAction(mainAdminUser, project2, ShareMethod.STANDARD_SHARE, subject, session, subject2, session2);
+        performBatchShareAction(mainUser, project2, ShareMethod.STANDARD_SHARE, subject, session, subject2, session2);
 
         Project sharedProject = mainInterface().readProject(project2.getId());
         Subject sharedSubject = sharedProject.findSecondarySubject(subject.getLabel());
@@ -243,12 +244,6 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
 
         mainInterface().createProject(receiverProject);
 
-        List<ShareRequest> requestList = new ArrayList<>();
-
-        List<Object> elements = new ArrayList<>();
-        elements.add(permissionsSubject);
-        elements.add(permissionsSession);
-
         runPermissionsChecksForUserType("owner", permissionsProject, receiverProject, ownerUser, permissionsSubject, permissionsSession);
         runPermissionsChecksForUserType("member", permissionsProject, receiverProject, memberUser, permissionsSubject, permissionsSession);
         runPermissionsChecksForUserType("collaborator", permissionsProject, receiverProject, collaboratorUser, permissionsSubject, permissionsSession);
@@ -259,30 +254,54 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
 
     @Test
     public void testBatchCopyAnonymization() {
-        mainInterface().setProjectAnonScript(project2, projScript);
+        Project sourceProject = new Project();
+        Project destProject = new Project();
+        Subject sourceSubj = new Subject(sourceProject);
+        MRSession sourceSesh = new MRSession(sourceProject, sourceSubj);
+
+        sourceSesh.extension(new SessionImportExtension(sourceSesh, TestData.ANON_2.toFile()));
+
+        mainInterface().createProject(sourceProject);
+        mainInterface().createProject(destProject);
+
+        mainInterface().getAccessionNumber(sourceSubj);
+        mainInterface().getAccessionNumber(sourceSesh);
+
+        mainInterface().setProjectAnonScript(destProject, projScript);
 
         try {
-            restDriver.clearPrearchiveSessions(mainUser, project);
+            restDriver.clearPrearchiveSessions(mainUser, sourceProject);
         } catch (Throwable throwable) {
             LOG.warn(throwable);
         }
 
-        performBatchShareAction(mainAdminUser, project2, ShareMethod.COPY, subject, session);
+        performBatchShareAction(mainUser, destProject, ShareMethod.COPY, sourceSubj, sourceSesh);
 
-        Project sharedProject = mainInterface().readProject(project2.getId());
-        Subject sharedSubject = sharedProject.findSubject(subject.getLabel());
-        ImagingSession sharedExperiment = (ImagingSession) sharedSubject.findSubjectAssessor(session.getLabel());
+        Project sharedProject = mainInterface().readProject(destProject.getId());
+        Subject sharedSubject = sharedProject.findSubject(sourceSubj.getLabel());
+        ImagingSession sharedExperiment = (ImagingSession) sharedSubject.findSubjectAssessor(sourceSesh.getLabel());
 
         final List<File> files = downloadResourceFiles(sharedExperiment, sharedSubject, sharedProject);
 
         new ProjectScript().validateScriptRan(files);
+
+        Project originalProject = mainInterface().readProject(sourceProject.getId());
+        Subject originalSubject = originalProject.findSubject(sourceSubj.getLabel());
+        ImagingSession originalExperiment = (ImagingSession) originalSubject.findSubjectAssessor(sourceSesh.getLabel());
+
+        final List<File> sourceProjectFiles = downloadResourceFiles(originalExperiment, originalSubject, originalProject);
+
+        new ProjectScript().validateScriptDidntRun(sourceProjectFiles);
+
+        restDriver.deleteProjectSilently(mainAdminUser, sourceProject);
+        restDriver.deleteProjectSilently(mainAdminUser, destProject);
     }
 
     @Test
     public void testResourceFileBatchShareEditing() {
         restDriver.validateResource(mainUser, subjectResource);
 
-        performBatchShareAction(mainAdminUser, project2, ShareMethod.COPY, subject, session);
+        performBatchShareAction(mainUser, project2, ShareMethod.COPY, subject, session);
 
         restDriver.validateResource(mainUser, subjectResource);
 
@@ -296,6 +315,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         mainInterface().overwriteResourceFile(sharedSubjectResource, sharedResourceFile);
 
         restDriver.validateResource(mainUser, sharedSubjectResource);
+        restDriver.validateResource(mainUser, subjectResource);
     }
 
     public List<ShareRequest> addElementsToBatchShare(ShareMethod shareMethod, Project sharedToProject, List<Object> elements) {
