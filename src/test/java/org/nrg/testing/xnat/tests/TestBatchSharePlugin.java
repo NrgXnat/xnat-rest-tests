@@ -1,15 +1,14 @@
 package org.nrg.testing.xnat.tests;
 
 import io.restassured.http.ContentType;
-import io.restassured.path.json.JsonPath;
 import org.apache.log4j.Logger;
-import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.ProjectScript;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.XnatObjectUtils;
 import org.nrg.xnat.enums.ShareMethod;
+import org.nrg.xnat.interfaces.XnatInterface;
 import org.nrg.xnat.pogo.AnonScript;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -24,7 +23,6 @@ import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.nrg.xnat.pogo.resources.SubjectResource;
 import org.nrg.xnat.pogo.sharing.ShareRequest;
 import org.nrg.xnat.pogo.users.User;
-import org.python.antlr.op.Sub;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -33,10 +31,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
+import static org.hamcrest.Matchers.equalTo;
 import static org.nrg.xnat.enums.DicomEditVersion.DE_6;
-import static org.testng.AssertJUnit.assertTrue;
 
 import static org.testng.AssertJUnit.assertEquals;
 
@@ -64,7 +61,6 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
 
     private Resource subjectResource;
     private ResourceFile resourceFile;
-
 
     @BeforeMethod
     public void setupBatchShareTesting() {
@@ -135,38 +131,18 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
     //version of the subject/experiment
     @Test
     public void testMultipleSharedElements() {
-        assertTrue(project2.getSubjects().size() == 0);
+        assertEquals(0, project2.getSubjects().size());
 
-        Project project3 = new Project();
-        mainAdminInterface().createProject(project3);
-        assertTrue(project3.getSubjects().size() == 0);
+        final Project project3 = new Project();
+        mainInterface().createProject(project3);
+        assertEquals(0, project3.getSubjects().size());
 
         performBatchShareAction(mainUser, project2, ShareMethod.STANDARD_SHARE, subject, session);
+        performBatchShareAction(mainUser, project3, ShareMethod.COPY, subject, session);
 
-        List <ShareRequest> copyRequestList = new ArrayList<>();
-        performBatchShareAction(mainUser, project3, ShareMethod.COPY, subject, subject);
-
-        Project originalProject = mainInterface().readProject(project.getId());
-        assertEquals(originalProject.getSubjects().size() + originalProject.getSecondarySubjects().size(), 1);
-
-        JsonPath originalProjectExperiments = mainQueryBase().get(formatRestUrl("projects/{id}/experiments"), originalProject.getId()).then().assertThat().statusCode(200).and().extract().jsonPath();
-        Integer totalOriginalProjectExperiments = Integer.valueOf(originalProjectExperiments.getString("ResultSet.totalRecords"));
-        assertEquals(totalOriginalProjectExperiments.intValue(), 1);
-
-        Project sharedProject = mainInterface().readProject(project2.getId());
-        assertEquals(sharedProject.getSubjects().size() + sharedProject.getSecondarySubjects().size(), 1);
-
-        JsonPath sharedProjectExperiments = mainQueryBase().get(formatRestUrl("projects/{id}/experiments"), originalProject.getId()).then().assertThat().statusCode(200).and().extract().jsonPath();
-        Integer totalSharedProjectExperiments = Integer.valueOf(sharedProjectExperiments.getString("ResultSet.totalRecords"));
-        assertEquals(totalSharedProjectExperiments.intValue(), 1);
-
-
-        Project copiedProject = mainInterface().readProject(project3.getId());
-        assertEquals(copiedProject.getSubjects().size() + copiedProject.getSecondarySubjects().size(), 1);
-
-        JsonPath copiedProjectExperiments = mainQueryBase().get(formatRestUrl("projects/{id}/experiments"), originalProject.getId()).then().assertThat().statusCode(200).and().extract().jsonPath();
-        Integer totalCopiedProjectExperiments = Integer.valueOf(copiedProjectExperiments.getString("ResultSet.totalRecords"));
-        assertEquals(totalCopiedProjectExperiments.intValue(), 1);
+        checkProjectHasSingleSession(project.getId()); // original
+        checkProjectHasSingleSession(project2.getId()); // shared
+        checkProjectHasSingleSession(project3.getId()); // copied
 
         restDriver.deleteProjectSilently(mainAdminUser, project3);
     }
@@ -177,7 +153,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         Subject subject2 = new Subject(project3);
         MRSession session2 = new MRSession(project3, subject2);
         session2.extension(new SessionImportExtension(session2, TestData.SAMPLE_2.toFile()));
-        mainAdminInterface().createProject(project3);
+        mainInterface().createProject(project3);
 
         mainInterface().getAccessionNumber(subject2);
         mainInterface().getAccessionNumber(session2);
@@ -213,7 +189,6 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         }
         assertEquals(totalFilesSessionTwo, TOTAL_FILES_SESSION_2);
 
-
         restDriver.deleteProjectSilently(mainAdminUser, project3);
     }
 
@@ -228,7 +203,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         Subject permissionsSubject = new Subject(permissionsProject);
         MRSession permissionsSession = new MRSession(permissionsProject, permissionsSubject);
 
-        permissionsSession.extension(new SessionImportExtension(session, TestData.SAMPLE_1.toFile()));
+        permissionsSession.extension(new SessionImportExtension(permissionsSession, TestData.SAMPLE_1.toFile()));
 
         Project receiverProject = new Project();
 
@@ -236,7 +211,9 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         permissionsProject.addMember(memberUser);
         permissionsProject.addCollaborator(collaboratorUser);
 
+        receiverProject.addMember(ownerUser);
         receiverProject.addMember(memberUser);
+        receiverProject.addMember(collaboratorUser);
 
         mainInterface().createProject(permissionsProject);
         mainInterface().getAccessionNumber(permissionsSubject);
@@ -281,7 +258,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         Subject sharedSubject = sharedProject.findSubject(sourceSubj.getLabel());
         ImagingSession sharedExperiment = (ImagingSession) sharedSubject.findSubjectAssessor(sourceSesh.getLabel());
 
-        final List<File> files = downloadResourceFiles(sharedExperiment, sharedSubject, sharedProject);
+        final List<File> files = restDriver.downloadAllDicomFromSession(mainUser, sharedProject, sharedSubject, sharedExperiment);
 
         new ProjectScript().validateScriptRan(files);
 
@@ -289,7 +266,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         Subject originalSubject = originalProject.findSubject(sourceSubj.getLabel());
         ImagingSession originalExperiment = (ImagingSession) originalSubject.findSubjectAssessor(sourceSesh.getLabel());
 
-        final List<File> sourceProjectFiles = downloadResourceFiles(originalExperiment, originalSubject, originalProject);
+        final List<File> sourceProjectFiles = restDriver.downloadAllDicomFromSession(mainUser, originalProject, originalSubject, originalExperiment);
 
         new ProjectScript().validateScriptDidntRun(sourceProjectFiles);
 
@@ -319,7 +296,6 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
     }
 
     public List<ShareRequest> addElementsToBatchShare(ShareMethod shareMethod, Project sharedToProject, List<Object> elements) {
-
         List<ShareRequest> requestList = new ArrayList<>();
         for (Object element : elements) {
             ShareRequest request = new ShareRequest();
@@ -347,26 +323,9 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
     }
 
     public void performBatchShareAction(User user, Project sharedToProject, ShareMethod shareMethod, Object... elements) {
-        List<ShareRequest> requestList = addElementsToBatchShare(shareMethod, sharedToProject, Arrays.asList(elements));
-
-        String trackingId = interfaceFor(user).launchBatchShare(requestList);
-
-        final long start = System.currentTimeMillis();
-        boolean succeeded;
-        do {
-            final JsonPath json = interfaceFor(user)
-                    .jsonQuery()
-                    .get(formatXapiUrl("event_tracking", trackingId))
-                    .then().assertThat().statusCode(200).and().extract().jsonPath();
-
-            try {
-                succeeded = json.getBoolean("succeeded");
-            } catch (NullPointerException e) {
-                TimeUtils.sleep(5000);
-                continue;
-            }
-            break;
-        } while (System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(20));
+        final List<ShareRequest> requestList = addElementsToBatchShare(shareMethod, sharedToProject, Arrays.asList(elements));
+        final XnatInterface xnatInterface = interfaceFor(user);
+        xnatInterface.waitForTrackedEventSuccessful(xnatInterface.launchBatchShare(requestList));
     }
 
     public void performBatchShareFailureAction(User user, Project sharedToProject, ShareMethod shareMethod, Object... elements) {
@@ -374,15 +333,12 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         interfaceFor(user).queryBase().contentType(ContentType.JSON).body(requestList).post(formatXapiUrl("batch_share")).then().assertThat().statusCode(400);
     }
 
-    private List<File> downloadResourceFiles(ImagingSession session, Subject inputSubject, Project inputProject) {
-        final List<File> dicomFiles = new ArrayList<>();
-        final List<Scan> scans = mainInterface().readScans(inputProject, inputSubject, session);
-        for (Scan scan : scans) {
-            final Resource dicom = mainInterface().findResource(scan.getScanResources(), "DICOM");
-            for (ResourceFile file : dicom.getResourceFiles()) {
-                dicomFiles.add(restDriver.saveBinaryResponseToFile(restDriver.interfaceFor(mainUser).queryBase().get(mainInterface().resourceFileUrl(dicom, file))));
-            }
-        }
-        return dicomFiles;
+    private void checkProjectHasSingleSession(String projectId) {
+        final Project project = mainInterface().readProject(projectId);
+        assertEquals(project.getSubjects().size() + project.getSecondarySubjects().size(), 1);
+
+        mainQueryBase().get(formatRestUrl("projects/{id}/experiments"), project.getId()).then().assertThat().statusCode(200).
+                and().body("ResultSet.totalRecords", equalTo("1"));
     }
+
 }

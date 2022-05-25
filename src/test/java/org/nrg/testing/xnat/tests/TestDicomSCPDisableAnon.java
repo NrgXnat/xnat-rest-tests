@@ -181,14 +181,7 @@ public class TestDicomSCPDisableAnon extends BaseXnatRestTest {
     }
 
     private List<File> downloadResourceFiles(ImagingSession session) {
-        final List<File> dicomFiles = new ArrayList<>();
-        final List<Scan> scans = mainInterface().readScans(project, session.getSubject(), session);
-        for (Scan scan : scans) {
-            final Resource dicom = mainInterface().findResource(scan.getScanResources(), "DICOM");
-            for (ResourceFile file : dicom.getResourceFiles()) {
-                dicomFiles.add(restDriver.saveBinaryResponseToFile(restDriver.interfaceFor(mainUser).queryBase().get(mainInterface().resourceFileUrl(dicom, file))));
-            }
-        }
-        return dicomFiles;
+        return restDriver.downloadAllDicomFromSession(mainUser, project, session.getSubject(), session);
     }
+
 }

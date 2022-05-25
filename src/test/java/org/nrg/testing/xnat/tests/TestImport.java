@@ -41,6 +41,7 @@ import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.nrg.xnat.pogo.resources.ScanResource;
 import org.nrg.xnat.pogo.resources.SubjectAssessorResource;
 import org.nrg.xnat.pogo.users.User;
+import org.nrg.xnat.rest.NotFoundException;
 import org.nrg.xnat.versions.*;
 import org.testng.annotations.*;
 
@@ -674,37 +675,16 @@ public class TestImport extends BaseXnatRestTest {
 
         final UserCacheTestObject testObjects = setupForUserCacheUpload(mainInterface());
 
-        final long start = System.currentTimeMillis();
-        boolean succeeded = false;
-        String finalMsg = null;
-        do {
-            final JsonPath json = mainInterface()
-                    .jsonQuery()
-                    .get(formatXapiUrl("event_tracking", testObjects.listener))
-                    .then().assertThat().statusCode(200).and().extract().jsonPath();
-
-            try {
-                succeeded = json.getBoolean("succeeded");
-            } catch (NullPointerException e) {
-                // succeeded is null while processing is running, so sleep and keep polling
-                TimeUtils.sleep(5000);
-                continue;
-            }
-
-            // succeeded is T or F: either way, we can break out of this loop once we collect the final message
-            finalMsg = json.getString("finalMessage");
-            break;
-        } while (System.currentTimeMillis() - start < TimeUnit.MINUTES.toMillis(20));
-
-        assertTrue(succeeded);
-        assertEquals("Archive:" + testObjects.session.getUri(), finalMsg);
+        assertEquals(
+                "Archive:" + testObjects.session.getUri(),
+                mainInterface().waitForTrackedEventSuccessful(testObjects.listener).getFinalMessage()
+        );
 
         // Validate that other users cannot poll the progress of this event
-        User genericUser = getGenericUser();
-        restDriver.queryBaseFor(genericUser)
-                .queryParam("format", "json")
-                .get(formatXapiUrl("event_tracking", testObjects.listener))
-                .then().assertThat().statusCode(404);
+        try {
+            interfaceFor(getGenericUser()).readEventTrackingData(testObjects.listener);
+            fail("Method call should have failed");
+        } catch (NotFoundException ignored) {}
 
         mainInterface().waitForAutoRun(testObjects.session);
         mainInterface().deleteProject(testObjects.session.getPrimaryProject());

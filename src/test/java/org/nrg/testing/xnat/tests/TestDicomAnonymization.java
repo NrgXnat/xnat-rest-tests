@@ -16,10 +16,7 @@ import org.nrg.xnat.pogo.AnonScript;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
-import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
-import org.nrg.xnat.pogo.resources.Resource;
-import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
@@ -517,20 +514,8 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         return session;
     }
 
-    private List<File> downloadResourceFiles(ImagingSession session) {
-        final List<File> dicomFiles = new ArrayList<>();
-        final List<Scan> scans = mainInterface().readScans(anonProject, session.getSubject(), session);
-        for (Scan scan : scans) {
-            final Resource dicom = mainInterface().findResource(scan.getScanResources(), "DICOM");
-            for (ResourceFile file : dicom.getResourceFiles()) {
-                dicomFiles.add(restDriver.saveBinaryResponseToFile(restDriver.interfaceFor(mainUser).queryBase().get(mainInterface().resourceFileUrl(dicom, file))));
-            }
-        }
-        return dicomFiles;
-    }
-
     private void validateAnon(ImagingSession session, List<AnonScript> enabledScripts, List<AnonScript> disabledScripts) {
-        final List<File> dicom = downloadResourceFiles(session);
+        final List<File> dicom = restDriver.downloadAllDicomFromSession(mainUser, anonProject, session.getSubject(), session);
         if (enabledScripts != null) {
             for (AnonScript script : enabledScripts) {
                 scriptValidationMap.get(script).validateScriptRan(dicom);
