@@ -41,6 +41,7 @@ public class TestXapiInvestigator extends BaseXnatRestTest {
     @Test
     @TestedApiSpec(method = {Method.GET, Method.PUT, Method.DELETE}, url = "/xapi/investigators/{investigatorId}")
     public void testInvestigatorsInvestigatorId() {
+        mainAdminInterface().setSiteUserListRestriction(false); // required by readProject()
         final Investigator investigator = randomInvestigator().title("Dr.").department("DEPT").email(Settings.EMAIL).phone("314-867-5309");
         final Project project = new Project().pi(investigator);
         investigator.setPrimaryProjects(Collections.singletonList(project.getId()));
