@@ -22,10 +22,9 @@ import org.testng.annotations.Test;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.net.*;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -40,8 +39,8 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
                                                                      "https://myexternalip.com/raw", "http://ipecho.net/plain",
                                                                      "http://www.trackip.net/ip");
 
-    private final String           publicIpAddress   = getPublicIpAddress();
-    private final Project          project           = new Project();
+    private final List<String>     myIps    = getMyIps();
+    private final Project          project  = new Project();
     private final DicomScpReceiver receiver
                         = new DicomScpReceiver().aeTitle(RandomHelper.randomID())
                                                 .host(Settings.DICOM_HOST)
@@ -143,7 +142,7 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
     @Test
     public void testWhitelistEnabledWithValidIpAddress(){
         receiver.whitelistEnabled(true);
-        receiver.setWhitelist(Collections.singletonList(publicIpAddress));
+        receiver.setWhitelist(myIps);
         mainAdminInterface().updateDicomScpReceiver(receiver);
 
         new XnatCStore(receiver)
@@ -157,7 +156,8 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
     @Test
     public void testWhitelistEnabledWithValidAEAndValidIp(){
         receiver.whitelistEnabled(true);
-        receiver.setWhitelist(Collections.singletonList(Settings.CALLING_AE_TITLE + "@" + publicIpAddress));
+        receiver.setWhitelist(myIps.stream().map(ip -> Settings.CALLING_AE_TITLE + "@" + ip)
+                .collect(Collectors.toList()));
         mainAdminInterface().updateDicomScpReceiver(receiver);
 
         new XnatCStore(receiver)
@@ -211,7 +211,8 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
     @Test
     public void testWhitelistEnabledWithInvalidAEAndValidIp(){
         receiver.whitelistEnabled(true);
-        receiver.setWhitelist(Collections.singletonList(INVALID_AE + "@" + publicIpAddress));
+        receiver.setWhitelist(myIps.stream().map(ip -> INVALID_AE + "@" + ip)
+                .collect(Collectors.toList()));
         mainAdminInterface().updateDicomScpReceiver(receiver);
 
         try{
@@ -226,6 +227,24 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
             }
         }
         assertEquals(0, mainInterface().getPrearchiveEntriesForProject(project).size());
+    }
+
+    private List<String> getMyIps() {
+        List<String> ips = new ArrayList<>();
+        try {
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+            while (networkInterfaces.hasMoreElements()) {
+                Enumeration<InetAddress> inetAddresses = networkInterfaces.nextElement().getInetAddresses();
+                while (inetAddresses.hasMoreElements()) {
+                    InetAddress address = inetAddresses.nextElement();
+                    if (address instanceof Inet4Address && !address.isLoopbackAddress()) {
+                        ips.add(address.getHostAddress());
+                    }
+                }
+            }
+        } catch (SocketException ignored) {}
+        ips.add(getPublicIpAddress());
+        return ips;
     }
 
     private String getPublicIpAddress(){
