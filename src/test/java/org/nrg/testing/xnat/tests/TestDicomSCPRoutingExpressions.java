@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.restassured.http.ContentType.JSON;
 import static org.junit.Assert.*;
 
 
@@ -85,6 +86,36 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
             .subjectRoutingExpression( null)
             .sessionRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):3");
 
+    private final DicomScpReceiver unknownIdentifierReceiver
+            = new DicomScpReceiver().aeTitle(RandomHelper.randomID())
+            .host(Settings.DICOM_HOST)
+            .port(Settings.DICOM_PORT)
+            .identifier( "unknownIdentifier")
+            .enabled(true)
+            .customProcessing(false)
+            .directArchive(true)
+            .anonymizationEnabled(true)
+            .whitelistEnabled(false)
+            .routingExpressionsEnabled(false)
+            .projectRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):1")
+            .subjectRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):2")
+            .sessionRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):3");
+
+    private final DicomScpReceiver dqrReceiver
+            = new DicomScpReceiver().aeTitle(RandomHelper.randomID())
+            .host(Settings.DICOM_HOST)
+            .port(Settings.DICOM_PORT)
+            .identifier( "dqrObjectIdentifier")
+            .enabled(true)
+            .customProcessing(false)
+            .directArchive(true)
+            .anonymizationEnabled(true)
+            .whitelistEnabled(false)
+            .routingExpressionsEnabled(false)
+            .projectRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):1")
+            .subjectRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):2")
+            .sessionRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):3");
+
     @BeforeClass
     public void setup() {
         mainAdminInterface().createDicomScpReceiver( allRouteReceiver);
@@ -105,10 +136,48 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
 
     @AfterClass(alwaysRun = true)
     public void tearDown() {
-        mainAdminInterface().deleteProject( project);
+        if( project != null) {
+            mainAdminInterface().deleteProject(project);
+        }
         mainAdminInterface().deleteDicomScpReceiver( allRouteReceiver);
         mainAdminInterface().deleteDicomScpReceiver( someRoutesReceiver);
         mainAdminInterface().deleteDicomScpReceiver( simpleRouteReceiver);
+    }
+
+    /**
+     * It is an error to create a Receiver with an unknown DICOM Object Identifier.
+      */
+    @Test
+    public void testUnknownIdentifier() {
+        project = null;
+        String responseString = mainAdminInterface().queryBase().contentType(JSON).body(unknownIdentifierReceiver).post(formatXapiUrl("dicomscp"))
+                .then().assertThat().statusCode(400).extract().asString();
+        assertTrue(responseString.contains("unknown DICOM Object Identifier 'unknownIdentifier'"));
+    }
+
+    /**
+     * Save a receiver with routing-expression--incapable DOI but routing expressions disabled.
+     */
+    @Test
+    @TestRequires(plugins = "dicom-query-retrieve")
+    public void testDqrIdentifier() {
+        project = null;
+        dqrReceiver.routingExpressionsEnabled( false);
+        mainAdminInterface().queryBase().contentType(JSON).body(dqrReceiver).post(formatXapiUrl("dicomscp"))
+                .then().assertThat().statusCode(200);
+    }
+
+    /**
+     * Fail to save a receiver with routing-expression--incapable DOI but routing expressions enabled.
+     */
+    @Test
+    @TestRequires(plugins = "dicom-query-retrieve")
+    public void testDqrIdentifierPrevented() {
+        project = null;
+        dqrReceiver.routingExpressionsEnabled( true);
+        String responseString = mainAdminInterface().queryBase().contentType(JSON).body(dqrReceiver).post(formatXapiUrl("dicomscp"))
+                .then().assertThat().statusCode(400).extract().asString();
+        assertTrue(responseString.contains("does not support custom routing but custom routing is enabled"));
     }
 
     @Test
