@@ -1,0 +1,137 @@
+{
+  "name": "debug-fork-testing",
+  "description": "Runs a user-provided command, without output",
+  "label": "debug-fork-testing",
+  "version": "1.6",
+  "image": "xnat/debug-command:latest",
+  "schema-version": "1.0",
+  "type": "docker",
+  "command-line": "#COMMAND#",
+  "override-entrypoint": true,
+  "mounts": [
+    {
+      "name": "in",
+      "writable": "false",
+      "path": "/input"
+    }
+  ],
+  "inputs": [
+    {
+      "name": "command",
+      "description": "The command to run",
+      "type": "string",
+      "required": true,
+      "default-value": "echo hello world",
+      "replacement-key": "#COMMAND#"
+    }
+  ],
+  "outputs": [],
+  "xnat": [
+    {
+      "name": "debug-project-no-out",
+      "description": "Run the debug container with a project mounted",
+      "label": "Debug",
+      "contexts": ["xnat:projectData"],
+      "external-inputs": [
+        {
+          "name": "project",
+          "description": "Input project",
+          "type": "Project",
+          "required": true,
+          "provides-files-for-command-mount": "in",
+          "load-children": false
+        }
+      ],
+      "derived-inputs": [],
+      "output-handlers": []
+    },
+    {
+      "name": "debug-project-asset-no-out",
+      "description": "Run the debug container with a project-asset mounted",
+      "label": "Debug",
+      "contexts": ["xnat:abstractProjectAsset"],
+      "external-inputs": [
+        {
+          "name": "project-asset",
+          "description": "Input project asset",
+          "type": "ProjectAsset",
+          "required": true,
+          "provides-files-for-command-mount": "in",
+          "load-children": false
+        }
+      ],
+      "derived-inputs": [],
+      "output-handlers": []
+    },
+    {
+      "name": "debug-subject-no-out",
+      "description": "Run the debug container with a subject mounted",
+      "contexts": ["xnat:subjectData"],
+      "external-inputs": [
+        {
+          "name": "subject",
+          "description": "Input subject",
+          "type": "Subject",
+          "required": true,
+          "load-children": false
+        }
+      ],
+      "derived-inputs": [],
+      "output-handlers": []
+    },
+    {
+      "name": "debug-session-no-out",
+      "description": "Run the debug container with a session mounted",
+      "label": "Debug",
+      "contexts": ["xnat:imageSessionData"],
+      "external-inputs": [
+        {
+          "name": "session",
+          "description": "Input session",
+          "type": "Session",
+          "required": true,
+          "provides-files-for-command-mount": "in",
+          "load-children": false
+        }
+      ],
+      "derived-inputs": [],
+      "output-handlers": []
+    },
+    {
+      "name": "debug-scan-no-out",
+      "description": "Run the debug container with a scan mounted",
+      "label": "Debug",
+      "contexts": ["xnat:imageScanData"],
+      "external-inputs": [
+        {
+          "name": "scan",
+          "description": "Input scan",
+          "type": "Scan",
+          "required": true,
+          "provides-files-for-command-mount": "in",
+          "load-children": false
+        }
+      ],
+      "derived-inputs": [],
+      "output-handlers": []
+    },
+    {
+      "name": "debug-assessor-no-out",
+      "description": "Run the debug container with a assessor mounted",
+      "label": "Debug",
+      "contexts": ["xnat:imageAssessorData"],
+      "external-inputs": [
+        {
+          "name": "assessor",
+          "description": "Input assessor",
+          "type": "Assessor",
+          "required": true,
+          "provides-files-for-command-mount": "in",
+          "load-children": false
+        }
+      ],
+      "derived-inputs": [],
+      "output-handlers": []
+    }
+  ]
+}
