@@ -25,7 +25,7 @@ import java.util.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-@AddedIn(Xnat_1_8_5.class)
+@AddedIn(Xnat_1_8_6.class)
 public class TestCustomFieldPermissions extends BaseXnatRestTest {
 
     private static final String MR_NAME = "CUSTOM_MR";
