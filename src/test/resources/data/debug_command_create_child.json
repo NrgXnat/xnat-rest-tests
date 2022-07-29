@@ -41,57 +41,6 @@
   ],
   "xnat": [
     {
-      "name": "debug-session-create-assessor",
-      "description": "Run the debug container with a session mounted, creating a child assessor (does not actually work)",
-      "label": "Debug",
-      "contexts": ["xnat:imageSessionData"],
-      "external-inputs": [
-        {
-          "name": "session",
-          "description": "Input session",
-          "type": "Session",
-          "required": true,
-          "provides-files-for-command-mount": "in",
-          "load-children": false
-        }
-      ],
-      "derived-inputs": [],
-      "output-handlers": [
-        {
-          "name": "assessor",
-          "type": "Assessor",
-          "accepts-command-output": "obj_xml",
-          "as-a-child-of": "session",
-          "xsi-type": "xnat:qcManualAssessorData"
-        }
-      ]
-    },
-    {
-      "name": "debug-session-create-assessor-missing-xsitype",
-      "description": "Run the debug container with a session mounted, creating a child unspecified assessor (does not actually work)",
-      "label": "Debug",
-      "contexts": ["xnat:imageSessionData"],
-      "external-inputs": [
-        {
-          "name": "session",
-          "description": "Input session",
-          "type": "Session",
-          "required": true,
-          "provides-files-for-command-mount": "in",
-          "load-children": false
-        }
-      ],
-      "derived-inputs": [],
-      "output-handlers": [
-        {
-          "name": "assessor",
-          "type": "Assessor",
-          "accepts-command-output": "obj_xml",
-          "as-a-child-of": "session"
-        }
-      ]
-    },
-    {
       "name": "debug-session-create-child-scan",
       "description": "Run the debug container with a session mounted, creating a child scan (does not actually work)",
       "label": "Debug",
