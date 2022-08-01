@@ -25,6 +25,7 @@ import org.nrg.xnat.versions.Xnat_1_8_5;
 import org.testng.annotations.*;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.nrg.testing.TestGroups.*;
@@ -96,29 +97,30 @@ public class TestContainerServicePermissions extends BaseXnatRestTest {
         mainAdminInterface().addCommand(getDataFile("debug_command_no_output.json"));
         mainAdminInterface().addCommand(getDataFile("debug_command_create_child.json"));
         mainAdminInterface().addCommand(getDataFile("sample_qc_assessor.json"));
-        for (Image image : TEST_IMAGES) {
-            for (Command command : mainAdminInterface().readCommands(image)) {
-                for (Wrapper wrapper : command.getWrappers()) {
-                    mainAdminInterface().setWrapperStatusOnSite(wrapper, true);
-                }
-            }
-        }
 
-        standardProjectDebug = lookupWrapper("debug-project");
-        projectDebugNoOutput = lookupWrapper("debug-project-no-out");
-        standardSubjectDebug = lookupWrapper("debug-subject");
-        subjectDebugNoOutput = lookupWrapper("debug-subject-no-out");
-        standardProjectAssetDebug = lookupWrapper("debug-project-asset");
-        projectAssetDebugNoOutput = lookupWrapper("debug-project-asset-no-out");
-        standardSessionDebug = lookupWrapper("debug-session");
-        sessionDebugNoOutput = lookupWrapper("debug-session-no-out");
-        sessionDebugCreateScan = lookupWrapper("debug-session-create-child-scan");
-        standardScanDebug = lookupWrapper("debug-scan");
-        scanDebugNoOutput = lookupWrapper("debug-scan-no-out");
-        standardSessionAssessorDebug = lookupWrapper("debug-assessor");
-        sessionAssessorDebugNoOutput = lookupWrapper("debug-assessor-no-out");
-        qcImageCreateUnspecifiedAssessor = lookupWrapper("generate-test-qc-assessor-from-session-missing-xsitype");
-        qcImageCreateSpecifiedAssessor = lookupWrapper("generate-test-qc-assessor-from-session");
+        final Map<String, Wrapper> allTestWrappers = TEST_IMAGES.stream()
+                .map(image -> mainAdminInterface().readCommands(image))
+                .flatMap(List::stream)
+                .map(Command::getWrappers)
+                .flatMap(List::stream)
+                .peek(wrapper -> mainAdminInterface().setWrapperStatusOnSite(wrapper, true))
+                .collect(Collectors.toMap(Wrapper::getName, Function.identity()));
+
+        standardProjectDebug = allTestWrappers.get("debug-project");
+        projectDebugNoOutput = allTestWrappers.get("debug-project-no-out");
+        standardSubjectDebug = allTestWrappers.get("debug-subject");
+        subjectDebugNoOutput = allTestWrappers.get("debug-subject-no-out");
+        standardProjectAssetDebug = allTestWrappers.get("debug-project-asset");
+        projectAssetDebugNoOutput = allTestWrappers.get("debug-project-asset-no-out");
+        standardSessionDebug = allTestWrappers.get("debug-session");
+        sessionDebugNoOutput = allTestWrappers.get("debug-session-no-out");
+        sessionDebugCreateScan = allTestWrappers.get("debug-session-create-child-scan");
+        standardScanDebug = allTestWrappers.get("debug-scan");
+        scanDebugNoOutput = allTestWrappers.get("debug-scan-no-out");
+        standardSessionAssessorDebug = allTestWrappers.get("debug-assessor");
+        sessionAssessorDebugNoOutput = allTestWrappers.get("debug-assessor-no-out");
+        qcImageCreateUnspecifiedAssessor = allTestWrappers.get("generate-test-qc-assessor-from-session-missing-xsitype");
+        qcImageCreateSpecifiedAssessor = allTestWrappers.get("generate-test-qc-assessor-from-session");
 
         initProject(ownerProject);
         initProject(memberProject);
@@ -1341,20 +1343,6 @@ public class TestContainerServicePermissions extends BaseXnatRestTest {
                 }
             }
         }
-    }
-
-    private Wrapper lookupWrapper(String wrapperName) {
-        for (Image image : TEST_IMAGES) {
-            for (Command command : mainAdminInterface().readCommands(image)) {
-                for (Wrapper wrapper : command.getWrappers()) {
-                    if (wrapperName.equals(wrapper.getName())) {
-                        return wrapper;
-                    }
-                }
-            }
-        }
-        fail("Missing wrapper: " + wrapperName);
-        return null;
     }
 
     private String generateSharedSessionUri(ImagingSession session) {
