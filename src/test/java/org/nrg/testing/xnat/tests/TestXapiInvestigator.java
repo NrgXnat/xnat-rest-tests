@@ -16,8 +16,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.nrg.testing.TestGroups.INVESTIGATORS;
 import static org.testng.AssertJUnit.*;
 
+@Test(groups = INVESTIGATORS)
 public class TestXapiInvestigator extends BaseXnatRestTest {
 
     @Test

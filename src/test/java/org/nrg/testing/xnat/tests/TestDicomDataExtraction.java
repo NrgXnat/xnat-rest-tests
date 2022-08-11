@@ -24,6 +24,7 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 import java.util.Map;
 
+import static org.nrg.testing.TestGroups.*;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertTrue;
 
@@ -42,6 +43,7 @@ import static org.testng.AssertJUnit.assertTrue;
         TestData.EXTRACTION_CT,
         TestData.EXTRACTION_OPT
 })
+@Test(groups = {METADATA_EXTRACTION, IMPORTER})
 public class TestDicomDataExtraction extends BaseXnatRestTest {
 
     private static final String STUDY_COMMENTS = "studyComments";
@@ -54,7 +56,7 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
     private final ImagingSession optSession = new ImagingSession(testProject, testSubject);
 
     @BeforeClass
-    public void disableAnonAndSetupProject() {
+    private void disableAnonAndSetupProject() {
         mainAdminInterface().disableSiteAnonScript();
         new SessionImportExtension(standardMRSession, TestData.EXTRACTION_MR.toFile());
         new SessionImportExtension(diffusionMR, TestData.EXTRACTION_DIFFUSION.toFile());
@@ -64,11 +66,11 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
     }
 
     @AfterClass(alwaysRun = true)
-    public void removeProject() {
+    private void removeProject() {
         restDriver.deleteProjectSilently(mainAdminUser, testProject);
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @Basic
     public void testMRDicomExtraction() throws IOException {
         checkStudyMatchesAttributes(standardMRSession, "mrSessionAttributes.json");

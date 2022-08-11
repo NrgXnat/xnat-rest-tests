@@ -34,10 +34,13 @@ import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static org.nrg.testing.TestGroups.CONTAINERS;
+import static org.nrg.testing.TestGroups.WORKFLOWS;
 import static org.testng.AssertJUnit.*;
 
 @TestRequires(plugins = "containers")
 @AddedIn(Xnat_1_7_7.class) // Pending CS-600
+@Test(groups = CONTAINERS)
 public class TestContainerService extends BaseXnatRestTest {
     private static final String OUTPUT_CONTENT = "hello world";
     private static final String OUTPUT_FILENAME = "out.txt";
@@ -54,7 +57,7 @@ public class TestContainerService extends BaseXnatRestTest {
     private SessionAssessor assessor;
 
     @BeforeMethod
-    public void setupContainerServiceTest() {
+    private void setupContainerServiceTest() {
         // setup objects
         project  = testSpecificProject;
         subject  = new Subject(project, "S1").gender(Gender.MALE);
@@ -91,7 +94,7 @@ public class TestContainerService extends BaseXnatRestTest {
     }
 
     @AfterMethod
-    public void removeContainerServiceProjects() {
+    private void removeContainerServiceProjects() {
         restDriver.deleteProjectSilently(mainUser, project);
     }
 
@@ -125,21 +128,21 @@ public class TestContainerService extends BaseXnatRestTest {
         assertEquals(0, mainAdminInterface().readCommands(DEBUG_IMG).size());
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerProject() {
         enableAndRunContainerThenCheckOutputs(DataType.PROJECT,
                 String.format("/archive/projects/%s", project.getId()));
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerSubject() {
         enableAndRunContainerThenCheckOutputs(DataType.SUBJECT,
                 String.format("/archive/subjects/%s", subject.getAccessionNumber()));
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     @AddedIn(Xnat_1_8_0.class)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerSubjectAltUri() {
@@ -147,14 +150,14 @@ public class TestContainerService extends BaseXnatRestTest {
                 String.format("/archive/projects/%s/subjects/%s", project.getId(), subject.getLabel()));
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerSession() {
         enableAndRunContainerThenCheckOutputs(DataType.MR_SESSION,
                 String.format("/archive/experiments/%s", session.getAccessionNumber()));
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     @TestRequires(plugins = "batchLaunchPlugin")
     @SoftDependency("testDisableSwarmMode")
     public void testContainerSessionBulk() {
@@ -167,7 +170,7 @@ public class TestContainerService extends BaseXnatRestTest {
         enableAndRunContainerThenCheckOutputs(DataType.MR_SESSION, uriToId);
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerSessionAltUri() {
         enableAndRunContainerThenCheckOutputs(DataType.MR_SESSION,
@@ -175,7 +178,7 @@ public class TestContainerService extends BaseXnatRestTest {
                         project.getId(), subject.getLabel(), session.getLabel()));
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerAssessor() {
         enableAndRunContainerThenCheckOutputs(DataType.QC,
@@ -183,7 +186,7 @@ public class TestContainerService extends BaseXnatRestTest {
                         session.getAccessionNumber(), assessor.getAccessionNumber()));
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     @AddedIn(Xnat_1_8_0.class)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerAssessorAltUri() {
@@ -192,7 +195,7 @@ public class TestContainerService extends BaseXnatRestTest {
                         project.getId(), subject.getLabel(), session.getLabel(), assessor.getLabel()));
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     @AddedIn(Xnat_1_8_0.class)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerAssessorAltUri2() {
@@ -201,7 +204,7 @@ public class TestContainerService extends BaseXnatRestTest {
                         session.getAccessionNumber(), assessor.getLabel()));
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     @AddedIn(Xnat_1_8_0.class)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerAssessorAltUri3() {
@@ -209,14 +212,14 @@ public class TestContainerService extends BaseXnatRestTest {
                 String.format("/archive/experiments/%s", assessor.getAccessionNumber()));
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerScan() {
         enableAndRunContainerThenCheckOutputs(DataType.MR_SCAN,
                 String.format("/archive/experiments/%s/scans/%s", session.getAccessionNumber(), scan.getId()));
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     @SoftDependency("testDisableSwarmMode")
     public void testContainerScanAltUri() {
         enableAndRunContainerThenCheckOutputs(DataType.MR_SCAN,
@@ -232,7 +235,7 @@ public class TestContainerService extends BaseXnatRestTest {
         assertTrue(mainInterface().readDockerServer().getSwarmMode());
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     @TestRequires(csSwarmCanEnable = true)
     @HardDependency("testEnableSwarmMode")
     public void testContainerSessionSwarm() {

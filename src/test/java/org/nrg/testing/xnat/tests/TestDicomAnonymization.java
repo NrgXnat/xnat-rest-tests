@@ -25,9 +25,17 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.util.*;
 
+import static org.nrg.testing.TestGroups.ANONYMIZATION;
+import static org.nrg.testing.TestGroups.SMOKE;
 import static org.nrg.xnat.enums.DicomEditVersion.*;
 
-@TestRequires(admin = true, data = {TestData.ANON_2, TestData.ANON_DUPLICATE_PRIVATE_TAG, TestData.DICOM_WEB_PETMR2_PT, TestData.JPEGLOSSLESS_2000})
+@TestRequires(admin = true, data = {
+        TestData.ANON_2,
+        TestData.ANON_DUPLICATE_PRIVATE_TAG,
+        TestData.DICOM_WEB_PETMR2_PT,
+        TestData.JPEGLOSSLESS_2000
+})
+@Test(groups = ANONYMIZATION)
 public class TestDicomAnonymization extends BaseXnatRestTest {
 
     private final Project anonProject = new Project();
@@ -43,7 +51,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     boolean projectCreated = false;
 
     @BeforeClass
-    public void createProject() {
+    private void createProject() {
         mainInterface().createProject(anonProject);
         projectCreated = true;
         mainInterface().regenerateUserSession(); // hack for XNAT-5187
@@ -54,7 +62,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @AfterMethod(alwaysRun = true)
-    public void clean() {
+    private void clean() {
         restDriver.clearPrearchiveSessions(mainUser, anonProject);
         if (projectCreated) {
             mainInterface().deleteAllProjectData(anonProject);
@@ -62,12 +70,12 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @AfterClass(alwaysRun = true)
-    public void resetAnon() {
+    private void resetAnon() {
         mainAdminInterface().enableSiteAnonScript();
         mainAdminInterface().setSiteAnonScript(restDriver.getDefaultXnatAnonScript());
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @Basic
     public void testSubjectRelabel_4P_4S() {
         performSubjectRelabelAnonTest(projectAnonDE4, siteAnonDE4);
@@ -83,13 +91,13 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         performSubjectRelabelAnonTest(projectAnonDE6, siteAnonDE4);
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @Basic
     public void testSubjectRelabel_6P_6S() {
         performSubjectRelabelAnonTest(projectAnonDE6, siteAnonDE6);
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @Basic
     public void testSessionRelabel_4P_4S() {
         performSessionRelabelAnonTest(projectAnonDE4, siteAnonDE4);
@@ -105,19 +113,19 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         performSessionRelabelAnonTest(projectAnonDE6, siteAnonDE4);
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @Basic
     public void testSessionRelabel_6P_6S() {
         performSessionRelabelAnonTest(projectAnonDE6, siteAnonDE6);
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @Basic
     public void testStandardElementRemovalDE4() {
         performBasicScriptTest(DE_4, "standardDelete.das", new StandardDeleteScript());
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @Basic
     public void testStandardElementRemovalDE6() {
         performBasicScriptTest(DE_6, "standardDelete.das", new StandardDeleteScript());

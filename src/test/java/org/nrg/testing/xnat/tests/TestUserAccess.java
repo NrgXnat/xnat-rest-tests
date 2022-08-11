@@ -20,24 +20,25 @@ import org.testng.annotations.Test;
 import java.util.Collections;
 import java.util.Set;
 
+import static org.nrg.testing.TestGroups.*;
 import static org.testng.AssertJUnit.*;
 
 public class TestUserAccess extends BaseXnatRestTest {
 
-    @Test
+    @Test(groups = {PERMISSIONS, AUTHENTICATION, SMOKE})
     @Basic
     public void testValidAccess() {
         final Response response = Settings.mainCredentials().expect().statusCode(200).given().queryParam("format", "xml").get(formatRestUrl("projects"));
         TestNgUtils.assertNonempty(response.asString());
     }
 
-    @Test
+    @Test(groups = {PERMISSIONS, AUTHENTICATION, SMOKE})
     @Basic
     public void testInvalidAccess() {
         restDriver.invalidCredentials().expect().statusCode(401).given().queryParam("format", "xml").get(formatRestUrl("projects"));
     }
 
-    @Test
+    @Test(groups = {PERMISSIONS, AUTHENTICATION, RESOURCES})
     @TestRequires(users = 1)
     public void testNonExpiringUserRestCalls() {
         final User nonExpiringUser = getGenericUser();
@@ -51,7 +52,7 @@ public class TestUserAccess extends BaseXnatRestTest {
         );
     }
 
-    @Test
+    @Test(groups = {PERMISSIONS, AUTHENTICATION, SMOKE})
     @TestRequires(users = 1)
     @Basic
     public void testUserSessionInvalidation() {

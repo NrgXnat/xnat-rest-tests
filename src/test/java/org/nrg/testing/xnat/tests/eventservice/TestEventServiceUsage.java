@@ -17,16 +17,16 @@ import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.nrg.testing.TestGroups.SCHEDULED_EVENTS;
 import static org.testng.AssertJUnit.assertEquals;
 
 @AddedIn(Xnat_1_8_0.class)
 public class TestEventServiceUsage extends BaseEventServiceTest {
 
-    @Test
+    @Test(groups = SCHEDULED_EVENTS)
     @AddedIn(Xnat_1_8_5.class)
     public void testScheduledEvent(){
         final Calendar time = Calendar.getInstance();

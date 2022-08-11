@@ -1,12 +1,9 @@
 package org.nrg.testing.xnat.tests.eventservice;
 
 import com.google.common.collect.Sets;
-import io.restassured.http.ContentType;
 import org.apache.commons.io.FileUtils;
 import org.dcm4che3.data.Tag;
-import org.nrg.testing.FileIOUtils;
 import org.nrg.testing.annotations.AddedIn;
-import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.enums.TestData;
@@ -96,7 +93,7 @@ public class TestEventDetection extends BaseEventServiceTest {
         xmlUploadScan1, xmlUploadScan2, xmlUploadScan3, restXmlScan1, restXmlScan2, restXmlScan3, turbineScan1, turbineScan2, turbineScan3;
 
     @BeforeClass
-    public void setupSubscriptionsAndData() throws IOException {
+    private void setupSubscriptionsAndData() throws IOException {
         mainAdminInterface().setupDataType(subjectAssessorDataType);
         mainAdminInterface().setSessionXmlRebuilderTimes(1, 5000);
         for (Subscription subscription : subscriptionsToCleanup) {

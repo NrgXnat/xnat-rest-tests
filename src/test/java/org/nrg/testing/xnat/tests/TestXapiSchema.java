@@ -16,8 +16,11 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import static org.hamcrest.Matchers.*;
+import static org.nrg.testing.TestGroups.SCHEMAS;
+import static org.nrg.testing.TestGroups.SMOKE;
 
 @DisallowXnatVersion(disallowedVersions = Xnat_1_6dev.class)
+@Test(groups = SCHEMAS)
 public class TestXapiSchema extends BaseXnatRestTest {
 
     private static final int SCHEMA_COUNT_LOWER_BOUND = 10;
@@ -69,7 +72,7 @@ public class TestXapiSchema extends BaseXnatRestTest {
         validateSessionDatatype("MR", response);
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @TestedApiSpec(method = Method.POST, url = "/xapi/schemas/datatypes/names")
     @Basic
     public void testSchemasDatatypesNames() {
@@ -100,7 +103,7 @@ public class TestXapiSchema extends BaseXnatRestTest {
         validateDatatypeName(DataType.MR_SESSION, response);
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @TestedApiSpec(method = Method.GET, url = {
             "/xapi/schemas/{namespace}/{schema}",
             "/xapi/schemas/{schema}"

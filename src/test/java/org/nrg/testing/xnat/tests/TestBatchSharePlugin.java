@@ -33,11 +33,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.nrg.testing.TestGroups.*;
 import static org.nrg.xnat.enums.DicomEditVersion.DE_6;
 
 import static org.testng.AssertJUnit.assertEquals;
 
 @TestRequires(plugins = {"batchSharePlugin"}, data = {TestData.SAMPLE_1, TestData.SAMPLE_2, TestData.ANON_2})
+@Test(groups = SHARING)
 public class TestBatchSharePlugin extends BaseXnatRestTest {
     private static final Logger LOG = Logger.getLogger(TestBatchSharePlugin.class);
 
@@ -63,8 +65,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
     private ResourceFile resourceFile;
 
     @BeforeMethod
-    public void setupBatchShareTesting() {
-
+    private void setupBatchShareTesting() {
         project = new Project();
         project2 = new Project();
         subject = new Subject(project);
@@ -85,7 +86,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
     }
 
     @AfterMethod()
-    public void tearDownBatchShareTesting() {
+    private void tearDownBatchShareTesting() {
         restDriver.deleteProjectSilently(mainAdminUser, project);
         restDriver.deleteProjectSilently(mainAdminUser, project2);
     }
@@ -192,7 +193,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         restDriver.deleteProjectSilently(mainAdminUser, project3);
     }
 
-    @Test
+    @Test(groups = PERMISSIONS)
     @TestRequires(users = 3)
     public void testUserPermissions() {
         User ownerUser = getGenericUser();
@@ -229,7 +230,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         restDriver.deleteProjectSilently(mainAdminUser, receiverProject);
     }
 
-    @Test
+    @Test(groups = ANONYMIZATION)
     public void testBatchCopyAnonymization() {
         Project sourceProject = new Project();
         Project destProject = new Project();
@@ -295,7 +296,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         restDriver.validateResource(mainUser, subjectResource);
     }
 
-    public List<ShareRequest> addElementsToBatchShare(ShareMethod shareMethod, Project sharedToProject, List<Object> elements) {
+    private List<ShareRequest> addElementsToBatchShare(ShareMethod shareMethod, Project sharedToProject, List<Object> elements) {
         List<ShareRequest> requestList = new ArrayList<>();
         for (Object element : elements) {
             ShareRequest request = new ShareRequest();
@@ -312,7 +313,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         return requestList;
     }
 
-    public void runPermissionsChecksForUserType(String userType, Project permissionsProject, Project receiverProject, User user, Object... elements) {
+    private void runPermissionsChecksForUserType(String userType, Project permissionsProject, Project receiverProject, User user, Object... elements) {
         mainQueryBase().contentType(ContentType.JSON).body(STOP_PROJECT_SHARING_STRING).post(formatXnatUrl("REST/services/features?group={group}_" + userType), permissionsProject.getId()).then().assertThat().statusCode(200);
 
         performBatchShareFailureAction(user, receiverProject, ShareMethod.STANDARD_SHARE, elements);
@@ -322,13 +323,13 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         performBatchShareAction(user, receiverProject, ShareMethod.STANDARD_SHARE, elements);
     }
 
-    public void performBatchShareAction(User user, Project sharedToProject, ShareMethod shareMethod, Object... elements) {
+    private void performBatchShareAction(User user, Project sharedToProject, ShareMethod shareMethod, Object... elements) {
         final List<ShareRequest> requestList = addElementsToBatchShare(shareMethod, sharedToProject, Arrays.asList(elements));
         final XnatInterface xnatInterface = interfaceFor(user);
         xnatInterface.waitForTrackedEventSuccessful(xnatInterface.launchBatchShare(requestList));
     }
 
-    public void performBatchShareFailureAction(User user, Project sharedToProject, ShareMethod shareMethod, Object... elements) {
+    private void performBatchShareFailureAction(User user, Project sharedToProject, ShareMethod shareMethod, Object... elements) {
         List<ShareRequest> requestList = addElementsToBatchShare(shareMethod, sharedToProject, Arrays.asList(elements));
         interfaceFor(user).queryBase().contentType(ContentType.JSON).body(requestList).post(formatXapiUrl("batch_share")).then().assertThat().statusCode(400);
     }

@@ -13,9 +13,12 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.nrg.testing.TestGroups.PERMISSIONS;
+import static org.nrg.testing.TestGroups.WORKFLOWS;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.nrg.xnat.pogo.Workflow.*;
 
+@Test(groups = WORKFLOWS)
 public class TestWorkflows extends BaseXnatRestTest {
 
     private Project adminProject;
@@ -23,7 +26,7 @@ public class TestWorkflows extends BaseXnatRestTest {
     private MRSession adminExp;
 
     @BeforeMethod(alwaysRun = true)
-    public void setupWorkflowTest() {
+    private void setupWorkflowTest() {
         adminExp     = new MRSession().date(LocalDate.parse("1999-12-12"));
         adminSubject = new Subject().label("workflow_subj_1").addExperiment(adminExp);
         adminProject = new Project().addSubject(adminSubject);
@@ -32,7 +35,7 @@ public class TestWorkflows extends BaseXnatRestTest {
     }
 
     @AfterMethod(alwaysRun = true)
-    public void tearDownWorkflowTest() {
+    private void tearDownWorkflowTest() {
         restDriver.deleteProjectSilently(mainAdminUser, adminProject);
     }
 
@@ -50,8 +53,8 @@ public class TestWorkflows extends BaseXnatRestTest {
         mainAdminCredentials().expect().statusCode(200).when().get(formatRestUrl("workflows", workflowId));
     }
 
-    @Test
-    public void testWputorkflowUserPrivileges() {
+    @Test(groups = PERMISSIONS)
+    public void testPutWorkflowUserPrivileges() {
         putWorkflow("Queued", true);
         mainCredentials().expect().statusCode(403).given().queryParams(workflowQueryParams("Complete", false)).when().put(formatRestUrl("workflows"));
     }

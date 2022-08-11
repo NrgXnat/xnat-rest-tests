@@ -19,6 +19,8 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import static org.nrg.testing.TestGroups.SEARCH;
+
 public class TestTableNamingLimits extends BaseXnatRestTest {
 
     private User longUsernameUser;
@@ -42,7 +44,7 @@ public class TestTableNamingLimits extends BaseXnatRestTest {
         restDriver.deleteProjectSilently(longUsernameUser, longIdProject);
     }
 
-    @Test
+    @Test(groups = SEARCH)
     @AddedIn(Xnat_1_8_4.class)
     public void testLongSiteSearch() {
         final String searchXML = longUserInterface.queryBase().urlEncodingEnabled(false).get(formatRestUrl("/search/saved/@" + DataType.MANUAL_QC.getXsiType())).

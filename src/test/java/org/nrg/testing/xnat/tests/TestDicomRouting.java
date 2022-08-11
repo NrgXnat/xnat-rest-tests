@@ -38,7 +38,9 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 import static org.junit.Assert.fail;
+import static org.nrg.testing.TestGroups.*;
 
+@Test(groups = {DICOM_SCP, DICOM_ROUTING, IMPORTER})
 public class TestDicomRouting extends BaseXnatRestTest {
 
     private final Project project = new Project().prearchiveCode(PrearchiveCode.AUTO_ARCHIVE_OVERWRITE);
@@ -66,7 +68,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
     }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
     @BeforeClass
-    public void setupImportProject() {
+    private void setupImportProject() {
         mainInterface().createProject(project);
         mainAdminInterface().disableSiteAnonScript();
         mainAdminInterface().setSessionXmlRebuilderTimes(1, 10000);
@@ -74,7 +76,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
 
     @BeforeMethod(alwaysRun = true) // clear out prearchive/archive for each test
     @AfterClass(alwaysRun = true) // ... and then clear them out when we're all done
-    public void clearArchives() {
+    private void clearArchives() {
         try {
             restDriver.clearPrearchiveSessions(mainUser, project);
         } catch (Throwable throwable) {
@@ -96,54 +98,54 @@ public class TestDicomRouting extends BaseXnatRestTest {
     }
 
     @AfterMethod(alwaysRun = true)
-    public void removeTmpFiles() {
+    private void removeTmpFiles() {
         for (File f : filesToRemove) {
             f.delete();
         }
     }
 
     @AfterClass(alwaysRun = true)
-    public void tearDownImportTests() {
+    private void tearDownImportTests() {
         restDriver.deleteProjectSilently(mainAdminUser, project);
         mainAdminInterface().enableSiteAnonScript();
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @AddedIn(Xnat_1_8_0.class)
     @Basic
     public void testProjectRoutingSessionImporter() {
         testProjectRouting(this::uploadViaImporter, null);
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @AddedIn(Xnat_1_8_0.class)
     @Basic
     public void testProjectRoutingDicomZip() {
         testProjectRouting(this::uploadViaImporter, "DICOM-zip");
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @AddedIn(Xnat_1_8_0.class)
     @Basic
     public void testSubjectRoutingSessionImporter() {
         testSubjectRouting(this::uploadViaImporter, null);
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @AddedIn(Xnat_1_8_0.class)
     @Basic
     public void testSubjectRoutingDicomZip() {
         testSubjectRouting(this::uploadViaImporter, "DICOM-zip");
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @AddedIn(Xnat_1_8_0.class)
     @Basic
     public void testSessionRoutingSessionImporter() {
         testSessionRouting(this::uploadViaImporter, null);
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @AddedIn(Xnat_1_8_0.class)
     @Basic
     public void testSessionRoutingDicomZip() {

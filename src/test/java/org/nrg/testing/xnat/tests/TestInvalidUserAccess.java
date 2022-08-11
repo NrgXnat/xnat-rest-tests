@@ -21,6 +21,8 @@ import org.testng.annotations.Test;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.nrg.testing.TestGroups.PERMISSIONS;
+
 public class TestInvalidUserAccess extends BaseXnatRestTest {
 
     Project testProject;
@@ -43,7 +45,7 @@ public class TestInvalidUserAccess extends BaseXnatRestTest {
         restDriver.deleteProjectSilently(mainAdminUser, testProject);
     }
 
-    @Test
+    @Test(groups = PERMISSIONS)
     @TestRequires(closedXnat = true)
     public void testProtectedXMLCRUD() {
         mainAdminInterface().updateAccessibility(testProject, Accessibility.PROTECTED);

@@ -23,8 +23,10 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.util.List;
 
+import static org.nrg.testing.TestGroups.*;
 import static org.testng.AssertJUnit.assertEquals;
 
+@Test(groups = {IMPORTER, PREARCHIVE})
 public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
     private final File sessionZip = getDataFile("mr_1.zip");
@@ -42,7 +44,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
     private final ImagingSession mr3_1 = new MRSession(project1, subject3, "MR31");
 
     @BeforeClass
-    public void addPrearchiveMgmtProjects() {
+    private void addPrearchiveMgmtProjects() {
         mainInterface().createProject(project1);
         mainInterface().createProject(project2);
         mainInterface().createProject(project3);
@@ -63,7 +65,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
     }
 
     @AfterClass(alwaysRun = true)
-    public void removePrearchiveMgmtProjects() {
+    private void removePrearchiveMgmtProjects() {
         for (Project project : new Project[]{project1, project2, project3}) {
             restDriver.deleteProjectSilently(mainUser, project);
         }
@@ -143,7 +145,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
         assertSessionsInProjectPrearc(project2, 0);
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @Basic
     public void testPrearchiveWithDestination() {
         final String subject = "SUBJ9";

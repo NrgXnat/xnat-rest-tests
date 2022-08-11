@@ -105,13 +105,13 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
         receiver.setWhitelist(Collections.singletonList(Settings.CALLING_AE_TITLE));
         mainAdminInterface().updateDicomScpReceiver(receiver);
 
-        try{
+        try {
             new XnatCStore(receiver, INVALID_AE)
                     .overwrittenHeaders(Collections.singletonMap(Tag.StudyDescription, project.getId()))
                     .data(TestData.SAMPLE_1_SCAN_4)
                     .sendDICOM();
-        }catch(Throwable e){
-            if(! (e instanceof AAssociateRJ)){
+        } catch (Throwable e){
+            if (!(e instanceof AAssociateRJ)) {
                 LOG.error(e.getMessage(), e);
                 throw e;
             }
@@ -125,13 +125,13 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
         receiver.setWhitelist(Collections.singletonList(INVALID_IP));
         mainAdminInterface().updateDicomScpReceiver(receiver);
 
-        try{
+        try {
             new XnatCStore(receiver)
                     .overwrittenHeaders(Collections.singletonMap(Tag.StudyDescription, project.getId()))
                     .data(TestData.SAMPLE_1_SCAN_4)
                     .sendDICOM();
-        }catch(Throwable e){
-            if(! (e instanceof AAssociateRJ)){
+        } catch (Throwable e){
+            if (!(e instanceof AAssociateRJ)) {
                 LOG.error(e.getMessage(), e);
                 throw e;
             }
@@ -174,13 +174,13 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
         receiver.setWhitelist(Collections.singletonList(INVALID_AE + "@" + INVALID_IP));
         mainAdminInterface().updateDicomScpReceiver(receiver);
 
-        try{
+        try {
             new XnatCStore(receiver)
                     .overwrittenHeaders(Collections.singletonMap(Tag.StudyDescription, project.getId()))
                     .data(TestData.SAMPLE_1_SCAN_4)
                     .sendDICOM();
-        }catch(Throwable e){
-            if(! (e instanceof AAssociateRJ)){
+        } catch (Throwable e) {
+            if (!(e instanceof AAssociateRJ)) {
                 LOG.error(e.getMessage(), e);
                 throw e;
             }
@@ -194,13 +194,13 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
         receiver.setWhitelist(Collections.singletonList(Settings.CALLING_AE_TITLE + "@" + INVALID_IP));
         mainAdminInterface().updateDicomScpReceiver(receiver);
 
-        try{
+        try {
             new XnatCStore(receiver)
                     .overwrittenHeaders(Collections.singletonMap(Tag.StudyDescription, project.getId()))
                     .data(TestData.SAMPLE_1_SCAN_4)
                     .sendDICOM();
-        }catch(Throwable e){
-            if(! (e instanceof AAssociateRJ)){
+        } catch (Throwable e) {
+            if (!(e instanceof AAssociateRJ)) {
                 LOG.error(e.getMessage(), e);
                 throw e;
             }
@@ -215,13 +215,13 @@ public class TestDicomSCPWhitelist extends BaseXnatRestTest {
                 .collect(Collectors.toList()));
         mainAdminInterface().updateDicomScpReceiver(receiver);
 
-        try{
+        try {
             new XnatCStore(receiver)
                     .overwrittenHeaders(Collections.singletonMap(Tag.StudyDescription, project.getId()))
                     .data(TestData.SAMPLE_1_SCAN_4)
                     .sendDICOM();
-        }catch(Throwable e){
-            if(! (e instanceof AAssociateRJ)){
+        } catch (Throwable e){
+            if (!(e instanceof AAssociateRJ)) {
                 LOG.error(e.getMessage(), e);
                 throw e;
             }

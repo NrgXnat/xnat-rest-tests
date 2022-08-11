@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
+import static org.nrg.testing.TestGroups.VALIDATION;
 import static org.testng.AssertJUnit.assertEquals;
 
 public class TestSubjAssessmentResources extends BaseXnatRestTest {
@@ -41,13 +42,13 @@ public class TestSubjAssessmentResources extends BaseXnatRestTest {
         restDriver.deleteProjectSilently(mainUser, currentProject);
     }
 
-    @Test
+    @Test(groups = VALIDATION)
     public void testDateFormatValidation() {
         mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(readDataFile("test_expt_bad_date.xml")).
                 post(experimentsUrl()).then().assertThat().statusCode(400);
     }
 
-    @Test
+    @Test(groups = VALIDATION)
     public void testIntegerFormatValidation() {
         mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(readDataFile("test_expt_bad_int.xml")).
                 post(experimentsUrl()).then().assertThat().statusCode(400);
@@ -71,13 +72,13 @@ public class TestSubjAssessmentResources extends BaseXnatRestTest {
                 post(experimentsUrl()).then().assertThat().statusCode(400); // contains parent directory syntax => invalid
     }
 
-    @Test
+    @Test(groups = VALIDATION)
     public void testLengthValidation() {
         mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(readDataFile("test_expt_bad_length.xml")).
                 post(experimentsUrl()).then().assertThat().statusCode(400);
     }
 
-    @Test
+    @Test(groups = VALIDATION)
     public void testInvalidSubjectValidation() {
         mainCredentials().given().queryParam("format", "xml").contentType(ContentType.XML).body(readDataFile("test_expt_v1.xml")).
                 post(formatRestUrl("projects", currentProject.getId(), "subjects", "INVALIDSUBJECT", "experiments")).then().assertThat().statusCode(404);

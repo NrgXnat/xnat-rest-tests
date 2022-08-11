@@ -22,6 +22,7 @@ import org.testng.annotations.*;
 import java.io.File;
 import java.time.LocalDate;
 
+import static org.nrg.testing.TestGroups.*;
 import static org.testng.AssertJUnit.assertEquals;
 
 public class TestArchive extends BaseXnatRestTest {
@@ -106,7 +107,7 @@ public class TestArchive extends BaseXnatRestTest {
         }
     }
 
-    @Test
+    @Test(groups = {SMOKE, IMPORTER})
     @Basic
     public void testImportToArchive() {
         final ImagingSession session = readMr1("1", "MR1");
@@ -125,7 +126,7 @@ public class TestArchive extends BaseXnatRestTest {
         restDriver.validateResource(mainUser, session.getScans().get(0).getScanResources().get(0)); // should have been created by session importer
     }
 
-    @Test
+    @Test(groups = {IMPORTER, PREARCHIVE})
     public void testBasicArchiveFromPrearc() {
         final ImagingSession session = readMr1("SPP_0x220790", "SPP_0x220790_MR2");
 
@@ -146,7 +147,7 @@ public class TestArchive extends BaseXnatRestTest {
         restDriver.validateResource(mainUser, session.getScans().get(0).getScanResources().get(0)); // should have been created by session importer
     }
 
-    @Test
+    @Test(groups = {SMOKE, IMPORTER, PREARCHIVE})
     @Basic
     public void testBasicArchiveFromPrearcWParams() {
         final ImagingSession session = readMr1("1", "MR1");

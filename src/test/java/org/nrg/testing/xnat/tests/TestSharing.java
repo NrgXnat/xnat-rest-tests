@@ -21,13 +21,17 @@ import org.testng.annotations.Test;
 
 import java.time.LocalDate;
 
+import static org.nrg.testing.TestGroups.PERMISSIONS;
+import static org.nrg.testing.TestGroups.SHARING;
+
+@Test(groups = {PERMISSIONS, SHARING})
 public class TestSharing extends BaseXnatRestTest {
 
     private Project userProject;
     private Project adminProject;
 
     @BeforeMethod
-    public void setupSharingProjects() {
+    private void setupSharingProjects() {
         userProject = new Project().accessibility(Accessibility.PROTECTED);
         adminProject = new Project().accessibility(Accessibility.PROTECTED);
         mainInterface().createProject(userProject);
@@ -35,7 +39,7 @@ public class TestSharing extends BaseXnatRestTest {
     }
 
     @AfterMethod(alwaysRun = true)
-    public void deleteSharingProjects() {
+    private void deleteSharingProjects() {
         restDriver.deleteProjectSilently(mainAdminUser, userProject);
         restDriver.deleteProjectSilently(mainAdminUser, adminProject);
     }

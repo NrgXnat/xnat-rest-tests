@@ -36,9 +36,12 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.nrg.testing.TestGroups.*;
+import static org.nrg.testing.TestGroups.IMPORTER;
 import static org.testng.Assert.assertTrue;
 
 @AddedIn(Xnat_1_8_3.class)
+@Test(groups = {DICOM_SCP, DICOM_ROUTING, IMPORTER, DIRECT_ARCHIVE})
 public class TestDirectArchive extends BaseXnatRestTest {
     private final Project project = new Project();
     private final Project altProject = new Project();
@@ -51,7 +54,7 @@ public class TestDirectArchive extends BaseXnatRestTest {
     private static final Logger LOGGER = Logger.getLogger(TestDirectArchive.class);
 
     @BeforeClass
-    public void setup() {
+    private void setup() {
         mainInterface().createProject(project);
         mainAdminInterface().disableSiteAnonScript();
         mainAdminInterface().setSessionXmlRebuilderTimes(1, 10000);
@@ -61,7 +64,7 @@ public class TestDirectArchive extends BaseXnatRestTest {
 
     @BeforeMethod(alwaysRun = true) // clear out prearchive/archive for each test
     @AfterClass(alwaysRun = true) // ... and then clear them out when we're all done
-    public void clearArchives() {
+    private void clearArchives() {
         try {
             restDriver.clearPrearchiveSessions(mainUser, project);
         } catch (Throwable throwable) {
@@ -79,7 +82,7 @@ public class TestDirectArchive extends BaseXnatRestTest {
     }
 
     @AfterClass(alwaysRun = true)
-    public void tearDown() {
+    private void tearDown() {
         restDriver.deleteProjectSilently(mainAdminUser, project);
         mainAdminInterface().deleteDicomScpReceiver(directArchiveReceiver);
     }
@@ -201,4 +204,5 @@ public class TestDirectArchive extends BaseXnatRestTest {
         TimeUtils.sleep(1000); // sleep for 1s to accommodate a little gap between prearchive being empty and session being accessible
         mainQueryBase().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
     }
+
 }

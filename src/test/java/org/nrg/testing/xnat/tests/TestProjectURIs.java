@@ -8,9 +8,12 @@ import org.nrg.xnat.pogo.resources.Resource;
 import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.testng.annotations.Test;
 
+import static org.nrg.testing.TestGroups.PREARCHIVE;
+import static org.nrg.testing.TestGroups.RESOURCES;
+
 public class TestProjectURIs extends BaseXnatRestTest {
 
-    @Test
+    @Test(groups = PREARCHIVE)
     public void testPrearchiveConfig() {
         try {
             mainInterface().createProject(testSpecificProject);
@@ -24,7 +27,7 @@ public class TestProjectURIs extends BaseXnatRestTest {
         }
     }
 
-    @Test
+    @Test(groups = RESOURCES)
     public void testProjectDeleteCrossover() {
         final Resource resource1 = new ProjectResource().folder("TESTING").addResourceFile(new ResourceFile().extension(new SimpleResourceFileExtension(getDataFile("louie.jpg"))));
         final Resource resource2 = new ProjectResource().folder("TESTING2").addResourceFile(new ResourceFile().extension(new SimpleResourceFileExtension(getDataFile("louie.jpg"))));

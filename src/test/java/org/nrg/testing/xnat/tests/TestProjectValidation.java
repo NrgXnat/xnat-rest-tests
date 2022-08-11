@@ -7,19 +7,22 @@ import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.Project;
 import org.testng.annotations.*;
 
+import static org.nrg.testing.TestGroups.VALIDATION;
+
 // Adapted from tests originally written by James on 2014-02-24
+@Test(groups = VALIDATION)
 public class TestProjectValidation extends BaseXnatRestTest {
 
     private Project project;
 
     @BeforeMethod
-    public void addProjectValidationProject() {
+    private void addProjectValidationProject() {
         project = new Project().runningTitle(RandomHelper.randomID()).title(RandomHelper.randomID()).addAlias(RandomHelper.randomID());
         mainAdminInterface().createProject(project);
     }
 
     @AfterMethod(alwaysRun = true)
-    public void deleteProjectValidationProject() {
+    private void deleteProjectValidationProject() {
         restDriver.deleteProjectSilently(mainAdminUser, project);
     }
 

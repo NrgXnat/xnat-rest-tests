@@ -6,7 +6,7 @@ import org.nrg.xnat.subinterfaces.XnatFunctionalitySubinterface;
 import java.util.Collections;
 import java.util.List;
 
-public class BaseCustomTest extends BaseXnatRestTest {
+public abstract class BaseCustomTest extends BaseXnatRestTest {
 
     @Override
     protected List<Class<? extends XnatFunctionalitySubinterface>> additionalRegisteredSubinterfaces() {

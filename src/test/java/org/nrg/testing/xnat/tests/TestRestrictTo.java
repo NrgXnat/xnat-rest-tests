@@ -3,7 +3,11 @@ package org.nrg.testing.xnat.tests;
 import org.nrg.testing.annotations.TestRequires;
 import org.testng.annotations.Test;
 
+import static org.nrg.testing.TestGroups.OPEN_XNAT;
+import static org.nrg.testing.TestGroups.PERMISSIONS;
+
 @TestRequires(plugins = "xnat-test-harness-plugin")
+@Test(groups = PERMISSIONS)
 public class TestRestrictTo extends BasePermissionComparisonTest {
 
     public TestRestrictTo() {
@@ -18,7 +22,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new ProjectTest().operation(Operation.READ).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectReadOpenXnat() {
         new ProjectTest().operation(Operation.READ).openXnat(true).run();
@@ -30,7 +34,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new ProjectTest().operation(Operation.EDIT).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectEditOpenXnat() {
         new ProjectTest().operation(Operation.EDIT).openXnat(true).run();
@@ -42,7 +46,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new ProjectTest().operation(Operation.DELETE).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectDeleteOpenXnat() {
         new ProjectTest().operation(Operation.DELETE).openXnat(true).run();
@@ -56,7 +60,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectTest().operation(Operation.READ).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToSubjectReadOpenXnat() {
         new SubjectTest().operation(Operation.READ).openXnat(true).run();
@@ -68,7 +72,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectTest().operation(Operation.EDIT).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToSubjectEditOpenXnat() {
         new SubjectTest().operation(Operation.EDIT).openXnat(true).run();
@@ -80,7 +84,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectTest().operation(Operation.DELETE).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToSubjectDeleteOpenXnat() {
         new SubjectTest().operation(Operation.DELETE).openXnat(true).run();
@@ -92,7 +96,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectTest().project(true).operation(Operation.READ).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectSubjectReadOpenXnat() {
         new SubjectTest().project(true).operation(Operation.READ).openXnat(true).run();
@@ -104,7 +108,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectTest().project(true).operation(Operation.EDIT).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectSubjectEditOpenXnat() {
         new SubjectTest().project(true).operation(Operation.EDIT).openXnat(true).run();
@@ -116,7 +120,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectTest().project(true).operation(Operation.DELETE).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectSubjectDeleteOpenXnat() {
         new SubjectTest().project(true).operation(Operation.DELETE).openXnat(true).run();
@@ -130,7 +134,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectAssessorTest().operation(Operation.READ).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToSubjectAssessorReadOpenXnat() {
         new SubjectAssessorTest().operation(Operation.READ).openXnat(true).run();
@@ -142,7 +146,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectAssessorTest().operation(Operation.EDIT).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToSubjectAssessorEditOpenXnat() {
         new SubjectAssessorTest().operation(Operation.EDIT).openXnat(true).run();
@@ -154,7 +158,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectAssessorTest().operation(Operation.DELETE).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToSubjectAssessorDeleteOpenXnat() {
         new SubjectAssessorTest().operation(Operation.DELETE).openXnat(true).run();
@@ -166,7 +170,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectAssessorTest().project(true).operation(Operation.READ).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectSubjectAssessorReadOpenXnat() {
         new SubjectAssessorTest().project(true).operation(Operation.READ).openXnat(true).run();
@@ -178,7 +182,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectAssessorTest().project(true).operation(Operation.EDIT).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectSubjectAssessorEditOpenXnat() {
         new SubjectAssessorTest().project(true).operation(Operation.EDIT).openXnat(true).run();
@@ -190,7 +194,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectAssessorTest().project(true).operation(Operation.DELETE).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectSubjectAssessorDeleteOpenXnat() {
         new SubjectAssessorTest().project(true).operation(Operation.DELETE).openXnat(true).run();
@@ -202,7 +206,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectAssessorTest().subject(true).operation(Operation.READ).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToSubjectSubjectAssessorReadOpenXnat() {
         new SubjectAssessorTest().subject(true).operation(Operation.READ).openXnat(true).run();
@@ -214,7 +218,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectAssessorTest().subject(true).operation(Operation.EDIT).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToSubjectSubjectAssessorEditOpenXnat() {
         new SubjectAssessorTest().subject(true).operation(Operation.EDIT).openXnat(true).run();
@@ -226,7 +230,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectAssessorTest().subject(true).operation(Operation.DELETE).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToSubjectSubjectAssessorDeleteOpenXnat() {
         new SubjectAssessorTest().subject(true).operation(Operation.DELETE).openXnat(true).run();
@@ -238,7 +242,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectAssessorTest().subject(true).project(true).operation(Operation.READ).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectSubjectSubjectAssessorReadOpenXnat() {
         new SubjectAssessorTest().subject(true).project(true).operation(Operation.READ).openXnat(true).run();
@@ -250,7 +254,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectAssessorTest().subject(true).project(true).operation(Operation.EDIT).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectSubjectSubjectAssessorEditOpenXnat() {
         new SubjectAssessorTest().subject(true).project(true).operation(Operation.EDIT).openXnat(true).run();
@@ -262,7 +266,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SubjectAssessorTest().subject(true).project(true).operation(Operation.DELETE).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectSubjectSubjectAssessorDeleteOpenXnat() {
         new SubjectAssessorTest().subject(true).project(true).operation(Operation.DELETE).openXnat(true).run();
@@ -274,7 +278,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SessionAssessorTest().operation(Operation.READ).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToSessionAssessorReadOpenXnat() {
         new SessionAssessorTest().operation(Operation.READ).openXnat(true).run();
@@ -286,7 +290,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SessionAssessorTest().operation(Operation.EDIT).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToSessionAssessorEditOpenXnat() {
         new SessionAssessorTest().operation(Operation.EDIT).openXnat(true).run();
@@ -298,7 +302,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SessionAssessorTest().operation(Operation.DELETE).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToSessionAssessorDeleteOpenXnat() {
         new SessionAssessorTest().operation(Operation.DELETE).openXnat(true).run();
@@ -310,7 +314,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SessionAssessorTest().project(true).operation(Operation.READ).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectSessionAssessorReadOpenXnat() {
         new SessionAssessorTest().project(true).operation(Operation.READ).openXnat(true).run();
@@ -322,7 +326,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SessionAssessorTest().project(true).operation(Operation.EDIT).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectSessionAssessorEditOpenXnat() {
         new SessionAssessorTest().project(true).operation(Operation.EDIT).openXnat(true).run();
@@ -334,7 +338,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SessionAssessorTest().project(true).operation(Operation.DELETE).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectSessionAssessorDeleteOpenXnat() {
         new SessionAssessorTest().project(true).operation(Operation.DELETE).openXnat(true).run();
@@ -346,7 +350,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SessionAssessorTest().subject(true).operation(Operation.READ).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToSubjectSessionAssessorReadOpenXnat() {
         new SessionAssessorTest().subject(true).operation(Operation.READ).openXnat(true).run();
@@ -358,7 +362,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SessionAssessorTest().subject(true).operation(Operation.EDIT).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToSubjectSessionAssessorEditOpenXnat() {
         new SessionAssessorTest().subject(true).operation(Operation.EDIT).openXnat(true).run();
@@ -370,7 +374,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SessionAssessorTest().subject(true).operation(Operation.DELETE).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToSubjectSessionAssessorDeleteOpenXnat() {
         new SessionAssessorTest().subject(true).operation(Operation.DELETE).openXnat(true).run();
@@ -382,7 +386,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SessionAssessorTest().subject(true).project(true).operation(Operation.READ).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectSubjectSessionAssessorReadOpenXnat() {
         new SessionAssessorTest().subject(true).project(true).operation(Operation.READ).openXnat(true).run();
@@ -394,7 +398,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SessionAssessorTest().subject(true).project(true).operation(Operation.EDIT).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectSubjectSessionAssessorEditOpenXnat() {
         new SessionAssessorTest().subject(true).project(true).operation(Operation.EDIT).openXnat(true).run();
@@ -406,7 +410,7 @@ public class TestRestrictTo extends BasePermissionComparisonTest {
         new SessionAssessorTest().subject(true).project(true).operation(Operation.DELETE).openXnat(false).run();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     public void testRestrictToProjectSubjectSessionAssessorDeleteOpenXnat() {
         new SessionAssessorTest().subject(true).project(true).operation(Operation.DELETE).openXnat(true).run();

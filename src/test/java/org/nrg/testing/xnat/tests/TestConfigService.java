@@ -21,8 +21,11 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.util.*;
 
+import static org.nrg.testing.TestGroups.CONFIG_SERVICE;
+import static org.nrg.testing.TestGroups.PERMISSIONS;
 import static org.testng.AssertJUnit.*;
 
+@Test(groups = CONFIG_SERVICE)
 public class TestConfigService extends BaseXnatRestTest {
 
     private final List<Project> projects = new ArrayList<>();
@@ -32,7 +35,7 @@ public class TestConfigService extends BaseXnatRestTest {
     private final String TEST_PATH = "newPath/goes/here";
 
     @AfterClass(alwaysRun = true)
-    public void removeConfigServiceProjects() {
+    private void removeConfigServiceProjects() {
         for (Project project : projects) {
             restDriver.deleteProjectSilently(mainAdminUser, project);
         }
@@ -185,7 +188,7 @@ public class TestConfigService extends BaseXnatRestTest {
         }
     }
 
-    @Test
+    @Test(groups = PERMISSIONS)
     public void testConfigServiceProjectLevelSecurityLegacy() {
         final Project project = registerProject();
         final String tool = UUID.randomUUID().toString();
@@ -199,7 +202,7 @@ public class TestConfigService extends BaseXnatRestTest {
                 then().assertThat().statusCode(404); // user can't see project, so 404 instead of 403
     }
 
-    @Test
+    @Test(groups = PERMISSIONS)
     @TestRequires(users = 3)
     public void testConfigServiceProjectLevelEditSecurity() {
         final Project project = registerProject().accessibility(Accessibility.PRIVATE);

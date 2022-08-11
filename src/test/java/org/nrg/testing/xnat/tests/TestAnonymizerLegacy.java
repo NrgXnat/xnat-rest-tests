@@ -38,9 +38,11 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 
+import static org.nrg.testing.TestGroups.*;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertNull;
 
+@Test(groups = ANONYMIZATION)
 public class TestAnonymizerLegacy extends BaseXnatRestTest {
     private final File anonScript1File = getDataFile("anon1.das");
     private final AnonScript anonScript1 = XnatObjectUtils.anonScriptFromFile(null, anonScript1File);
@@ -59,17 +61,17 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     private Project otherProject;
 
     @BeforeClass
-    public void setSiteScript() {
+    private void setSiteScript() {
         mainAdminInterface().setSiteAnonScript(restDriver.getDefaultXnatAnonScript());
     }
 
     @BeforeMethod
-    public void enableSiteScript() {
+    private void enableSiteScript() {
         mainAdminInterface().enableSiteAnonScript();
     }
 
     @BeforeMethod
-    public void setUpAnonProject() {
+    private void setUpAnonProject() {
         currentProject = new Project().prearchiveCode(PrearchiveCode.MANUAL);
         subject = new Subject(currentProject, "ANON_SUBJ_1").gender(Gender.MALE);
         session = new MRSession(currentProject, subject, "MR1").date(LocalDate.parse("2000-01-01"));
@@ -79,7 +81,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     }
 
     @AfterMethod(alwaysRun = true)
-    public void tearDownAnonTest() {
+    private void tearDownAnonTest() {
         restDriver.deleteProjectSilently(mainAdminUser, currentProject);
         restDriver.deleteProjectSilently(mainAdminUser, otherProject);
     }
@@ -87,7 +89,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     /**
      * Test uploading and downloading multiple scripts to a project.
      */
-    @Test
+    @Test(groups = SMOKE)
     @Basic
     public void testUploadScriptToProject() {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
@@ -101,7 +103,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      * Test to see if a file uploaded via the Zip importer to the prearchive and then archived to a project
      * has had both the site-wide and project specific anon scripts applied to it.
      */
-    @Test
+    @Test(groups = {SMOKE, IMPORTER})
     @Basic
     public void testPrearchiveProjectZipUpload() throws IOException {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
@@ -131,7 +133,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      * Test that uploading to a project via the zip uploader applies both
      * the site-wide and project specific scripts to the DICOM files.
      */
-    @Test
+    @Test(groups = {SMOKE, IMPORTER})
     @Basic
     public void testProjectZipUpload() throws IOException {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
@@ -161,7 +163,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      * Test that applying a project specific script adds the name
      * of the project to the DICOM header
      */
-    @Test
+    @Test(groups = IMPORTER)
     public void testSessionLabelInHeader() throws IOException {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
         
@@ -189,7 +191,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      * Test that uploading a script to a project and then disabling it
      * keeps the edit script from being applied
      */
-    @Test
+    @Test(groups = IMPORTER)
     public void testDisabledProjectScript() throws IOException {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
         mainInterface().disableProjectAnonScript(currentProject);
@@ -218,7 +220,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      * Test that disabling the site-wide script and only applies
      * the project-specific script to the DICOM files.
      */
-    @Test
+    @Test(groups = IMPORTER)
     public void testDisabledSiteWideScript() throws IOException {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
         mainAdminInterface().disableSiteAnonScript();
@@ -247,7 +249,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      * Test that uploading via the zip uploader to the prearchive applies the
      * site-wide script.
      */
-    @Test
+    @Test(groups = {SMOKE, IMPORTER})
     @Basic
     public void testDefaultAnonZipUploadSiteWide() throws IOException {
         restDriver.clearUnassignedPrearchiveSessions(mainAdminUser, UIDList.uids);
@@ -288,7 +290,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     /**
      * Test to see if a file uploaded via the Gradual DICOM importer is properly anonymized in reference to the site-wide script
      */
-    @Test
+    @Test(groups = {SMOKE, IMPORTER})
     @Basic
     public void testDefaultAnonGradualDicomUpload() throws IOException {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
@@ -307,7 +309,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
         assertEquals(getSiteScriptId(mainAdminUser), codes[0].getCodeValue());
     }
 
-    @Test
+    @Test(groups = IMPORTER)
     public void testNoProjectScript() throws IOException {
         // upload DICOM to the experiment
         mainInterface().callImporter(
@@ -333,7 +335,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      * Test that uploading via the gradual DICOM importer into archiving into a project
      * applies the site-wide and project specific edit scripts to the DICOM files.
      */
-    @Test
+    @Test(groups = {SMOKE, IMPORTER})
     @Basic
     public void testDefaultProjectGradualDicomUpload() throws IOException {
         mainInterface().setProjectAnonScript(currentProject, anonScript1);
@@ -363,7 +365,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      * 2. Project specific
      * 3. Project specific
      */
-    @Test
+    @Test(groups = {SMOKE, IMPORTER})
     @Basic
     public void testSubjectChange() throws IOException {
         final Subject testSubject = new Subject(currentProject, "00001");
@@ -397,7 +399,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      *   - a project-specific edit script application
      *   - another project-specific script application
      */
-    @Test
+    @Test(groups = {SMOKE, IMPORTER})
     @Basic
     public void testLabelChange() throws IOException {
         final Subject testSubject = new Subject(currentProject, "00001");
@@ -436,7 +438,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
      * 2. old project script
      * 3. new project script
      */
-    @Test
+    @Test(groups = {SMOKE, IMPORTER})
     @Basic
     public void testProjectChange() throws IOException {
         otherProject = new Project();

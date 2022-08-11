@@ -15,6 +15,8 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 
+import static org.nrg.testing.TestGroups.RESOURCES;
+
 public class TestFileFiltering extends BaseXnatRestTest {
 
     private final File louieFile = getDataFile("louie.jpg");
@@ -29,7 +31,7 @@ public class TestFileFiltering extends BaseXnatRestTest {
         restDriver.deleteProjectSilently(mainAdminUser, testSpecificProject);
     }
 
-    @Test
+    @Test(groups = RESOURCES)
     public void testFileFiltering() {
         final String content1 = "TEST1";
         final String content2 = "TEST2";

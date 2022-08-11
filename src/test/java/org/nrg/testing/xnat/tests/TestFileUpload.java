@@ -30,9 +30,12 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.zip.ZipFile;
 
+import static org.nrg.testing.TestGroups.RESOURCES;
+import static org.nrg.testing.TestGroups.SMOKE;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.fail;
 
+@Test(groups = RESOURCES)
 public class TestFileUpload extends BaseXnatRestTest {
 
     private final SimpleDateFormat americanDate = new SimpleDateFormat("MM/dd/yyyy");
@@ -49,12 +52,12 @@ public class TestFileUpload extends BaseXnatRestTest {
     private ImagingSession session;
 
     @BeforeClass
-    public void disableSiteAnon() {
+    private void disableSiteAnon() {
         mainAdminInterface().disableSiteAnonScript();
     }
 
     @BeforeMethod
-    public void setupFileUploadProject() {
+    private void setupFileUploadProject() {
         project = testSpecificProject;
         subject = new Subject(project, "1").gender(Gender.MALE);
         session = new MRSession(project, subject, "MR1").date(LocalDate.parse("2000-01-01"));
@@ -63,16 +66,16 @@ public class TestFileUpload extends BaseXnatRestTest {
     }
 
     @AfterMethod(alwaysRun = true)
-    public void removeFileUploadProject() {
+    private void removeFileUploadProject() {
         restDriver.deleteProjectSilently(mainUser, project);
     }
 
     @AfterClass(alwaysRun = true)
-    public void enableSiteAnon() {
+    private void enableSiteAnon() {
         mainAdminInterface().enableSiteAnonScript();
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @Basic
     public void testImageUploadWResourcePrecreate() {
         final Scan scan1 = new MRScan(session, "1").seriesDescription("LOCALIZER").quality("usable");
@@ -193,7 +196,7 @@ public class TestFileUpload extends BaseXnatRestTest {
         restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(assessorUrl, "out/files/1.dcm"), dicomFile1);
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @Basic
     public void testScanUpload() {
         final Scan scan = new MRScan(session, "MR1_scan1");
@@ -234,7 +237,7 @@ public class TestFileUpload extends BaseXnatRestTest {
         restDriver.validateUpload(mainUser, CommonStringUtils.formatUrl(subjectUrl, "files/1.dcm"), dicomFile3);
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @Basic
     public void testProjectResourceUpload() {
         final String projectUrl = mainInterface().projectUrl(project);
@@ -267,7 +270,7 @@ public class TestFileUpload extends BaseXnatRestTest {
         uploadAndExtractToSession(testTgz);
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @Basic
     public void testScanResourceUploadZip() {
         uploadAndExtractToScan(testZip);

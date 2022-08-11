@@ -21,8 +21,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.nrg.testing.TestGroups.OPEN_XNAT;
+import static org.nrg.testing.TestGroups.PREFERENCES;
 import static org.testng.AssertJUnit.*;
 
+@Test(groups = PREFERENCES)
 public class TestXapiSiteConfig extends BaseXnatRestTest {
 
     private static final String publicPreference = "siteId";
@@ -32,7 +35,7 @@ public class TestXapiSiteConfig extends BaseXnatRestTest {
     private static final Map<String, Object> expectedSiteConfig = new HashMap<>();
 
     @BeforeMethod
-    public void setSiteConfig() {
+    private void setSiteConfig() {
         expectedSiteConfig.put(publicPreference, "XNAT");
         expectedSiteConfig.put(authenticatedPreference, "PIB");
         expectedSiteConfig.put(adminPreference, "Custom complexity message");
@@ -40,7 +43,7 @@ public class TestXapiSiteConfig extends BaseXnatRestTest {
         mainAdminInterface().postToSiteConfig(expectedSiteConfig);
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     @AddedIn(Xnat_1_8_4.class)
     @TestedApiSpec(method = Method.GET, url = "/xapi/siteConfig")
@@ -58,7 +61,7 @@ public class TestXapiSiteConfig extends BaseXnatRestTest {
         RestAssured.given().get(formatXapiUrl("siteConfig")).then().assertThat().statusCode(401);
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     @AddedIn(Xnat_1_8_4.class)
     @TestedApiSpec(method = Method.GET, url = "/xapi/siteConfig/{property}")
@@ -74,7 +77,7 @@ public class TestXapiSiteConfig extends BaseXnatRestTest {
         testGetSiteConfigByProperty();
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     @AddedIn(Xnat_1_8_4.class)
     @TestedApiSpec(method = Method.POST, url = "/xapi/siteConfig")
@@ -90,7 +93,7 @@ public class TestXapiSiteConfig extends BaseXnatRestTest {
         testSiteConfigMapPost(false);
     }
 
-    @Test
+    @Test(groups = OPEN_XNAT)
     @TestRequires(openXnat = true)
     @AddedIn(Xnat_1_8_4.class)
     @TestedApiSpec(method = Method.POST, url = "/xapi/siteConfig/{property}")

@@ -22,6 +22,8 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 
+import static org.nrg.testing.TestGroups.PERMISSIONS;
+
 public class TestRename extends BaseXnatRestTest {
 
     private final Project renameProject1 = new Project();
@@ -86,7 +88,7 @@ public class TestRename extends BaseXnatRestTest {
         restDriver.validateResource(mainAdminUser, sessionResource);
     }
 
-    @Test
+    @Test(groups = PERMISSIONS)
     public void testExptWAssessRename() {
         final Subject subject = new Subject(renameProject1, "3").addShare(new Share(renameProject2));
         final ImagingSession session = new MRSession(renameProject1, subject, "MR3").addShare(new Share(renameProject2));

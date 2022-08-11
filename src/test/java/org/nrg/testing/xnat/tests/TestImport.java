@@ -56,9 +56,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static org.nrg.testing.TestGroups.*;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.AssertJUnit.*;
 
+@Test(groups = IMPORTER)
 public class TestImport extends BaseXnatRestTest {
 
     private final Project project = new Project().prearchiveCode(PrearchiveCode.MANUAL);
@@ -78,13 +80,13 @@ public class TestImport extends BaseXnatRestTest {
     private static final Logger LOGGER = Logger.getLogger(TestImport.class);
 
     @BeforeClass
-    public void setupImportProject() {
+    private void setupImportProject() {
         mainInterface().createProject(project);
         mainAdminInterface().disableSiteAnonScript();
     }
 
     @BeforeClass
-    public void setupZip() throws IOException {
+    private void setupZip() throws IOException {
         if (zipContainingNonDicom.exists()) {
             //noinspection ResultOfMethodCallIgnored
             zipContainingNonDicom.delete();
@@ -101,7 +103,7 @@ public class TestImport extends BaseXnatRestTest {
 
     @BeforeMethod(alwaysRun = true) // clear out prearchive/archive for each test
     @AfterClass(alwaysRun = true) // ... and then clear them out when we're all done
-    public void clearArchives() {
+    private void clearArchives() {
         try {
             restDriver.clearPrearchiveSessions(mainUser, project);
         } catch (Throwable throwable) {
@@ -116,11 +118,11 @@ public class TestImport extends BaseXnatRestTest {
     }
 
     @AfterClass(alwaysRun = true)
-    public void tearDownImportTests() {
+    private void tearDownImportTests() {
         restDriver.deleteProjectSilently(mainAdminUser, project);
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @Basic
     public void testDataProject() {
         // services/import?dest=/archive/projects/{PROJECT} POST
@@ -140,7 +142,7 @@ public class TestImport extends BaseXnatRestTest {
         mainInterface().deleteSubjectAssessor(session);
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @Basic
     public void testDataSubject() {
         // services/import?dest=/archive/projects/{PROJECT}/subjects/SUBJECT POST
@@ -161,7 +163,7 @@ public class TestImport extends BaseXnatRestTest {
         mainInterface().deleteSubjectAssessor(session);
     }
 
-    @Test
+    @Test(groups = SMOKE)
     @Basic
     public void testDataProjectExperimentNew() {
         // services/import?dest=/archive/projects/{PROJECT}/subjects/SUBJECT/experiments/EXPERIMENT POST
@@ -214,7 +216,7 @@ public class TestImport extends BaseXnatRestTest {
     /**
      * Tests merging MR scans into an existing PET session... this should fail
      */
-    @Test
+    @Test(groups = {PREARCHIVE, MERGE})
     public void testDataProjectExperimentNewExptXSIOverwriteFDeleteF() {
         setCrossModalityMergePrevention(false);
 
@@ -236,7 +238,7 @@ public class TestImport extends BaseXnatRestTest {
     /**
      * Tests merging MR scans into an existing PET session with overwrite=delete... this should fail unconditionally prior to 1.7.7 and conditionally afterward
      */
-    @Test
+    @Test(groups = {PREARCHIVE, MERGE})
     public void testDataProjectExperimentNewExptXSIOverwriteTDeleteF() {
         setCrossModalityMergePrevention(true);
 
@@ -270,7 +272,7 @@ public class TestImport extends BaseXnatRestTest {
     }
 
 
-    @Test
+    @Test(groups = {PREARCHIVE, MERGE})
     public void testDataDuplicateScanFilesOverwriteFDeleteF() {
         final Subject subject = new Subject(project, "SUBJ5");
         final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
@@ -287,7 +289,7 @@ public class TestImport extends BaseXnatRestTest {
         mainInterface().deleteSubjectAssessor(session);
     }
 
-    @Test
+    @Test(groups = {PREARCHIVE, MERGE})
     public void testDataDuplicateScanFilesOverwriteTDeleteF() {
         final Subject subject = new Subject(project, "SUBJ_5");
         final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
@@ -307,7 +309,7 @@ public class TestImport extends BaseXnatRestTest {
     /**
      * This used to fail.  But now it should succeed.  Reimporting the same files is OK.
      */
-    @Test
+    @Test(groups = {PREARCHIVE, MERGE})
     public void testDataDuplicateScanFilesOverwriteTDeleteFWithFileFlag() {
         final Subject subject = new Subject(project, "SUBJ_05");
         final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
@@ -318,7 +320,7 @@ public class TestImport extends BaseXnatRestTest {
         mainInterface().deleteSubjectAssessor(session);
     }
 
-    @Test
+    @Test(groups = {PREARCHIVE, MERGE})
     public void testDataDuplicateScanFilesOverwriteTDeleteT() {
         final Subject subject = new Subject(project, "SUBJ_005");
         final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
@@ -329,7 +331,7 @@ public class TestImport extends BaseXnatRestTest {
         mainInterface().deleteSubjectAssessor(session);
     }
 
-    @Test
+    @Test(groups = {PREARCHIVE, MERGE})
     public void testDataScan2partsFilesOverwriteTDeleteF() {
         final Subject subject = new Subject(project, "SUBJ5");
         final ImagingSession session = new MRSession(project, subject, newLabel());
@@ -345,7 +347,7 @@ public class TestImport extends BaseXnatRestTest {
                 then().assertThat().body("ResultSet.Result", Matchers.hasSize(16)); // full scan1
     }
 
-    @Test
+    @Test(groups = {PREARCHIVE, MERGE})
     public void testDataScan2partsOverlapFilesOverwriteTDeleteT() {
         final Subject subject = new Subject(project, "SUBJ5");
         final ImagingSession session = new MRSession(project, subject, newLabel());
@@ -361,7 +363,7 @@ public class TestImport extends BaseXnatRestTest {
                 then().assertThat().body("ResultSet.Result", Matchers.hasSize(16)); // full scan1
     }
 
-    @Test
+    @Test(groups = {PREARCHIVE, MERGE})
     public void testDataScan2partsOverlapFilesOverwriteTDeleteF() {
         final Subject subject = new Subject(project, "SUBJ5");
         final ImagingSession session = new MRSession(project, subject, newLabel());
@@ -375,7 +377,7 @@ public class TestImport extends BaseXnatRestTest {
         }
     }
 
-    @Test
+    @Test(groups = {PREARCHIVE, MERGE})
     public void testPrearcMergeNewScan() {
         final String timestamp = "20000101_100001";
         final String session = newLabel();
@@ -391,7 +393,7 @@ public class TestImport extends BaseXnatRestTest {
         }
     }
 
-    @Test
+    @Test(groups = {PREARCHIVE, MERGE})
     public void testPrearcMergeDiffUID() {
         final String timestamp = "20000101_100001";
         final String session = newLabel();
@@ -411,7 +413,7 @@ public class TestImport extends BaseXnatRestTest {
     /**
      * This mimics the behavior of the upload assistant on a non-autoarchive project.
      */
-    @Test
+    @Test(groups = PREARCHIVE)
     public void testPrearcGradualImport() {
         final List<String> responseUris = new ArrayList<>();
         final DicomZipRequest importerRequest = new DicomZipRequest().destPrearchive(project);
@@ -435,7 +437,7 @@ public class TestImport extends BaseXnatRestTest {
     /**
      * This mimics a session sent from DICOM Browser into Unassigned, moved to a valid project, and archived.
      */
-    @Test
+    @Test(groups = {SMOKE, PREARCHIVE})
     @Basic
     public void testUnassignedManualArchiveGradualImport() {
         final List<String> sessionUris = new ArrayList<>();
@@ -474,7 +476,7 @@ public class TestImport extends BaseXnatRestTest {
     /**
      * This mimics the behavior of the upload assistant on an auto archive project.
      */
-    @Test
+    @Test(groups = PREARCHIVE)
     public void testManualArchiveGradualImport() {
         final List<String> sessionUris = new ArrayList<>();
         final DicomZipRequest importerRequest = new DicomZipRequest().destPrearchive(project);
@@ -540,7 +542,7 @@ public class TestImport extends BaseXnatRestTest {
                 assertThat().body("msgs.get(0).last().status", Matchers.equalTo("COMPLETED"));
     }
 
-    @Test
+    @Test(groups = {PREARCHIVE, MERGE})
     public void testModifiedSeriesUIDs() {
         // 5 DICOM files from the original scan will be uploaded.
         // one frame has been modified to change the series UID.
@@ -607,7 +609,7 @@ public class TestImport extends BaseXnatRestTest {
         assertEquals("Should have 3 files.", 3, scan1JsonPath.getInt("get(0).file_count"));
     }
 
-    @Test
+    @Test(groups = {PREARCHIVE, MERGE})
     @TestRequires(data = {
             TestData.SAMPLE_1_SCAN_4,
             TestData.SAMPLE_1_SCAN_5,
@@ -690,18 +692,18 @@ public class TestImport extends BaseXnatRestTest {
         mainInterface().deleteProject(testObjects.session.getPrimaryProject());
     }
 
-    @Test
+    @Test(groups = PREARCHIVE)
     public void testUploadIgnoreUnparsableMissingParam() {
         runUnparsableTest(false, false);
     }
 
-    @Test
+    @Test(groups = PREARCHIVE)
     @AddedIn(Xnat_1_8_3.class)
     public void testUploadIgnoreUnparsableFalse() {
         runUnparsableTest(true, false);
     }
 
-    @Test
+    @Test(groups = PREARCHIVE)
     @AddedIn(Xnat_1_8_3.class)
     public void testUploadIgnoreUnparsableTrue() {
         runUnparsableTest(true, true);

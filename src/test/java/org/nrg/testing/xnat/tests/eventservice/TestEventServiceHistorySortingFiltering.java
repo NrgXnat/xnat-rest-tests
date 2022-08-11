@@ -31,7 +31,7 @@ public class TestEventServiceHistorySortingFiltering extends BaseEventServiceTes
     DeliveredEvent subject4Event, subject3Event, subject2Event, subject1Event;
 
     @BeforeClass
-    public void addData() {
+    private void addData() {
         mainAdminInterface().createSubscription(subjectSubscription);
         subscriptionsToCleanup.add(subjectSubscription);
         mainAdminInterface().createSubscription(sessionSubscription);

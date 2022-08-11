@@ -25,14 +25,17 @@ import org.nrg.xnat.pogo.users.CustomUserGroup;
 import org.nrg.xnat.pogo.users.User;
 import org.nrg.xnat.pogo.users.UserGroups;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.*;
 
+import static org.nrg.testing.TestGroups.PERMISSIONS;
 import static org.nrg.xnat.enums.DataAccessLevel.*;
 import static org.nrg.xnat.pogo.DataType.MR_SESSION;
 import static org.nrg.xnat.pogo.DataType.QC;
 
-public class BasePermissionComparisonTest extends BaseXnatRestTest {
+@Test(groups = PERMISSIONS)
+public abstract class BasePermissionComparisonTest extends BaseXnatRestTest {
 
     private final User allDataAdmin = Users.genericAccount().dataRole(SiteDataRole.ALL_DATA_ADMIN);
     private final User allDataAccess = Users.genericAccount().dataRole(SiteDataRole.ALL_DATA_ACCESS);
@@ -69,7 +72,7 @@ public class BasePermissionComparisonTest extends BaseXnatRestTest {
     }
 
     @BeforeClass
-    public void createTestProjects() {
+    protected void createTestProjects() {
         TestNgUtils.assumeFalse(mainAdminUser.getUsername().equals(mainUser.getUsername()), "Main admin user and main user accounts must be distinct.");
         for (User user : Arrays.asList(allDataAdmin, allDataAccess, owner, member, collaborator, readSubjects, manageSubjects, readMR, editMR, manageMR, readQC, manageQC)) {
             mainAdminInterface().createUser(user);

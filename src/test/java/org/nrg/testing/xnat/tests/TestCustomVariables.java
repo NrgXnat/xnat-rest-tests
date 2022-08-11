@@ -19,8 +19,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.nrg.testing.TestGroups.CUSTOM_VARIABLES;
 import static org.testng.AssertJUnit.assertEquals;
 
+@Test(groups = CUSTOM_VARIABLES)
 public class TestCustomVariables extends BaseXnatRestTest {
 
     private static final String FIELD_NAME = "test01";
@@ -28,12 +30,12 @@ public class TestCustomVariables extends BaseXnatRestTest {
     private static final Map<String, Object> FIELD_MAP = Collections.singletonMap(FIELD_NAME, FIELD_VALUE);
 
     @BeforeMethod
-    public void createTestProject() {
+    private void createTestProject() {
         mainInterface().createProject(testSpecificProject);
     }
 
     @AfterMethod(alwaysRun = true)
-    public void deleteTestProject() {
+    private void deleteTestProject() {
         restDriver.deleteProjectSilently(mainUser, testSpecificProject);
     }
 
@@ -89,11 +91,11 @@ public class TestCustomVariables extends BaseXnatRestTest {
     }
 
     private Response readCustomVariables(SubjectAssessor assessor) {
-        return mainCredentials().given().
-                queryParam("xnat:mrSessionData/label", assessor.getLabel()).
-                queryParam("format", "json").
-                queryParam("columns", "xnat:mrSessionData/fields/field/field,xnat:mrSessionData/fields/field/name").
-                get(formatRestUrl("projects", assessor.getSubject().getProject().getId(), "subjects", assessor.getSubject().getLabel(), "experiments"));
+        return mainQueryBase()
+                .queryParam("xnat:mrSessionData/label", assessor.getLabel())
+                .queryParam("format", "json")
+                .queryParam("columns", "xnat:mrSessionData/fields/field/field,xnat:mrSessionData/fields/field/name")
+                .get(formatRestUrl("projects", assessor.getSubject().getProject().getId(), "subjects", assessor.getSubject().getLabel(), "experiments"));
     }
 
     private String customVariableJsonPath(String fieldValue, String fieldName) {

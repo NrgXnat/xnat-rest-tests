@@ -26,9 +26,11 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.nrg.testing.TestGroups.*;
 
 @TestRequires(plugins = {"containers", "batchLaunchPlugin"})
 @AddedIn(Xnat_1_8_2.class)
+@Test(groups = {CONTAINERS, ORCHESTRATION})
 public class TestContainerOrchestration extends BaseXnatRestTest {
     private static final Image DEBUG_IMG = new Image("xnat", "debug-command", "latest");
     private static final String DEBUG_WRAPPER_NAME = "debug-session";
@@ -42,7 +44,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
     private List<CommandSummaryForContext> wrapperSummaries;
 
     @BeforeMethod
-    public void setupTest() {
+    private void setupTest() {
         // setup objects
         project  = testSpecificProject;
         subject  = new Subject(project, "S1").gender(Gender.MALE);
@@ -71,12 +73,12 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
     }
 
     @AfterMethod
-    public void removeContainerServiceProjects() {
+    private void removeContainerServiceProjects() {
         restDriver.deleteProjectSilently(mainUser, project);
     }
 
     @AfterMethod
-    public void deleteAllImages() {
+    private void deleteAllImages() {
         final List<Image> imagesWithCommands = mainAdminInterface().readImages(IMAGES_WITH_COMMANDS_JSON_PATH);
 
         for (Image image : imagesWithCommands) {
@@ -84,7 +86,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
         }
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     public void testOrchestrationSession() {
         setProjectOrchestration(setupOrchestration());
         final int workflowId = mainInterface().launchContainer(project, findSummary(DEBUG_WRAPPER_NAME), session.getUri());
@@ -93,7 +95,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
         mainInterface().waitForWorkflowComplete(nextWorkflowId, 60 * 5);
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     public void testOrchestrationSessionFailure() {
         // Setup orchestration ensuring debug-session is first
         setProjectOrchestration(setupOrchestration());
@@ -109,7 +111,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
         mainInterface().verifyNoWorkflow(session, ALT_WRAPPER_NAME);
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     public void testOrchestrationSessionReverseOrder() {
         final Orchestration orchestration = setupOrchestration();
         setProjectOrchestration(orchestration);
@@ -122,7 +124,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
         mainInterface().waitForWorkflowComplete(nextWorkflowId, 60 * 5);
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     public void testOrchestrationDisable() {
         final Orchestration orchestration = setupOrchestration();
         setProjectOrchestration(orchestration);
@@ -137,7 +139,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
         mainInterface().verifyNoWorkflow(session, ALT_WRAPPER_NAME);
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     public void testOrchestrationDisableThruCommandProject() {
         setProjectOrchestration(setupOrchestration());
         mainInterface().setWrapperStatusOnProject(findSummary(DEBUG_WRAPPER_NAME), project, false);
@@ -151,7 +153,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
         mainInterface().verifyNoWorkflow(session, ALT_WRAPPER_NAME);
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     public void testOrchestrationDisableThruCommandSite() {
         setProjectOrchestration(setupOrchestration());
         mainAdminInterface().setWrapperStatusOnSite(findSummary(DEBUG_WRAPPER_NAME), project, false);
@@ -165,7 +167,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
         mainInterface().verifyNoWorkflow(session, ALT_WRAPPER_NAME);
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     public void testOrchestrationDelete() {
         final Orchestration orchestration = setupOrchestration();
         setProjectOrchestration(orchestration);
@@ -178,7 +180,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
         mainInterface().verifyNoWorkflow(session, ALT_WRAPPER_NAME);
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     public void testOrchestrationNotSetupOnProject() {
         setupOrchestration();
 
@@ -189,7 +191,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
         mainInterface().verifyNoWorkflow(session, ALT_WRAPPER_NAME);
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     public void testOrchestrationRemovedFromProject() {
         setProjectOrchestration(setupOrchestration());
         removeProjectOrchestration();
@@ -201,7 +203,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
         mainInterface().verifyNoWorkflow(session, ALT_WRAPPER_NAME);
     }
 
-    @Test // tests CS-663
+    @Test(groups = WORKFLOWS) // tests CS-663
     public void testOrchestrationOverwrite() {
         setProjectOrchestration(setupOrchestration());
         setProjectOrchestration(setupOrchestrationWithName("second-orchestration", ALT_WRAPPER_NAME, DEBUG_WRAPPER_NAME));
@@ -232,7 +234,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
         assertNull(op.getSelectedOrchestrationId());
     }
 
-    @Test
+    @Test(groups = WORKFLOWS)
     public void testContainerSessionBulk() {
         // Setup another session
         final MRSession session2 = new MRSession(project, subject, "MR2").date(LocalDate.parse("2000-01-02"));

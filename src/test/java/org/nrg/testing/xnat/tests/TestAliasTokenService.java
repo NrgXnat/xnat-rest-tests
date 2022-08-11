@@ -17,9 +17,11 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import static io.restassured.RestAssured.given;
+import static org.nrg.testing.TestGroups.*;
 import static org.testng.AssertJUnit.*;
 
 @TestRequires(users = 1)
+@Test(groups = {ALIAS_TOKENS, AUTHENTICATION, PERMISSIONS})
 public class TestAliasTokenService extends BaseXnatRestTest {
 
     private User otherUser;
@@ -27,14 +29,14 @@ public class TestAliasTokenService extends BaseXnatRestTest {
     private final Project otherUserProject = new Project().accessibility(Accessibility.PRIVATE);
 
     @BeforeClass
-    public void addPrivateProject() {
+    private void addPrivateProject() {
         otherUser = getGenericUser();
         mainInterface().createProject(project);
         interfaceFor(otherUser).createProject(otherUserProject);
     }
 
     @AfterClass(alwaysRun = true)
-    public void revertState() {
+    private void revertState() {
         restDriver.deleteProjectSilently(mainAdminUser, project);
         restDriver.deleteProjectSilently(mainAdminUser, otherUserProject);
         mainAdminInterface().closeXnat();
@@ -42,12 +44,12 @@ public class TestAliasTokenService extends BaseXnatRestTest {
 
     @TestRequires(closedXnat = true)
     @Test
-    public void testSelfAliasTokenClosedXnat() {
+    private void testSelfAliasTokenClosedXnat() {
         selfAliasTokenTest();
     }
 
     @TestRequires(openXnat = true)
-    @Test
+    @Test(groups = OPEN_XNAT)
     public void testSelfAliasTokenOpenXnat() {
         selfAliasTokenTest();
     }
@@ -59,7 +61,7 @@ public class TestAliasTokenService extends BaseXnatRestTest {
     }
 
     @TestRequires(openXnat = true)
-    @Test
+    @Test(groups = OPEN_XNAT)
     public void testProxyAliasTokenOpenXnat() {
         proxyAliasTokenTest(true);
     }
@@ -71,7 +73,7 @@ public class TestAliasTokenService extends BaseXnatRestTest {
     }
 
     @TestRequires(openXnat = true)
-    @Test
+    @Test(groups = OPEN_XNAT)
     public void testAliasTokenValidationOpenXnat() {
         validationAliasTokenTest();
     }

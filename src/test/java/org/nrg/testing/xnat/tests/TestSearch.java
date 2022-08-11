@@ -6,13 +6,15 @@ import org.testng.annotations.Test;
 
 import java.util.Map;
 
+import static org.nrg.testing.TestGroups.PERMISSIONS;
+import static org.nrg.testing.TestGroups.SEARCH;
 import static org.nrg.xnat.pogo.DataType.MR_SESSION;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.AssertJUnit.assertEquals;
 
 public class TestSearch extends BaseXnatRestTest {
 
-    @Test
+    @Test(groups = {SEARCH, PERMISSIONS})
     public void testElements() {
         final JsonPath elements = mainCredentials().given().queryParam("format", "json").get(formatRestUrl("search", "elements")).
                 then().assertThat().statusCode(200).

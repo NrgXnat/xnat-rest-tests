@@ -34,10 +34,12 @@ import java.io.File;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.nrg.testing.TestGroups.*;
 import static org.nrg.xnat.enums.DicomEditVersion.DE_6;
 
 @AddedIn(Xnat_1_8_5.class)
 @TestRequires(admin = true, data = TestData.ANON_2)
+@Test(groups = {ANONYMIZATION, DICOM_SCP, DICOM_ROUTING, IMPORTER})
 public class TestDicomSCPDisableAnon extends BaseXnatRestTest {
     private static final Logger LOG            = Logger.getLogger(TestDicomSCPDisableAnon.class);
     private static final long   FIVE_MINUTES   = 300000;
@@ -65,7 +67,7 @@ public class TestDicomSCPDisableAnon extends BaseXnatRestTest {
                                             .whitelistEnabled(false);
 
     @BeforeClass
-    public void setup() {
+    private void setup() {
         mainInterface().createProject(project);
         mainInterface().setProjectAnonScript(project, projScript);
 
@@ -97,7 +99,7 @@ public class TestDicomSCPDisableAnon extends BaseXnatRestTest {
     }
 
     @AfterClass(alwaysRun = true)
-    public void tearDown() {
+    private void tearDown() {
         mainAdminInterface().deleteProject(project);
         mainAdminInterface().deleteDicomScpReceiver(receiver);
     }
@@ -134,7 +136,7 @@ public class TestDicomSCPDisableAnon extends BaseXnatRestTest {
         new ProjectScript().validateScriptDidntRun(files);
     }
 
-    @Test
+    @Test(groups = DIRECT_ARCHIVE)
     public void testDirectArchiveWithAnonymizationEnabled() {
         mainAdminInterface().updateDicomScpReceiver(receiver.anonymizationEnabled(true).directArchive(true));
         new XnatCStore(receiver).overwrittenHeaders(Collections.singletonMap(Tag.PatientComments, patientComments))
@@ -147,7 +149,7 @@ public class TestDicomSCPDisableAnon extends BaseXnatRestTest {
         new ProjectScript().validateScriptRan(files);
     }
 
-    @Test
+    @Test(groups = DIRECT_ARCHIVE)
     public void testDirectArchiveWithAnonymizationDisabled() {
         mainAdminInterface().updateDicomScpReceiver(receiver.anonymizationEnabled(false).directArchive(true));
         new XnatCStore(receiver).overwrittenHeaders(Collections.singletonMap(Tag.PatientComments, patientComments))
