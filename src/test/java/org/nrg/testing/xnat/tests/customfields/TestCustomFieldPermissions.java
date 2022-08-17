@@ -16,7 +16,7 @@ import org.nrg.xnat.pogo.experiments.sessions.PETSession;
 import org.nrg.xnat.pogo.users.CustomUserGroup;
 import org.nrg.xnat.rest.ForbiddenException;
 import org.nrg.xnat.rest.NotFoundException;
-import org.nrg.xnat.versions.Xnat_1_8_5;
+import org.nrg.xnat.versions.Xnat_1_8_6;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
