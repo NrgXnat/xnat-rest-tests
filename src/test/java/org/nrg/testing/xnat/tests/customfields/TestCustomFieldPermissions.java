@@ -16,7 +16,7 @@ import org.nrg.xnat.pogo.experiments.sessions.PETSession;
 import org.nrg.xnat.pogo.users.CustomUserGroup;
 import org.nrg.xnat.rest.ForbiddenException;
 import org.nrg.xnat.rest.NotFoundException;
-import org.nrg.xnat.versions.Xnat_1_8_6;
+import org.nrg.xnat.versions.XnatFormIo;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
@@ -25,7 +25,7 @@ import java.util.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-@AddedIn(Xnat_1_8_6.class)
+@AddedIn(XnatFormIo.class)
 public class TestCustomFieldPermissions extends BaseXnatRestTest {
 
     private static final String MR_NAME = "CUSTOM_MR";
