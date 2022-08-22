@@ -12,6 +12,7 @@ import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.Scan;
+import org.nrg.xnat.pogo.extensions.subject_assessor.DicomZipImportExtension;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
 import org.nrg.xnat.versions.Xnat_1_8_5;
 import org.testng.annotations.AfterClass;
@@ -159,7 +160,7 @@ public class TestDicomModalityAssignment extends BaseXnatRestTest {
         new DicomModalityTest(
                 new SeriesSpec(PT, DataType.PET_SCAN).consistentInstances(UID.PositronEmissionTomographyImageStorage, 2),
                 new SeriesSpec(MR, DataType.MR_SCAN).consistentInstances(UID.MRImageStorage, 3)
-        ).run(DataType.PET_MR_SESSION);
+        ).usingDicomZipImporter().run(DataType.PET_MR_SESSION);
     }
 
     public void testModalityExtractionPetMrAsPet() {
@@ -167,14 +168,20 @@ public class TestDicomModalityAssignment extends BaseXnatRestTest {
         new DicomModalityTest(
                 new SeriesSpec(PT, DataType.PET_SCAN).consistentInstances(UID.PositronEmissionTomographyImageStorage, 2),
                 new SeriesSpec(MR, DataType.MR_SCAN).consistentInstances(UID.MRImageStorage, 3)
-        ).run(DataType.PET_SESSION);
+        ).usingDicomZipImporter().run(DataType.PET_SESSION);
     }
 
     private class DicomModalityTest {
         private final List<SeriesSpec> seriesSpecs;
+        private boolean useDicomZipImporter = false;
 
         DicomModalityTest(SeriesSpec... seriesSpecs) {
             this.seriesSpecs = Arrays.asList(seriesSpecs);
+        }
+
+        DicomModalityTest usingDicomZipImporter() {
+            useDicomZipImporter = true;
+            return this;
         }
 
         void run(DataType expectedSessionType) {
@@ -205,7 +212,11 @@ public class TestDicomModalityAssignment extends BaseXnatRestTest {
 
             final Subject subject = new Subject(testProject);
             final ImagingSession session = new ImagingSession(testProject, subject);
-            new SessionImportExtension(session, sessionZip);
+            if (useDicomZipImporter) {
+                new DicomZipImportExtension(session, sessionZip);
+            } else {
+                new SessionImportExtension(session, sessionZip);
+            }
             mainInterface().createSubject(subject);
 
             final ImagingSession sessionAsExistsInXnat = (ImagingSession) mainInterface().readSubjectAssessors(testProject, subject).get(0);
