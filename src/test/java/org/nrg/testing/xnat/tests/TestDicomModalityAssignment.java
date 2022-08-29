@@ -5,6 +5,7 @@ import org.dcm4che3.util.UIDUtils;
 import org.nrg.testing.DicomUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.DeprecatedIn;
+import org.nrg.testing.annotations.RequireXnatVersion;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.PetMrProcessingSetting;
 import org.nrg.xnat.pogo.DataType;
@@ -14,6 +15,7 @@ import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.pogo.extensions.subject_assessor.DicomZipImportExtension;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
+import org.nrg.xnat.versions.Xnat_1_8_4;
 import org.nrg.xnat.versions.Xnat_1_8_5;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -84,6 +86,7 @@ public class TestDicomModalityAssignment extends BaseXnatRestTest {
         ).run(OTHER_SESSION);
     }
 
+    @AddedIn(Xnat_1_8_4.class) // might actually work on earlier versions of 1.8.x
     public void testModalityExtractionMrAndRt() {
         new DicomModalityTest(
                 new SeriesSpec(RTSTRUCT, RT_SCAN).consistentInstances(UID.RTStructureSetStorage, 1),
@@ -133,7 +136,7 @@ public class TestDicomModalityAssignment extends BaseXnatRestTest {
         ).run(DataType.MR_SESSION);
     }
 
-    @DeprecatedIn(Xnat_1_8_5.class)
+    @RequireXnatVersion(allowedVersions = Xnat_1_8_4.class) // might actually work on earlier versions of 1.8.x
     public void testModalityExtractionMrSopClassMissingModalityLegacy() {
         new DicomModalityTest(
                 new SeriesSpec("", DataType.MR_SCAN).consistentInstances(UID.MRImageStorage, 4)
@@ -147,6 +150,7 @@ public class TestDicomModalityAssignment extends BaseXnatRestTest {
         ).run(DataType.PET_SESSION);
     }
 
+    @AddedIn(Xnat_1_8_4.class) // might actually work on earlier versions of 1.8.x
     public void testModalityExtractionPetCtRt() {
         new DicomModalityTest(
                 new SeriesSpec(RTSTRUCT, RT_SCAN).consistentInstances(UID.RTStructureSetStorage, 1),
