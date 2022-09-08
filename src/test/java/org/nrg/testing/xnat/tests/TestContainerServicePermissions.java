@@ -41,7 +41,8 @@ public class TestContainerServicePermissions extends BaseXnatRestTest {
     private static final String DATASETS_PLUGIN = "datasetsPlugin";
     private static final Image DEBUG_IMG = new Image("xnat", "debug-command", "latest");
     private static final Image QC_IMG = new Image("xnat", "generate-test-qc-assessor", "latest");
-    private static final List<Image> TEST_IMAGES = Arrays.asList(DEBUG_IMG, QC_IMG);
+    private static final Image SCAN_IMG = new Image("xnat", "generatescan", "1.0");
+    private static final List<Image> TEST_IMAGES = Arrays.asList(DEBUG_IMG, QC_IMG, SCAN_IMG);
     private static final Map<String, String> BASE_DEBUG_LAUNCH_PARAMS = makeContainerLaunchReqBody();
 
     private final List<Project> projects = new ArrayList<>();
@@ -93,9 +94,9 @@ public class TestContainerServicePermissions extends BaseXnatRestTest {
                 mainAdminInterface().pullImage(DEBUG_IMG).readCommands(DEBUG_IMG).size()
         );
         mainAdminInterface().pullImage(QC_IMG, false);
+        mainAdminInterface().pullImage(SCAN_IMG, true);
 
         mainAdminInterface().addCommand(getDataFile("debug_command_no_output.json"));
-        mainAdminInterface().addCommand(getDataFile("debug_command_create_child.json"));
         mainAdminInterface().addCommand(getDataFile("sample_qc_assessor.json"));
 
         final Map<String, Wrapper> allTestWrappers = TEST_IMAGES.stream()
@@ -114,7 +115,7 @@ public class TestContainerServicePermissions extends BaseXnatRestTest {
         projectAssetDebugNoOutput = allTestWrappers.get("debug-project-asset-no-out");
         standardSessionDebug = allTestWrappers.get("debug-session");
         sessionDebugNoOutput = allTestWrappers.get("debug-session-no-out");
-        sessionDebugCreateScan = allTestWrappers.get("debug-session-create-child-scan");
+        sessionDebugCreateScan = allTestWrappers.get("generate-test-scan");
         standardScanDebug = allTestWrappers.get("debug-scan");
         scanDebugNoOutput = allTestWrappers.get("debug-scan-no-out");
         standardSessionAssessorDebug = allTestWrappers.get("debug-assessor");
@@ -715,7 +716,7 @@ public class TestContainerServicePermissions extends BaseXnatRestTest {
     }
 
     public void testLaunchSessionCreateScanOwner() {
-        new LaunchTest(ExpectedLaunchResult.UPLOAD_FAILED, sessionDebugCreateScan)
+        new LaunchTest(ExpectedLaunchResult.SUCCESS, sessionDebugCreateScan)
                 .arbitrarySessionInputFrom(ownerProject)
                 .run();
     }
@@ -733,7 +734,7 @@ public class TestContainerServicePermissions extends BaseXnatRestTest {
     }
 
     public void testLaunchSessionCreateScanMember() {
-        new LaunchTest(ExpectedLaunchResult.UPLOAD_FAILED, sessionDebugCreateScan)
+        new LaunchTest(ExpectedLaunchResult.SUCCESS, sessionDebugCreateScan)
                 .arbitrarySessionInputFrom(memberProject)
                 .run();
     }
