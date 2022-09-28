@@ -3,6 +3,7 @@ package org.nrg.testing;
 public class TestGroups {
 
     public static final String ALIAS_TOKENS = "alias-tokens";
+    public static final String ARCHIVE = "archive";
     public static final String ANONYMIZATION = "anonymization";
     public static final String AUTHENTICATION = "authentication";
     public static final String CONFIG_SERVICE = "config-service";
