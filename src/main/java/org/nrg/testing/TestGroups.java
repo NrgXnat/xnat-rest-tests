@@ -23,6 +23,7 @@ public class TestGroups {
     public static final String PREARCHIVE = "prearchive";
     public static final String PREFERENCES = "preferences";
     public static final String RESOURCES = "resources";
+    public static final String SCANS = "scans";
     public static final String SCHEDULED_EVENTS = "scheduled-events";
     public static final String SCHEMAS = "schemas";
     public static final String SEARCH = "search";
