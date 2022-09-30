@@ -320,6 +320,9 @@ public class TestContainerService extends BaseXnatRestTest {
     private void toggleSwarmMode(boolean enable) {
         final DockerServer dockerServer = mainAdminInterface().readDockerServer();
         dockerServer.setSwarmMode(enable);
+        if (enable && Settings.swarmConstraints().size() > 0) {
+            dockerServer.setSwarmConstraints(Settings.swarmConstraints());
+        }
         mainAdminInterface().updateDockerServer(dockerServer);
     }
 
