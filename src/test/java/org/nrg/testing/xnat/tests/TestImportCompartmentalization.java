@@ -16,6 +16,7 @@ import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.versions.Xnat_1_8_6;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
@@ -49,55 +50,70 @@ public class TestImportCompartmentalization extends BaseXnatRestTest {
             .subjectRoutingExpression(ROUTE_ON_STUDY_INSTANCE_UID)
             .sessionRoutingExpression(ROUTE_ON_STUDY_INSTANCE_UID);
 
+    private final Consumer<Project> uploadViaDicomZip = project -> {
+        final String uri = mainInterface().callImporter(
+                new DicomZipRequest()
+                        .file(TestData.SAMPLE_1.toFile())
+                        .destPrearchive()
+                        .project(project)
+        ); // don't specify subject/session metadata to see how it gets routed
+        mainQueryBase().queryParam("action", "commit").post(formatXnatUrl(uri))
+                .then().assertThat().statusCode(Matchers.oneOf(200, 301)); // TODO: Move this and other usages to a Subinterface
+    };
+
+    private final Consumer<Project> uploadViaSessionImporter = project -> {
+        mainInterface().callImporter(
+                new DefaultImporterRequest()
+                        .file(TestData.SAMPLE_1.toFile())
+                        .destArchive()
+                        .project(project)
+        ); // don't specify subject/session metadata to see how it gets routed
+    };
+
     @BeforeClass
-    private void cacheReceivers() {
+    private void cacheReceiversAndDisableCustomRouting() {
         existingReceivers.addAll(mainAdminInterface().readAllDicomScpReceivers());
-        for (DicomScpReceiver receiver : existingReceivers) {
-            mainAdminInterface().deleteDicomScpReceiver(receiver);
-        }
-        mainAdminInterface().createDicomScpReceiver(receiverWithCustomRouting);
         mainAdminInterface().disableProjectDicomRoutingConfig();
         mainAdminInterface().disableSubjectDicomRoutingConfig();
         mainAdminInterface().disableSessionDicomRoutingConfig();
     }
 
-    @AfterClass
+    @BeforeMethod
+    private void clearScpReceivers() {
+        for (DicomScpReceiver definedReceiver : mainAdminInterface().readAllDicomScpReceivers()) {
+            mainAdminInterface().deleteDicomScpReceiver(definedReceiver);
+        }
+    }
+
+    @AfterClass(alwaysRun = true)
     private void restoreReceivers() {
-        mainAdminInterface().deleteDicomScpReceiver(receiverWithCustomRouting);
+        clearScpReceivers();
         for (DicomScpReceiver receiver : existingReceivers) {
+            receiver.setId(null);
             mainAdminInterface().createDicomScpReceiver(receiver);
         }
     }
 
     public void testDicomZipPerReceiverRoutingLeak() {
-        runRoutingLeakTest(
-                project -> {
-                    final String uri = mainInterface().callImporter(
-                            new DicomZipRequest()
-                                    .file(TestData.SAMPLE_1.toFile())
-                                    .destPrearchive()
-                                    .project(project)
-                    ); // don't specify subject/session metadata to see how it gets routed
-                    mainQueryBase().queryParam("action", "commit").post(formatXnatUrl(uri))
-                            .then().assertThat().statusCode(Matchers.oneOf(200, 301)); // TODO: Move this and other usages to a Subinterface
-                }
-        );
+        runRoutingLeakTest(true, uploadViaDicomZip);
     }
 
     public void testSessionImporterPerReceiverRoutingLeak() {
-        runRoutingLeakTest(
-                project -> {
-                    mainInterface().callImporter(
-                            new DefaultImporterRequest()
-                                    .file(TestData.SAMPLE_1.toFile())
-                                    .destArchive()
-                                    .project(project)
-                    ); // don't specify subject/session metadata to see how it gets routed
-                }
-        );
+        runRoutingLeakTest(true, uploadViaSessionImporter);
     }
 
-    private void runRoutingLeakTest(Consumer<Project> uploadFunction) {
+    public void testDicomZipPerReceiverRoutingLeakMissingReceivers() {
+        runRoutingLeakTest(false, uploadViaDicomZip);
+    }
+
+    public void testSessionImporterPerReceiverRoutingLeakMissingReceivers() {
+        runRoutingLeakTest(false, uploadViaSessionImporter);
+    }
+
+    private void runRoutingLeakTest(boolean defineReceiver, Consumer<Project> uploadFunction) {
+        if (defineReceiver) {
+            mainAdminInterface().createDicomScpReceiver(receiverWithCustomRouting);
+        }
         final Project project = registerTempProject();
         mainInterface().createProject(project);
         uploadFunction.accept(project);
