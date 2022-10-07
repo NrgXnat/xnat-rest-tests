@@ -37,7 +37,7 @@ public class TestUsersApi extends BaseXnatRestTest {
     @TestRequires(users = 1, admin = true)
     public void testUserXml() {
         final User genericUser = getGenericUser();
-        String userXml = mainQueryBase().get(formatXnatUrl("/app/action/XDATActionRouter/xdataction/xml/search_element/xdat:user/search_field/xdat:user.login/search_value/", genericUser.getUsername(), "/popup/true")).getBody().prettyPrint();
+        String userXml = mainAdminQueryBase().get(formatXnatUrl("/app/action/XDATActionRouter/xdataction/xml/search_element/xdat:user/search_field/xdat:user.login/search_value/", genericUser.getUsername(), "/popup/true")).getBody().prettyPrint();
         assertTrue(userXml.contains("xdat:firstname"));
         assertFalse(userXml.contains("xdat:primary_password"));
     }
