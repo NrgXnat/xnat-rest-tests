@@ -1,6 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
 import org.hamcrest.Matchers;
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.Basic;
 import org.nrg.testing.annotations.DeprecatedIn;
 import org.nrg.testing.xnat.BaseXnatRestTest;
@@ -21,6 +22,7 @@ import org.nrg.xnat.pogo.extensions.SimpleResourceFileExtension;
 import org.nrg.xnat.pogo.resources.Resource;
 import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.nrg.xnat.pogo.resources.ScanResource;
+import org.nrg.xnat.versions.Xnat_1_8_6;
 import org.testng.annotations.*;
 
 import java.io.File;
@@ -128,6 +130,7 @@ public class TestArchive extends BaseXnatRestTest {
     }
 
     @SuppressWarnings("CommentedOutCode")
+    @AddedIn(Xnat_1_8_6.class)
     @Test(groups = {ARCHIVE, SMOKE})
     public void testSetScanProperties() {
         final Subject        subject   = new Subject(project);
