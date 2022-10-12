@@ -129,7 +129,6 @@ public class TestArchive extends BaseXnatRestTest {
         }
     }
 
-    @SuppressWarnings("CommentedOutCode")
     @AddedIn(Xnat_1_8_6.class)
     @Test(groups = {ARCHIVE, SMOKE})
     public void testSetScanProperties() {
@@ -186,19 +185,6 @@ public class TestArchive extends BaseXnatRestTest {
 
         final Scan retrievedScan6 = getScan(subject, mr1);
         assertEquals(retrievedScan6.getNote(), PARAM_VALUE_NOTE4);
-
-        /*
-        // XNAT-7014 Change to implement this was rolled back for 1.8.6 release. Should be pushed back in for 1.8.7.
-        // Test that updating scan fails with XML path with CT scan XSI type
-        mainQueryBase().queryParam(QUERY_PARAM_CT_SCAN_NOTE, PARAM_VALUE_BAD_NOTE)
-                       .put(scanUrl).then()
-                       .assertThat().statusCode(409).and()
-                       .body(Matchers.containsString(MESSAGE_BAD_XSI_TYPE));
-
-        // Make sure that the note property didn't change
-        final Scan retrievedScan7 = getScan(subject, mr1);
-        assertEquals(retrievedScan7.getNote(), PARAM_VALUE_NOTE4);
-        */
     }
 
     @Test(groups = {SMOKE, IMPORTER})
