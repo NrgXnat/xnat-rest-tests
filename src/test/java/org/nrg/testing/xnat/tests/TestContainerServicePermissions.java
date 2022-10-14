@@ -74,9 +74,8 @@ public class TestContainerServicePermissions extends BaseXnatRestTest {
 
     @BeforeClass
     public void setupCompute() {
-        // TODO: once grxnat DockerServer supports "backend", also need to set that to docker
         final DockerServer dockerServer = mainAdminInterface().readDockerServer();
-        dockerServer.setSwarmMode(false);
+        dockerServer.setBackend(Backend.DOCKER);
         mainAdminInterface().updateDockerServer(dockerServer);
 
         final List<Image> installedImages = mainAdminInterface().readImages();

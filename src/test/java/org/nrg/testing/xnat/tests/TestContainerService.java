@@ -6,6 +6,7 @@ import org.nrg.testing.annotations.*;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
+import org.nrg.xnat.pogo.containers.Backend;
 import org.nrg.xnat.versions.Xnat_1_7_7;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.enums.Gender;
@@ -231,7 +232,7 @@ public class TestContainerService extends BaseXnatRestTest {
     @TestRequires(csSwarmCanEnable = true)
     @HardDependency("testPullImageWithCommand")
     public void testEnableSwarmMode() {
-        toggleSwarmMode(true);
+        setServerBackend(Backend.SWARM);
         assertTrue(mainInterface().readDockerServer().getSwarmMode());
     }
 
@@ -247,7 +248,7 @@ public class TestContainerService extends BaseXnatRestTest {
     @TestRequires(csSwarmCanEnable = true)
     @SoftDependency("testContainerSessionSwarm")
     public void testDisableSwarmMode() {
-        toggleSwarmMode(false);
+        setServerBackend(Backend.DOCKER);
         assertFalse(mainInterface().readDockerServer().getSwarmMode());
     }
 
@@ -317,11 +318,13 @@ public class TestContainerService extends BaseXnatRestTest {
         }
     }
 
-    private void toggleSwarmMode(boolean enable) {
+    private void setServerBackend(Backend backend) {
         final DockerServer dockerServer = mainAdminInterface().readDockerServer();
-        dockerServer.setSwarmMode(enable);
-        if (enable && Settings.swarmConstraints().size() > 0) {
+        dockerServer.setBackend(backend);
+        if (backend != Backend.DOCKER && Settings.swarmConstraints().size() > 0) {
             dockerServer.setSwarmConstraints(Settings.swarmConstraints());
+        } else {
+            dockerServer.setSwarmConstraints(Collections.emptyList());
         }
         mainAdminInterface().updateDockerServer(dockerServer);
     }
