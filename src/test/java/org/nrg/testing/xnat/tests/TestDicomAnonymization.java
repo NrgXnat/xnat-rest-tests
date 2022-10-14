@@ -316,7 +316,6 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "DE-46")
     public void testAssignFloatDE6() {
         performBasicScriptTest(DE_6, "assignFloat.das", new AssignFloatScript());
     }
@@ -451,6 +450,24 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     @AddedIn(Xnat_1_8_5.class)
     public void testGroup2DeleteDE6() {
         performBasicScriptTest(DE_6, "group2Delete.das", new Group2DeleteScript());
+    }
+
+    @Test  // Tests DE-58
+    @AddedIn(Xnat_1_8_7.class)
+    public void testStandardConditionalsWithFunctionDE6() {
+        performBasicScriptTest(DE_6, "standardConditionalWithFunction.das", new StandardConditionalWithFunctionScript());
+    }
+
+    @Test  // Tests DE-45
+    @AddedIn(Xnat_1_8_7.class)
+    public void testRetainPrivateTagsDE6() {
+        performBasicScriptTest(DE_6, "retainPrivateTags.das", new RetainPrivateTagsScript());
+    }
+
+    @Test  // Tests DE-45
+    @AddedIn(Xnat_1_8_7.class)
+    public void testIfElseBlocks() {
+        performBasicScriptTest(DE_6, "ifElseBlocks.das", new IfElseBlockScript());
     }
 
     private void performSubjectRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {

@@ -1,5 +1,8 @@
 package org.nrg.testing.dicom;
 
+import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
+import org.nrg.xnat.versions.Xnat_1_8_6;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,7 +20,13 @@ public class DuplicatedInvalidPrivateTagRemoval extends ScriptValidation {
         
         root.putValueEqualCheck(0x00290010, "REASONABLE PERSON HEADER1");
         root.putValueEqualCheck(0x00290011, "REASONABLE PERSON HEADER2");
-        root.putNonexistenceChecks(0x00290012, 0x002900E1);
+        if (XnatTestingVersionManager.testedVersionFollows(Xnat_1_8_6.class)) {
+            // delete does not remove orphan private creator IDs
+            root.putValueEqualCheck(0x00290012, "NAUGHTY PERSON");
+            root.putValueEqualCheck(0x002900E1, "NAUGHTY PERSON");
+        } else {
+            root.putNonexistenceChecks(0x00290012, 0x002900E1);
+        }
         root.putValueEqualCheck(0x00291008, "MLO");
         root.putValueEqualCheck(0x00291009, "YES");
         root.putValueEqualCheck(0x002911AA, "meow");
@@ -26,7 +35,13 @@ public class DuplicatedInvalidPrivateTagRemoval extends ScriptValidation {
 
         root.putValueEqualCheck(0x00490010, "REASONABLE PERSON HEADER1");
         root.putValueEqualCheck(0x00490011, "REASONABLE PERSON HEADER2");
-        root.putNonexistenceChecks(0x00490012, 0x004900E1);
+        if (XnatTestingVersionManager.testedVersionFollows(Xnat_1_8_6.class)) {
+            // delete does not remove orphan private creator IDs
+            root.putValueEqualCheck(0x00490012, "NAUGHTY PERSON");
+            root.putValueEqualCheck(0x004900E1, "NAUGHTY PERSON");
+        } else {
+            root.putNonexistenceChecks(0x00490012, 0x004900E1);
+        }
         root.putValueEqualCheck(0x00491008, "MLO");
         root.putValueEqualCheck(0x00491009, "YES");
         root.putValueEqualCheck(0x004911AA, "meow");

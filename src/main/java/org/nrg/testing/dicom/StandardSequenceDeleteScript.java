@@ -1,6 +1,8 @@
 package org.nrg.testing.dicom;
 
 import org.nrg.testing.dicom.values.DicomSequence;
+import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
+import org.nrg.xnat.versions.Xnat_1_8_6;
 
 public class StandardSequenceDeleteScript extends SimplestDicomScriptValidation {
 
@@ -8,14 +10,22 @@ public class StandardSequenceDeleteScript extends SimplestDicomScriptValidation 
     protected RootDicomObject generateValidationObject() {
         final RootDicomObject root = new RootDicomObject();
 
-        final DicomObject interventionDrugInfoSeqItem = new DicomObject();
-        interventionDrugInfoSeqItem.putValueEqualCheck("(0018,0028)", "150000");
-        interventionDrugInfoSeqItem.putValueEqualCheck("(0018,0034)", "CHOCOLATE");
-        final DicomObject interventionDrugCodeSeqItem = new DicomObject();
-        interventionDrugCodeSeqItem.putValueEqualCheck("(0008,0100)", "C-21047");
-        interventionDrugCodeSeqItem.putValueEqualCheck("(0008,0104)", "Ethanol");
-        interventionDrugInfoSeqItem.putSequenceCheck("(0018,0029)", new DicomSequence(interventionDrugCodeSeqItem));
-        root.putSequenceCheck("(0018,0026)", new DicomSequence(interventionDrugInfoSeqItem));
+        final DicomObject interventionDrugInfoSeqItem1 = new DicomObject();
+        interventionDrugInfoSeqItem1.putValueEqualCheck("(0018,0028)", "150000");
+        interventionDrugInfoSeqItem1.putValueEqualCheck("(0018,0034)", "CHOCOLATE");
+        final DicomObject interventionDrugCodeSeqItem1 = new DicomObject();
+        interventionDrugCodeSeqItem1.putValueEqualCheck("(0008,0100)", "C-21047");
+        interventionDrugCodeSeqItem1.putValueEqualCheck("(0008,0104)", "Ethanol");
+        if (XnatTestingVersionManager.testedVersionFollows(Xnat_1_8_6.class)) {
+            // the contents of item 2 are deleted but not the item itself.
+            final DicomObject interventionDrugInfoSeqItem2 = new DicomObject();
+            interventionDrugInfoSeqItem2.putNonexistenceChecks( "(0018,0028)", "(0018,0034)");
+            root.putSequenceCheck( "(0018,0026)", new DicomSequence( interventionDrugInfoSeqItem1, interventionDrugInfoSeqItem2));
+            interventionDrugInfoSeqItem1.putSequenceCheck("(0018,0029)", new DicomSequence(interventionDrugCodeSeqItem1));
+        } else {
+            interventionDrugInfoSeqItem1.putSequenceCheck("(0018,0029)", new DicomSequence(interventionDrugCodeSeqItem1));
+            root.putSequenceCheck("(0018,0026)", new DicomSequence(interventionDrugInfoSeqItem1));
+        }
 
         root.putNonexistenceChecks("(0040,100A)");
 
