@@ -1,11 +1,11 @@
 package org.nrg.testing.xnat.tests;
 
 import org.apache.commons.io.IOUtils;
+import org.nrg.testing.xnat.containers.ContainerTestUtils;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.*;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
-import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
 import org.nrg.xnat.pogo.containers.Backend;
 import org.nrg.xnat.versions.Xnat_1_7_7;
 import org.nrg.xnat.versions.Xnat_1_8_0;
@@ -14,7 +14,6 @@ import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.containers.CommandSummaryForContext;
-import org.nrg.xnat.pogo.containers.DockerServer;
 import org.nrg.xnat.pogo.containers.Image;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.Scan;
@@ -45,10 +44,6 @@ import static org.testng.AssertJUnit.*;
 public class TestContainerService extends BaseXnatRestTest {
     private static final String OUTPUT_CONTENT = "hello world";
     private static final String OUTPUT_FILENAME = "out.txt";
-    private static final Image DEBUG_IMG = new Image("xnat", "debug-command",
-            XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_8_0.class) ? "1.5" : "latest");
-    private static final String OUTPUT_RESOURCE = "DEBUG_OUTPUT";
-    private static final String IMAGES_WITH_COMMANDS_JSON_PATH = "findAll { it.commands.size() > 0 }";
     private static final Map<String, String> BASE_DEBUG_LAUNCH_PARAMS = makeContainerLaunchReqBody();
     private static final String CS_SWARM_CAN_ENABLE = "cs.swarm.canEnable";
 
@@ -102,32 +97,28 @@ public class TestContainerService extends BaseXnatRestTest {
 
     @Test
     public void testDeleteAllImages() {
-        final List<Image> imagesWithCommands = mainAdminInterface().readImages(IMAGES_WITH_COMMANDS_JSON_PATH);
-
-        for (Image image : imagesWithCommands) {
-            mainAdminInterface().deleteImage(image);
-        }
-
-        assertEquals(0, mainAdminInterface().readCommands(DEBUG_IMG).size());
+        ContainerTestUtils.deleteAllImagesWithCommands(this);
+        assertEquals(0, mainAdminInterface().readCommands(ContainerTestUtils.DEBUG_IMG).size());
     }
 
     @Test
     @HardDependency("testDeleteAllImages")
     public void testPullImageWithCommand() {
+        ContainerTestUtils.pullDebugImage(this);
         // Add new image with commands
         assertEquals(
                 1,
-                mainAdminInterface().pullImage(DEBUG_IMG).readCommands(DEBUG_IMG).size()
+                mainInterface().readCommands(ContainerTestUtils.DEBUG_IMG).size()
         );
     }
 
     @Test
     @SoftDependency({"testDisableSwarmMode", "testContainerProject", "testContainerSubject", "testContainerSubjectAltUri", "testContainerSession", "testContainerSessionAltUri", "testContainerAssessor", "testContainerAssessorAltUri", "testContainerAssessorAltUri2", "testContainerScan", "testContainerScanAltUri"})
     public void testDeleteImage() {
-        final List<Image> imagesWithCommands = mainAdminInterface().readImages(IMAGES_WITH_COMMANDS_JSON_PATH);
+        final List<Image> imagesWithCommands = mainAdminInterface().readImages(ContainerTestUtils.IMAGES_WITH_COMMANDS_JSON_PATH);
         assertEquals(1, imagesWithCommands.size());
         mainAdminInterface().deleteImage(imagesWithCommands.get(0));
-        assertEquals(0, mainAdminInterface().readCommands(DEBUG_IMG).size());
+        assertEquals(0, mainAdminInterface().readCommands(ContainerTestUtils.DEBUG_IMG).size());
     }
 
     @Test(groups = WORKFLOWS)
@@ -270,7 +261,7 @@ public class TestContainerService extends BaseXnatRestTest {
     }
 
     private void enableAndRunContainerThenCheckOutputs(DataType dataType, Map<String, String> urisAndIds, boolean swarm) {
-        final CommandSummaryForContext wrapper = mainInterface().readAvailableCommands(dataType, project).get(0);
+        final CommandSummaryForContext wrapper = readWrapper(dataType);
         mainInterface().setWrapperStatusOnProject(wrapper, project, true);
         mainInterface().bulkLaunchContainers(project, wrapper, urisAndIds.keySet(), BASE_DEBUG_LAUNCH_PARAMS);
 
@@ -293,7 +284,7 @@ public class TestContainerService extends BaseXnatRestTest {
     @Deprecated
     private void verifyOutputs(String uri) {
         byte[] zipBytes = mainQueryBase().queryParam("format", "zip")
-                .get(formatRestUrl(uri, "resources", "DEBUG_OUTPUT", "files"))
+                .get(formatRestUrl(uri, "resources", ContainerTestUtils.DEBUG_OUTPUT_RESOURCE_NAME, "files"))
                 .then().assertThat().statusCode(200).and().extract().asByteArray();
 
         try {
@@ -305,35 +296,28 @@ public class TestContainerService extends BaseXnatRestTest {
                 while ((zipEntry = zi.getNextEntry()) != null) {
                     count++;
                     name = zipEntry.getName();
-                    content = IOUtils.toString(zi, StandardCharsets.UTF_8.name());
+                    content = IOUtils.toString(zi, StandardCharsets.UTF_8);
                 }
             }
 
             assertEquals(1, count);
-            assertTrue(Paths.get(name).endsWith(Paths.get("resources", OUTPUT_RESOURCE,
+            assertTrue(Paths.get(name).endsWith(Paths.get("resources", ContainerTestUtils.DEBUG_OUTPUT_RESOURCE_NAME,
                     "files", OUTPUT_FILENAME)));
             assertEquals(OUTPUT_CONTENT, content.trim());
         } catch (IOException e) {
-            fail("Exception thrown trying to unzip and read resource " + OUTPUT_RESOURCE +
+            fail("Exception thrown trying to unzip and read resource " + ContainerTestUtils.DEBUG_OUTPUT_RESOURCE_NAME +
                     " of " + uri + ": " + e.getMessage());
         }
     }
 
     private void setServerBackend(Backend backend) {
-        final DockerServer dockerServer = mainAdminInterface().readDockerServer();
-        dockerServer.setBackend(backend);
-        if (backend != Backend.DOCKER && Settings.swarmConstraints().size() > 0) {
-            dockerServer.setSwarmConstraints(Settings.swarmConstraints());
-        } else {
-            dockerServer.setSwarmConstraints(Collections.emptyList());
-        }
-        mainAdminInterface().updateDockerServer(dockerServer);
+        ContainerTestUtils.setServerBackend(this, backend);
     }
 
     private static Map<String, String> makeContainerLaunchReqBody() {
         final Map<String, String> queryParams = new HashMap<>();
-        queryParams.put("command", "echo " + OUTPUT_CONTENT);
-        queryParams.put("output-file", OUTPUT_FILENAME);
+        queryParams.put(ContainerTestUtils.DEBUG_COMMAND_LINE_INPUT_NAME, "echo " + OUTPUT_CONTENT);
+        queryParams.put(ContainerTestUtils.DEBUG_OUTPUT_FILE_INPUT_NAME, OUTPUT_FILENAME);
         return queryParams;
     }
 
