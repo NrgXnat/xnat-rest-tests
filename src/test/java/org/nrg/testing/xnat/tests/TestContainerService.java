@@ -50,6 +50,7 @@ public class TestContainerService extends BaseXnatRestTest {
     private static final String OUTPUT_RESOURCE = "DEBUG_OUTPUT";
     private static final String IMAGES_WITH_COMMANDS_JSON_PATH = "findAll { it.commands.size() > 0 }";
     private static final Map<String, String> BASE_DEBUG_LAUNCH_PARAMS = makeContainerLaunchReqBody();
+    private static final String CS_SWARM_CAN_ENABLE = "cs.swarm.canEnable";
 
     private Project project;
     private Subject subject;
@@ -229,7 +230,7 @@ public class TestContainerService extends BaseXnatRestTest {
     }
 
     @Test
-    @TestRequires(csSwarmCanEnable = true)
+    @TestRequires(trueProperties = CS_SWARM_CAN_ENABLE)
     @HardDependency("testPullImageWithCommand")
     public void testEnableSwarmMode() {
         setServerBackend(Backend.SWARM);
@@ -237,7 +238,7 @@ public class TestContainerService extends BaseXnatRestTest {
     }
 
     @Test(groups = WORKFLOWS)
-    @TestRequires(csSwarmCanEnable = true)
+    @TestRequires(trueProperties = CS_SWARM_CAN_ENABLE)
     @HardDependency("testEnableSwarmMode")
     public void testContainerSessionSwarm() {
         enableAndRunContainerThenCheckOutputs(DataType.MR_SESSION,
@@ -245,7 +246,7 @@ public class TestContainerService extends BaseXnatRestTest {
     }
 
     @Test
-    @TestRequires(csSwarmCanEnable = true)
+    @TestRequires(trueProperties = CS_SWARM_CAN_ENABLE)
     @SoftDependency("testContainerSessionSwarm")
     public void testDisableSwarmMode() {
         setServerBackend(Backend.DOCKER);
