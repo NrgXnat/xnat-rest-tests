@@ -352,7 +352,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "DE-42")
+    @AddedIn(Xnat_1_8_7.class)
     public void testShiftDateTimeByIncrementWithTimezone() {
         performBasicScriptTest(DE_6, "shiftDateTimeWithTimezone.das", new ShiftDateTimeWithTimezoneScript());
     }
