@@ -335,8 +335,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @Test
-    @AddedIn(Xnat_1_8_0.class)
-    @ExpectedFailure(jiraIssue = "DE-49") // (and DE-48)
+    @AddedIn(Xnat_1_8_7.class)
     public void testSequenceAssignIfExists() {
         performBasicScriptTest(DE_6, "sequenceAssignIfExists.das", new SequenceAssignIfExistsScript());
     }
