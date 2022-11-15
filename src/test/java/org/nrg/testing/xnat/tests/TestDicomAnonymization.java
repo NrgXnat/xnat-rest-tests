@@ -1,16 +1,19 @@
 package org.nrg.testing.xnat.tests;
 
-import org.dcm4che3.data.UID;
+import org.dcm4che3.data.*;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.Basic;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.*;
 import org.nrg.testing.dicom.ScriptValidation;
+import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
+import org.nrg.testing.dicom.transform.TransformFunction;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.XnatObjectUtils;
 import org.nrg.xnat.enums.DicomEditVersion;
+import org.nrg.xnat.pogo.DicomDataSet;
 import org.nrg.xnat.versions.*;
 import org.nrg.xnat.pogo.AnonScript;
 import org.nrg.xnat.pogo.Project;
@@ -362,6 +365,30 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     @AddedIn(Xnat_1_8_1.class)
     public void testShiftDateTimeSequenceByIncrement() {
         performBasicScriptTest(DE_6, "shiftDateTimeSequence.das", new ShiftDateTimeSequenceScript());
+    }
+
+    /*
+      Shift should not change the precision of the value.
+     */
+    @Test
+    @AddedIn(Xnat_1_8_7.class)
+    public void testShiftDateTimePrecision() {
+        final LocallyCacheableDicomTransformation dicomGenerator = new LocallyCacheableDicomTransformation("dtPrecision")
+                .createZip()
+                .simpleTransform(TransformFunction.generateFromScratch(() -> {
+                    DicomDataSet dicomDataSet = new DicomDataSet();
+                    dicomDataSet.setTag( Tag.PatientName, "DTPrecision")
+                            .setTag( new int[]{Tag.ReferencedStudySequence, 0, Tag.ProductExpirationDateTime}, "1960" )
+                            .setTag( new int[]{Tag.ReferencedStudySequence, 1, Tag.ProductExpirationDateTime}, "196005" )
+                            .setTag( new int[]{Tag.ReferencedStudySequence, 2, Tag.ProductExpirationDateTime}, "19600519" )
+                            .setTag( new int[]{Tag.ReferencedStudySequence, 3, Tag.ProductExpirationDateTime}, "1960051913" )
+                            .setTag( new int[]{Tag.ReferencedStudySequence, 4, Tag.ProductExpirationDateTime}, "196005191324" )
+                            .setTag( new int[]{Tag.ReferencedStudySequence, 5, Tag.ProductExpirationDateTime}, "19600519132435" );
+                    return Collections.singletonList( dicomDataSet.getDataset());
+                }));
+        dicomGenerator.build();
+        File dtPrecisionData = dicomGenerator.locateOverallZip().toFile();
+        performBasicScriptTest(DE_6, "shiftDateTimePrecision.das", new ShiftDateTimePrecisionScript(), dtPrecisionData);
     }
 
     @Test
