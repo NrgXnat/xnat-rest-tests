@@ -150,7 +150,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "DE-47")
+    @AddedIn(Xnat_1_8_7.class)
     public void testAssignToNullDE6() {
         performBasicScriptTest(DE_6, "assignToNull.das", new AssignToNullScript());
     }
