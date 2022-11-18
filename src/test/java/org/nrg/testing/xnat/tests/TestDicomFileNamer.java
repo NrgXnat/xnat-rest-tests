@@ -14,6 +14,7 @@ import org.nrg.testing.xnat.rest.XnatRestDriver;
 import org.nrg.xnat.enums.PrearchiveCode;
 import org.nrg.xnat.importer.importers.DicomZipRequest;
 import org.nrg.xnat.importer.importers.SessionImporterRequest;
+import org.nrg.xnat.pogo.AnonScript;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.pogo.resources.Resource;
@@ -65,6 +66,7 @@ public class TestDicomFileNamer extends BaseXnatRestTest {
     @BeforeMethod
     private void disableCustomRouting() {
         try {
+            mainAdminInterface().disableSiteAnonScript();
             mainAdminInterface().disableProjectDicomRoutingConfig();
             mainAdminInterface().disableSubjectDicomRoutingConfig();
             mainAdminInterface().disableSessionDicomRoutingConfig();
@@ -151,6 +153,22 @@ public class TestDicomFileNamer extends BaseXnatRestTest {
                 new ValidateNamesInArchive(SAMPLE1_DUPLICATED),
                 new CstoreStep(TestData.SAMPLE_1),
                 REBUILD,
+                ARCHIVE,
+                new ValidateNamesInArchive(SAMPLE1)
+        ).run();
+    }
+
+    @Test
+    public void testDicomFilenameWithAnon() {
+        final AnonScript deleteInstanceNum = new AnonScript().contents("-(0020,0013)");
+        new FileNamerTest(
+                project -> {
+                    mainAdminInterface().setSiteAnonScript(deleteInstanceNum);
+                    mainInterface().setProjectAnonScript(project, deleteInstanceNum);
+                },
+                new CstoreStep(TestData.SAMPLE_1),
+                REBUILD,
+                new ValidateNamesInPrearc(SAMPLE1),
                 ARCHIVE,
                 new ValidateNamesInArchive(SAMPLE1)
         ).run();
