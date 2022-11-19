@@ -29,6 +29,7 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -183,7 +184,7 @@ public class TestDicomFileNamer extends BaseXnatRestTest {
         try {
             scanFileNameRecords = SerializationUtils.deserializeList(
                     XnatRestDriver.XNAT_REST_MAPPER.readValue(
-                            FileIOUtils.readFile(getDataFile(FILE_NAMES_SUBDIR + File.separator + expectedFileList)),
+                            FileIOUtils.readFile(getDataFile(Paths.get(FILE_NAMES_SUBDIR, expectedFileList).toString())),
                             List.class
                     ),
                     ScanFileNameRecord.class
