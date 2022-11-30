@@ -316,6 +316,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @Test
+    @AddedIn(Xnat_1_8_7.class)
     public void testAssignFloatDE6() {
         performBasicScriptTest(DE_6, "assignFloat.das", new AssignFloatScript());
     }
