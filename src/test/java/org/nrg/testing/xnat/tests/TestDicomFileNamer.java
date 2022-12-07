@@ -11,6 +11,7 @@ import org.nrg.testing.dicom.transform.TransformFunction;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.rest.XnatRestDriver;
+import org.nrg.xnat.enums.MergeBehavior;
 import org.nrg.xnat.enums.PrearchiveCode;
 import org.nrg.xnat.importer.importers.DicomZipRequest;
 import org.nrg.xnat.importer.importers.SessionImporterRequest;
@@ -24,6 +25,8 @@ import org.nrg.xnat.prearchive.PrearchiveQueryScope;
 import org.nrg.xnat.prearchive.SessionData;
 import org.nrg.xnat.rest.SerializationUtils;
 import org.nrg.xnat.versions.Xnat_1_8_6_1;
+import org.nrg.xnat.versions.Xnat_1_8_7;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -74,6 +77,11 @@ public class TestDicomFileNamer extends BaseXnatRestTest {
         } catch (Throwable throwable) {
             LOGGER.warn(throwable);
         }
+    }
+
+    @AfterMethod
+    private void resetSopInstanceForDicomUniqueness() {
+        mainAdminInterface().setUseSopInstanceUidToUniquelyIdentifyDicom(true);
     }
 
     @Test
@@ -137,12 +145,15 @@ public class TestDicomFileNamer extends BaseXnatRestTest {
      * with two different file naming schemes going on. Since the file names are used as
      * the identifier for uniqueness of the instances, this results in duplication of those instances.
      * However, in the third send of the same entire study, the file names do match, so the data is
-     * at least not triplicated. However, the third send also seems to unexpectedly overwrite the whole
-     * series, which is unexpected. If we come up with a better scheme later to prevent duplicate DICOM instances,
+     * at least not triplicated. If we come up with a better scheme later to prevent duplicate DICOM instances,
      * this test should be retired gladly. - Charlie, 2022-11-18
+     *
+     * Test updated per fixes in XNAT-7273 and XNAT-7274.
      */
     @Test
+    @AddedIn(Xnat_1_8_7.class)
     public void testDicomFilenameMismatchInstanceDuplication() {
+        mainAdminInterface().setUseSopInstanceUidToUniquelyIdentifyDicom(false);
         new FileNamerTest(
                 new DicomZipStep(TestData.SAMPLE_1, false),
                 REBUILD,
@@ -155,7 +166,39 @@ public class TestDicomFileNamer extends BaseXnatRestTest {
                 new CstoreStep(TestData.SAMPLE_1),
                 REBUILD,
                 ARCHIVE,
+                new ValidateNamesInArchive(SAMPLE1_DUPLICATED)
+        ).run();
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_7.class)
+    public void testDicomUidOverwrite() {
+        new FileNamerTest(
+                new DicomZipStep(TestData.SAMPLE_1, false),
+                REBUILD,
+                ARCHIVE,
+                new CstoreStep(TestData.SAMPLE_1),
+                REBUILD,
+                new ValidateNamesInPrearc(SAMPLE1),
+                ARCHIVE,
+                new ValidateNamesInArchive(SAMPLE1),
+                new CstoreStep(TestData.SAMPLE_1),
+                REBUILD,
+                ARCHIVE,
                 new ValidateNamesInArchive(SAMPLE1)
+        ).run();
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_7.class)
+    public void testSessionImporterUidOverwrite() {
+        new FileNamerTest(
+                new CstoreStep(TestData.SAMPLE_1),
+                REBUILD,
+                new ValidateNamesInPrearc(SAMPLE1),
+                ARCHIVE,
+                new SessionImporterStep(TestData.SAMPLE_1, MergeBehavior.DELETE),
+                new ValidateNamesInArchive(SAMPLE1_ORIG_NAMES)
         ).run();
     }
 
@@ -274,14 +317,26 @@ public class TestDicomFileNamer extends BaseXnatRestTest {
 
     private class SessionImporterStep implements TestComponent {
         private final TestData data;
+        private MergeBehavior overwrite = null;
 
         SessionImporterStep(TestData data) {
             this.data = data;
         }
 
+        SessionImporterStep(TestData data, MergeBehavior overwrite) {
+            this.data = data;
+            this.overwrite = overwrite;
+        }
+
         @Override
         public void perform(Project project) {
-            mainInterface().callImporter(new SessionImporterRequest().destArchive(project).file(data.toFile()));
+            final SessionImporterRequest request = new SessionImporterRequest()
+                    .destArchive(project)
+                    .file(data.toFile());
+            if (overwrite != null) {
+                request.overwrite(overwrite);
+            }
+            mainInterface().callImporter(request);
         }
     }
 
