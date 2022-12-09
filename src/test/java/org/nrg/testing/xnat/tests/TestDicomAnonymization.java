@@ -39,10 +39,10 @@ import static org.nrg.xnat.enums.DicomEditVersion.*;
 public class TestDicomAnonymization extends BaseXnatRestTest {
 
     private final Project anonProject = new Project();
-    private final File anonData = getDataFile(TestData.ANON_2.getZipName());
+    private final File anonData = TestData.ANON_2.toFile();
     private final File evleData = anonData;
-    private final File ivleData = getDataFile( TestData.DICOM_WEB_PETMR2_PT.getZipName());
-    private final File jpglosslessData = getDataFile( TestData.JPEGLOSSLESS_2000.getZipName());
+    private final File ivleData = TestData.DICOM_WEB_PETMR2_PT.toFile();
+    private final File jpglosslessData = TestData.JPEGLOSSLESS_2000.toFile();
     private final AnonScript projectAnonDE4 = XnatObjectUtils.anonScriptFromFile(DE_4, "projectAnon.das");
     private final AnonScript projectAnonDE6 = XnatObjectUtils.anonScriptFromFile(DE_6, "projectAnon.das");
     private final AnonScript siteAnonDE4 = XnatObjectUtils.anonScriptFromFile(DE_4, "siteAnon.das");
