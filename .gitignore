@@ -6,4 +6,4 @@
 xnat_test.log*
 local.properties
 *.DS_Store
-src/test/resources/data
+src/test/resources/data/local_data_cache
