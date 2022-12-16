@@ -509,6 +509,11 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     public void testMultipleElseIf() {
         performBasicScriptTest(DE_6, "MultipleElseIf.das", new MultipleElseIfScript());
     }
+    @Test //Tests DE-65
+    @AddedIn(Xnat_1_8_7.class)
+    public void testIfElseDirectTag() {
+        performBasicScriptTest(DE_6, "ifElseDirectTag.das", new IfElseDirectTagScript());
+    }
 
     private void performSubjectRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
         mainAdminInterface().setSiteAnonScript(siteScript);
