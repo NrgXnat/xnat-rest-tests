@@ -498,6 +498,11 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     public void testIfElseDirectPrivateTag() {
         performBasicScriptTest(DE_6, "ifElseDirectPrivateTag.das", new IfElseNoNewlineBlockScript());
     }
+    @Test //Tests DE-65
+    @AddedIn(Xnat_1_8_7.class)
+    public void testIfElseDirectSequencePath() {
+        performBasicScriptTest(DE_6, "ifElseDirectSequencePath.das", new IfElseNoNewlineBlockScript());
+    }
 
     private void performSubjectRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
         mainAdminInterface().setSiteAnonScript(siteScript);
