@@ -534,12 +534,6 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         performBasicScriptTest(DE_6, "ifElseDirectSequencePath.das", new IfElseNoNewlineBlockScript());
     }
 
-    @Test //Tests DE-65
-    @AddedIn(Xnat_1_8_7.class)
-    public void testIfElseUnresolvableCondition() {
-        performBasicScriptTest(DE_6, "ifElseUnresolvableCondition.das", new IfElseUnresolvableConditionScript());
-    }
-
     private void performSubjectRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
         mainAdminInterface().setSiteAnonScript(siteScript);
         mainInterface().setProjectAnonScript(anonProject, projectScript);
