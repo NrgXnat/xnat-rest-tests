@@ -37,9 +37,6 @@ public class MultipleElseIfScript extends SimplestDicomScriptValidation {
         root.putValueEqualCheck("(0018,9005)", "TSE");
         root.putValueEqualCheck("(0018,9008)", "SPIN");
 
-
-
-
         return root;
     }
 
