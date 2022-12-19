@@ -13,7 +13,7 @@ elseif (modality = "PET") {
 elseif (modality = "RAD") {
     (0018,0087) := "elseif3"
 }
-else{
+else {
     (0008,0014) := "else"
 }
 
@@ -31,7 +31,7 @@ elseif (accessionNumber = "45") {
 elseif (accessionNumber = "32431") {
     (0018,0088) := "elseif3"
 }
-else{
+else {
     (0008,0030) := "else"
 }
 
@@ -49,7 +49,7 @@ elseif (studyDescription = "Fruit_Struct") {
 elseif (studyDescription = "lala") {
     (0018,0095) := "elseif3"
 }
-else{
+else {
     (0008,0070) := "else"
 }
 
@@ -67,7 +67,7 @@ elseif (contentTime = "131758") {
     (0018,5100) := "elseif3"
     (0018,9004) := "thenthis"
 }
-else{
+else {
     (0018,9005) := "else"
 }
 
@@ -84,7 +84,7 @@ elseif (seriesDescription = "Fruit_Struct") {
 elseif (seriesDescription = "123") {
     (0018,9008) := "elseif3"
 }
-else{
+else {
     (0008,1030) := "else"
     (0008,103e) := "here"
 }

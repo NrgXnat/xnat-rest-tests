@@ -509,11 +509,13 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     public void testMultipleElseIf() {
         performBasicScriptTest(DE_6, "MultipleElseIf.das", new MultipleElseIfScript());
     }
+
     @Test //Tests DE-65
     @AddedIn(Xnat_1_8_7.class)
     public void testIfElseDirectTag() {
         performBasicScriptTest(DE_6, "ifElseDirectTag.das", new IfElseDirectTagScript());
     }
+
     @Test //Tests DE-65
     @AddedIn(Xnat_1_8_7.class)
     public void testIfElseNoNewlineBlock() {
@@ -525,10 +527,17 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     public void testIfElseDirectPrivateTag() {
         performBasicScriptTest(DE_6, "ifElseDirectPrivateTag.das", new IfElseNoNewlineBlockScript());
     }
+
     @Test //Tests DE-65
     @AddedIn(Xnat_1_8_7.class)
     public void testIfElseDirectSequencePath() {
         performBasicScriptTest(DE_6, "ifElseDirectSequencePath.das", new IfElseNoNewlineBlockScript());
+    }
+
+    @Test //Tests DE-65
+    @AddedIn(Xnat_1_8_7.class)
+    public void testIfElseUnresolvableCondition() {
+        performBasicScriptTest(DE_6, "ifElseUnresolvableCondition.das", new IfElseUnresolvableConditionScript());
     }
 
     private void performSubjectRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
