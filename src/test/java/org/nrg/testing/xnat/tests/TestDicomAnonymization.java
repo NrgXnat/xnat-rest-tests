@@ -416,8 +416,14 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     @Test
     @AddedIn(Xnat_1_8_1.class)
     @ExpectedFailure(jiraIssue = "DE-51")
-    public void testAlterPixels() {
-        performBasicScriptTest(DE_6, "alterPixels.das", new AlterPixelsScript(), TestData.SAMPLE_1.toFile());
+    public void testAlterPixelsOverflow() {
+        performBasicScriptTest(DE_6, "alterPixelsOverflow.das", new AlterPixelsOverflowScript(), TestData.SAMPLE_1.toFile());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_1.class)
+    public void testAlterPixelsBasic() {
+        performBasicScriptTest(DE_6, "alterPixelsBasic.das", new AlterPixelsBasicScript(), TestData.SAMPLE_1.toFile());
     }
 
     @Test

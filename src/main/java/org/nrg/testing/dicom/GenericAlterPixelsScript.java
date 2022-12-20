@@ -1,5 +1,6 @@
 package org.nrg.testing.dicom;
 
+import org.apache.log4j.Logger;
 import org.dcm4che3.data.Tag;
 import org.nrg.testing.DicomUtils;
 import org.nrg.testing.FileIOUtils;
@@ -18,20 +19,29 @@ import java.util.Map;
 
 import static org.testng.AssertJUnit.assertEquals;
 
-public class AlterPixelsScript extends ScriptValidation {
+public abstract class GenericAlterPixelsScript extends ScriptValidation {
+
+    protected TestData testedDataset;
+    private static final Logger LOGGER = Logger.getLogger(GenericAlterPixelsScript.class);
+
+    GenericAlterPixelsScript(TestData testedDataset) {
+        this.testedDataset = testedDataset;
+    }
 
     @Override
     public void validateScriptRan(List<File> dicomFiles) {
-        assertEquals(528, dicomFiles.size());
+        final List<File> expectedDicomInstances = FileIOUtils.listFilesRecursively(testedDataset.toDirectory());
+        assertEquals(expectedDicomInstances.size(), dicomFiles.size());
         final Map<String, File> sourceDicom = new HashMap<>();
         final Map<String, String> tempNameMap = new HashMap<>();
-        for (File sourceDicomFile : FileIOUtils.listFilesRecursively(TestData.SAMPLE_1.toDirectory())) {
-            sourceDicom.put(DicomUtils.readDicom(sourceDicomFile).getDataset().getString(Tag.SOPInstanceUID), sourceDicomFile);
-            tempNameMap.put(DicomUtils.readDicom(sourceDicomFile).getDataset().getString(Tag.SOPInstanceUID), sourceDicomFile.getName());
+        for (File sourceDicomFile : expectedDicomInstances) {
+            final String sopInstanceUid = DicomUtils.readDicom(sourceDicomFile).getDataset().getString(Tag.SOPInstanceUID);
+            sourceDicom.put(sopInstanceUid, sourceDicomFile);
+            tempNameMap.put(sopInstanceUid, sourceDicomFile.getName());
         }
         for (File dicomFile : dicomFiles) {
             final String sopInstanceUID = DicomUtils.readDicom(dicomFile).getDataset().getString(Tag.SOPInstanceUID);
-            System.out.println("Checking " + tempNameMap.get(sopInstanceUID));
+            LOGGER.info("Checking PixelData for DICOM instance " + tempNameMap.get(sopInstanceUID));
             try {
                 new ImageDeviationComparator().checkDiffedImage(new BlackedOutDiffedImage(sourceDicom.get(sopInstanceUID), dicomFile));
             } catch (ImageProcessingException ipe) {
@@ -50,27 +60,16 @@ public class AlterPixelsScript extends ScriptValidation {
         return new ArrayList<>();
     }
 
-    private static class BlackedOutDiffedImage extends DiffedImage {
+    protected abstract boolean pixelIsWithinBlackoutRegion(int x, int y);
+
+    private class BlackedOutDiffedImage extends DiffedImage {
         BlackedOutDiffedImage(File original, File generated) throws ImageProcessingException {
             super(original, generated, ImageType.DICOM);
         }
 
         @Override
         protected ComparisonPixel readComparisonPixel(int x, int y, int[] original, int[] generated) {
-            return super.readComparisonPixel(x, y, insideBlackoutRegion(x, y) ? new int[]{0} : original, generated);
-        }
-
-        private boolean insideBlackoutRegion(int x, int y) {
-            if (x < 20 && y < 20) {
-                return true;
-            }
-            if (x >= 250 && y < 20) {
-                return true;
-            }
-            if (x >= 100 && x < 150 && y >= 100 && y < 150) {
-                return true;
-            }
-            return x >= 120 && x < 140 && y >= 80 && y < 200;
+            return super.readComparisonPixel(x, y, pixelIsWithinBlackoutRegion(x, y) ? new int[]{0} : original, generated);
         }
     }
 
