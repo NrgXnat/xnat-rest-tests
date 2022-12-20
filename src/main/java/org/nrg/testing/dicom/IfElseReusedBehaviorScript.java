@@ -1,6 +1,6 @@
 package org.nrg.testing.dicom;
 
-public class IfElseNoNewlineBlockScript extends SimplestDicomScriptValidation {
+public class IfElseReusedBehaviorScript extends SimplestDicomScriptValidation {
 
     @Override
     protected RootDicomObject generateValidationObject() {
