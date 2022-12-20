@@ -519,19 +519,19 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     @Test //Tests DE-65
     @AddedIn(Xnat_1_8_7.class)
     public void testIfElseNoNewlineBlock() {
-        performBasicScriptTest(DE_6, "ifElseNoNewlineBlock.das", new IfElseNoNewlineBlockScript());
+        performBasicScriptTest(DE_6, "ifElseNoNewlineBlock.das", new IfElseReusedBehaviorScript());
     }
 
     @Test //Tests DE-65
     @AddedIn(Xnat_1_8_7.class)
     public void testIfElseDirectPrivateTag() {
-        performBasicScriptTest(DE_6, "ifElseDirectPrivateTag.das", new IfElseNoNewlineBlockScript());
+        performBasicScriptTest(DE_6, "ifElseDirectPrivateTag.das", new IfElseReusedBehaviorScript());
     }
 
     @Test //Tests DE-65
     @AddedIn(Xnat_1_8_7.class)
     public void testIfElseDirectSequencePath() {
-        performBasicScriptTest(DE_6, "ifElseDirectSequencePath.das", new IfElseNoNewlineBlockScript());
+        performBasicScriptTest(DE_6, "ifElseDirectSequencePath.das", new IfElseReusedBehaviorScript());
     }
 
     private void performSubjectRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
