@@ -419,7 +419,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     public void testAlterPixelsOverflow() {
         performBasicScriptTest(DE_6, "alterPixelsOverflow.das", new AlterPixelsOverflowScript(), TestData.SAMPLE_1.toFile());
     }
-
+    
     @Test
     @AddedIn(Xnat_1_8_1.class)
     public void testAlterPixelsBasic() {
@@ -513,7 +513,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     @Test //Tests DE-65
     @AddedIn(Xnat_1_8_7.class)
     public void testMultipleElseIf() {
-        performBasicScriptTest(DE_6, "MultipleElseIf.das", new MultipleElseIfScript());
+        performBasicScriptTest(DE_6, "multipleElseIf.das", new MultipleElseIfScript());
     }
 
     @Test //Tests DE-65
@@ -538,6 +538,66 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     @AddedIn(Xnat_1_8_7.class)
     public void testIfElseDirectSequencePath() {
         performBasicScriptTest(DE_6, "ifElseDirectSequencePath.das", new IfElseReusedBehaviorScript());
+    }
+
+    @Test //Tests DE-65
+    @AddedIn(Xnat_1_8_7.class)
+    public void testIfElseDoesNotEqual() {
+        performBasicScriptTest(DE_6, "ifElseDoesNotEqual.das", new IfElseReusedBehaviorScript());
+    }
+
+    @Test //Tests DE-65
+    @AddedIn(Xnat_1_8_7.class)
+    public void testIfElseLiteralTabs() {
+        performBasicScriptTest(DE_6, "ifElseLiteralTabs.das", new IfElseReusedBehaviorScript());
+    }
+
+    @Test //Tests DE-65
+    @AddedIn(Xnat_1_8_7.class)
+    public void testIfElseUnresolvableCondition() {
+        performBasicScriptTest(DE_6, "ifElseUnresolvableCondition.das", new IfElseUnresolvableConditionScript());
+    }
+
+    @Test //Tests DE-65
+    @AddedIn(Xnat_1_8_7.class)
+    public void testIfElseNestedConditionals() {
+        performBasicScriptTest(DE_6, "nestedConditionals.das", new NestedConditionalsScript());
+    }
+
+    @Test //Tests DE-65
+    @AddedIn(Xnat_1_8_7.class)
+    public void testIfElseMatches() {
+        performBasicScriptTest(DE_6, "ifElseMatches.das", new IfElseReusedBehaviorScript());
+    }
+
+    @Test //Tests DE-65
+    @AddedIn(Xnat_1_8_7.class)
+    public void testIfElseDoesNotMatch() {
+        performBasicScriptTest(DE_6, "ifElseDoesNotMatch.das", new IfElseReusedBehaviorScript());
+    }
+
+    @Test //Tests DE-65
+    @AddedIn(Xnat_1_8_7.class)
+    public void testIfElseDeleteWithinConditional() {
+        performBasicScriptTest(DE_6, "ifElseDeleteWithinConditional.das", new IfElseDeleteWithinConditionalScript());
+    }
+
+    @Test //Tests DE-65
+    @AddedIn(Xnat_1_8_7.class)
+    public void testIfElseRetainPrivateTags() {
+        performBasicScriptTest(DE_6, "ifElseRetainPrivateTags.das", new IfElseRetainPrivateTagsScript());
+    }
+
+    @Test //Tests DE-65
+    @AddedIn(Xnat_1_8_7.class)
+    public void testIfElseVariableScope() {
+        performBasicScriptTest(DE_6, "ifElseVariableScope.das", new IfElseVariableScopeScript());
+    }
+
+    @Test //Tests DE-65
+    @AddedIn(Xnat_1_8_7.class)
+    public void testIfElseAlterPixels() {
+        performBasicScriptTest(DE_6, "ifElseAlterPixels.das", new IfElseAlterPixelsScript());
     }
 
     private void performSubjectRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
