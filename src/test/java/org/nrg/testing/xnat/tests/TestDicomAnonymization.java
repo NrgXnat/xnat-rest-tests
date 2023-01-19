@@ -378,12 +378,12 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
                 .simpleTransform(TransformFunction.generateFromScratch(() -> {
                     DicomDataSet dicomDataSet = new DicomDataSet();
                     dicomDataSet.setTag( Tag.PatientName, "DTPrecision")
-                            .setTag( new int[]{Tag.ReferencedStudySequence, 0, Tag.ProductExpirationDateTime}, "1960" )
-                            .setTag( new int[]{Tag.ReferencedStudySequence, 1, Tag.ProductExpirationDateTime}, "196005" )
-                            .setTag( new int[]{Tag.ReferencedStudySequence, 2, Tag.ProductExpirationDateTime}, "19600519" )
-                            .setTag( new int[]{Tag.ReferencedStudySequence, 3, Tag.ProductExpirationDateTime}, "1960051913" )
-                            .setTag( new int[]{Tag.ReferencedStudySequence, 4, Tag.ProductExpirationDateTime}, "196005191324" )
-                            .setTag( new int[]{Tag.ReferencedStudySequence, 5, Tag.ProductExpirationDateTime}, "19600519132435" );
+                            .setTagArray( new int[]{Tag.ReferencedStudySequence, 0, Tag.ProductExpirationDateTime}, "1960" )
+                            .setTagArray( new int[]{Tag.ReferencedStudySequence, 1, Tag.ProductExpirationDateTime}, "196005" )
+                            .setTagArray( new int[]{Tag.ReferencedStudySequence, 2, Tag.ProductExpirationDateTime}, "19600519" )
+                            .setTagArray( new int[]{Tag.ReferencedStudySequence, 3, Tag.ProductExpirationDateTime}, "1960051913" )
+                            .setTagArray( new int[]{Tag.ReferencedStudySequence, 4, Tag.ProductExpirationDateTime}, "196005191324" )
+                            .setTagArray( new int[]{Tag.ReferencedStudySequence, 5, Tag.ProductExpirationDateTime}, "19600519132435" );
                     return Collections.singletonList( dicomDataSet.getDataset());
                 }));
         dicomGenerator.build();
