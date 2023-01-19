@@ -1,0 +1,29 @@
+[
+    {
+        "scanId": "4",
+        "resources": {
+            "DICOM": [
+                "repeated_file_name.dcm",
+                "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-2-5cw0xw.dcm"
+            ]
+        }
+    },
+    {
+        "scanId": "5",
+        "resources": {
+            "DICOM": [
+                "repeated_file_name.dcm",
+                "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-5-2-137l2ab.dcm"
+            ]
+        }
+    },
+    {
+        "scanId": "6",
+        "resources": {
+            "DICOM": [
+                "repeated_file_name.dcm",
+                "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-2-mwvqfl.dcm"
+            ]
+        }
+    }
+]

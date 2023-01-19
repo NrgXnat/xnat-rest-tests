@@ -1,0 +1,26 @@
+[
+    {
+        "scanId": "4",
+        "resources": {
+            "DICOM": [
+                "0.dcm"
+            ]
+        }
+    },
+    {
+        "scanId": "5",
+        "resources": {
+            "DICOM": [
+                "1.dcm"
+            ]
+        }
+    },
+    {
+        "scanId": "6",
+        "resources": {
+            "DICOM": [
+                "2.dcm"
+            ]
+        }
+    }
+]

@@ -1,0 +1,29 @@
+[
+    {
+        "scanId": "4",
+        "resources": {
+            "DICOM": [
+                "repeated_file_name.dcm",
+                "repeated_file_name.dcm_1"
+            ]
+        }
+    },
+    {
+        "scanId": "5",
+        "resources": {
+            "DICOM": [
+                "repeated_file_name.dcm",
+                "repeated_file_name.dcm_1"
+            ]
+        }
+    },
+    {
+        "scanId": "6",
+        "resources": {
+            "DICOM": [
+                "repeated_file_name.dcm",
+                "repeated_file_name.dcm_1"
+            ]
+        }
+    }
+]
