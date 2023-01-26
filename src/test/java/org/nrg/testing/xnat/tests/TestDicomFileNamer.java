@@ -69,12 +69,14 @@ public class TestDicomFileNamer extends BaseXnatRestTest {
     private static final String SAMPLE1_REPEATED_UIDS = "sample1_repeated_uid.json";
     private static final String SAMPLE1_DATALOSS = "sample1_dataloss.json";
     private static final String SAMPLE1_ENHMR_COPIED = "sample1_enhmr.json";
+    private static final String SAMPLE1_RTSTRUCT_COPIED = "sample1_rt.json";
     private static final String SAMPLE1_FILE_NAME_CLASH_DICOM_ZIP = "sample1_clash_dicomzip.json";
     private static final String SAMPLE1_FILE_NAME_CLASH_SI = "sample1_clash_si.json";
     private static final String SAMPLE1_ONE_FILE_PER_SERIES_CUSTOM = "sample1_one_file_per_series_custom.json";
     private static final LocallyCacheableDicomTransformation FILE_CLASH = generateFileClash();
     private static final LocallyCacheableDicomTransformation FILE_CLASH_DISTINCT_ZIPS = generateFileClashDistinctZips();
     private static final LocallyCacheableDicomTransformation ONE_FILE_PER_SERIES_SAMPLE1 = oneFilePerSeriesSample1();
+    private static final LocallyCacheableDicomTransformation DUPLICATE_UID_SIMILAR_SOP_CLASS = produceMinimalCopyWithSopClass("duplicate-uid-similar-sop-class", UID.EnhancedMRImageStorage);
     private static final String DUPLICATE_NAME_FIRST_FILE = "duplicate-name-first-file";
     private static final String DUPLICATE_NAME_SECOND_FILE = "duplicate-name-second-file";
     private static final String SCRIPT_HASH_UIDS = "version \"6.1\"\n(0008,0018) := hashUID[(0008,0018)]";
@@ -312,12 +314,38 @@ public class TestDicomFileNamer extends BaseXnatRestTest {
     public void testUidDuplicationSameResources() {
         new FileNamerTest(
                 new UpdateFileNamer(FILE_NAMER_SOP_INSTANCE_UID_AND_HASH),
-                new CstoreStep(produceMinimalCopyWithSopClass("duplicate-uid-similar-sop-class", UID.EnhancedMRImageStorage)),
+                new CstoreStep(DUPLICATE_UID_SIMILAR_SOP_CLASS),
                 REBUILD,
                 new ValidateNamesInPrearc(SAMPLE1_ENHMR_COPIED),
                 new ExpectFailureOnArchive(),
                 new ArchiveOverrideExceptions(),
                 new ValidateNamesInArchive(SAMPLE1_ENHMR_COPIED)
+        ).run();
+    }
+
+    @Test
+    public void testUidDuplicationSameResourcesLegacyFilenameSetting() {
+        new FileNamerTest(
+                USE_FILE_NAME_AS_UNIQUENESS_SOURCE,
+                new UpdateFileNamer(FILE_NAMER_SOP_INSTANCE_UID_AND_HASH),
+                new CstoreStep(DUPLICATE_UID_SIMILAR_SOP_CLASS),
+                REBUILD,
+                new ValidateNamesInPrearc(SAMPLE1_ENHMR_COPIED),
+                ARCHIVE,
+                new ValidateNamesInArchive(SAMPLE1_ENHMR_COPIED)
+        ).run();
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_7.class) // See XNAT-7279
+    public void testUidDuplicationDifferentResources() {
+        new FileNamerTest(
+                new UpdateFileNamer(FILE_NAMER_SOP_INSTANCE_UID_AND_HASH),
+                new CstoreStep(produceMinimalCopyWithSopClass("duplicate-uid-disparate-sop-class", UID.RTStructureSetStorage)),
+                REBUILD,
+                new ValidateNamesInPrearc(SAMPLE1_RTSTRUCT_COPIED),
+                ARCHIVE,
+                new ValidateNamesInArchive(SAMPLE1_RTSTRUCT_COPIED)
         ).run();
     }
 
@@ -508,32 +536,6 @@ public class TestDicomFileNamer extends BaseXnatRestTest {
                 new ValidateResourceSizeInArchive(33682876, "5", true),
                 new ValidateResourceSizeInArchive(33964048, "6", true)
         ).run();
-    }
-
-    private LocallyCacheableDicomTransformation produceMinimalCopyWithSopClass(String identifier, String targetSopClassUid) {
-        return new LocallyCacheableDicomTransformation(identifier)
-                .data(TestData.SAMPLE_1)
-                .transformations(
-                        new DicomTransformation(identifier)
-                                .prefilter(DicomFilters.subsetWithInstanceNumber(1))
-                                .transformFunction(
-                                        TransformFunction.generalTransform(
-                                                dicomList -> dicomList.stream()
-                                                        .map(original -> {
-                                                            final Attributes copyWithDifferentSopClass = DicomUtils.clone(original).getDataset();
-                                                            copyWithDifferentSopClass.setString(Tag.SOPClassUID, VR.UI, targetSopClassUid);
-                                                            return Arrays.asList(
-                                                                    original,
-                                                                    new DatasetWithFMI(
-                                                                            copyWithDifferentSopClass.createFileMetaInformation(UID.ExplicitVRLittleEndian),
-                                                                            copyWithDifferentSopClass
-                                                                    )
-                                                            );
-                                                        }).flatMap(Collection::stream)
-                                                        .collect(Collectors.toList())
-                                        )
-                                )
-                );
     }
 
     private SessionData expectSinglePrearchiveResultForProject(Project project) {
@@ -869,6 +871,32 @@ public class TestDicomFileNamer extends BaseXnatRestTest {
             final ImagingSession session = mainInterface().readProject(project.getId()).getSubjects().get(0).getSessions().get(0);
             mainInterface().relabelSubjectAssessor(session, label);
         }
+    }
+
+    private static LocallyCacheableDicomTransformation produceMinimalCopyWithSopClass(String identifier, String targetSopClassUid) {
+        return new LocallyCacheableDicomTransformation(identifier)
+                .data(TestData.SAMPLE_1)
+                .transformations(
+                        new DicomTransformation(identifier)
+                                .prefilter(DicomFilters.subsetWithInstanceNumber(1))
+                                .transformFunction(
+                                        TransformFunction.generalTransform(
+                                                dicomList -> dicomList.stream()
+                                                        .map(original -> {
+                                                            final Attributes copyWithDifferentSopClass = DicomUtils.clone(original).getDataset();
+                                                            copyWithDifferentSopClass.setString(Tag.SOPClassUID, VR.UI, targetSopClassUid);
+                                                            return Arrays.asList(
+                                                                    original,
+                                                                    new DatasetWithFMI(
+                                                                            copyWithDifferentSopClass.createFileMetaInformation(UID.ExplicitVRLittleEndian),
+                                                                            copyWithDifferentSopClass
+                                                                    )
+                                                            );
+                                                        }).flatMap(Collection::stream)
+                                                        .collect(Collectors.toList())
+                                        )
+                                )
+                );
     }
 
     private static LocallyCacheableDicomTransformation generateFileClash() {
