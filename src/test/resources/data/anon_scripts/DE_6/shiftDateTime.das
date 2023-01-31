@@ -1,4 +1,4 @@
-version "6.4"
+version "6.3"
 
 (0008,002A) := shiftDateTimeByIncrement[(0008,002A), "360"]
 (0018,9516) := shiftDateTimeByIncrement["20200101120000.000000", "10"]

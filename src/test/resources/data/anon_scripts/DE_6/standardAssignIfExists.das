@@ -1,4 +1,4 @@
-version "6.4"
+version "6.3"
 (0008,1070) ?= "TECH^SCANNING"
 (0008,1090) ?= "REMOVED"
 (0008,0061) ?= "NOTPRESENT"
