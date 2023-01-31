@@ -1,4 +1,4 @@
-version "6.3"
+version "6.4"
 modality := (0008,0060)
 if ( modality = "MR") {
     alterPixels["rectangle", "l=10, t=10, r=20, b=100", "solid", "v=100"]

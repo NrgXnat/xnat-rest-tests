@@ -1,4 +1,4 @@
-version "6.3"
+version "6.4"
 modality := (0008,0060)
 accessionNumber := (0008,0050)
 studyDescription := (0008,1030)
