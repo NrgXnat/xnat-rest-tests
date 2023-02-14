@@ -1,0 +1,63 @@
+{
+    "rsnStatus": "CONFORMING",
+    "xsiType": "xnat:mrSessionData",
+    "resourceLabel": "DICOM",
+    "resourceUri": "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/scan_6_catalog.xml",
+    "scanLabel": "6",
+    "scanDescription": "t2_spc_1mm_p2",
+    "surveyReport": {
+        "totalEntries": 6,
+        "totalUids": 3,
+        "totalBadFiles": 0,
+        "totalMismatchedFiles": 0,
+        "totalDuplicates": 3,
+        "uids": {
+            "1.2.840.10008.5.1.4.1.1.4": [
+                "1.3.12.2.1107.5.2.32.35177.3.2006121409514290933519715",
+                "1.3.12.2.1107.5.2.32.35177.3.200612140951434399719723",
+                "1.3.12.2.1107.5.2.32.35177.3.2006121409514360219719"
+            ]
+        },
+        "badFiles": null,
+        "mismatchedFiles": null,
+        "duplicates": {
+            "1.2.840.10008.5.1.4.1.1.4": {
+                "1.3.12.2.1107.5.2.32.35177.3.2006121409514290933519715": {
+                    "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/6.dcm": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-80-ncojqu.dcm",
+                    "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-80-ncojqu.dcm": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-80-ncojqu.dcm"
+                },
+                "1.3.12.2.1107.5.2.32.35177.3.200612140951434399719723": {
+                    "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-82-dgw3pd.dcm": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-82-dgw3pd.dcm",
+                    "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/8.dcm": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-82-dgw3pd.dcm"
+                },
+                "1.3.12.2.1107.5.2.32.35177.3.2006121409514360219719": {
+                    "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/7.dcm": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-81-1ym7ctk.dcm",
+                    "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-81-1ym7ctk.dcm": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-81-1ym7ctk.dcm"
+                }
+            }
+        }
+    },
+    "mitigationReport": {
+        "movedFiles": {
+            "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-82-dgw3pd.dcm": "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-82-dgw3pd.dcm",
+            "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-81-1ym7ctk.dcm": "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-81-1ym7ctk.dcm",
+            "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-80-ncojqu.dcm": "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-80-ncojqu.dcm"
+        },
+        "removedFiles": {
+            "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/6.dcm": "/opt/data/cache/$PROJECT/$SESSION_ID/$TIMESTAMP/$SCAN_PK/6.dcm",
+            "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/7.dcm": "/opt/data/cache/$PROJECT/$SESSION_ID/$TIMESTAMP/$SCAN_PK/7.dcm",
+            "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-82-dgw3pd.dcm": "/opt/data/cache/$PROJECT/$SESSION_ID/$TIMESTAMP/$SCAN_PK/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-82-dgw3pd.dcm",
+            "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-81-1ym7ctk.dcm": "/opt/data/cache/$PROJECT/$SESSION_ID/$TIMESTAMP/$SCAN_PK/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-81-1ym7ctk.dcm",
+            "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-80-ncojqu.dcm": "/opt/data/cache/$PROJECT/$SESSION_ID/$TIMESTAMP/$SCAN_PK/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-80-ncojqu.dcm",
+            "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/8.dcm": "/opt/data/cache/$PROJECT/$SESSION_ID/$TIMESTAMP/$SCAN_PK/8.dcm"
+        },
+        "backupErrors": null,
+        "moveErrors": null,
+        "deleteErrors": null,
+        "catalogWriteError": null,
+        "resourceSaveError": null,
+        "totalMovedFiles": 3,
+        "totalRemovedFiles": 6,
+        "totalFileErrors": 0
+    }
+}

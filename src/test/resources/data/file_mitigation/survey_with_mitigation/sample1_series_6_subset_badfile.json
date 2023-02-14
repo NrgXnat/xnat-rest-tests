@@ -1,0 +1,38 @@
+{
+    "rsnStatus": "CONFORMING",
+    "xsiType": "xnat:mrSessionData",
+    "resourceLabel": "DICOM",
+    "resourceUri": "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/scan_6_catalog.xml",
+    "scanLabel": "6",
+    "scanDescription": "t2_spc_1mm_p2",
+    "surveyReport": {
+        "totalEntries": 3,
+        "totalUids": 2,
+        "totalBadFiles": 1,
+        "totalMismatchedFiles": 0,
+        "totalDuplicates": 0,
+        "uids": {
+            "1.2.840.10008.5.1.4.1.1.4": [
+                "1.3.12.2.1107.5.2.32.35177.3.200612140951434399719723",
+                "1.3.12.2.1107.5.2.32.35177.3.2006121409514360219719"
+            ]
+        },
+        "badFiles": [
+            "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/6/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-6-80-ncojqu.dcm"
+        ],
+        "mismatchedFiles": null,
+        "duplicates": null
+    },
+    "mitigationReport": {
+        "movedFiles": null,
+        "removedFiles": null,
+        "backupErrors": null,
+        "moveErrors": null,
+        "deleteErrors": null,
+        "catalogWriteError": null,
+        "resourceSaveError": null,
+        "totalMovedFiles": 0,
+        "totalRemovedFiles": 0,
+        "totalFileErrors": 0
+    }
+}

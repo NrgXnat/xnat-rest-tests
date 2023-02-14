@@ -13,6 +13,7 @@ public class TestGroups {
     public static final String DICOM_ROUTING = "dicom-routing";
     public static final String DIRECT_ARCHIVE = "direct-archive";
     public static final String EVENT_SERVICE = "event-service";
+    public static final String FILE_MITIGATION = "file-mitigation";
     public static final String IMPORTER = "importer";
     public static final String INVESTIGATORS = "investigators";
     public static final String MERGE = "merge";

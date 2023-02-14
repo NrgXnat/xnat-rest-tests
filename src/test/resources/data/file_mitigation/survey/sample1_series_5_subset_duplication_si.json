@@ -1,0 +1,41 @@
+{
+    "rsnStatus": "DIVERGENT",
+    "xsiType": "xnat:mrSessionData",
+    "resourceLabel": "DICOM",
+    "resourceUri": "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/5/DICOM/scan_5_catalog.xml",
+    "scanLabel": "5",
+    "scanDescription": "t1_mpr_1mm_p2_pos50",
+    "surveyReport": {
+        "totalEntries": 6,
+        "totalUids": 3,
+        "totalBadFiles": 0,
+        "totalMismatchedFiles": 0,
+        "totalDuplicates": 3,
+        "uids": {
+            "1.2.840.10008.5.1.4.1.1.4": [
+                "1.3.12.2.1107.5.2.32.35177.3.2006121409454581603319004",
+                "1.3.12.2.1107.5.2.32.35177.3.2006121409454596469019012",
+                "1.3.12.2.1107.5.2.32.35177.3.2006121409454590873719008"
+            ]
+        },
+        "badFiles": null,
+        "mismatchedFiles": null,
+        "duplicates": {
+            "1.2.840.10008.5.1.4.1.1.4": {
+                "1.3.12.2.1107.5.2.32.35177.3.2006121409454581603319004": {
+                    "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/5/DICOM/3.dcm": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-5-80-3x8pz.dcm",
+                    "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/5/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-5-80-3x8pz.dcm": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-5-80-3x8pz.dcm"
+                },
+                "1.3.12.2.1107.5.2.32.35177.3.2006121409454596469019012": {
+                    "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/5/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-5-82-1oey2f5.dcm": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-5-82-1oey2f5.dcm",
+                    "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/5/DICOM/5.dcm": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-5-82-1oey2f5.dcm"
+                },
+                "1.3.12.2.1107.5.2.32.35177.3.2006121409454590873719008": {
+                    "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/5/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-5-81-1aha0f8.dcm": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-5-81-1aha0f8.dcm",
+                    "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/5/DICOM/4.dcm": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-5-81-1aha0f8.dcm"
+                }
+            }
+        }
+    },
+    "mitigationReport": null
+}

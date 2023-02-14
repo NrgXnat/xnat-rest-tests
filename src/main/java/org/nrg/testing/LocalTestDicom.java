@@ -1,5 +1,6 @@
 package org.nrg.testing;
 
+import org.dcm4che3.data.DatasetWithFMI;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.nrg.testing.dicom.transform.DicomFilters;
@@ -7,6 +8,10 @@ import org.nrg.testing.dicom.transform.DicomTransformation;
 import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
 import org.nrg.testing.dicom.transform.TransformFunction;
 import org.nrg.testing.enums.TestData;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Function;
 
 public class LocalTestDicom {
 
@@ -23,6 +28,16 @@ public class LocalTestDicom {
                                         dicom.getDataset().setString(Tag.StudyInstanceUID, VR.UI, "1.3.12.2.1107.5.2.32.05177.3.2006121409370267005218149"); // invalid per PS 3.5, section 9.1
                                     })
                             )
+            );
+    public static final String SAMPLE1_SMALL_SUBSET_ID = "sample1-subset-middle";
+    public static final Function<List<DatasetWithFMI>, List<DatasetWithFMI>> SAMPLE1_MIDDLEISH_INSTANCES = DicomFilters.subsetWithInstanceNumber(Arrays.asList(80, 81, 82));
+    public static final LocallyCacheableDicomTransformation SAMPLE1_SMALL_SUBSET = new LocallyCacheableDicomTransformation(SAMPLE1_SMALL_SUBSET_ID)
+            .data(TestData.SAMPLE_1)
+            .createZip()
+            .transformations(
+                    new DicomTransformation(SAMPLE1_SMALL_SUBSET_ID)
+                            .produceZip()
+                            .prefilter(SAMPLE1_MIDDLEISH_INSTANCES)
             );
 
 }

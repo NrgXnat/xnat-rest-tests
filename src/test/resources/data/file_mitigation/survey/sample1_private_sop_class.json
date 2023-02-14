@@ -1,0 +1,26 @@
+{
+    "rsnStatus": "DIVERGENT",
+    "xsiType": "xnat:mrSessionData",
+    "resourceLabel": "secondary",
+    "resourceUri": "$ARCHIVE/$PROJECT/arc001/$SESSION_LABEL/SCANS/4/secondary/scan_4_secondary_catalog.xml",
+    "scanLabel": "4",
+    "scanDescription": "t1_mpr_1mm_p2_pos50",
+    "surveyReport": {
+        "totalEntries": 1,
+        "totalUids": 1,
+        "totalBadFiles": 0,
+        "totalMismatchedFiles": 1,
+        "totalDuplicates": 0,
+        "uids": {
+            "9.9.9.9.9.123.456.789": [
+                "1.3.12.2.1107.5.2.32.35177.3.2006121409365951632817982"
+            ]
+        },
+        "badFiles": null,
+        "mismatchedFiles": {
+            "$ARCHIVE/$PROJECT/arc001/$SESSION_LABEL/SCANS/4/secondary/0.dcm": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-1-1m0zhq7.dcm"
+        },
+        "duplicates": null
+    },
+    "mitigationReport": null
+}
