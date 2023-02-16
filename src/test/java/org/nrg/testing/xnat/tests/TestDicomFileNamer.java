@@ -278,6 +278,7 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
     }
 
     @Test
+    @AddedIn(Xnat_1_8_7.class) // See XNAT-7279
     public void testUidDuplicationSameResourcesLegacyFilenameSetting() {
         run(new FileNamerTest(
                 USE_FILE_NAME_AS_UNIQUENESS_SOURCE,
