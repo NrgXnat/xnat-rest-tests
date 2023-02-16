@@ -14,7 +14,7 @@ import org.nrg.xnat.pogo.experiments.assessors.QC;
 import org.nrg.xnat.pogo.experiments.scans.MRScan;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.rest.NotFoundException;
-import org.nrg.xnat.versions.XnatFormIo;
+import org.nrg.xnat.versions.Xnat_1_8_8;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -28,7 +28,7 @@ import static io.restassured.http.Method.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-@AddedIn(XnatFormIo.class)
+@AddedIn(Xnat_1_8_8.class)
 public class TestCustomFieldUsage extends BaseXnatRestTest {
     private Project project;
     private Subject subject;
