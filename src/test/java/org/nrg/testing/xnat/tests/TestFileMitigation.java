@@ -463,6 +463,7 @@ public class TestFileMitigation extends BaseFileNamerTest {
             final ResourceMitigationReport mitigationReport = survey.getMitigationReport();
             mitigationReport.setMovedFiles(null);
             mitigationReport.setRemovedFiles(null);
+            mitigationReport.setRetainedFiles(null);
             cleanedSurveys.add(session, survey);
         });
         cleanedSurveys.validateSurveyRequests(mainInterface().readResourceSurveysForProject(project));
@@ -754,6 +755,21 @@ public class TestFileMitigation extends BaseFileNamerTest {
                                     coerceToStringMap(actualRemovedFiles)
                             );
                         }
+
+                        final List<File> expectedRetainedFiles = expectedMitigation.getRetainedFiles();
+                        final List<File> actualRetainedFiles = actualMitigation.getRetainedFiles();
+                        if (expectedRetainedFiles == null) {
+                            assertNull(actualRetainedFiles);
+                        } else {
+                            assertEquals(
+                                    populatePossiblePlaceholders(expectedRetainedFiles, session, actualSurvey),
+                                    genericizeFileList(actualRetainedFiles)
+                            );
+                        }
+
+                        assertEquals(expectedMitigation.getTotalMovedFiles(), actualMitigation.getTotalMovedFiles());
+                        assertEquals(expectedMitigation.getTotalRemovedFiles(), actualMitigation.getTotalRemovedFiles());
+                        assertEquals(expectedMitigation.getTotalFileErrors(), actualMitigation.getTotalFileErrors());
 
                         if (actualMitigation.getBackupErrors() != null) {
                             fail("Unexpected backupErrors");
