@@ -404,6 +404,7 @@ public class TestFileMitigation extends BaseFileNamerTest {
                 readSurveyRequest(SUBSET_6_BADFILE_NAME)
         ).forEach(survey -> {
                     final ResourceSurveyReport report = survey.getSurveyReport();
+                    survey.setRsnStatus(CANCELED);
                     report.setUids(null);
                     report.setDuplicates(null);
                     report.setMismatchedFiles(null);
