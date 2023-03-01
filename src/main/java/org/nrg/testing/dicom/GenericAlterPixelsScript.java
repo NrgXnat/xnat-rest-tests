@@ -9,7 +9,8 @@ import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.processing.exceptions.ImageProcessingException;
 import org.nrg.testing.xnat.processing.files.comparators.imaging.ComparisonPixel;
 import org.nrg.testing.xnat.processing.files.comparators.imaging.DiffedImage;
-import org.nrg.testing.xnat.processing.files.comparators.imaging.ImageDeviationComparator;
+import org.nrg.testing.xnat.processing.files.comparators.imaging.ImageComparator;
+import org.nrg.testing.xnat.processing.files.comparators.imaging.PixelValue;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -43,7 +44,8 @@ public abstract class GenericAlterPixelsScript extends ScriptValidation {
             final String sopInstanceUID = DicomUtils.readDicom(dicomFile).getDataset().getString(Tag.SOPInstanceUID);
             LOGGER.info("Checking PixelData for DICOM instance " + tempNameMap.get(sopInstanceUID));
             try {
-                new ImageDeviationComparator().checkDiffedImage(new BlackedOutDiffedImage(sourceDicom.get(sopInstanceUID), dicomFile));
+                DiffedImage diffedImage = new DiffedImage(sourceDicom.get(sopInstanceUID), dicomFile, ImageType.DICOM, true);
+                new WholeImageComparator().checkDiffedImage(diffedImage);
             } catch (ImageProcessingException ipe) {
                 throw new RuntimeException(ipe);
             }
@@ -60,16 +62,41 @@ public abstract class GenericAlterPixelsScript extends ScriptValidation {
         return new ArrayList<>();
     }
 
-    protected abstract boolean pixelIsWithinBlackoutRegion(int x, int y);
-
-    private class BlackedOutDiffedImage extends DiffedImage {
-        BlackedOutDiffedImage(File original, File generated) throws ImageProcessingException {
-            super(original, generated, ImageType.DICOM);
-        }
+    private class WholeImageComparator extends ImageComparator {
 
         @Override
-        protected ComparisonPixel readComparisonPixel(int x, int y, int[] original, int[] generated) {
-            return super.readComparisonPixel(x, y, pixelIsWithinBlackoutRegion(x, y) ? new int[]{0} : original, generated);
+        public void checkDiffedImage(DiffedImage diffedImage) throws ImageProcessingException {
+            if (diffedImage.ifAnyFail(this::pixelValueTest)) {
+                throw new ImageProcessingException("");
+            }
+        }
+
+        protected boolean pixelValueTest(ComparisonPixel comparisonPixel) {
+            int x = comparisonPixel.getX();
+            int y = comparisonPixel.getY();
+            int z = comparisonPixel.getZ();
+            try {
+                if (pixelIsWithinBlackoutRegion(x, y, z)) {
+                    return comparisonPixel.getGeneratedPixelValue().equals(getExpectedBlackoutPixelValue(x, y, z));
+                } else {
+                    return comparisonPixel.isTrivial();
+                }
+            } catch (ImageProcessingException e) {
+                return false;
+            }
+        }
+    }
+
+
+    protected abstract boolean pixelIsWithinBlackoutRegion(int x, int y, int z);
+
+    private final static PixelValue REDACTED_PIXEL_VALUE = new PixelValue(0);
+
+    protected PixelValue getExpectedBlackoutPixelValue(int x, int y, int z) throws ImageProcessingException {
+        if (pixelIsWithinBlackoutRegion(x, y, z)) {
+            return REDACTED_PIXEL_VALUE;
+        } else {
+            throw new ImageProcessingException(String.format("Requesting redacted pixel value in non-redacted region %d,%d,%d (x,y,z)", x, y, z));
         }
     }
 

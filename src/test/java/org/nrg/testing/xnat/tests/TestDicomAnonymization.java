@@ -407,15 +407,8 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         performBasicScriptTest(DE_6, "privateMapReferencedUIDs.das", new PrivateMapReferencedUIDsScript(), TestData.SIMPLE_PET.toFile());
     }
 
-    /*
-      This test is rather complex, so even if DE-51 is fixed, I'm not sure this test will work. Unfortunately,
-      DE-51 is preventing me from really testing it. Another problem that may arise is whether the blackout regions
-      have value=0 in every single image. There may be some W/L considerations that make the blackout regions a solid,
-      but non-zero value region, so I would need to modify the check to use a possibly different value for each image.
-     */
     @Test
-    @AddedIn(Xnat_1_8_1.class)
-    @ExpectedFailure(jiraIssue = "DE-51")
+    @AddedIn(Xnat_1_8_9.class)
     public void testAlterPixelsOverflow() {
         performBasicScriptTest(DE_6, "alterPixelsOverflow.das", new AlterPixelsOverflowScript(), TestData.SAMPLE_1.toFile());
     }
@@ -424,6 +417,12 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     @AddedIn(Xnat_1_8_1.class)
     public void testAlterPixelsBasic() {
         performBasicScriptTest(DE_6, "alterPixelsBasic.das", new AlterPixelsBasicScript(), TestData.SAMPLE_1.toFile());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_9.class)
+    public void testAlterPixelsSimpleOverflow() {
+        performBasicScriptTest(DE_6, "alterPixelsSimpleOverflow.das", new AlterPixelsSimpleOverflowScript(), TestData.SAMPLE_1.toFile());
     }
 
     @Test

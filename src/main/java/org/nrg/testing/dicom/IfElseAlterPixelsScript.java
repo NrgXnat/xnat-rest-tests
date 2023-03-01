@@ -9,7 +9,7 @@ public class IfElseAlterPixelsScript extends GenericAlterPixelsScript {
     }
 
     @Override
-    protected boolean pixelIsWithinBlackoutRegion(int x, int y) {
+    protected boolean pixelIsWithinBlackoutRegion(int x, int y, int z) {
         if (x < 20 && x >= 10 && y < 100 && y >= 10) {
             return true;
         }
