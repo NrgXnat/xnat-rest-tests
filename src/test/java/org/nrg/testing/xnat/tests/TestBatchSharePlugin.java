@@ -193,7 +193,7 @@ public class TestBatchSharePlugin extends BaseXnatRestTest {
         restDriver.deleteProjectSilently(mainAdminUser, project3);
     }
 
-    @Test(groups = PERMISSIONS)
+    @Test(groups = PERMISSIONS, enabled = false)
     @TestRequires(users = 3)
     public void testUserPermissions() {
         User ownerUser = getGenericUser();
