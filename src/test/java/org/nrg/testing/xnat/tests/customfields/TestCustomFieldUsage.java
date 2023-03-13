@@ -3,7 +3,6 @@ package org.nrg.testing.xnat.tests.customfields;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestedApiSpec;
 import org.nrg.testing.annotations.TestedApiSpecs;
-import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.pogo.CustomFieldScope;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -13,7 +12,6 @@ import org.nrg.xnat.pogo.experiments.SessionAssessor;
 import org.nrg.xnat.pogo.experiments.assessors.QC;
 import org.nrg.xnat.pogo.experiments.scans.MRScan;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
-import org.nrg.xnat.rest.NotFoundException;
 import org.nrg.xnat.versions.Xnat_1_8_8;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -24,12 +22,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.restassured.http.Method.*;
+import static io.restassured.http.Method.DELETE;
+import static io.restassured.http.Method.GET;
+import static io.restassured.http.Method.PUT;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 @AddedIn(Xnat_1_8_8.class)
-public class TestCustomFieldUsage extends BaseXnatRestTest {
+public class TestCustomFieldUsage extends BaseCustomFieldsRestTest {
     private Project project;
     private Subject subject;
     private ImagingSession session;
@@ -531,7 +530,7 @@ public class TestCustomFieldUsage extends BaseXnatRestTest {
      *   10) Set an existing field and verify the API returns a JSON with an updated value, but other fields untouched
      *   11) Retrieve fields and verify they have been updated
      *   12) Delete a field and verify the API returns the rest of the fields
-     *   13) Attempt to delete a nonexistent field
+     *   13) Attempt to delete a nonexistent field, verify 404
      *   14) Retrieve the fields one last time to verify all is as expected
      */
     private void testFieldLifecycle(CustomFieldScope fieldScope) {
@@ -541,6 +540,7 @@ public class TestCustomFieldUsage extends BaseXnatRestTest {
         final String secondKey = "key2";
         final Integer secondVal = 1000;
         final String secondValOverwrite = "new value";
+        final String nonexistentField = "DOESNOTEXIST";
         final Map<String, Object> firstFields = Collections.singletonMap(firstKey, firstVal);
         final Map<String, Object> secondFields = Collections.singletonMap(secondKey, secondVal);
         final Map<String, Object> mergedFields = new HashMap<>(firstFields);
@@ -557,15 +557,12 @@ public class TestCustomFieldUsage extends BaseXnatRestTest {
         assertEquals(secondFields, mainInterface().readCustomFields(fieldScope, Arrays.asList(secondKey, "DNE"))); // 7)
         assertEquals(firstVal, mainInterface().readCustomField(fieldScope, firstKey)); // 8)
 
-        try {
-            mainInterface().readCustomField(fieldScope, "DNE"); // 9)
-            fail("Should have thrown 404");
-        } catch (NotFoundException expected) {}
+        verifyGetIndividual404(fieldScope, nonexistentField); // 9)
 
         assertEquals(fieldsPostOverwrite, mainInterface().setCustomFields(fieldScope, Collections.singletonMap(secondKey, secondValOverwrite))); // 10)
         assertEquals(fieldsPostOverwrite, mainInterface().readCustomFields(fieldScope)); // 11)
         assertEquals(firstFields, mainInterface().deleteCustomField(fieldScope, secondKey)); // 12)
-        assertEquals(firstFields, mainInterface().deleteCustomField(fieldScope, "DOESNOTEXIST")); // 13)
+        verifyDelete404(fieldScope, nonexistentField); // 13)
         assertEquals(firstFields, mainInterface().readCustomFields(fieldScope)); // 14)
     }
 
