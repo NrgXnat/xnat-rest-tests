@@ -1,0 +1,537 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xdat:bundle ID="@xnat:mrScanData"
+    xmlns:arc="http://nrg.wustl.edu/arc"
+    xmlns:cat="http://nrg.wustl.edu/catalog"
+    xmlns:pipe="http://nrg.wustl.edu/pipe"
+    xmlns:prov="http://www.nbirn.net/prov"
+    xmlns:scr="http://nrg.wustl.edu/scr"
+    xmlns:val="http://nrg.wustl.edu/val"
+    xmlns:wrk="http://nrg.wustl.edu/workflow"
+    xmlns:xdat="http://nrg.wustl.edu/security"
+    xmlns:xnat="http://nrg.wustl.edu/xnat"
+    xmlns:xnat_a="http://nrg.wustl.edu/xnat_assessments"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <xdat:root_element_name>xnat:mrScanData</xdat:root_element_name>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PROJECT</xdat:field_ID>
+        <xdat:sequence>0</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>project</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>SESSION_LABEL</xdat:field_ID>
+        <xdat:sequence>1</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>Session Label</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>ID</xdat:field_ID>
+        <xdat:sequence>2</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>ID</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>NOTE</xdat:field_ID>
+        <xdat:sequence>3</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>note</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>QUALITY</xdat:field_ID>
+        <xdat:sequence>4</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>quality</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>CONDITION</xdat:field_ID>
+        <xdat:sequence>5</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>condition</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>SERIES_DESCRIPTION</xdat:field_ID>
+        <xdat:sequence>6</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>series_description</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>BODYPARTEXAMINED</xdat:field_ID>
+        <xdat:sequence>7</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>bodyPartExamined</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>REQUESTEDPROCEDUREDESCRIPTION</xdat:field_ID>
+        <xdat:sequence>8</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>requestedProcedureDescription</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PROTOCOLNAME</xdat:field_ID>
+        <xdat:sequence>9</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>protocolName</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>DOCUMENTATION</xdat:field_ID>
+        <xdat:sequence>10</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>documentation</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>SCANNER</xdat:field_ID>
+        <xdat:sequence>11</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>scanner</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>SCANNER_MANUFACTURER</xdat:field_ID>
+        <xdat:sequence>12</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>manufacturer</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>SCANNER_MODEL</xdat:field_ID>
+        <xdat:sequence>13</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>model</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>MODALITY</xdat:field_ID>
+        <xdat:sequence>14</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>modality</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>FRAMES</xdat:field_ID>
+        <xdat:sequence>15</xdat:sequence>
+        <xdat:type>integer</xdat:type>
+        <xdat:header>frames</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>OPERATOR</xdat:field_ID>
+        <xdat:sequence>16</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>operator</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>STARTTIME</xdat:field_ID>
+        <xdat:sequence>17</xdat:sequence>
+        <xdat:type>time</xdat:type>
+        <xdat:header>startTime</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>TYPE</xdat:field_ID>
+        <xdat:sequence>18</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>type</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>UID</xdat:field_ID>
+        <xdat:sequence>19</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>UID</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>COIL</xdat:field_ID>
+        <xdat:sequence>20</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>coil</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>FIELDSTRENGTH</xdat:field_ID>
+        <xdat:sequence>21</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>fieldStrength</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>MARKER</xdat:field_ID>
+        <xdat:sequence>22</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>marker</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>STABILIZATION</xdat:field_ID>
+        <xdat:sequence>23</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>stabilization</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_VOXELRES_UNITS</xdat:field_ID>
+        <xdat:sequence>24</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>units</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_VOXELRES_X</xdat:field_ID>
+        <xdat:sequence>25</xdat:sequence>
+        <xdat:type>float</xdat:type>
+        <xdat:header>x</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_VOXELRES_Y</xdat:field_ID>
+        <xdat:sequence>26</xdat:sequence>
+        <xdat:type>float</xdat:type>
+        <xdat:header>y</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_VOXELRES_Z</xdat:field_ID>
+        <xdat:sequence>27</xdat:sequence>
+        <xdat:type>float</xdat:type>
+        <xdat:header>z</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_ORIENTATION</xdat:field_ID>
+        <xdat:sequence>28</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>orientation</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_FOV_X</xdat:field_ID>
+        <xdat:sequence>29</xdat:sequence>
+        <xdat:type>integer</xdat:type>
+        <xdat:header>x</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_FOV_Y</xdat:field_ID>
+        <xdat:sequence>30</xdat:sequence>
+        <xdat:type>integer</xdat:type>
+        <xdat:header>y</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_MATRIX_X</xdat:field_ID>
+        <xdat:sequence>31</xdat:sequence>
+        <xdat:type>integer</xdat:type>
+        <xdat:header>x</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_MATRIX_Y</xdat:field_ID>
+        <xdat:sequence>32</xdat:sequence>
+        <xdat:type>integer</xdat:type>
+        <xdat:header>y</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_PARTITIONS</xdat:field_ID>
+        <xdat:sequence>33</xdat:sequence>
+        <xdat:type>integer</xdat:type>
+        <xdat:header>partitions</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_TR</xdat:field_ID>
+        <xdat:sequence>34</xdat:sequence>
+        <xdat:type>float</xdat:type>
+        <xdat:header>tr</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_TE</xdat:field_ID>
+        <xdat:sequence>35</xdat:sequence>
+        <xdat:type>float</xdat:type>
+        <xdat:header>te</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_TI</xdat:field_ID>
+        <xdat:sequence>36</xdat:sequence>
+        <xdat:type>float</xdat:type>
+        <xdat:header>ti</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_FLIP</xdat:field_ID>
+        <xdat:sequence>37</xdat:sequence>
+        <xdat:type>float</xdat:type>
+        <xdat:header>flip</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_SEQUENCE</xdat:field_ID>
+        <xdat:sequence>38</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>sequence</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_ORIGIN</xdat:field_ID>
+        <xdat:sequence>39</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>origin</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_IMAGETYPE</xdat:field_ID>
+        <xdat:sequence>40</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>imageType</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_SCANSEQUENCE</xdat:field_ID>
+        <xdat:sequence>41</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>scanSequence</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_SEQVARIANT</xdat:field_ID>
+        <xdat:sequence>42</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>seqVariant</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_SCANOPTIONS</xdat:field_ID>
+        <xdat:sequence>43</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>scanOptions</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_ACQTYPE</xdat:field_ID>
+        <xdat:sequence>44</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>acqType</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_COIL</xdat:field_ID>
+        <xdat:sequence>45</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>coil</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_DTIACQCOUNT</xdat:field_ID>
+        <xdat:sequence>46</xdat:sequence>
+        <xdat:type>integer</xdat:type>
+        <xdat:header>dtiAcqCount</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_PIXELBANDWIDTH</xdat:field_ID>
+        <xdat:sequence>47</xdat:sequence>
+        <xdat:type>double</xdat:type>
+        <xdat:header>pixelBandwidth</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_DIFFUSION_BVALUES</xdat:field_ID>
+        <xdat:sequence>48</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>bValues</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_DIFFUSION_DIRECTIONALITY</xdat:field_ID>
+        <xdat:sequence>49</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>directionality</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_DIFFUSION_ORIENTATIONS</xdat:field_ID>
+        <xdat:sequence>50</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>orientations</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>PARAMETERS_DIFFUSION_ANISOTROPYTYPE</xdat:field_ID>
+        <xdat:sequence>51</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>anisotropyType</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>DCMVALIDATION</xdat:field_ID>
+        <xdat:sequence>52</xdat:sequence>
+        <xdat:type>string</xdat:type>
+        <xdat:header>dcmValidation</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>        <!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+        <xdat:element_name>xnat:mrScanData</xdat:element_name>
+        <xdat:field_ID>DCMVALIDATION_STATUS</xdat:field_ID>
+        <xdat:sequence>53</xdat:sequence>
+        <xdat:type>boolean</xdat:type>
+        <xdat:header>status</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:subjectData</xdat:element_name>
+        <xdat:field_ID>SUBJECT_LABEL</xdat:field_ID>
+        <xdat:sequence>54</xdat:sequence>
+        <xdat:header>SUBJECT_LABEL</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:subjectData</xdat:element_name>
+        <xdat:field_ID>GENDER</xdat:field_ID>
+        <xdat:sequence>55</xdat:sequence>
+        <xdat:header>GENDER</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:subjectData</xdat:element_name>
+        <xdat:field_ID>HANDEDNESS</xdat:field_ID>
+        <xdat:sequence>56</xdat:sequence>
+        <xdat:header>HANDEDNESS</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:subjectData</xdat:element_name>
+        <xdat:field_ID>DOB</xdat:field_ID>
+        <xdat:sequence>57</xdat:sequence>
+        <xdat:header>DOB</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:subjectData</xdat:element_name>
+        <xdat:field_ID>EDUC</xdat:field_ID>
+        <xdat:sequence>58</xdat:sequence>
+        <xdat:header>EDUC</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:subjectData</xdat:element_name>
+        <xdat:field_ID>SES</xdat:field_ID>
+        <xdat:sequence>59</xdat:sequence>
+        <xdat:header>SES</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:mrSessionData</xdat:element_name>
+        <xdat:field_ID>MR_NOTES</xdat:field_ID>
+        <xdat:sequence>60</xdat:sequence>
+        <xdat:header>MR_NOTES</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:mrSessionData</xdat:element_name>
+        <xdat:field_ID>LABEL</xdat:field_ID>
+        <xdat:sequence>61</xdat:sequence>
+        <xdat:header>LABEL</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:mrSessionData</xdat:element_name>
+        <xdat:field_ID>OPERATOR</xdat:field_ID>
+        <xdat:sequence>62</xdat:sequence>
+        <xdat:header>OPERATOR</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:subjectData</xdat:element_name>
+        <xdat:field_ID>COHORT</xdat:field_ID>
+        <xdat:sequence>63</xdat:sequence>
+        <xdat:header>COHORT</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:mrSessionData</xdat:element_name>
+        <xdat:field_ID>SCANNER</xdat:field_ID>
+        <xdat:sequence>64</xdat:sequence>
+        <xdat:header>SCANNER</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:mrSessionData</xdat:element_name>
+        <xdat:field_ID>MARKER</xdat:field_ID>
+        <xdat:sequence>65</xdat:sequence>
+        <xdat:header>MARKER</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:mrSessionData</xdat:element_name>
+        <xdat:field_ID>STABILIZATION</xdat:field_ID>
+        <xdat:sequence>66</xdat:sequence>
+        <xdat:header>STABILIZATION</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:qcManualAssessorData</xdat:element_name>
+        <xdat:field_ID>EXPT_ID</xdat:field_ID>
+        <xdat:sequence>67</xdat:sequence>
+        <xdat:header>EXPT_ID</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:qcManualAssessorData</xdat:element_name>
+        <xdat:field_ID>DATE</xdat:field_ID>
+        <xdat:sequence>68</xdat:sequence>
+        <xdat:header>DATE</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:qcManualAssessorData</xdat:element_name>
+        <xdat:field_ID>RATER</xdat:field_ID>
+        <xdat:sequence>69</xdat:sequence>
+        <xdat:header>RATER</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:qcManualAssessorData</xdat:element_name>
+        <xdat:field_ID>STEREOTACTICMARKER</xdat:field_ID>
+        <xdat:sequence>70</xdat:sequence>
+        <xdat:header>STEREOTACTICMARKER</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:qcManualAssessorData</xdat:element_name>
+        <xdat:field_ID>INCIDENTALFINDINGS</xdat:field_ID>
+        <xdat:sequence>71</xdat:sequence>
+        <xdat:header>INCIDENTALFINDINGS</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:qcManualAssessorData</xdat:element_name>
+        <xdat:field_ID>COMMENTS</xdat:field_ID>
+        <xdat:sequence>72</xdat:sequence>
+        <xdat:header>COMMENTS</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:qcManualAssessorData</xdat:element_name>
+        <xdat:field_ID>PASS</xdat:field_ID>
+        <xdat:sequence>73</xdat:sequence>
+        <xdat:header>PASS</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:qcManualAssessorData</xdat:element_name>
+        <xdat:field_ID>PAYABLE</xdat:field_ID>
+        <xdat:sequence>74</xdat:sequence>
+        <xdat:header>PAYABLE</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:qcManualAssessorData</xdat:element_name>
+        <xdat:field_ID>RESCAN</xdat:field_ID>
+        <xdat:sequence>75</xdat:sequence>
+        <xdat:header>RESCAN</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:qcManualAssessorData</xdat:element_name>
+        <xdat:field_ID>RESOLVABLE</xdat:field_ID>
+        <xdat:sequence>76</xdat:sequence>
+        <xdat:header>RESOLVABLE</xdat:header>
+    </xdat:search_field>
+    <xdat:search_field>
+        <xdat:element_name>xnat:qcManualAssessorData</xdat:element_name>
+        <xdat:field_ID>RETRAIN</xdat:field_ID>
+        <xdat:sequence>77</xdat:sequence>
+        <xdat:header>RETRAIN</xdat:header>
+    </xdat:search_field>
+</xdat:bundle>
