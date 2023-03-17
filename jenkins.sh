@@ -23,7 +23,7 @@ xnat.setupMrscan=true
 xnat.testBehavior.expectedFailures=ignore
 cs.swarm.canEnable=true
 cs.swarm.timeout=30
-cs.swarm.constraints=false,engine.labels.instance.spot,==,false;false,engine.labels.instance.type,==,m5.large
+cs.swarm.constraints=false,engine.labels.instance.spot,==,False;false,engine.labels.instance.type,==,m5.large
 EOF
 
 # set config per test expectations
