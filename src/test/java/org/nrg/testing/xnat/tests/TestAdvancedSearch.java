@@ -228,8 +228,8 @@ public class TestAdvancedSearch extends BaseXnatRestTest {
     }
 
     private List<Map<String, Object>> getRestCallResults(final String file) throws IOException {
-        String rawTestString = FileUtils.readFileToString(getDataFile("search/" + file), "UTF-8");
-        rawTestString.replaceAll("SITE_URL_BASE", formatXnatUrl());
+        String rawTestString = FileUtils.readFileToString(getDataFile("search/" + file), "UTF-8")
+                .replaceAll("SITE_URL_BASE/", formatXnatUrl());
 
         Map<String, String> queryParams = new HashMap<>();
         queryParams.put("format", "json");
