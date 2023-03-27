@@ -41,6 +41,7 @@ import static org.nrg.xnat.enums.DicomEditVersion.*;
 @Test(groups = ANONYMIZATION)
 public class TestDicomAnonymization extends BaseXnatRestTest {
 
+    private static final LocallyCacheableDicomTransformation ANON_DATA_WITH_EXTRA_PRIVATE_ELEMENTS = defineAnonDataWithExtraPrivateElements();
     private final Project anonProject = new Project();
     private final File anonData = TestData.ANON_2.toFile();
     private final File evleData = anonData;
@@ -377,14 +378,14 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
                 .createZip()
                 .simpleTransform(TransformFunction.generateFromScratch(() -> {
                     DicomDataSet dicomDataSet = new DicomDataSet();
-                    dicomDataSet.setTag( Tag.PatientName, "DTPrecision")
-                            .setTagArray( new int[]{Tag.ReferencedStudySequence, 0, Tag.ProductExpirationDateTime}, "1960" )
-                            .setTagArray( new int[]{Tag.ReferencedStudySequence, 1, Tag.ProductExpirationDateTime}, "196005" )
-                            .setTagArray( new int[]{Tag.ReferencedStudySequence, 2, Tag.ProductExpirationDateTime}, "19600519" )
-                            .setTagArray( new int[]{Tag.ReferencedStudySequence, 3, Tag.ProductExpirationDateTime}, "1960051913" )
-                            .setTagArray( new int[]{Tag.ReferencedStudySequence, 4, Tag.ProductExpirationDateTime}, "196005191324" )
-                            .setTagArray( new int[]{Tag.ReferencedStudySequence, 5, Tag.ProductExpirationDateTime}, "19600519132435" );
-                    return Collections.singletonList( dicomDataSet.getDataset());
+                    dicomDataSet.setTag(Tag.PatientName, "DTPrecision")
+                            .setTagArray(new int[]{Tag.ReferencedStudySequence, 0, Tag.ProductExpirationDateTime}, "1960")
+                            .setTagArray(new int[]{Tag.ReferencedStudySequence, 1, Tag.ProductExpirationDateTime}, "196005")
+                            .setTagArray(new int[]{Tag.ReferencedStudySequence, 2, Tag.ProductExpirationDateTime}, "19600519")
+                            .setTagArray(new int[]{Tag.ReferencedStudySequence, 3, Tag.ProductExpirationDateTime}, "1960051913")
+                            .setTagArray(new int[]{Tag.ReferencedStudySequence, 4, Tag.ProductExpirationDateTime}, "196005191324")
+                            .setTagArray(new int[]{Tag.ReferencedStudySequence, 5, Tag.ProductExpirationDateTime}, "19600519132435");
+                    return Collections.singletonList(dicomDataSet.getDataset());
                 }));
         dicomGenerator.build();
         File dtPrecisionData = dicomGenerator.locateOverallZip().toFile();
@@ -600,6 +601,63 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         performBasicScriptTest(DE_6, "ifElseAlterPixels.das", new IfElseAlterPixelsScript());
     }
 
+    @Test
+    @AddedIn(Xnat_1_8_8.class)
+    @ExpectedFailure(jiraIssue = "DE-92")
+    public void testLevelWildcardAsteriskAssignIfExists() {
+        performBasicScriptTest(
+                DE_6,
+                "levelWildcardAsteriskAssignIfExists.das",
+                new LevelWildcardAssignIfExistsScript(SequenceLevelWildcard.ASTERISK),
+                ANON_DATA_WITH_EXTRA_PRIVATE_ELEMENTS.build().locateOverallZip().toFile()
+        );
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_8.class)
+    @ExpectedFailure(jiraIssue = "DE-92")
+    public void testLevelWildcardDotAssignIfExists() {
+        performBasicScriptTest(
+                DE_6,
+                "levelWildcardDotAssignIfExists.das",
+                new LevelWildcardAssignIfExistsScript(SequenceLevelWildcard.DOT),
+                ANON_DATA_WITH_EXTRA_PRIVATE_ELEMENTS.build().locateOverallZip().toFile()
+        );
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_8.class)
+    @ExpectedFailure(jiraIssue = "DE-92")
+    public void testLevelWildcardPlusAssignIfExists() {
+        performBasicScriptTest(
+                DE_6,
+                "levelWildcardPlusAssignIfExists.das",
+                new LevelWildcardAssignIfExistsScript(SequenceLevelWildcard.PLUS),
+                ANON_DATA_WITH_EXTRA_PRIVATE_ELEMENTS.build().locateOverallZip().toFile()
+        );
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_8.class)
+    @ExpectedFailure(jiraIssue = "DE-91")
+    public void testDeleteLastItemInSequence() {
+        performBasicScriptTest(DE_6, "standardSequenceDeleteLastItem.das", new StandardDeleteLastItemScript());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_8.class)
+    @ExpectedFailure(jiraIssue = "DE-92")
+    public void testTagDigitWildcardAssignIfExists() {
+        performBasicScriptTest(DE_6, "tagDigitWildcardAssignIfExists.das", new TagDigitWildcardsAssignIfExistsScript());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_8.class)
+    @ExpectedFailure(jiraIssue = "DE-92")
+    public void testSequenceItemWildcardAssignIfExists() {
+        performBasicScriptTest(DE_6, "sequenceItemWildcardAssignIfExists.das", new SequenceItemWildcardAssignIfExistsScript());
+    }
+
     private void performSubjectRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
         mainAdminInterface().setSiteAnonScript(siteScript);
         mainInterface().setProjectAnonScript(anonProject, projectScript);
@@ -680,6 +738,27 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
                 scriptValidationMap.get(script).validateScriptDidntRun(dicom);
             }
         }
+    }
+
+    private static LocallyCacheableDicomTransformation defineAnonDataWithExtraPrivateElements() {
+        return new LocallyCacheableDicomTransformation("anon2_2")
+                .createZip()
+                .data(TestData.ANON_2)
+                .simpleTransform(
+                        TransformFunction.simple((dicom) -> {
+                            final String creatorId = "REST tests";
+                            final Attributes dataset = dicom.getDataset();
+                            dataset.setString(creatorId, 0x00991050, VR.LO, "ROOT VALUE");
+                            final Sequence sequence = dataset.newSequence(creatorId, 0x00991051, 1);
+                            final Attributes sequenceItem = new Attributes();
+                            sequenceItem.setString(creatorId, 0x00991050, VR.LO, "LEVEL ONE");
+                            sequence.add(sequenceItem);
+                            final Sequence nestedSequence = sequenceItem.newSequence(creatorId, 0x00991051, 1);
+                            final Attributes nestedSequenceItem = new Attributes();
+                            nestedSequenceItem.setString(creatorId, 0x00991050, VR.LO, "LEVEL TWO");
+                            nestedSequence.add(nestedSequenceItem);
+                        })
+                );
     }
 
 }
