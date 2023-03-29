@@ -36,6 +36,7 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
 
     @Test
     public void testCreateManyProjectsAsIndividualUsers() {
+        mainAdminInterface().disableSmtp();
         performanceScenario()
                 .tests(
                         new RepeatedMonitorableAction("create-many-projects-one-per-user")
