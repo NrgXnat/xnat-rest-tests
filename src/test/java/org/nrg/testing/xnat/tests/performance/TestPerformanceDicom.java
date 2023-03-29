@@ -38,7 +38,6 @@ import static org.testng.AssertJUnit.assertTrue;
 public class TestPerformanceDicom extends XnatPerformanceTests {
 
     private static final int HARD_WAIT_LIMIT = 7200;
-    private static final String UNIQUE_SUBJECT_SESSION_ROUTING = "(0020,000D):(.*)";
     private static final String AUTOARCHIVE_PROJECT_ID = "AUTOARCHIVE_TEST";
     private static final String PREARCHIVE_PROJECT_ID = "PREARC_TEST";
     private static final String MANY_SERIES_PROJECT_ID = "MANY_SERIES";
@@ -57,7 +56,12 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                         new DicomTransformation("duplicate")
                                 .prefilter(DicomFilters.ONLY_ONE_FILE)
                                 .transformationCount(totalNumInstances)
-                                .transformFunction(DicomTransforms.REMAP_UIDS)
+                                .transformFunction(
+                                        TransformFunction.composition(
+                                                DicomTransforms.REMAP_UIDS,
+                                                hardcodeRoutingForProject(AUTOARCHIVE_PROJECT_ID)
+                                        )
+                                )
                 );
 
         final Project project = new Project(AUTOARCHIVE_PROJECT_ID).prearchiveCode(PrearchiveCode.AUTO_ARCHIVE);
@@ -110,7 +114,12 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                 .transformations(
                         new DicomTransformation("duplicate")
                                 .prefilter(DicomFilters.ONLY_ONE_FILE)
-                                .transformFunction(DicomTransforms.duplicateInstance(totalNumInstances))
+                                .transformFunction(
+                                        TransformFunction.composition(
+                                                DicomTransforms.duplicateInstance(totalNumInstances),
+                                                hardcodeRoutingForProject(project.getId())
+                                        )
+                                )
                 );
         performanceScenario()
                 .setup(setupForCStoreToProject(project))
@@ -157,7 +166,8 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                                                         dicom.setString(Tag.SeriesInstanceUID, VR.UI, UIDUtils.createUID());
                                                         dicom.setInt(Tag.SeriesNumber, VR.IS, i);
                                                     }
-                                                })
+                                                }),
+                                                hardcodeRoutingForProject(project.getId())
                                         )
                                 )
                 );
@@ -187,13 +197,10 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                 ).run();
     }
 
-
     private Consumer<PerformanceStateHelper> setupForCStoreToProject(Project project) {
         return performanceStateHelper -> {
+            mainAdminInterface().disableSiteAnonScript();
             mainAdminInterface().createProject(project);
-            mainAdminInterface().setProjectDicomRoutingConfig(projectRoutingString(project.getId()));
-            mainAdminInterface().setSubjectDicomRoutingConfig(UNIQUE_SUBJECT_SESSION_ROUTING);
-            mainAdminInterface().setSessionDicomRoutingConfig(UNIQUE_SUBJECT_SESSION_ROUTING);
             mainAdminInterface().setSessionXmlRebuilderTimes(1, 5000);
         };
     }
@@ -227,12 +234,13 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
         };
     }
 
-    private static Consumer<PerformanceStateHelper> createSpecificProject(Project projectSpec) {
-        return stateHelper -> stateHelper.mainAdminInterface().createProject(projectSpec);
-    }
-
-    private static String projectRoutingString(String projectId) {
-        return "(0008,0018):(.*):1 t:.+ r:" + projectId;
+    private TransformFunction hardcodeRoutingForProject(String projectId) {
+        return TransformFunction.simple((dicom) -> {
+            final Attributes dataset = dicom.getDataset();
+            dataset.setString(Tag.StudyDescription, VR.LO, projectId);
+            dataset.setString(Tag.PatientName, VR.PN, dataset.getString(Tag.StudyInstanceUID));
+            dataset.setString(Tag.PatientID, VR.LO, dataset.getString(Tag.StudyInstanceUID));
+        });
     }
 
 }
