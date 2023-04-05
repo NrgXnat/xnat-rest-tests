@@ -603,7 +603,6 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
 
     @Test
     @AddedIn(Xnat_1_8_8.class)
-    @ExpectedFailure(jiraIssue = "DE-92")
     public void testLevelWildcardAsteriskAssignIfExists() {
         performBasicScriptTest(
                 DE_6,
@@ -615,7 +614,6 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
 
     @Test
     @AddedIn(Xnat_1_8_8.class)
-    @ExpectedFailure(jiraIssue = "DE-92")
     public void testLevelWildcardDotAssignIfExists() {
         performBasicScriptTest(
                 DE_6,
@@ -627,7 +625,6 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
 
     @Test
     @AddedIn(Xnat_1_8_8.class)
-    @ExpectedFailure(jiraIssue = "DE-92")
     public void testLevelWildcardPlusAssignIfExists() {
         performBasicScriptTest(
                 DE_6,
@@ -638,7 +635,6 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     }
 
     @Test
-    @AddedIn(Xnat_1_8_8.class)
     @ExpectedFailure(jiraIssue = "DE-91")
     public void testDeleteLastItemInSequence() {
         performBasicScriptTest(DE_6, "standardSequenceDeleteLastItem.das", new StandardDeleteLastItemScript());
@@ -646,14 +642,12 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
 
     @Test
     @AddedIn(Xnat_1_8_8.class)
-    @ExpectedFailure(jiraIssue = "DE-92")
     public void testTagDigitWildcardAssignIfExists() {
         performBasicScriptTest(DE_6, "tagDigitWildcardAssignIfExists.das", new TagDigitWildcardsAssignIfExistsScript());
     }
 
     @Test
     @AddedIn(Xnat_1_8_8.class)
-    @ExpectedFailure(jiraIssue = "DE-92")
     public void testSequenceItemWildcardAssignIfExists() {
         performBasicScriptTest(DE_6, "sequenceItemWildcardAssignIfExists.das", new SequenceItemWildcardAssignIfExistsScript());
     }
