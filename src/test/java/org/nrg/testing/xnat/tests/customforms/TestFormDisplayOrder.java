@@ -12,9 +12,8 @@ import org.nrg.xnat.interfaces.XnatInterface;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.users.User;
 import org.nrg.xnat.versions.Xnat_1_8_8;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.testng.annotations.*;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -31,17 +30,16 @@ public class TestFormDisplayOrder extends BaseCustomFormRestTest {
      Reference: https://radiologics.atlassian.net/browse/XNAT-7444
      */
 
-    @BeforeClass
+    @BeforeClass(groups = {CUSTOM_FORMS})
     private void createCustomForms() throws IOException {
         List<String> files = CustomFormConstants.SITE_FORM_TEMPLATES.subList(0, 1);
         generatedFormUUIDs.addAll(createSiteSpecificForms(mainAdminInterface(), files, 201));
     }
 
-    @AfterClass(alwaysRun = true)
-    public void deleteCustomForms() throws IOException {
+    @AfterClass(groups = {CUSTOM_FORMS}, alwaysRun = true)
+    private void deleteCustomForms() throws IOException {
         deleteForms(mainAdminInterface(), generatedFormUUIDs, 200);
     }
-
 
     @Test(groups = {CUSTOM_FORMS})
     public void testInValidValueForFormId() {
@@ -58,7 +56,6 @@ public class TestFormDisplayOrder extends BaseCustomFormRestTest {
         formsOnSite = fetchForms(mainAdminInterface);
         verifyDisplayOrder(formsOnSite, "2000");
     }
-
 
     @Test(groups = {CUSTOM_FORMS})
     public void testDisplayOrderValues() {
@@ -80,13 +77,13 @@ public class TestFormDisplayOrder extends BaseCustomFormRestTest {
 
         validOrders.stream().forEach(displayOrder ->
                 generatedFormUUIDs.forEach(fUUID -> {
-                        sendRequestToModify(mainAdminInterface, fUUID, displayOrder, 200);
-                        try {
-                            List<CustomFormPojo> formsOnSite = fetchForms(mainAdminInterface);
-                            verifyDisplayOrder(formsOnSite, displayOrder);
-                        } catch (Exception e) {
-                            throw new ProcessingException(e.getMessage());
-                        }
+                    sendRequestToModify(mainAdminInterface, fUUID, displayOrder, 200);
+                    try {
+                        List<CustomFormPojo> formsOnSite = fetchForms(mainAdminInterface);
+                        verifyDisplayOrder(formsOnSite, displayOrder);
+                    } catch (Exception e) {
+                        throw new ProcessingException(e.getMessage());
+                    }
                 })
         );
     }
@@ -115,7 +112,7 @@ public class TestFormDisplayOrder extends BaseCustomFormRestTest {
 
     @Test(groups = {CUSTOM_FORMS, PERMISSIONS})
     @TestRequires(users = 1)
-    public void testProjectOwnerCanNotSetDisplayOrderForSiteForm()  {
+    public void testProjectOwnerCanNotSetDisplayOrderForSiteForm() {
         final User projectOwnerUser = getGenericUser();
         final Project project = registerTempProject();
         project.addOwner(projectOwnerUser);
@@ -128,7 +125,7 @@ public class TestFormDisplayOrder extends BaseCustomFormRestTest {
 
     @Test(groups = {CUSTOM_FORMS, PERMISSIONS})
     @TestRequires(users = 1)
-    public void testUserCanNotSetDisplayOrderForSiteForm()  {
+    public void testUserCanNotSetDisplayOrderForSiteForm() {
         final User genericUser = getGenericUser();
         XnatInterface genericUserInterface = interfaceFor(genericUser);
         String formUUID = generatedFormUUIDs.iterator().next();
@@ -137,7 +134,7 @@ public class TestFormDisplayOrder extends BaseCustomFormRestTest {
 
     @Test(groups = {CUSTOM_FORMS, PERMISSIONS})
     @TestRequires(users = 1)
-    public void testProjectOwnerCanNotSetDisplayOrderForFormSharedBetweenProject() throws IOException {
+    public void testProjectOwnerCanNotSetDisplayOrderForFormSharedBetweenProject() {
         XnatInterface mainAdminInterface = mainAdminInterface();
         final User projectOwnerUser = getGenericUser();
         final Project project1 = registerTempProject();
@@ -155,7 +152,7 @@ public class TestFormDisplayOrder extends BaseCustomFormRestTest {
 
     @Test(groups = {CUSTOM_FORMS, PERMISSIONS})
     @TestRequires(users = 1)
-    public void testProjectOwnerCanNotSetDisplayOrderForProjectForm() throws IOException {
+    public void testProjectOwnerCanNotSetDisplayOrderForProjectForm() {
         XnatInterface mainAdminInterface = mainAdminInterface();
         final User projectOwnerUser = getGenericUser();
         final Project project = registerTempProject();
@@ -171,7 +168,7 @@ public class TestFormDisplayOrder extends BaseCustomFormRestTest {
 
     @Test(groups = {CUSTOM_FORMS, PERMISSIONS})
     @TestRequires(users = 1)
-    public void testProjectMemberCanNotSetDisplayOrderForProjectForm() throws IOException {
+    public void testProjectMemberCanNotSetDisplayOrderForProjectForm() {
         XnatInterface mainAdminInterface = mainAdminInterface();
         final User projectMemberUser = getGenericUser();
         final Project project = registerTempProject();
@@ -249,5 +246,4 @@ public class TestFormDisplayOrder extends BaseCustomFormRestTest {
     }
 
     private Set<String> generatedFormUUIDs = new HashSet<>();
-
 }
