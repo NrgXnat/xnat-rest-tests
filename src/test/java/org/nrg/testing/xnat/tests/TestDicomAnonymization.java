@@ -20,10 +20,7 @@ import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.testng.annotations.*;
 
 import java.io.File;
 import java.util.*;
@@ -42,7 +39,7 @@ import static org.nrg.xnat.enums.DicomEditVersion.*;
 public class TestDicomAnonymization extends BaseXnatRestTest {
 
     private static final LocallyCacheableDicomTransformation ANON_DATA_WITH_EXTRA_PRIVATE_ELEMENTS = defineAnonDataWithExtraPrivateElements();
-    private final Project anonProject = new Project();
+    private Project anonProject = new Project();
     private final File anonData = TestData.ANON_2.toFile();
     private final File evleData = anonData;
     private final File ivleData = TestData.DICOM_WEB_PETMR2_PT.toFile();
@@ -54,8 +51,9 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     private final Map<AnonScript, ScriptValidation> scriptValidationMap = new HashMap<>();
     boolean projectCreated = false;
 
-    @BeforeClass
+    @BeforeMethod
     private void createProject() {
+        anonProject = new Project();
         mainInterface().createProject(anonProject);
         projectCreated = true;
         mainInterface().regenerateUserSession(); // hack for XNAT-5187
@@ -69,7 +67,8 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     private void clean() {
         restDriver.clearPrearchiveSessions(mainUser, anonProject);
         if (projectCreated) {
-            mainInterface().deleteAllProjectData(anonProject);
+            mainInterface().deleteProject(anonProject);
+            projectCreated = false;
         }
     }
 
@@ -420,7 +419,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     public void testAlterPixelsOverflow() {
         performBasicScriptTest(DE_6, "alterPixelsOverflow.das", new AlterPixelsOverflowScript(), TestData.SAMPLE_1.toFile());
     }
-    
+
     @Test
     @AddedIn(Xnat_1_8_1.class)
     public void testAlterPixelsBasic() {
