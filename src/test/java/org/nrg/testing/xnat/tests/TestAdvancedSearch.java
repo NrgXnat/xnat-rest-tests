@@ -86,12 +86,14 @@ public class TestAdvancedSearch extends BaseXnatRestTest {
 
         final List<Share> shares = Collections.singletonList(new Share(mp));
 
-        final Project sharedProject = generateEntireProject(2);
+        final Project sharedProject = generateEntireProject(3);
         final Subject sharedSubject = sharedProject.getSubjects().get(0);
+        final Subject sharedSubjectOfSharedSession = sharedProject.getSubjects().get(2);
         sharedSubject.setShares(shares);
+        sharedSubjectOfSharedSession.setShares(shares);
         mainAdminInterface().createProject(sharedProject);
 
-        final MRSession sharedSession = new MRSession(sharedProject, sharedProject.getSubjects().get(1));
+        final MRSession sharedSession = new MRSession(sharedProject, sharedSubjectOfSharedSession);
         generateQC(sharedSession, 2);
         generateMrScan(sharedSession, 2);
         sharedSession.setShares(shares);
@@ -103,6 +105,7 @@ public class TestAdvancedSearch extends BaseXnatRestTest {
         final List<SessionAssessor> validQcs = validSessions.stream().flatMap(s -> s.getAssessors().stream()).collect(Collectors.toList());
 
         validSubjects.add(sharedSubject);
+        validSubjects.add(sharedSubjectOfSharedSession);
         validSessions.add(sharedSession);
 
         subjectLabels = validSubjects.stream().map(Subject::getLabel).sorted().collect(Collectors.toList());
