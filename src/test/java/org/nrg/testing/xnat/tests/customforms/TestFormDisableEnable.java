@@ -1,10 +1,12 @@
 package org.nrg.testing.xnat.tests.customforms;
 
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.customforms.pojo.CustomFormPojo;
 import org.nrg.xnat.interfaces.XnatInterface;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.users.User;
+import org.nrg.xnat.versions.Xnat_1_8_8;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -17,6 +19,7 @@ import java.util.function.Predicate;
 import static org.nrg.testing.TestGroups.CUSTOM_FORMS;
 import static org.nrg.testing.TestGroups.PERMISSIONS;
 
+@AddedIn(Xnat_1_8_8.class)
 public class TestFormDisableEnable extends BaseCustomFormRestTest {
 
     /*
