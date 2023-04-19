@@ -3,6 +3,8 @@ package org.nrg.testing.xnat.tests;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.hamcrest.Matchers;
+import org.nrg.testing.annotations.PluginRequirement;
+import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.Gender;
 import org.nrg.xnat.enums.Handedness;
@@ -23,6 +25,7 @@ import static org.nrg.testing.TestGroups.CUSTOM_VARIABLES;
 import static org.testng.AssertJUnit.assertEquals;
 
 @Test(groups = CUSTOM_VARIABLES)
+@TestRequires(specificPluginRequirements = {@PluginRequirement(pluginId = "bogus")})
 public class TestCustomVariables extends BaseXnatRestTest {
 
     private static final String FIELD_NAME = "test01";

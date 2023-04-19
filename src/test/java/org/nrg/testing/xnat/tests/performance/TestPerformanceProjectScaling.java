@@ -27,6 +27,8 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
         performanceScenario()
                 .tests(
                         new RepeatedMonitorableAction("create-projects-admin")
+                                .title("Cumulative time for admin creating projects")
+                                .actionDescription("Number of projects created")
                                 .asUser(mainAdminUser)
                                 .overallIterationCount(NUM_ADMIN_PROJECTS)
                                 .performanceTestAction(CREATE_PROJECT_ACTION)
@@ -40,6 +42,8 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
         performanceScenario()
                 .tests(
                         new RepeatedMonitorableAction("create-many-projects-one-per-user")
+                                .title("Cumulative time for unique users each creating a single project")
+                                .actionDescription("Number of projects created")
                                 .withUserProvider(new SequentialUserProvider(createGenericUsers(NUM_ACCOUNTS_CREATING_PROJECTS)))
                                 .overallIterationCount(NUM_ACCOUNTS_CREATING_PROJECTS)
                                 .performanceTestAction(CREATE_PROJECT_ACTION)
@@ -59,11 +63,15 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
         performanceScenario()
                 .tests(
                         new RepeatedMonitorableAction("create-many-public-projects")
+                                .title("Cumulative public project creation time")
+                                .actionDescription("Number of projects created")
                                 .asUser(mainUser)
                                 .overallIterationCount(NUM_PUBLIC_PROJECTS)
                                 .performanceTestAction(CREATE_PUBLIC_PROJECT_ACTION)
                                 .validateUsing(PolynomialRegressionValidator.STRICT_QUADRATIC),
                         new RepeatedMonitorableAction("make-projects-public")
+                                .title("Cumulative time to make existing projects public")
+                                .actionDescription("Number of projects modified")
                                 .asUser(mainUser)
                                 .overallIterationCount(NUM_PROJECTS_TO_MAKE_PUBLIC)
                                 .actionsPerSnapshot(1)

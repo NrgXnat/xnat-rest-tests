@@ -94,6 +94,8 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(cstoreAndAutoarchiveAction),
                         new RepeatedMonitorableAction("subject-default-stored-search-1000-subjects")
+                                .title("Repeated 1000 subject listing access")
+                                .actionDescription("Call count")
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(readSubjectListing)
                                 .actionsPerSnapshot(1)
@@ -125,19 +127,24 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                 .setup(setupForCStoreToProject(project))
                 .tests(
                         new SimpleTimedAction("cstore-large-study")
+                                .title(String.format("CSTORE of %d MR images", totalNumInstances))
                                 .withSetup(dicomTransformation)
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(cstoreDicomFromTransformation(dicomTransformation)),
                         new SimpleTimedAction("rebuild-and-archive-large-study")
+                                .title(String.format("Rebuild and archive of study containing %d MR images", totalNumInstances))
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(archiveActionForSingleSession(project)),
                         new SimpleTimedAction("anonymize-via-relabel-de4")
+                                .title(String.format("Relabel and DicomEdit4 anonymization of study containing %d MR images", totalNumInstances))
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(anonActionViaRelabel(project, DicomEditVersion.DE_4, SIMPLISTIC_ANON_SCRIPT)),
                         new SimpleTimedAction("anonymize-via-relabel-de6")
+                                .title(String.format("Relabel and DicomEdit6 anonymization of study containing %d MR images", totalNumInstances))
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(anonActionViaRelabel(project, DicomEditVersion.DE_6, SIMPLISTIC_ANON_SCRIPT)),
                         new SimpleTimedAction("anonymize-via-relabel-de6-alterPixels")
+                                .title(String.format("Relabel and DicomEdit6 pixel anonymization of study containing %d MR images", totalNumInstances))
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(anonActionViaRelabel(project, DicomEditVersion.DE_6, BASIC_PIXEL_ANON_SCRIPT))
                 ).run();
@@ -176,13 +183,16 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                 .setup(setupForCStoreToProject(project))
                 .tests(
                         new SimpleTimedAction("cstore-many-series")
+                                .title(String.format("CSTORE of %d small series to XNAT", numSeries))
                                 .withSetup(dicomTransformation)
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(cstoreDicomFromTransformation(dicomTransformation)),
                         new SimpleTimedAction("rebuild-and-archive-study-many-series")
+                                .title(String.format("Rebuild and archive of %d small series", numSeries))
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(archiveActionForSingleSession(project)),
                         new SimpleTimedAction("retrieve-html-study-many-series")
+                                .title(String.format("Retrieving session page for study containing %d series", numSeries))
                                 .asUser(mainAdminUser)
                                 .performanceTestAction((xnatInterface, actionMonitor) -> {
                                     final Subject subject = xnatInterface.readProject(project.getId(), XnatRecursionLevel.SUBJECTS_WITH_METADATA).getSubjects().get(0);
