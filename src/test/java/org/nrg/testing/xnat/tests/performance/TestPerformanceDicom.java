@@ -23,7 +23,7 @@ import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
-import org.nrg.xnat.pogo.search.CachedSearch;
+import org.nrg.xnat.pogo.search.SearchResponse;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
 import org.nrg.xnat.pogo.search.XnatSearchParams;
 import org.nrg.xnat.prearchive.*;
@@ -83,7 +83,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
         };
         final Consumer<XnatInterface> readSubjectListing = (xnatInterface) -> {
             final XnatSearchDocument defaultSubjectSearch = xnatInterface.getDefaultSearch(project, DataType.SUBJECT);
-            final CachedSearch cachedSearch = xnatInterface.cacheSearch(defaultSubjectSearch);
+            final SearchResponse cachedSearch = xnatInterface.cacheSearch(defaultSubjectSearch);
             assertTrue(xnatInterface.retrieveCachedSearchResultsAsXList(cachedSearch, new XnatSearchParams()).contains("sub_project_identifier"));
         };
         performanceScenario()
