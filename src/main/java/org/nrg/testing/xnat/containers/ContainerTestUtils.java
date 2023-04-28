@@ -23,7 +23,7 @@ public class ContainerTestUtils {
     public static void setServerBackend(BaseXnatRestTest testClassInstance, Backend backend) {
         final DockerServer dockerServer = testClassInstance.mainAdminInterface().readDockerServer();
         dockerServer.setBackend(backend);
-        if (backend != Backend.DOCKER && Settings.swarmConstraints().size() > 0) {
+        if (backend == Backend.SWARM && Settings.swarmConstraints().size() > 0) {
             dockerServer.setSwarmConstraints(Settings.swarmConstraints());
         } else {
             dockerServer.setSwarmConstraints(Collections.emptyList());
