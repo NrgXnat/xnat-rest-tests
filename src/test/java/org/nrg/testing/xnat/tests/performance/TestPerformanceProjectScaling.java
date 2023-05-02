@@ -5,9 +5,11 @@ import org.nrg.testing.xnat.performance.actions.*;
 import org.nrg.testing.xnat.performance.validator.PolynomialRegressionValidator;
 import org.nrg.xnat.enums.Accessibility;
 import org.nrg.xnat.interfaces.XnatInterface;
+import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.testng.annotations.Test;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -28,6 +30,33 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
                 .tests(
                         new RepeatedMonitorableAction("create-projects-admin")
                                 .title("Cumulative time for admin creating projects")
+                                .actionDescription("Number of projects created")
+                                .asUser(mainAdminUser)
+                                .overallIterationCount(NUM_ADMIN_PROJECTS)
+                                .performanceTestAction(CREATE_PROJECT_ACTION)
+                                .validateUsing(PolynomialRegressionValidator.STRICT_QUADRATIC)
+                ).run();
+    }
+
+    @Test
+    public void testCreateProjectsAsAdminAdditionalTypeRegistration() {
+        performanceScenario()
+                .setup(
+                        performanceStateHelper -> {
+                            final List<List<DataType>> dataTypesToEnable = Arrays.asList(
+                                    DataType.lookupAllKnownScanTypes(),
+                                    DataType.lookupSessionTypesNotAddedByDefault(),
+                                    Arrays.asList(DataType.SCID_RESEARCH, DataType.PITTSBURGH_SIDE_EFFECTS, DataType.UPDRS, DataType.YBOCS, DataType.YGTSS)
+                            );
+                            for (List<DataType> individualList : dataTypesToEnable) {
+                                for (DataType dataType : individualList) {
+                                    mainAdminInterface().setupDataType(dataType);
+                                }
+                            }
+                        }
+                ).tests(
+                        new RepeatedMonitorableAction("create-projects-admin-registered-types")
+                                .title("Cumulative time for admin creating projects, extra data types enabled")
                                 .actionDescription("Number of projects created")
                                 .asUser(mainAdminUser)
                                 .overallIterationCount(NUM_ADMIN_PROJECTS)
