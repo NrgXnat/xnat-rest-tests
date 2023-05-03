@@ -22,7 +22,7 @@ public class TestSearchGeneration extends BaseSearchTest {
 
     private static final List<String> XML_NAMESPACES_TO_RETAIN = Arrays.asList("arc", "val", "pipe", "wrk", "scr", "xdat", "cat", "prov", "xnat", "xnat_a", "xsi");
     private static final String PIPED_NAMESPACES_TO_RETAIN = String.join("|", XML_NAMESPACES_TO_RETAIN);
-    private static final String NAMESPACE_PATTERN = " (xmlns:(?!" + PIPED_NAMESPACES_TO_RETAIN + ")\\S*?=\"\\S*?\")|(xsi:schemaLocation=\".*?\") ?";
+    private static final String NAMESPACE_PATTERN = " (xmlns:(?!" + PIPED_NAMESPACES_TO_RETAIN + ")\\S+?=\"\\S+?\")|(xsi:schemaLocation=\".*?\") ?";
     private final Project commonProject = registerTempProject();
 
     @BeforeClass
