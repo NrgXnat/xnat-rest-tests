@@ -5,7 +5,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.Matchers;
-import org.junit.runners.Parameterized;
 import org.nrg.testing.annotations.PluginRequirement;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
@@ -21,17 +20,11 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Parameters;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.file.Paths;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
@@ -40,7 +33,6 @@ import java.util.zip.ZipInputStream;
 import static io.restassured.http.ContentType.JSON;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
@@ -53,6 +45,13 @@ import static org.nrg.testing.TestGroups.CONTAINERS;
 public class TestContainerLogs extends BaseXnatRestTest {
 
     public static final String LOG_SUFFIX = ".log";
+
+    public static final int SWARM_TIMEOUT_MINUTES = Settings.getIntProperty(XNATProperties.CS_SWARM_TIMEOUT, Settings.DEFAULT_TIMEOUT);
+    public static final int K8S_TIMEOUT_MINUTES = Settings.getIntProperty("cs.k8s.timeout", Settings.DEFAULT_TIMEOUT);
+    public static final int STATUS_POLL_TIME_MILLISECONDS = 1000;
+    public static final int LOG_MESSAGE_DELAY_SECONDS = 10;
+
+    private int timeout_minutes;
 
     private void deleteCommands() {
         // Clean up all commands
@@ -88,6 +87,9 @@ public class TestContainerLogs extends BaseXnatRestTest {
     private void before(Object[] backendHolder) {
         if (backendHolder != null && backendHolder.length > 0) {
             final Backend backend = (Backend) backendHolder[0];
+            timeout_minutes = backend == Backend.SWARM ? SWARM_TIMEOUT_MINUTES :
+                    backend == Backend.KUBERNETES ? K8S_TIMEOUT_MINUTES :
+                            Settings.DEFAULT_TIMEOUT;
             try {
                 log.info("Setting backend {}", backend);
                 ContainerTestUtils.setServerBackend(this, backend);
@@ -153,15 +155,15 @@ public class TestContainerLogs extends BaseXnatRestTest {
                 .getInt("workflow-id");
 
         // Wait for container to finish successfully
-        mainAdminInterface().waitForWorkflowComplete(workflowId, 20);
+        mainAdminInterface().waitForWorkflowComplete(workflowId, 60 * timeout_minutes);
 
         // Container id from workflow comments
         final Workflow workflow = mainAdminInterface().readWorkflow(workflowId);
         final String containerId = workflow.getComments();
 
         // Ensure container is finalized and it has a log file of the type we're looking for
-        await().atMost(2, TimeUnit.SECONDS)
-                .pollDelay(500, TimeUnit.MILLISECONDS)
+        await().atMost(timeout_minutes, TimeUnit.MINUTES)
+                .pollDelay(STATUS_POLL_TIME_MILLISECONDS, TimeUnit.MILLISECONDS)
                 .until(() -> mainInterface().getContainer(containerId)
                         .getLogPaths()
                         .size() == (expectSplitStdoutStderr ? 2 : 1)
@@ -224,8 +226,8 @@ public class TestContainerLogs extends BaseXnatRestTest {
         // Produce a log message, then wait, then produce another
         final String initialLogMessage = "Starting logs " + RandomStringUtils.randomAlphabetic(10);
         final String finalLogMessage = "We did it fam " + RandomStringUtils.randomAlphabetic(10);
-        final int logMessageDelaySeconds = 10;
-        final String script = "echo " + initialLogMessage + "; sleep " + logMessageDelaySeconds + "; echo " + finalLogMessage;
+
+        final String script = "echo " + initialLogMessage + "; sleep " + LOG_MESSAGE_DELAY_SECONDS + "; echo " + finalLogMessage;
 
         final String expectedInitialLogMessage = (addInitialNewline ? "\n" : "") + initialLogMessage + "\n";
         final String expectedFinalLogMessage = (addInitialNewline ? "\n" : "") + finalLogMessage + "\n";
@@ -248,8 +250,8 @@ public class TestContainerLogs extends BaseXnatRestTest {
 
         // Container id from workflow comments
         final String[] containerIdHolder = {null};
-        await().atMost(logMessageDelaySeconds, TimeUnit.SECONDS)
-                .pollDelay(500, TimeUnit.MILLISECONDS)
+        await().atMost(timeout_minutes, TimeUnit.MINUTES)
+                .pollDelay(STATUS_POLL_TIME_MILLISECONDS, TimeUnit.MILLISECONDS)
                 .until(() -> {
                     containerIdHolder[0] = mainAdminInterface().readWorkflow(workflowId).getComments();
                     return StringUtils.isNotBlank(containerIdHolder[0]);
@@ -258,8 +260,8 @@ public class TestContainerLogs extends BaseXnatRestTest {
 
         // Use the "logSince" API
         final ContainerLogPollResponse[] initialLogResponseHolder = {null};
-        await().atMost(logMessageDelaySeconds, TimeUnit.SECONDS)
-                .pollDelay(500, TimeUnit.MILLISECONDS)
+        await().atMost(timeout_minutes, TimeUnit.MINUTES)
+                .pollDelay(STATUS_POLL_TIME_MILLISECONDS, TimeUnit.MILLISECONDS)
                 .until(() -> {
                     initialLogResponseHolder[0] = mainInterface().pollContainerLog(containerId, logType);
                     return StringUtils.isNotBlank(initialLogResponseHolder[0].getContent());
@@ -274,8 +276,8 @@ public class TestContainerLogs extends BaseXnatRestTest {
 
         // Use the "logSince" API again, this time only getting logs newer than what we had before
         final ContainerLogPollResponse[] finalLogResponseHolder = {null};
-        await().atMost(3*logMessageDelaySeconds, TimeUnit.SECONDS)
-                .pollDelay(500, TimeUnit.MILLISECONDS)
+        await().atMost(timeout_minutes, TimeUnit.MINUTES)
+                .pollDelay(STATUS_POLL_TIME_MILLISECONDS, TimeUnit.MILLISECONDS)
                 .until(() -> {
                     finalLogResponseHolder[0] = mainInterface().pollContainerLog(containerId, logType, since);
                     return StringUtils.isNotBlank(finalLogResponseHolder[0].getContent());
@@ -314,7 +316,7 @@ public class TestContainerLogs extends BaseXnatRestTest {
                 .getInt("workflow-id");
 
         // Wait for container to finish successfully
-        mainAdminInterface().waitForWorkflowComplete(workflowId);
+        mainAdminInterface().waitForWorkflowComplete(workflowId, 60 * timeout_minutes);
 
         // Container id from workflow comments
         final Workflow workflow = mainAdminInterface().readWorkflow(workflowId);
