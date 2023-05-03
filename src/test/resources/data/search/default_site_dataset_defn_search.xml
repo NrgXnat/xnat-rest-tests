@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xdat:bundle ID="@sets:definition" xmlns:arc="http://nrg.wustl.edu/arc" xmlns:val="http://nrg.wustl.edu/val" xmlns:pipe="http://nrg.wustl.edu/pipe" xmlns:wrk="http://nrg.wustl.edu/workflow" xmlns:scr="http://nrg.wustl.edu/scr" xmlns:xdat="http://nrg.wustl.edu/security" xmlns:cat="http://nrg.wustl.edu/catalog" xmlns:prov="http://www.nbirn.net/prov" xmlns:xnat="http://nrg.wustl.edu/xnat" xmlns:xnat_a="http://nrg.wustl.edu/xnat_assessments" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
+<xdat:root_element_name>sets:definition</xdat:root_element_name>
+<xdat:search_field>
+<!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+<xdat:element_name>sets:definition</xdat:element_name>
+<xdat:field_ID>RPT</xdat:field_ID>
+<xdat:sequence>0</xdat:sequence>
+<xdat:type>UNKNOWN</xdat:type>
+<xdat:header>ID</xdat:header>
+</xdat:search_field>
+<xdat:search_field>
+<!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+<xdat:element_name>sets:definition</xdat:element_name>
+<xdat:field_ID>LABEL</xdat:field_ID>
+<xdat:sequence>1</xdat:sequence>
+<xdat:type>string</xdat:type>
+<xdat:header>Label</xdat:header>
+</xdat:search_field>
+<xdat:search_field>
+<!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+<xdat:element_name>sets:definition</xdat:element_name>
+<xdat:field_ID>DATE</xdat:field_ID>
+<xdat:sequence>2</xdat:sequence>
+<xdat:type>date</xdat:type>
+<xdat:header>Date</xdat:header>
+</xdat:search_field>
+<xdat:search_field>
+<!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+<xdat:element_name>sets:definition</xdat:element_name>
+<xdat:field_ID>DESCRIPTION</xdat:field_ID>
+<xdat:sequence>3</xdat:sequence>
+<xdat:type>string</xdat:type>
+<xdat:header>description</xdat:header>
+</xdat:search_field>
+</xdat:bundle>

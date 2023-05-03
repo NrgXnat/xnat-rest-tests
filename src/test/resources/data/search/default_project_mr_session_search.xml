@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xdat:bundle ID="%PROJECT_ID%_xnat:mrSessionData" allow-diff-columns="0" secure="0" brief-description="MR Sessions" tag="%PROJECT_ID%" xmlns:arc="http://nrg.wustl.edu/arc" xmlns:val="http://nrg.wustl.edu/val" xmlns:pipe="http://nrg.wustl.edu/pipe" xmlns:wrk="http://nrg.wustl.edu/workflow" xmlns:scr="http://nrg.wustl.edu/scr" xmlns:xdat="http://nrg.wustl.edu/security" xmlns:cat="http://nrg.wustl.edu/catalog" xmlns:prov="http://www.nbirn.net/prov" xmlns:xnat="http://nrg.wustl.edu/xnat" xmlns:xnat_a="http://nrg.wustl.edu/xnat_assessments" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
+<xdat:root_element_name>xnat:mrSessionData</xdat:root_element_name>
+<xdat:search_field>
+<!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+<xdat:element_name>xnat:mrSessionData</xdat:element_name>
+<xdat:field_ID>MR_PROJECT_IDENTIFIER=%PROJECT_ID%</xdat:field_ID>
+<xdat:sequence>0</xdat:sequence>
+<xdat:type>string</xdat:type>
+<xdat:header>MR ID</xdat:header>
+<xdat:value>%PROJECT_ID%</xdat:value>
+</xdat:search_field>
+<xdat:search_field>
+<!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+<xdat:element_name>xnat:mrSessionData</xdat:element_name>
+<xdat:field_ID>DATE</xdat:field_ID>
+<xdat:sequence>1</xdat:sequence>
+<xdat:type>date</xdat:type>
+<xdat:header>Date</xdat:header>
+</xdat:search_field>
+<xdat:search_field>
+<!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+<xdat:element_name>xnat:subjectData</xdat:element_name>
+<xdat:field_ID>SUB_PROJECT_IDENTIFIER=%PROJECT_ID%</xdat:field_ID>
+<xdat:sequence>2</xdat:sequence>
+<xdat:type>string</xdat:type>
+<xdat:header>Subject</xdat:header>
+<xdat:value>%PROJECT_ID%</xdat:value>
+</xdat:search_field>
+<xdat:search_field>
+<!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+<xdat:element_name>xnat:mrSessionData</xdat:element_name>
+<xdat:field_ID>AGE</xdat:field_ID>
+<xdat:sequence>3</xdat:sequence>
+<xdat:type>float</xdat:type>
+<xdat:header>Age</xdat:header>
+</xdat:search_field>
+<xdat:search_field>
+<!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+<xdat:element_name>xnat:mrSessionData</xdat:element_name>
+<xdat:field_ID>SCANNER</xdat:field_ID>
+<xdat:sequence>4</xdat:sequence>
+<xdat:type>string</xdat:type>
+<xdat:header>Scanner</xdat:header>
+</xdat:search_field>
+<xdat:search_field>
+<!--hidden_fields[xdat_search_field_id="null",xdat_stored_search_id="null"]-->
+<xdat:element_name>xnat:mrSessionData</xdat:element_name>
+<xdat:field_ID>MR_SCAN_COUNT_AGG</xdat:field_ID>
+<xdat:sequence>5</xdat:sequence>
+<xdat:type>string</xdat:type>
+<xdat:header>Scans</xdat:header>
+</xdat:search_field>
+<xdat:search_where method="AND">
+<!--hidden_fields[xdat_criteria_set_id="null",xdat_stored_search_id="null"]-->
+<xdat:child_set method="OR">
+<!--hidden_fields[xdat_criteria_set_id="null",xdat_stored_search_id="null"]-->
+<xdat:criteria override_value_formatting="0">
+<!--hidden_fields[xdat_criteria_id="null",xdat_criteria_set_xdat_criteria_set_id="null"]-->
+<xdat:schema_field>xnat:mrSessionData/sharing/share/project</xdat:schema_field>
+<xdat:comparison_type>=</xdat:comparison_type>
+<xdat:value>%PROJECT_ID%</xdat:value>
+</xdat:criteria>
+<xdat:criteria override_value_formatting="0">
+<!--hidden_fields[xdat_criteria_id="null",xdat_criteria_set_xdat_criteria_set_id="null"]-->
+<xdat:schema_field>xnat:mrSessionData/PROJECT</xdat:schema_field>
+<xdat:comparison_type>=</xdat:comparison_type>
+<xdat:value>%PROJECT_ID%</xdat:value>
+</xdat:criteria>
+</xdat:child_set>
+</xdat:search_where>
+</xdat:bundle>

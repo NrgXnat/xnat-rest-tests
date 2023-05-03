@@ -1,7 +1,6 @@
-package org.nrg.testing.xnat.tests;
+package org.nrg.testing.xnat.tests.search;
 
 import org.nrg.testing.FileIOUtils;
-import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -20,15 +19,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.nrg.testing.TestGroups.PERMISSIONS;
-import static org.nrg.testing.TestGroups.SEARCH;
 import static org.nrg.xnat.pogo.DataType.MR_SESSION;
 import static org.testng.AssertJUnit.assertEquals;
 
-public class TestSearch extends BaseXnatRestTest {
+public class TestSearch extends BaseSearchTest {
 
-    private final File originalResourceFile = getDataFile("search/mrSearchXML.xml");
+    private final File originalResourceFile = searchFile("mrSearchXML.xml");
 
-    @Test(groups = {SEARCH, PERMISSIONS})
+    @Test(groups = {PERMISSIONS})
     public void testElements() {
         final List<SearchElement> searchElements = mainAdminInterface().readSearchElements();
         // These can be changed by a site administrator, but these are the default values.
@@ -48,7 +46,7 @@ public class TestSearch extends BaseXnatRestTest {
         assertEquals("xnat:investigatorData", unsecuredElements.get(0).getElementName());
     }
 
-    @Test(groups = {SEARCH})
+    @Test
     public void testBasicSearch() {
         final Project project = registerTempProject();
         final Subject subject = new Subject(project);
