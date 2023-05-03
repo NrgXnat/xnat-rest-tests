@@ -21,7 +21,8 @@ import static org.testng.AssertJUnit.assertEquals;
 public class TestSearchGeneration extends BaseSearchTest {
 
     private static final List<String> XML_NAMESPACES_TO_RETAIN = Arrays.asList("arc", "val", "pipe", "wrk", "scr", "xdat", "cat", "prov", "xnat", "xnat_a", "xsi");
-    private static final String NAMESPACE_PATTERN = String.format(" (xmlns:(?!%s).*?=\".*?\")|(xsi:schemaLocation=\".*?\") ?", String.join("|", XML_NAMESPACES_TO_RETAIN));
+    private static final String PIPED_NAMESPACES_TO_RETAIN = String.join("|", XML_NAMESPACES_TO_RETAIN);
+    private static final String NAMESPACE_PATTERN = " (xmlns:(?!" + PIPED_NAMESPACES_TO_RETAIN + ")\\S*?=\"\\S*?\")|(xsi:schemaLocation=\".*?\") ?";
     private final Project commonProject = registerTempProject();
 
     @BeforeClass
@@ -89,7 +90,6 @@ public class TestSearchGeneration extends BaseSearchTest {
     @Test
     @TestRequires(plugins = "datasetsPlugin") // no concrete implementation of project assessors currently exist in core XNAT
     public void testSearchXmlGenerationDatasetDefinition() {
-        // sets:definition
         final DataType datasetDefinition = new DataType().xsiType("sets:definition");
 
         assertXmlFromFile(
