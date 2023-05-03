@@ -10,10 +10,12 @@ import org.nrg.xnat.pogo.Project;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class TestPerformanceProjectScaling extends XnatPerformanceTests {
 
@@ -43,16 +45,12 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
         performanceScenario()
                 .setup(
                         performanceStateHelper -> {
-                            final List<List<DataType>> dataTypesToEnable = Arrays.asList(
-                                    DataType.lookupAllKnownScanTypes(),
-                                    DataType.lookupSessionTypesNotAddedByDefault(),
-                                    Arrays.asList(DataType.SCID_RESEARCH, DataType.PITTSBURGH_SIDE_EFFECTS, DataType.UPDRS, DataType.YBOCS, DataType.YGTSS)
-                            );
-                            for (List<DataType> individualList : dataTypesToEnable) {
-                                for (DataType dataType : individualList) {
-                                    mainAdminInterface().setupDataType(dataType);
-                                }
-                            }
+                            Stream.of(
+                                            DataType.lookupAllKnownScanTypes(),
+                                            DataType.lookupSessionTypesNotAddedByDefault(),
+                                            Arrays.asList(DataType.SCID_RESEARCH, DataType.PITTSBURGH_SIDE_EFFECTS, DataType.UPDRS, DataType.YBOCS, DataType.YGTSS)
+                                    ).flatMap(Collection::stream)
+                                    .forEach(mainAdminInterface()::setupDataType);
                         }
                 ).tests(
                         new RepeatedMonitorableAction("create-projects-admin-registered-types")
