@@ -12,17 +12,11 @@ import org.nrg.xnat.versions.Xnat_1_8_5;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.util.Arrays;
-import java.util.List;
-
 import static org.nrg.xnat.pogo.DataType.*;
 import static org.testng.AssertJUnit.assertEquals;
 
 public class TestSearchGeneration extends BaseSearchTest {
 
-    private static final List<String> XML_NAMESPACES_TO_RETAIN = Arrays.asList("arc", "val", "pipe", "wrk", "scr", "xdat", "cat", "prov", "xnat", "xnat_a", "xsi");
-    private static final String PIPED_NAMESPACES_TO_RETAIN = String.join("|", XML_NAMESPACES_TO_RETAIN);
-    private static final String NAMESPACE_PATTERN = " (xmlns:(?!" + PIPED_NAMESPACES_TO_RETAIN + ")\\S+?=\"\\S+?\")|(xsi:schemaLocation=\".*?\") ?";
     private final Project commonProject = registerTempProject();
 
     @BeforeClass
@@ -100,13 +94,8 @@ public class TestSearchGeneration extends BaseSearchTest {
         assertXmlFromFile("default_site_dataset_defn_search.xml", mainInterface().getDefaultSearch(datasetDefinition));
     }
 
-    private void genericizeXnatXml(XnatSearchDocument searchDocument) {
-        searchDocument.searchXml(searchDocument.getSearchXml().replaceAll(NAMESPACE_PATTERN, ""));
-    }
-
     private void genericizeXmlAndAssertEqual(String expectedXml, XnatSearchDocument searchXml) {
-        genericizeXnatXml(searchXml);
-        assertEquals(expectedXml, searchXml.getSearchXml());
+        assertEquals(expectedXml, searchXml.genericizedXml());
     }
 
     private void assertXmlFromFile(String expectedXmlFileName, XnatSearchDocument searchXml) {
