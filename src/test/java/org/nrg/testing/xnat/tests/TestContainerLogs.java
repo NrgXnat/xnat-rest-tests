@@ -40,8 +40,11 @@ import static org.hamcrest.Matchers.not;
 import static org.nrg.testing.TestGroups.CONTAINERS;
 
 @Slf4j
-@TestRequires(plugins = "containers")
 @Test(groups = CONTAINERS, dataProvider = "backend")
+@TestRequires(specificPluginRequirements = {
+        // Added tests around CS 3.3.2, had issues running on older versions
+        @PluginRequirement(pluginId = "containers", minimumSupportedVersion = "3.0")
+})
 public class TestContainerLogs extends BaseXnatRestTest {
 
     public static final String LOG_SUFFIX = ".log";
@@ -67,8 +70,8 @@ public class TestContainerLogs extends BaseXnatRestTest {
                 "\"name\": \"" + commandAndWrapperName + "\", " +
                 "\"command-line\": \"/bin/sh -c '" + script + "'\", " +
                 "\"xnat\": [{" +
-                    "\"name\": \"" + commandAndWrapperName + "\", " +
-                    "\"contexts\": [\"" + rootElement + "\"]" +
+                "\"name\": \"" + commandAndWrapperName + "\", " +
+                "\"contexts\": [\"" + rootElement + "\"]" +
                 "}]" +
                 "}";
         // Create command
@@ -331,3 +334,4 @@ public class TestContainerLogs extends BaseXnatRestTest {
         assertThat(logResponse.getContent(), is(emptyOrNullString()));
     }
 }
+
