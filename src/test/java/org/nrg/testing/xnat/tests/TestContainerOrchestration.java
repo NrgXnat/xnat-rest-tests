@@ -4,10 +4,12 @@ import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.containers.ContainerTestUtils;
 import org.nrg.xnat.enums.Gender;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
+import org.nrg.xnat.pogo.containers.Backend;
 import org.nrg.xnat.pogo.containers.CommandSummaryForContext;
 import org.nrg.xnat.pogo.containers.Image;
 import org.nrg.xnat.pogo.containers.Orchestration;
@@ -17,6 +19,7 @@ import org.nrg.xnat.pogo.experiments.SubjectAssessor;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.versions.Xnat_1_8_2;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -42,6 +45,11 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
     private Subject subject;
     private ImagingSession session;
     private List<CommandSummaryForContext> wrapperSummaries;
+
+    @BeforeClass
+    private void setup() {
+        ContainerTestUtils.setServerBackend(this, Backend.DOCKER);
+    }
 
     @BeforeMethod
     private void setupTest() {
