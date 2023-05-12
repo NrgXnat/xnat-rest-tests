@@ -52,6 +52,12 @@ public class TestDicomModalityAssignment extends BaseXnatRestTest {
     private static final DataType XA_SESSION = new DataType().xsiType("xnat:xaSessionData");
 
     @BeforeClass
+    private void setup() {
+        mainAdminInterface().setupDataType(OTHER_SESSION);
+        mainAdminInterface().setupDataType(XA_SESSION);
+    }
+
+    @BeforeClass
     private void initTestProject() {
         mainInterface().createProject(testProject);
     }

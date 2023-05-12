@@ -7,6 +7,7 @@ import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
@@ -54,9 +55,10 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
     private final MRSession diffusionMR = new MRSession(testProject, testSubject);
     private final CTSession standardCTSession = new CTSession(testProject, testSubject);
     private final ImagingSession optSession = new ImagingSession(testProject, testSubject);
-
+    
     @BeforeClass
     private void disableAnonAndSetupProject() {
+        mainAdminInterface().setupDataType(DataType.OPT_SESSION);
         mainAdminInterface().disableSiteAnonScript();
         new SessionImportExtension(standardMRSession, TestData.EXTRACTION_MR.toFile());
         new SessionImportExtension(diffusionMR, TestData.EXTRACTION_DIFFUSION.toFile());
