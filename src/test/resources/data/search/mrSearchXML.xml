@@ -69,7 +69,7 @@
             <xdat:criteria override_value_formatting="0">
                 <xdat:schema_field>xnat:mrSessionData.PROJECTS</xdat:schema_field>
                 <xdat:comparison_type> LIKE </xdat:comparison_type>
-                <xdat:value>%&lt;PROJECT_NAME_FIELD&gt;%</xdat:value>
+                <xdat:value>%&lt;%PROJECT_ID%&gt;%</xdat:value>
             </xdat:criteria>
         </xdat:child_set>
     </xdat:search_where>

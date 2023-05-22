@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>test_dependencies</artifactId>
-        <version>3.2-SNAPSHOT</version>
+        <version>3.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>xnat_rest_tests</artifactId>
@@ -42,7 +42,7 @@
     </scm>
 
     <properties>
-        <nrg_test.version>2.5-SNAPSHOT</nrg_test.version>
+        <nrg_test.version>2.6-SNAPSHOT</nrg_test.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>

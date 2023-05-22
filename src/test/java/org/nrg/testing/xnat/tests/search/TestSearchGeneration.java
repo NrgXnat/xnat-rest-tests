@@ -3,12 +3,14 @@ package org.nrg.testing.xnat.tests.search;
 import org.nrg.testing.FileIOUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
+import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
 import org.nrg.xnat.versions.Xnat_1_8_5;
+import org.nrg.xnat.versions.Xnat_1_8_8;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -94,21 +96,27 @@ public class TestSearchGeneration extends BaseSearchTest {
         assertXmlFromFile("default_site_dataset_defn_search.xml", mainInterface().getDefaultSearch(datasetDefinition));
     }
 
-    private void genericizeXmlAndAssertEqual(String expectedXml, XnatSearchDocument searchXml) {
-        assertEquals(expectedXml, searchXml.genericizedXml());
-    }
-
-    private void assertXmlFromFile(String expectedXmlFileName, XnatSearchDocument searchXml) {
-        genericizeXmlAndAssertEqual(
-                FileIOUtils.readFile(searchFile(expectedXmlFileName)),
+    // coercing back to string is not absolutely necessary, but it shows the actual reason
+    // for the failure if one occurs
+    private void assertXmlFromFile(String expectedXmlFileName, XnatSearchDocument searchXml, Project project) {
+        final TemplateReplacements replacements = new TemplateReplacements();
+        assertXml(
+                readXmlFromFile(expectedXmlFileName, project != null ? replacements.project(project) : replacements),
                 searchXml
         );
     }
 
-    private void assertXmlFromFile(String expectedXmlFileName, XnatSearchDocument searchXml, Project project) {
-        genericizeXmlAndAssertEqual(
-                FileIOUtils.readFile(searchFile(expectedXmlFileName)).replace("%PROJECT_ID%", project.getId()),
-                searchXml
+    private void assertXmlFromFile(String expectedXmlFileName, XnatSearchDocument searchXml) {
+        assertXmlFromFile(expectedXmlFileName, searchXml, null);
+    }
+
+    private void assertXml(XnatSearchDocument expectedDocument, XnatSearchDocument searchXml) {
+        if (XnatTestingVersionManager.testedVersionFollows(Xnat_1_8_8.class)) {
+            expectedDocument.correctSchemaFields();
+        }
+        assertEquals(
+                expectedDocument.asString(),
+                searchXml.asString()
         );
     }
 

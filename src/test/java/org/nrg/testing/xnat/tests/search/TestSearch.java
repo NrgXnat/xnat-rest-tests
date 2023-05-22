@@ -1,7 +1,5 @@
 package org.nrg.testing.xnat.tests.search;
 
-import org.nrg.testing.FileIOUtils;
-import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
@@ -13,7 +11,6 @@ import org.nrg.xnat.pogo.search.XnatSearchDocument;
 import org.nrg.xnat.pogo.search.XnatSearchParams;
 import org.testng.annotations.Test;
 
-import java.io.File;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,7 +21,7 @@ import static org.testng.AssertJUnit.assertEquals;
 
 public class TestSearch extends BaseSearchTest {
 
-    private final File originalResourceFile = searchFile("mrSearchXML.xml");
+    private static final String originalResourceFile = "mrSearchXML.xml";
 
     @Test(groups = {PERMISSIONS})
     public void testElements() {
@@ -54,11 +51,7 @@ public class TestSearch extends BaseSearchTest {
         final ImagingSession session2 = new MRSession(project, subject).date(LocalDate.parse("2015-05-03"));
         mainInterface().createProject(project);
 
-        final XnatSearchDocument searchBody = new XnatSearchDocument(
-                FileIOUtils.readFile(originalResourceFile)
-                        .replace("PROJECT_NAME_FIELD", project.getId())
-                        .replace("SITE_URL_BASE", Settings.BASEURL)
-        );
+        final XnatSearchDocument searchBody = readXmlFromFile(originalResourceFile, new TemplateReplacements().project(project));
 
         final SearchResponse cachedSearch = mainAdminInterface().cacheSearch(searchBody);
         final XnatSearchParams sortingParams = new XnatSearchParams().sortBy("date").sortOrder(XnatSearchParams.SortOrder.ASC);
