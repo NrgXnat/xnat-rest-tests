@@ -14,6 +14,7 @@ import org.nrg.testing.xnat.containers.ContainerTestUtils;
 import org.nrg.xnat.pogo.Workflow;
 import org.nrg.xnat.pogo.containers.Backend;
 import org.nrg.xnat.pogo.containers.ContainerLogPollResponse;
+import org.nrg.xnat.pogo.containers.ContainerLogPollResponsePre322;
 import org.nrg.xnat.subinterfaces.ContainerServiceSubinterface;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
@@ -210,18 +211,6 @@ public class TestContainerLogs extends BaseXnatRestTest {
             @PluginRequirement(pluginId = "containers", minimumSupportedVersion = "3.3.2")
     })
     public void testLogsFromLiveContainer(final Backend ignored) {
-        runTestLogsFromLiveContainer(false);
-    }
-
-    // CS versions prior to 3.3.2 added an extra newline at the beginning of the log messages when polling
-    @TestRequires(specificPluginRequirements = {
-            @PluginRequirement(pluginId = "containers", maximumSupportedVersion = "3.3.2")
-    })
-    public void testLogsFromLiveContainer_pre332(final Backend ignored) {
-        runTestLogsFromLiveContainer(true);
-    }
-
-    private void runTestLogsFromLiveContainer(final boolean addInitialNewline) {
         final ContainerServiceSubinterface.ContainerLog logType = ContainerServiceSubinterface.ContainerLog.STDOUT;
         final String name = RandomStringUtils.randomAlphabetic(5);
         final String rootElement = "site";
@@ -232,8 +221,8 @@ public class TestContainerLogs extends BaseXnatRestTest {
 
         final String script = "echo " + initialLogMessage + "; sleep " + LOG_MESSAGE_DELAY_SECONDS + "; echo " + finalLogMessage;
 
-        final String expectedInitialLogMessage = (addInitialNewline ? "\n" : "") + initialLogMessage + "\n";
-        final String expectedFinalLogMessage = (addInitialNewline ? "\n" : "") + finalLogMessage + "\n";
+        final String expectedInitialLogMessage = initialLogMessage + "\n";
+        final String expectedFinalLogMessage = finalLogMessage + "\n";
 
         // Create command
         final String launchUri = createCommandWhichRunsScriptAndReturnLaunchUri(name, rootElement, script);
@@ -272,7 +261,7 @@ public class TestContainerLogs extends BaseXnatRestTest {
         final ContainerLogPollResponse initialLogResponse = initialLogResponseHolder[0];
 
         // Assert
-        final long since = initialLogResponse.getTimestamp();
+        final String since = initialLogResponse.getTimestamp();
         assertThat(initialLogResponse.getFromFile(), is(false));
         assertThat(since, is(not(ContainerLogPollResponse.LOG_COMPLETE_TIMESTAMP)));
         assertThat(initialLogResponse.getContent(), is(expectedInitialLogMessage));
@@ -286,6 +275,80 @@ public class TestContainerLogs extends BaseXnatRestTest {
                     return StringUtils.isNotBlank(finalLogResponseHolder[0].getContent());
                 });
         final ContainerLogPollResponse finalLogResponse = finalLogResponseHolder[0];
+
+        // Assert
+        assertThat(finalLogResponse.getContent(), is(expectedFinalLogMessage));
+    }
+
+    // CS versions prior to 3.3.2 added an extra newline at the beginning of the log messages when polling
+    @TestRequires(specificPluginRequirements = {
+            @PluginRequirement(pluginId = "containers", maximumSupportedVersion = "3.3.2")
+    })
+    public void testLogsFromLiveContainer_pre332(final Backend ignored) {
+        final ContainerServiceSubinterface.ContainerLog logType = ContainerServiceSubinterface.ContainerLog.STDOUT;
+        final String name = RandomStringUtils.randomAlphabetic(5);
+        final String rootElement = "site";
+
+        // Produce a log message, then wait, then produce another
+        final String initialLogMessage = "Starting logs " + RandomStringUtils.randomAlphabetic(10);
+        final String finalLogMessage = "We did it fam " + RandomStringUtils.randomAlphabetic(10);
+
+        final String script = "echo " + initialLogMessage + "; sleep " + LOG_MESSAGE_DELAY_SECONDS + "; echo " + finalLogMessage;
+
+        final String expectedInitialLogMessage = "\n"+ initialLogMessage + "\n";
+        final String expectedFinalLogMessage = "\n" + finalLogMessage + "\n";
+
+        // Create command
+        final String launchUri = createCommandWhichRunsScriptAndReturnLaunchUri(name, rootElement, script);
+
+        // Launch container
+        final int workflowId = mainQueryBase()
+                .contentType(JSON)
+                .body("{\"" + rootElement + "\": \"" + rootElement + "\"}")  // BS non-useful param
+                .post(launchUri)
+                .then()
+                .assertThat()
+                .statusCode(200)
+                .body("status", Matchers.equalTo("success"))
+                .extract()
+                .jsonPath()
+                .getInt("workflow-id");
+
+        // Container id from workflow comments
+        final String[] containerIdHolder = {null};
+        await().atMost(timeout_minutes, TimeUnit.MINUTES)
+                .pollDelay(STATUS_POLL_TIME_MILLISECONDS, TimeUnit.MILLISECONDS)
+                .until(() -> {
+                    containerIdHolder[0] = mainAdminInterface().readWorkflow(workflowId).getComments();
+                    return StringUtils.isNotBlank(containerIdHolder[0]);
+                });
+        final String containerId = containerIdHolder[0];
+
+        // Use the "logSince" API
+        final ContainerLogPollResponsePre322[] initialLogResponseHolder = {null};
+        await().atMost(timeout_minutes, TimeUnit.MINUTES)
+                .pollDelay(STATUS_POLL_TIME_MILLISECONDS, TimeUnit.MILLISECONDS)
+                .until(() -> {
+                    initialLogResponseHolder[0] = mainInterface().pollContainerLogPre322(containerId, logType);
+                    return StringUtils.isNotBlank(initialLogResponseHolder[0].getContent());
+                });
+        final ContainerLogPollResponsePre322 initialLogResponse = initialLogResponseHolder[0];
+
+        // Assert
+        final long since = initialLogResponse.getTimestamp();
+        assertThat(initialLogResponse.getFromFile(), is(false));
+        assertThat(since, is(not(ContainerLogPollResponse.LOG_COMPLETE_TIMESTAMP)));
+        assertThat(initialLogResponse.getContent(), is(expectedInitialLogMessage));
+
+        // Use the "logSince" API again, this time only getting logs newer than what we had before
+        final ContainerLogPollResponsePre322[] finalLogResponseHolder = {null};
+        await().atMost(timeout_minutes, TimeUnit.MINUTES)
+                .pollDelay(STATUS_POLL_TIME_MILLISECONDS, TimeUnit.MILLISECONDS)
+                .until(() -> {
+                    finalLogResponseHolder[0] = mainInterface().pollContainerLogPre322(containerId, logType, since);
+                    return StringUtils.isNotBlank(finalLogResponseHolder[0].getContent());
+                });
+        final ContainerLogPollResponsePre322 finalLogResponse = finalLogResponseHolder[0];
 
         // Assert
         assertThat(finalLogResponse.getContent(), is(expectedFinalLogMessage));
