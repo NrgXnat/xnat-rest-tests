@@ -1,12 +1,10 @@
 package org.nrg.testing.xnat.tests.search;
 
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.testing.TestGroups;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.xnat.pogo.DataType;
-import org.nrg.xnat.pogo.experiments.sessions.MRSession;
+import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.search.ComparisonType;
-import org.nrg.xnat.pogo.search.SearchColumn;
 import org.nrg.xnat.pogo.search.SearchFieldTypes;
 import org.nrg.xnat.pogo.search.XdatCriteria;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
@@ -14,24 +12,21 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.util.Collections;
+import java.util.Arrays;
 
 public class TestSearchFilterFloats extends BaseSearchFilterTest {
 
-    private final SearchColumn weightSearchColumn = buildExpectedSearchColumn(WEIGHT_COLUMN_NAME, SearchFieldTypes.FLOAT, DataType.MR_SESSION, WEIGHT_DISPLAY_NAME);
     private final XnatSearchDocument weightSearchDocument = readXmlFromFile("default_project_mr_session_search.xml", new TemplateReplacements().project(testProject))
             .addSearchField(DataType.MR_SESSION, MR_WEIGHT_SCHEMA_PATH, SearchFieldTypes.FLOAT, WEIGHT_DISPLAY_NAME);
-    final SearchValidator<MRSession> sessionSearchValidator = new SearchValidator<>(
+    private final SearchValidator<ImagingSession> sessionSearchValidator = new SearchValidator<>(
             weightSearchColumn,
             weightSearchDocument,
-            (session, row) -> mrMatchesLabel.apply(session, row)
-                    && StringUtils.equals(session.getSpecificFields().get(MR_WEIGHT_SCHEMA_PATH), row.get(WEIGHT_COLUMN_NAME))
+            and(Arrays.asList(mrMatchesLabel, mrMatchesWeight))
     );
     private final XdatCriteria weightSearchCriteria = new XdatCriteria().schemaField(MR_WEIGHT_SCHEMA_PATH);
 
     @BeforeClass(groups = TestGroups.SEARCH)
     private void initCriteria() {
-        mrSession150Pounds.setSpecificFields(Collections.singletonMap(MR_WEIGHT_SCHEMA_PATH, "150.0")); // we want to set it up as 150 in initial setup, but it should behave as a float when filtering/retrieving
         weightSearchDocument.addSearchCriterion(weightSearchCriteria);
     }
 

@@ -1,12 +1,11 @@
 package org.nrg.testing.xnat.tests.search;
 
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.testing.TestGroups;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.xnat.pogo.DataType;
+import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.search.ComparisonType;
-import org.nrg.xnat.pogo.search.SearchColumn;
 import org.nrg.xnat.pogo.search.SearchFieldTypes;
 import org.nrg.xnat.pogo.search.XdatCriteria;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
@@ -14,50 +13,32 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.util.Arrays;
+
 /**
  * "integer" fields are surprisingly rare. In particular, I couldn't find a single example in base XNAT of a field that:
  *   1. Exists in the schema as an explicit "integer" field, AND
  *   2. Has a corresponding display field.
  *  It's fairly easy to find either/OR, but not both. So, I'm using two different fields for these tests unfortunately:
  *  xnat:experimentData/delay for the schema field, and a derived count of DTI scan count per MR session as a display field.
- *  The DTI count has the added benefit
  */
 public class TestSearchFilterIntegers extends BaseSearchFilterTest {
 
-    private final SearchColumn t1SearchColumn = new SearchColumn()
-            .key(T1_SCAN_COUNT_COLUMN_NAME)
-            .type(SearchFieldTypes.INTEGER)
-            .xpath(DataType.MR_SESSION.getXsiType() + "." + MR_T1_SCAN_COUNT_FIELD_ID.split("=")[0])
-            .elementName(DataType.MR_SESSION.getXsiType())
-            .header(T1_SCAN_COUNT_DISPLAY_NAME)
-            .id(MR_T1_SCAN_COUNT_FIELD_ID);
     private final XnatSearchDocument t1SearchDocument = readXmlFromFile("default_project_mr_session_search.xml", new TemplateReplacements().project(testProject))
             .addSearchField(DataType.MR_SESSION, MR_T1_SCAN_COUNT_FIELD_ID, SearchFieldTypes.INTEGER, T1_SCAN_COUNT_DISPLAY_NAME);
-    private final SearchValidator<MRSession> t1SearchValidator = new SearchValidator<>(
+    private final SearchValidator<ImagingSession> t1SearchValidator = new SearchValidator<>(
             t1SearchColumn,
             t1SearchDocument,
-            (session, row) -> {
-                if (!mrMatchesLabel.apply(session, row)) {
-                    return false;
-                }
-                final long scanCount = session
-                        .getScans()
-                        .stream()
-                        .filter(scan -> T1.equals(scan.getType()))
-                        .count();
-                return row.get(T1_SCAN_COUNT_COLUMN_NAME).equals(scanCount == 0 ? "" : String.valueOf(scanCount));
-            }
+            and(Arrays.asList(mrMatchesLabel, mrMatchesT1Count))
     );
     private final XdatCriteria t1SearchCriteria = new XdatCriteria().schemaField(DataType.MR_SESSION.getXsiType() + "." + MR_T1_SCAN_COUNT_FIELD_ID);
 
-    private final SearchColumn delaySearchColumn = buildExpectedSearchColumn(DELAY_COLUMN_NAME, SearchFieldTypes.INTEGER, DataType.MR_SESSION, DELAY_DISPLAY_NAME);
     private final XnatSearchDocument delaySearchDocument = readXmlFromFile("default_project_mr_session_search.xml", new TemplateReplacements().project(testProject))
             .addSearchField(DataType.MR_SESSION, MR_DELAY_SCHEMA_PATH, SearchFieldTypes.INTEGER, DELAY_DISPLAY_NAME);
-    private final SearchValidator<MRSession> delaySearchValidator = new SearchValidator<>(
+    private final SearchValidator<ImagingSession> delaySearchValidator = new SearchValidator<>(
             delaySearchColumn,
             delaySearchDocument,
-            (session, row) -> session.getLabel().equals(row.get("mr_project_identifier_" + testProject.getId().toLowerCase()))
-                    && StringUtils.equals(session.getSpecificFields().get(MR_DELAY_SCHEMA_PATH), row.get(DELAY_COLUMN_NAME))
+            and(Arrays.asList(mrMatchesLabel, mrMatchesDelay))
     );
     private final XdatCriteria delaySearchCriteria = new XdatCriteria().schemaField(MR_DELAY_SCHEMA_PATH);
 
