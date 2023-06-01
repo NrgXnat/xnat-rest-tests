@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+import static org.nrg.xnat.pogo.DataType.MR_SCAN;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertTrue;
 
@@ -119,6 +120,7 @@ public class BaseSearchFilterTest extends BaseSearchTest {
         if (!setupDone) {
             mainInterface().createProject(testProject);
             mrSession150Pounds.getSpecificFields().put(MR_WEIGHT_SCHEMA_PATH, "150.0"); // we want to set it up as 150 in initial setup, but it should behave as a float when filtering/retrieving
+            mainAdminInterface().setupDataType(MR_SCAN);
             setupDone = true;
         }
     }
