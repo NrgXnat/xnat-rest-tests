@@ -11,11 +11,15 @@ import org.nrg.xnat.pogo.search.SearchFieldTypes;
 import org.nrg.xnat.pogo.search.SearchRow;
 import org.nrg.xnat.pogo.search.XdatCriteria;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
+import org.nrg.xnat.pogo.search.XnatSearchParams;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.function.BiFunction;
+
+import static org.nrg.xnat.pogo.search.XnatSearchParams.SortOrder.ASC;
+import static org.nrg.xnat.pogo.search.XnatSearchParams.SortOrder.DESC;
 
 public class TestSearchFilterStrings extends BaseSearchFilterTest {
 
@@ -23,7 +27,7 @@ public class TestSearchFilterStrings extends BaseSearchFilterTest {
             && StringUtils.equals(subject.getGroup(), row.get(GROUP_DISPLAY_FIELD_ID.toLowerCase()));
 
     private final SearchColumn groupSearchColumn = buildExpectedSearchColumn(GROUP_DISPLAY_FIELD_ID.toLowerCase(), SearchFieldTypes.STRING, DataType.SUBJECT, GROUP_DISPLAY_NAME);
-    private final XnatSearchDocument groupSearchDocument = readXmlFromFile("default_project_subject_search.xml", new TemplateReplacements().project(testProject))
+    private final XnatSearchDocument groupSearchDocument = readSearchFromFile()
             .addSearchField(DataType.SUBJECT, GROUP_DISPLAY_FIELD_ID, SearchFieldTypes.STRING, GROUP_DISPLAY_NAME);
     private final SearchValidator<Subject> groupSearchValidator = new SearchValidator<>(
             groupSearchColumn,
@@ -32,7 +36,7 @@ public class TestSearchFilterStrings extends BaseSearchFilterTest {
     );
     private final XdatCriteria groupSearchCriteria = new XdatCriteria().schemaField(DataType.SUBJECT.getXsiType() + "." + GROUP_DISPLAY_FIELD_ID);
 
-    private final XnatSearchDocument groupSchemaSearchDocument = readXmlFromFile("default_project_subject_search.xml", new TemplateReplacements().project(testProject))
+    private final XnatSearchDocument groupSchemaSearchDocument = readSearchFromFile()
             .addSearchField(DataType.SUBJECT, GROUP_SCHEMA_PATH, SearchFieldTypes.STRING, GROUP_DISPLAY_NAME);
     private final SearchValidator<Subject> groupSchemaSearchValidator = new SearchValidator<>(
             groupSearchColumn,
@@ -169,6 +173,31 @@ public class TestSearchFilterStrings extends BaseSearchFilterTest {
         groupSchemaSearchValidator.performAndValidateSearch(
                 subjectSymmetric, subjectSpecialLinear, subjectFrobenius, subjectCyclic
         );
+    }
+
+    @Test
+    public void testSearchEngineSortingStringDisplayField() {
+        final XnatSearchDocument sortingSearchDocument = readSearchFromFile()
+                .addSearchField(DataType.SUBJECT, GROUP_DISPLAY_FIELD_ID, SearchFieldTypes.STRING, GROUP_DISPLAY_NAME);
+        final SearchValidator<Subject> sortingSearchValidator = new SearchValidator<>(
+                groupSearchColumn,
+                sortingSearchDocument,
+                subjectCheckerFunction
+        );
+
+        final XnatSearchParams searchParams = new XnatSearchParams().sortBy(GROUP_DISPLAY_FIELD_ID).sortOrder(DESC);
+        sortingSearchValidator.performAndValidateSearch(searchParams, subjectNull, subjectSymmetric, subjectSpecialLinear, subjectFrobenius, subjectCyclic);
+
+        searchParams.setSortOrder(ASC);
+        sortingSearchValidator.performAndValidateSearch(searchParams, subjectCyclic, subjectFrobenius, subjectSpecialLinear, subjectSymmetric, subjectNull);
+
+        searchParams.setSortOrder(DESC);
+        groupSearchCriteria.comparisonType(ComparisonType.IS_NOT_NULL);
+        groupSearchValidator.performAndValidateSearch(searchParams, subjectSymmetric, subjectSpecialLinear, subjectFrobenius, subjectCyclic);
+    }
+
+    private XnatSearchDocument readSearchFromFile() {
+        return readXmlFromFile("default_project_subject_search.xml", new TemplateReplacements().project(testProject));
     }
 
 }

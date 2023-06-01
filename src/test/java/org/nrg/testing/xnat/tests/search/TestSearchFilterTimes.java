@@ -11,6 +11,7 @@ import org.nrg.xnat.pogo.search.SearchFieldTypes;
 import org.nrg.xnat.pogo.search.SearchRow;
 import org.nrg.xnat.pogo.search.XdatCriteria;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
+import org.nrg.xnat.pogo.search.XnatSearchParams;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -19,6 +20,9 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.function.BiFunction;
 
+import static org.nrg.xnat.pogo.search.XnatSearchParams.SortOrder.ASC;
+import static org.nrg.xnat.pogo.search.XnatSearchParams.SortOrder.DESC;
+
 public class TestSearchFilterTimes extends BaseSearchFilterTest {
 
     private final BiFunction<Scan, SearchRow, Boolean> scanCheckerFunction = (scan, row) -> scan.getSession().getLabel().equals(row.get("session_label"))
@@ -26,7 +30,7 @@ public class TestSearchFilterTimes extends BaseSearchFilterTest {
             && StringUtils.equals(serialize(scan.getStartTime()), row.get(MR_SCAN_DISPLAY_FIELD_ID.toLowerCase()));
     private final SearchColumn mrStartTimeSearchColumn = buildExpectedSearchColumn(MR_SCAN_DISPLAY_FIELD_ID.toLowerCase(), SearchFieldTypes.TIME, DataType.MR_SCAN, MR_SCAN_START_TIME_DISPLAY_NAME);
 
-    private final XnatSearchDocument mrStartTimeDisplayFieldSearchDocument = readXmlFromFile("default_project_mr_scan_search.xml", new TemplateReplacements().project(testProject));
+    private final XnatSearchDocument mrStartTimeDisplayFieldSearchDocument = readSearchFromFile();
     private final SearchValidator<Scan> mrStartTimeDisplayFieldSearchValidator = new SearchValidator<>(
             mrStartTimeSearchColumn,
             mrStartTimeDisplayFieldSearchDocument,
@@ -34,7 +38,7 @@ public class TestSearchFilterTimes extends BaseSearchFilterTest {
     );
     private final XdatCriteria mrStartTimeDisplayFieldSearchCriteria = new XdatCriteria().schemaField(DataType.MR_SCAN.getXsiType() + "." + MR_SCAN_DISPLAY_FIELD_ID);
     
-    private final XnatSearchDocument mrStartTimeSchemaFieldSearchDocument = readXmlFromFile("default_project_mr_scan_search.xml", new TemplateReplacements().project(testProject));
+    private final XnatSearchDocument mrStartTimeSchemaFieldSearchDocument = readSearchFromFile();
     private final SearchValidator<Scan> mrStartTimeSchemaFieldSearchValidator = new SearchValidator<>(
             mrStartTimeSearchColumn,
             mrStartTimeSchemaFieldSearchDocument,
@@ -218,11 +222,31 @@ public class TestSearchFilterTimes extends BaseSearchFilterTest {
     @Test
     public void testSearchEngineFilterTimeSchemaFieldIsNotNull() {
         mrStartTimeSchemaFieldSearchCriteria.comparisonType(ComparisonType.IS_NOT_NULL);
-        mrStartTimeSchemaFieldSearchValidator.performAndValidateSearch(t1At012345 , t1At090909, t2At101010, t1At012346, t2At111111, t1At202020, t1At080808);
+        mrStartTimeSchemaFieldSearchValidator.performAndValidateSearch(t1At012345, t1At090909, t2At101010, t1At012346, t2At111111, t1At202020, t1At080808);
+    }
+
+    @Test
+    public void testSearchEngineSortingTimeDisplayField() {
+        final XnatSearchDocument sortingSearchDocument = readSearchFromFile();
+        final SearchValidator<Scan> sortingSearchValidator = new SearchValidator<>(
+                mrStartTimeSearchColumn,
+                sortingSearchDocument,
+                scanCheckerFunction
+        );
+
+        final XnatSearchParams searchParams = new XnatSearchParams().sortBy(MR_SCAN_DISPLAY_FIELD_ID).sortOrder(DESC);
+        sortingSearchValidator.performAndValidateSearch(searchParams, t1Timeless, t1At202020, t2At111111, t2At101010, t1At090909, t1At080808, t1At012346, t1At012345);
+
+        searchParams.setSortOrder(ASC);
+        sortingSearchValidator.performAndValidateSearch(searchParams, t1At012345, t1At012346, t1At080808, t1At090909, t2At101010, t2At111111, t1At202020, t1Timeless);
     }
 
     private String serialize(LocalTime localTime) {
         return (localTime == null) ? "" : DateTimeFormatter.ISO_TIME.format(localTime);
+    }
+
+    private XnatSearchDocument readSearchFromFile() {
+        return readXmlFromFile("default_project_mr_scan_search.xml", new TemplateReplacements().project(testProject));
     }
 
 }

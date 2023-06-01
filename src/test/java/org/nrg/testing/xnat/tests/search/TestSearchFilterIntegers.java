@@ -3,17 +3,23 @@ package org.nrg.testing.xnat.tests.search;
 import org.nrg.testing.TestGroups;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.xnat.pogo.DataType;
+import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.search.ComparisonType;
 import org.nrg.xnat.pogo.search.SearchFieldTypes;
+import org.nrg.xnat.pogo.search.SearchResponse;
 import org.nrg.xnat.pogo.search.XdatCriteria;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
+import org.nrg.xnat.pogo.search.XnatSearchParams;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
+
+import static org.nrg.xnat.pogo.search.XnatSearchParams.SortOrder.ASC;
+import static org.nrg.xnat.pogo.search.XnatSearchParams.SortOrder.DESC;
 
 /**
  * "integer" fields are surprisingly rare. In particular, I couldn't find a single example in base XNAT of a field that:
@@ -24,7 +30,7 @@ import java.util.Arrays;
  */
 public class TestSearchFilterIntegers extends BaseSearchFilterTest {
 
-    private final XnatSearchDocument t1SearchDocument = readXmlFromFile("default_project_mr_session_search.xml", new TemplateReplacements().project(testProject))
+    private final XnatSearchDocument t1SearchDocument = readSearchFromFile()
             .addSearchField(DataType.MR_SESSION, MR_T1_SCAN_COUNT_FIELD_ID, SearchFieldTypes.INTEGER, T1_SCAN_COUNT_DISPLAY_NAME);
     private final SearchValidator<ImagingSession> t1SearchValidator = new SearchValidator<>(
             t1SearchColumn,
@@ -33,7 +39,7 @@ public class TestSearchFilterIntegers extends BaseSearchFilterTest {
     );
     private final XdatCriteria t1SearchCriteria = new XdatCriteria().schemaField(DataType.MR_SESSION.getXsiType() + "." + MR_T1_SCAN_COUNT_FIELD_ID);
 
-    private final XnatSearchDocument delaySearchDocument = readXmlFromFile("default_project_mr_session_search.xml", new TemplateReplacements().project(testProject))
+    private final XnatSearchDocument delaySearchDocument = readSearchFromFile()
             .addSearchField(DataType.MR_SESSION, MR_DELAY_SCHEMA_PATH, SearchFieldTypes.INTEGER, DELAY_DISPLAY_NAME);
     private final SearchValidator<ImagingSession> delaySearchValidator = new SearchValidator<>(
             delaySearchColumn,
@@ -216,6 +222,41 @@ public class TestSearchFilterIntegers extends BaseSearchFilterTest {
     public void testSearchEngineFilterIntegerSchemaFieldIsNotNull() {
         delaySearchCriteria.comparisonType(ComparisonType.IS_NOT_NULL);
         delaySearchValidator.performAndValidateSearch(mrSession10000Delay, mrSession5000Delay, mrSession1234Delay);
+    }
+
+    // pre-sorting not available for SubQuery fields, so we have to cache the search first
+    @Test
+    public void testSearchEngineSortingIntegerDisplayField() {
+        final XnatSearchDocument sortingSearchDocument = readSearchFromFile()
+                .addSearchField(DataType.MR_SESSION, MR_T1_SCAN_COUNT_FIELD_ID, SearchFieldTypes.INTEGER, T1_SCAN_COUNT_DISPLAY_NAME);
+        final SearchValidator<ImagingSession> sortingSearchValidator = new SearchValidator<>(
+                t1SearchColumn,
+                sortingSearchDocument,
+                and(Arrays.asList(mrMatchesLabel, mrMatchesT1Count))
+        );
+
+        final XnatSearchParams searchParams = new XnatSearchParams()
+                .sortBy(MR_T1_SCAN_COUNT_FIELD_ID.toLowerCase().replace('=', '_'))
+                .sortOrder(DESC);
+        final SearchResponse cachedSearch = mainInterface().cacheSearch(sortingSearchDocument);
+        sortingSearchValidator.validateSearchResults(
+                true,
+                false,
+                mainInterface().retrieveCachedSearchResults(cachedSearch, searchParams),
+                mrSessionWithNoScans, mrSession3T1Scans, mrSession2T1Scans, mrSession1T1Scan // "0" is a null in this case unfortunately
+        );
+
+        searchParams.sortOrder(ASC);
+        sortingSearchValidator.validateSearchResults(
+                true,
+                false,
+                mainInterface().retrieveCachedSearchResults(cachedSearch, searchParams),
+                mrSession1T1Scan, mrSession2T1Scans, mrSession3T1Scans, mrSessionWithNoScans
+        );
+    }
+
+    private XnatSearchDocument readSearchFromFile() {
+        return readXmlFromFile("default_project_mr_session_search.xml", new TemplateReplacements().project(testProject));
     }
 
 }

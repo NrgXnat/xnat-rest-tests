@@ -15,6 +15,7 @@ import org.nrg.xnat.pogo.search.SearchFieldTypes;
 import org.nrg.xnat.pogo.search.SearchResponse;
 import org.nrg.xnat.pogo.search.SearchRow;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
+import org.nrg.xnat.pogo.search.XnatSearchParams;
 import org.testng.annotations.BeforeClass;
 
 import java.time.LocalDate;
@@ -158,21 +159,46 @@ public class BaseSearchFilterTest extends BaseSearchTest {
 
         @SafeVarargs
         protected final void performAndValidateSearch(X... expectedObjectsInResponse) {
+            performAndValidateSearch(new XnatSearchParams(), expectedObjectsInResponse);
+        }
+
+        @SafeVarargs
+        protected final void performAndValidateSearch(XnatSearchParams searchParams, X... expectedObjectsInResponse) {
+            validateSearchResults(
+                    searchParams.getSortBy() != null,
+                    true,
+                    mainInterface().performSearch(searchDocument, searchParams),
+                    expectedObjectsInResponse
+            );
+        }
+
+        // when retrieving results for an already cached search, the data involved with performExtraChecks isn't in the response, so we can skip it for those cases
+        @SafeVarargs
+        protected final void validateSearchResults(boolean enforceOrder, boolean performExtraChecks, SearchResponse searchResponse, X... expectedObjectsInResponse) {
             final List<X> expectedItems = Arrays.asList(expectedObjectsInResponse);
-            final SearchResponse searchResponse = mainInterface().performSearch(searchDocument);
             assertEquals("all items expected to validate should be unique", expectedItems.size(), new HashSet<>(expectedItems).size()); // double check test developer error
-            assertEquals(expectedItems.size(), searchResponse.getTotalRecords());
-            assertEquals(expectedItems.size(), searchResponse.getResult().size());
-            for (SearchColumn searchColumnToCheck : searchColumnsToCheck) {
-                assertTrue(searchResponse.getColumns().contains(searchColumnToCheck));
+            if (performExtraChecks) {
+                assertEquals(expectedItems.size(), searchResponse.getTotalRecords());
             }
-            for (X expectedObject : expectedItems) {
-                assertTrue(
-                        searchResponse
-                                .getResult()
-                                .stream()
-                                .anyMatch(row -> responseChecker.apply(expectedObject, row))
-                );
+            assertEquals(expectedItems.size(), searchResponse.getResult().size());
+            if (performExtraChecks) {
+                for (SearchColumn searchColumnToCheck : searchColumnsToCheck) {
+                    assertTrue(searchResponse.getColumns().contains(searchColumnToCheck));
+                }
+            }
+            if (enforceOrder) {
+                for (int i = 0; i < expectedItems.size(); i++) {
+                    assertTrue(responseChecker.apply(expectedItems.get(i), searchResponse.getResult().get(i)));
+                }
+            } else {
+                for (X expectedObject : expectedItems) {
+                    assertTrue(
+                            searchResponse
+                                    .getResult()
+                                    .stream()
+                                    .anyMatch(row -> responseChecker.apply(expectedObject, row))
+                    );
+                }
             }
         }
     }

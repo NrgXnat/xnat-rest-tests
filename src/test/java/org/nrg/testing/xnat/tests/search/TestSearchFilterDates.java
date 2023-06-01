@@ -4,6 +4,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.testing.TestGroups;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.xnat.pogo.DataType;
+import org.nrg.xnat.pogo.Subject;
+import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.search.ComparisonType;
 import org.nrg.xnat.pogo.search.SearchColumn;
@@ -11,6 +13,7 @@ import org.nrg.xnat.pogo.search.SearchFieldTypes;
 import org.nrg.xnat.pogo.search.SearchRow;
 import org.nrg.xnat.pogo.search.XdatCriteria;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
+import org.nrg.xnat.pogo.search.XnatSearchParams;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -23,6 +26,8 @@ import java.util.function.BiFunction;
 
 import static org.nrg.testing.TimeUtils.AMERICAN_DATE;
 import static org.nrg.testing.TimeUtils.UNAMBIGUOUS_DATE;
+import static org.nrg.xnat.pogo.search.XnatSearchParams.SortOrder.ASC;
+import static org.nrg.xnat.pogo.search.XnatSearchParams.SortOrder.DESC;
 
 public class TestSearchFilterDates extends BaseSearchFilterTest {
 
@@ -32,7 +37,7 @@ public class TestSearchFilterDates extends BaseSearchFilterTest {
             && StringUtils.equals((session.getDate() == null) ? "" : UNAMBIGUOUS_DATE.format(session.getDate()), row.get(MR_DATE_DISPLAY_FIELD_ID.toLowerCase()));
     private final SearchColumn mrDateSearchColumn = buildExpectedSearchColumn(MR_DATE_DISPLAY_FIELD_ID.toLowerCase(), SearchFieldTypes.DATE, DataType.MR_SESSION, MR_DATE_DISPLAY_NAME);
 
-    private final XnatSearchDocument mrDateDisplayFieldSearchDocument = readXmlFromFile("default_project_mr_session_search.xml", new TemplateReplacements().project(testProject));
+    private final XnatSearchDocument mrDateDisplayFieldSearchDocument = readSearchFromFile();
     private final SearchValidator<MRSession> mrDateDisplayFieldSearchValidator = new SearchValidator<>(
             mrDateSearchColumn,
             mrDateDisplayFieldSearchDocument,
@@ -40,7 +45,7 @@ public class TestSearchFilterDates extends BaseSearchFilterTest {
     );
     private final XdatCriteria mrDateDisplayFieldSearchCriteria = new XdatCriteria().schemaField(DataType.MR_SESSION.getXsiType() + "." + MR_DATE_DISPLAY_FIELD_ID);
     
-    private final XnatSearchDocument mrDateSchemaFieldSearchDocument = readXmlFromFile("default_project_mr_session_search.xml", new TemplateReplacements().project(testProject));
+    private final XnatSearchDocument mrDateSchemaFieldSearchDocument = readSearchFromFile();
     private final SearchValidator<MRSession> mrDateSchemaFieldSearchValidator = new SearchValidator<>(
             mrDateSearchColumn,
             mrDateSchemaFieldSearchDocument,
@@ -241,8 +246,28 @@ public class TestSearchFilterDates extends BaseSearchFilterTest {
         mrDateSchemaFieldSearchValidator.performAndValidateSearch(mr20180707, mr20200320, mr20210202);
     }
 
+    @Test
+    public void testSearchEngineSortingDateDisplayField() {
+        final XnatSearchDocument sortingSearchDocument = readSearchFromFile();
+        final SearchValidator<MRSession> sortingSearchValidator = new SearchValidator<>(
+                mrDateSearchColumn,
+                sortingSearchDocument,
+                mrCheckerFunction
+        );
+
+        final XnatSearchParams searchParams = new XnatSearchParams().sortBy(MR_DATE_DISPLAY_FIELD_ID).sortOrder(DESC);
+        sortingSearchValidator.performAndValidateSearch(searchParams, mrNoDate, mr20210202, mr20200320, mr20180707);
+
+        searchParams.sortOrder(ASC);
+        sortingSearchValidator.performAndValidateSearch(searchParams, mr20180707, mr20200320, mr20210202, mrNoDate);
+    }
+
     private String betweenTwoDates(DateTimeFormatter formatter, LocalDate leftDate, LocalDate rightDate) {
         return formatter.format(leftDate) + " AND " + formatter.format(rightDate);
+    }
+
+    private XnatSearchDocument readSearchFromFile() {
+        return readXmlFromFile("default_project_mr_session_search.xml", new TemplateReplacements().project(testProject));
     }
 
 }

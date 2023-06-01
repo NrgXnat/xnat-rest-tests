@@ -9,11 +9,15 @@ import org.nrg.xnat.pogo.search.SearchColumn;
 import org.nrg.xnat.pogo.search.SearchRow;
 import org.nrg.xnat.pogo.search.XdatCriteria;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
+import org.nrg.xnat.pogo.search.XnatSearchParams;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.function.BiFunction;
+
+import static org.nrg.xnat.pogo.search.XnatSearchParams.SortOrder.ASC;
+import static org.nrg.xnat.pogo.search.XnatSearchParams.SortOrder.DESC;
 
 public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
 
@@ -29,13 +33,13 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
 
     @BeforeClass(groups = TestGroups.SEARCH)
     private void initCriteria() {
-        final XnatSearchDocument petTracerStartDisplayFieldSearchDocument = mainInterface().getDefaultSearch(testProject, DataType.PET_SESSION);
+        final XnatSearchDocument petTracerStartDisplayFieldSearchDocument = readSearchFromRest();
         petTracerStartDisplayFieldSearchValidator = new SearchValidator<>(
                 petStartSearchColumn,
                 petTracerStartDisplayFieldSearchDocument,
                 petCheckerFunction
         );
-        final XnatSearchDocument petTracerStartSchemaFieldSearchDocument = mainInterface().getDefaultSearch(testProject, DataType.PET_SESSION);
+        final XnatSearchDocument petTracerStartSchemaFieldSearchDocument = readSearchFromRest();
         petTracerStartSchemaFieldSearchValidator = new SearchValidator<>(
                 petStartSearchColumn,
                 petTracerStartSchemaFieldSearchDocument,
@@ -54,7 +58,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
 
     @Test
     @ExpectedFailure(jiraIssue = "XNAT-7786")
-    public void testSearchEngineFilterTimestampDisplayFieldEquals() {
+    public void testSearchEngineFilterDateTimeDisplayFieldEquals() {
         petTracerStartDisplayFieldSearchCriteria
                 .comparisonType(ComparisonType.EQUALS)
                 .value(TIMESTAMP_20110101T030000);
@@ -63,7 +67,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
 
     @Test
     @ExpectedFailure(jiraIssue = "XNAT-7786")
-    public void testSearchEngineFilterTimestampDisplayFieldNotEquals() {
+    public void testSearchEngineFilterDateTimeDisplayFieldNotEquals() {
         petTracerStartDisplayFieldSearchCriteria
                 .comparisonType(ComparisonType.NOT_EQUALS)
                 .value(TIMESTAMP_20110101T030000);
@@ -72,7 +76,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
 
     @Test
     @ExpectedFailure(jiraIssue = "XNAT-7786")
-    public void testSearchEngineFilterTimestampDisplayFieldGreaterThan() {
+    public void testSearchEngineFilterDateTimeDisplayFieldGreaterThan() {
         petTracerStartDisplayFieldSearchCriteria
                 .comparisonType(ComparisonType.GREATER_THAN)
                 .value(TIMESTAMP_20110101T030001);
@@ -81,7 +85,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
 
     @Test
     @ExpectedFailure(jiraIssue = "XNAT-7786")
-    public void testSearchEngineFilterTimestampDisplayFieldGreaterThanOrEquals() {
+    public void testSearchEngineFilterDateTimeDisplayFieldGreaterThanOrEquals() {
         petTracerStartDisplayFieldSearchCriteria
                 .comparisonType(ComparisonType.GREATER_THAN_OR_EQUALS)
                 .value(TIMESTAMP_20110101T030001);
@@ -90,7 +94,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
 
     @Test
     @ExpectedFailure(jiraIssue = "XNAT-7786")
-    public void testSearchEngineFilterTimestampDisplayFieldLessThan() {
+    public void testSearchEngineFilterDateTimeDisplayFieldLessThan() {
         petTracerStartDisplayFieldSearchCriteria
                 .comparisonType(ComparisonType.LESS_THAN)
                 .value(TIMESTAMP_20110101T030001);
@@ -99,7 +103,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
 
     @Test
     @ExpectedFailure(jiraIssue = "XNAT-7786")
-    public void testSearchEngineFilterTimestampDisplayFieldLessThanOrEquals() {
+    public void testSearchEngineFilterDateTimeDisplayFieldLessThanOrEquals() {
         petTracerStartDisplayFieldSearchCriteria
                 .comparisonType(ComparisonType.LESS_THAN_OR_EQUALS)
                 .value(TIMESTAMP_20110101T030001);
@@ -108,7 +112,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
 
     @Test
     @ExpectedFailure(jiraIssue = "XNAT-7777")
-    public void testSearchEngineFilterTimestampDisplayFieldIn() {
+    public void testSearchEngineFilterDateTimeDisplayFieldIn() {
         petTracerStartDisplayFieldSearchCriteria
                 .comparisonType(ComparisonType.IN)
                 .value(TIMESTAMP_20110101T030000 + ", " + TIMESTAMP_20110101T030001);
@@ -116,7 +120,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
     }
 
     @Test
-    public void testSearchEngineFilterTimestampDisplayFieldBetween() {
+    public void testSearchEngineFilterDateTimeDisplayFieldBetween() {
         petTracerStartDisplayFieldSearchCriteria
                 .comparisonType(ComparisonType.BETWEEN)
                 .value(TIMESTAMP_20110101T030001 + " AND " + TIMESTAMP_20120202T130001);
@@ -124,19 +128,19 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
     }
 
     @Test
-    public void testSearchEngineFilterTimestampDisplayFieldIsNull() {
+    public void testSearchEngineFilterDateTimeDisplayFieldIsNull() {
         petTracerStartDisplayFieldSearchCriteria.comparisonType(ComparisonType.IS_NULL);
         petTracerStartDisplayFieldSearchValidator.performAndValidateSearch(petTimeless);
     }
 
     @Test
-    public void testSearchEngineFilterTimestampDisplayFieldIsNotNull() {
+    public void testSearchEngineFilterDateTimeDisplayFieldIsNotNull() {
         petTracerStartDisplayFieldSearchCriteria.comparisonType(ComparisonType.IS_NOT_NULL);
         petTracerStartDisplayFieldSearchValidator.performAndValidateSearch(pet20110101T030000, pet20110101T030001, pet20120202T130001, pet20160102T200000);
     }
 
     @Test
-    public void testSearchEngineFilterTimestampSchemaFieldEquals() {
+    public void testSearchEngineFilterDateTimeSchemaFieldEquals() {
         petTracerStartSchemaFieldSearchCriteria
                 .comparisonType(ComparisonType.EQUALS)
                 .value(TIMESTAMP_20110101T030000);
@@ -144,7 +148,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
     }
 
     @Test
-    public void testSearchEngineFilterTimestampSchemaFieldNotEquals() {
+    public void testSearchEngineFilterDateTimeSchemaFieldNotEquals() {
         petTracerStartSchemaFieldSearchCriteria
                 .comparisonType(ComparisonType.NOT_EQUALS)
                 .value(TIMESTAMP_20110101T030000);
@@ -152,7 +156,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
     }
 
     @Test
-    public void testSearchEngineFilterTimestampSchemaFieldGreaterThan() {
+    public void testSearchEngineFilterDateTimeSchemaFieldGreaterThan() {
         petTracerStartSchemaFieldSearchCriteria
                 .comparisonType(ComparisonType.GREATER_THAN)
                 .value(TIMESTAMP_20110101T030001);
@@ -160,7 +164,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
     }
 
     @Test
-    public void testSearchEngineFilterTimestampSchemaFieldGreaterThanOrEquals() {
+    public void testSearchEngineFilterDateTimeSchemaFieldGreaterThanOrEquals() {
         petTracerStartSchemaFieldSearchCriteria
                 .comparisonType(ComparisonType.GREATER_THAN_OR_EQUALS)
                 .value(TIMESTAMP_20110101T030001);
@@ -168,7 +172,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
     }
 
     @Test
-    public void testSearchEngineFilterTimestampSchemaFieldLessThan() {
+    public void testSearchEngineFilterDateTimeSchemaFieldLessThan() {
         petTracerStartSchemaFieldSearchCriteria
                 .comparisonType(ComparisonType.LESS_THAN)
                 .value(TIMESTAMP_20110101T030001);
@@ -176,7 +180,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
     }
 
     @Test
-    public void testSearchEngineFilterTimestampSchemaFieldLessThanOrEquals() {
+    public void testSearchEngineFilterDateTimeSchemaFieldLessThanOrEquals() {
         petTracerStartSchemaFieldSearchCriteria
                 .comparisonType(ComparisonType.LESS_THAN_OR_EQUALS)
                 .value(TIMESTAMP_20110101T030001);
@@ -185,7 +189,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
 
     @Test
     @ExpectedFailure(jiraIssue = "XNAT-7777")
-    public void testSearchEngineFilterTimestampSchemaFieldIn() {
+    public void testSearchEngineFilterDateTimeSchemaFieldIn() {
         petTracerStartSchemaFieldSearchCriteria
                 .comparisonType(ComparisonType.IN)
                 .value(TIMESTAMP_20110101T030000 + ", " + TIMESTAMP_20110101T030001);
@@ -194,7 +198,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
 
     @Test
     @ExpectedFailure(jiraIssue = "XNAT-7780")
-    public void testSearchEngineFilterTimestampSchemaFieldBetween() {
+    public void testSearchEngineFilterDateTimeSchemaFieldBetween() {
         petTracerStartSchemaFieldSearchCriteria
                 .comparisonType(ComparisonType.BETWEEN)
                 .value(TIMESTAMP_20110101T030001 + " AND " + TIMESTAMP_20120202T130001);
@@ -202,15 +206,35 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
     }
 
     @Test
-    public void testSearchEngineFilterTimestampSchemaFieldIsNull() {
+    public void testSearchEngineFilterDateTimeSchemaFieldIsNull() {
         petTracerStartSchemaFieldSearchCriteria.comparisonType(ComparisonType.IS_NULL);
         petTracerStartSchemaFieldSearchValidator.performAndValidateSearch(petTimeless);
     }
 
     @Test
-    public void testSearchEngineFilterTimestampSchemaFieldIsNotNull() {
+    public void testSearchEngineFilterDateTimeSchemaFieldIsNotNull() {
         petTracerStartSchemaFieldSearchCriteria.comparisonType(ComparisonType.IS_NOT_NULL);
         petTracerStartSchemaFieldSearchValidator.performAndValidateSearch(pet20110101T030000, pet20110101T030001, pet20120202T130001, pet20160102T200000);
+    }
+
+    @Test
+    public void testSearchEngineSortingDateTimeDisplayField() {
+        final XnatSearchDocument petTracerStartDisplayFieldSearchDocument = readSearchFromRest();
+        final SearchValidator<PETSession> sortingSearchValidator = new SearchValidator<>(
+                petStartSearchColumn,
+                petTracerStartDisplayFieldSearchDocument,
+                petCheckerFunction
+        );
+
+        final XnatSearchParams searchParams = new XnatSearchParams().sortBy(PET_TRACER_START_FIELD_ID).sortOrder(DESC);
+        sortingSearchValidator.performAndValidateSearch(searchParams, petTimeless, pet20160102T200000, pet20120202T130001, pet20110101T030001, pet20110101T030000);
+
+        searchParams.setSortOrder(ASC);
+        sortingSearchValidator.performAndValidateSearch(searchParams, pet20110101T030000, pet20110101T030001, pet20120202T130001, pet20160102T200000, petTimeless);
+    }
+
+    private XnatSearchDocument readSearchFromRest() {
+        return mainInterface().getDefaultSearch(testProject, DataType.PET_SESSION);
     }
 
 }
