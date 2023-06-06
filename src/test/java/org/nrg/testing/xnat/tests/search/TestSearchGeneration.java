@@ -1,6 +1,5 @@
 package org.nrg.testing.xnat.tests.search;
 
-import org.nrg.testing.FileIOUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
@@ -9,6 +8,7 @@ import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
+import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.versions.Xnat_1_8_5;
 import org.nrg.xnat.versions.Xnat_1_8_8;
 import org.testng.annotations.BeforeClass;
@@ -17,6 +17,7 @@ import org.testng.annotations.Test;
 import static org.nrg.xnat.pogo.DataType.*;
 import static org.testng.AssertJUnit.assertEquals;
 
+@AddedIn(Xnat_1_8_0.class)
 public class TestSearchGeneration extends BaseSearchTest {
 
     private final Project commonProject = registerTempProject();

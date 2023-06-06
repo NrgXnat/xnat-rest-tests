@@ -7,6 +7,7 @@ import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.search.SearchElement;
 import org.nrg.xnat.pogo.search.SearchResponse;
 import org.nrg.xnat.pogo.search.SearchRow;
+import org.nrg.xnat.pogo.search.SortOrder;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
 import org.nrg.xnat.pogo.search.XnatSearchParams;
 import org.testng.annotations.Test;
@@ -54,12 +55,12 @@ public class TestSearch extends BaseSearchTest {
         final XnatSearchDocument searchBody = readXmlFromFile(originalResourceFile, new TemplateReplacements().project(project));
 
         final SearchResponse cachedSearch = mainAdminInterface().cacheSearch(searchBody);
-        final XnatSearchParams sortingParams = new XnatSearchParams().sortBy("date").sortOrder(XnatSearchParams.SortOrder.ASC);
+        final XnatSearchParams sortingParams = new XnatSearchParams().sortBy("date").sortOrder(SortOrder.ASC);
 
         final SearchResponse ascendingResults = mainAdminInterface().retrieveCachedSearchResults(cachedSearch, sortingParams);
         assertResultsMatch(ascendingResults, session1, session2);
 
-        final SearchResponse descendingResults = mainAdminInterface().retrieveCachedSearchResults(cachedSearch, sortingParams.sortOrder(XnatSearchParams.SortOrder.DESC));
+        final SearchResponse descendingResults = mainAdminInterface().retrieveCachedSearchResults(cachedSearch, sortingParams.sortOrder(SortOrder.DESC));
         assertResultsMatch(descendingResults, session2, session1);
     }
 

@@ -1,9 +1,9 @@
 package org.nrg.testing.xnat.tests.search;
 
 import org.nrg.testing.TestGroups;
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.xnat.pogo.DataType;
-import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.search.ComparisonType;
@@ -12,14 +12,15 @@ import org.nrg.xnat.pogo.search.SearchResponse;
 import org.nrg.xnat.pogo.search.XdatCriteria;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
 import org.nrg.xnat.pogo.search.XnatSearchParams;
+import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
 
-import static org.nrg.xnat.pogo.search.XnatSearchParams.SortOrder.ASC;
-import static org.nrg.xnat.pogo.search.XnatSearchParams.SortOrder.DESC;
+import static org.nrg.xnat.pogo.search.SortOrder.ASC;
+import static org.nrg.xnat.pogo.search.SortOrder.DESC;
 
 /**
  * "integer" fields are surprisingly rare. In particular, I couldn't find a single example in base XNAT of a field that:
@@ -28,6 +29,7 @@ import static org.nrg.xnat.pogo.search.XnatSearchParams.SortOrder.DESC;
  *  It's fairly easy to find either/OR, but not both. So, I'm using two different fields for these tests unfortunately:
  *  xnat:experimentData/delay for the schema field, and a derived count of DTI scan count per MR session as a display field.
  */
+@AddedIn(Xnat_1_8_0.class)
 public class TestSearchFilterIntegers extends BaseSearchFilterTest {
 
     private final XnatSearchDocument t1SearchDocument = readSearchFromFile()

@@ -1,5 +1,6 @@
 package org.nrg.testing.xnat.tests.search;
 
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.search.ComparisonType;
@@ -8,10 +9,12 @@ import org.nrg.xnat.pogo.search.SearchMethod;
 import org.nrg.xnat.pogo.search.XdatChildSet;
 import org.nrg.xnat.pogo.search.XdatCriteria;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
+import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
 
+@AddedIn(Xnat_1_8_0.class)
 public class TestSearchFilterComplex extends BaseSearchFilterTest {
 
     private final XnatSearchDocument combinedSearchDocument = readXmlFromFile("default_project_mr_session_search.xml", new TemplateReplacements().project(testProject))

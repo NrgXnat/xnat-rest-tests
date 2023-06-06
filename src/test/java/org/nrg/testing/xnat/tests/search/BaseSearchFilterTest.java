@@ -20,6 +20,7 @@ import org.testng.annotations.BeforeClass;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,6 +39,7 @@ public class BaseSearchFilterTest extends BaseSearchTest {
     protected static final String GROUP_DISPLAY_NAME = "Group";
     protected static final String GROUP_DISPLAY_FIELD_ID = "SUB_GROUP";
     protected static final String GROUP_SCHEMA_PATH = DataType.SUBJECT + "/group";
+    protected static final String MR_SCANNER_SCHEMA_PATH = "xnat:mrSessionData/scanner";
     protected static final String MR_WEIGHT_SCHEMA_PATH = "xnat:mrSessionData/dcmPatientWeight";
     protected static final String WEIGHT_COLUMN_NAME = "xnat_col_mrsessiondatadcmpatientweight";
     protected static final String WEIGHT_DISPLAY_NAME = "DICOM Patient Weight";
@@ -68,10 +70,10 @@ public class BaseSearchFilterTest extends BaseSearchTest {
     protected static final LocalDate march20th2020 = LocalDate.parse("2020-03-20");
     protected static final LocalDate july7th2018 = LocalDate.parse("2018-07-07");
     protected static final LocalDate february2nd2021 = LocalDate.parse("2021-02-02");
-    protected static final MRSession mrSession1305Pounds = mrWithFields("130.5", "10000", march20th2020);
-    protected static final MRSession mrSession150Pounds = mrWithFields("150", "5000", july7th2018);
-    protected static final MRSession mrSession200Pounds = mrWithFields("200.0", "1234", february2nd2021);
-    protected static final MRSession mrSessionNoWeight = mrWithFields("", "", null);
+    protected static final MRSession mrSession1305Pounds = mrWithFields("130.5", "10000", march20th2020, "");
+    protected static final MRSession mrSession150Pounds = mrWithFields("150", "5000", july7th2018, "");
+    protected static final MRSession mrSession200Pounds = mrWithFields("200.0", "1234", february2nd2021, "SCANNING MRI DEVICE");
+    protected static final MRSession mrSessionNoWeight = mrWithFields("", "", null, "");
     protected static final Scan t1At012345 = new MRScan(mrSession1305Pounds, "1").seriesDescription(T1).type(T1).startTime(LocalTime.parse("01:23:45"));
     protected static final Scan t1At090909 = new MRScan(mrSession1305Pounds, "2").seriesDescription(T1).type(T1).startTime(LocalTime.parse("09:09:09"));
     protected static final Scan t2At101010 = new MRScan(mrSession1305Pounds, "3").seriesDescription(T2).type(T2).startTime(LocalTime.parse("10:10:10"));
@@ -90,6 +92,10 @@ public class BaseSearchFilterTest extends BaseSearchTest {
     protected static final PETSession pet20160102T200000 = petWithFields(TIMESTAMP_20160102T200000);
     protected static final PETSession petTimeless = petWithFields("");
 
+    protected static final BiFunction<Subject, SearchRow, Boolean> subjectMatchesLabel =
+            (subject, row) -> subject.getLabel().equals(row.getSubjectLabelInProject(subject.getProject()));
+    protected static final BiFunction<Subject, SearchRow, Boolean> subjectMatchesGroup =
+            (subject, row) -> StringUtils.equals(subject.getGroup(), row.get(GROUP_DISPLAY_FIELD_ID.toLowerCase()));
     protected static final BiFunction<ImagingSession, SearchRow, Boolean> mrMatchesLabel =
             (session, row) -> session.getLabel().equals(row.getMrSessionLabelInProject(testProject));
     protected static final BiFunction<ImagingSession, SearchRow, Boolean> mrMatchesWeight =
@@ -105,6 +111,7 @@ public class BaseSearchFilterTest extends BaseSearchTest {
             };
     protected static final BiFunction<ImagingSession, SearchRow, Boolean> mrMatchesDelay =
             (session, row) -> StringUtils.equals(session.getSpecificFields().get(MR_DELAY_SCHEMA_PATH), row.get(DELAY_COLUMN_NAME));
+    protected static final SearchColumn groupSearchColumn = buildExpectedSearchColumn(GROUP_DISPLAY_FIELD_ID.toLowerCase(), SearchFieldTypes.STRING, DataType.SUBJECT, GROUP_DISPLAY_NAME);
     protected static final SearchColumn weightSearchColumn = buildExpectedSearchColumn(WEIGHT_COLUMN_NAME, SearchFieldTypes.FLOAT, DataType.MR_SESSION, WEIGHT_DISPLAY_NAME);
     protected static final SearchColumn t1SearchColumn = new SearchColumn()
             .key(T1_SCAN_COUNT_COLUMN_NAME)
@@ -130,10 +137,11 @@ public class BaseSearchFilterTest extends BaseSearchTest {
                 .allMatch(function -> function.apply(session, row));
     }
 
-    protected static MRSession mrWithFields(String weight, String delay, LocalDate date) {
+    protected static MRSession mrWithFields(String weight, String delay, LocalDate date, String scanner) {
         final Map<String, String> fieldMap = new HashMap<>();
         fieldMap.put(MR_WEIGHT_SCHEMA_PATH, weight);
         fieldMap.put(MR_DELAY_SCHEMA_PATH, delay);
+        fieldMap.put(MR_SCANNER_SCHEMA_PATH, scanner);
         return new MRSession(testProject, subjectNull)
                 .specificFields(fieldMap)
                 .date(date);
@@ -154,9 +162,14 @@ public class BaseSearchFilterTest extends BaseSearchTest {
         }
 
         SearchValidator(List<SearchColumn> searchColumnsToCheck, XnatSearchDocument searchDocument, BiFunction<X, SearchRow, Boolean> responseChecker) {
-            this.searchColumnsToCheck = searchColumnsToCheck;
+            this.searchColumnsToCheck = new ArrayList<>(searchColumnsToCheck); // make sure it's mutable
             this.searchDocument = searchDocument;
             this.responseChecker = responseChecker;
+        }
+
+        SearchValidator<X> addSearchColumn(SearchColumn searchColumn) {
+            searchColumnsToCheck.add(searchColumn);
+            return this;
         }
 
         @SafeVarargs

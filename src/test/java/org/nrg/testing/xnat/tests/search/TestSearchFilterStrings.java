@@ -2,6 +2,7 @@ package org.nrg.testing.xnat.tests.search;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.testing.TestGroups;
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Subject;
@@ -12,21 +13,22 @@ import org.nrg.xnat.pogo.search.SearchRow;
 import org.nrg.xnat.pogo.search.XdatCriteria;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
 import org.nrg.xnat.pogo.search.XnatSearchParams;
+import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.util.Arrays;
 import java.util.function.BiFunction;
 
-import static org.nrg.xnat.pogo.search.XnatSearchParams.SortOrder.ASC;
-import static org.nrg.xnat.pogo.search.XnatSearchParams.SortOrder.DESC;
+import static org.nrg.xnat.pogo.search.SortOrder.ASC;
+import static org.nrg.xnat.pogo.search.SortOrder.DESC;
 
+@AddedIn(Xnat_1_8_0.class)
 public class TestSearchFilterStrings extends BaseSearchFilterTest {
 
-    private final BiFunction<Subject, SearchRow, Boolean> subjectCheckerFunction = (subject, row) -> subject.getLabel().equals(row.get("sub_project_identifier_" + testProject.getId().toLowerCase()))
-            && StringUtils.equals(subject.getGroup(), row.get(GROUP_DISPLAY_FIELD_ID.toLowerCase()));
+    private final BiFunction<Subject, SearchRow, Boolean> subjectCheckerFunction = and(Arrays.asList(subjectMatchesLabel, subjectMatchesGroup));
 
-    private final SearchColumn groupSearchColumn = buildExpectedSearchColumn(GROUP_DISPLAY_FIELD_ID.toLowerCase(), SearchFieldTypes.STRING, DataType.SUBJECT, GROUP_DISPLAY_NAME);
     private final XnatSearchDocument groupSearchDocument = readSearchFromFile()
             .addSearchField(DataType.SUBJECT, GROUP_DISPLAY_FIELD_ID, SearchFieldTypes.STRING, GROUP_DISPLAY_NAME);
     private final SearchValidator<Subject> groupSearchValidator = new SearchValidator<>(

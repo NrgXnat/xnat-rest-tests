@@ -2,10 +2,9 @@ package org.nrg.testing.xnat.tests.search;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.testing.TestGroups;
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.xnat.pogo.DataType;
-import org.nrg.xnat.pogo.Subject;
-import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.search.ComparisonType;
 import org.nrg.xnat.pogo.search.SearchColumn;
@@ -14,6 +13,7 @@ import org.nrg.xnat.pogo.search.SearchRow;
 import org.nrg.xnat.pogo.search.XdatCriteria;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
 import org.nrg.xnat.pogo.search.XnatSearchParams;
+import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -26,9 +26,10 @@ import java.util.function.BiFunction;
 
 import static org.nrg.testing.TimeUtils.AMERICAN_DATE;
 import static org.nrg.testing.TimeUtils.UNAMBIGUOUS_DATE;
-import static org.nrg.xnat.pogo.search.XnatSearchParams.SortOrder.ASC;
-import static org.nrg.xnat.pogo.search.XnatSearchParams.SortOrder.DESC;
+import static org.nrg.xnat.pogo.search.SortOrder.ASC;
+import static org.nrg.xnat.pogo.search.SortOrder.DESC;
 
+@AddedIn(Xnat_1_8_0.class)
 public class TestSearchFilterDates extends BaseSearchFilterTest {
 
     private static final List<DateTimeFormatter> supportedFormatters = Arrays.asList(UNAMBIGUOUS_DATE, AMERICAN_DATE);
