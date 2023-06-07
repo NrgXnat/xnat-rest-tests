@@ -55,10 +55,10 @@ public class TestSearchFilterIntegers extends BaseSearchFilterTest {
     private final MRSession mrSession5000Delay = mrSession150Pounds;
     private final MRSession mrSession1234Delay = mrSession200Pounds;
     private final MRSession mrSessionNoDelay = mrSessionNoWeight;
-    private final MRSession mrSession3T1Scans = mrSession200Pounds;
+    private final MRSession mrSession3T1Scans = mrSessionNoWeight;
     private final MRSession mrSession2T1Scans = mrSession1305Pounds;
     private final MRSession mrSession1T1Scan = mrSession150Pounds;
-    private final MRSession mrSessionWithNoScans = mrSessionNoWeight;
+    private final MRSession mrSessionWithNoScans = mrSession200Pounds;
 
     @BeforeClass(groups = TestGroups.SEARCH)
     private void initCriteria() {

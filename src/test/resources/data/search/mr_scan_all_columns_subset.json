@@ -1,0 +1,65 @@
+[
+    {
+        "key": "xnat_mrscandata_id",
+        "clickable": true,
+        "linkProps": [
+            {
+                "name": "HREF",
+                "value": "/data/experiments/@Field3/scans/@Field4?format=html",
+                "inserts": [
+                    {
+                        "name": "Field4",
+                        "value": "xnat_mrscandata_id"
+                    },
+                    {
+                        "name": "Field3",
+                        "value": "xnat_mrscandata_session_id"
+                    },
+                    {
+                        "name": "Field2",
+                        "value": "xnat_mrscandata_subject_id"
+                    },
+                    {
+                        "name": "Field1",
+                        "value": "xnat_mrscandata_project"
+                    }
+                ]
+            }
+        ],
+        "type": "string",
+        "header": "ID",
+        "id": "ID",
+        "xPATH": "xnat:mrScanData.ID",
+        "element_name": "xnat:mrScanData"
+    },
+    {
+        "key": "xnat_mrscandata_type",
+        "clickable": null,
+        "linkProps": null,
+        "type": "string",
+        "header": "type",
+        "id": "TYPE",
+        "xPATH": "xnat:mrScanData.TYPE",
+        "element_name": "xnat:mrScanData"
+    },
+    {
+        "key": "xnat_mrscandata_series_description",
+        "clickable": null,
+        "linkProps": null,
+        "type": "string",
+        "header": "series_description",
+        "id": "SERIES_DESCRIPTION",
+        "xPATH": "xnat:mrScanData.SERIES_DESCRIPTION",
+        "element_name": "xnat:mrScanData"
+    },
+    {
+        "key": "xnat_mrscandata_starttime",
+        "clickable": null,
+        "linkProps": null,
+        "type": "time",
+        "header": "startTime",
+        "id": "STARTTIME",
+        "xPATH": "xnat:mrScanData.STARTTIME",
+        "element_name": "xnat:mrScanData"
+    }
+]

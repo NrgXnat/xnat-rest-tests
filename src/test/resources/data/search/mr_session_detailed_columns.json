@@ -1,0 +1,97 @@
+[
+    {
+        "key": "xnat_mrsessiondata_mr_notes",
+        "clickable": null,
+        "linkProps": null,
+        "type": "string",
+        "header": "Notes",
+        "id": "MR_NOTES",
+        "xPATH": "xnat:mrSessionData.MR_NOTES",
+        "element_name": "xnat:mrSessionData"
+    },
+    {
+        "key": "xnat_mrsessiondata_label",
+        "clickable": true,
+        "linkProps": [
+            {
+                "name": "HREF",
+                "value": "/app/action/DisplayItemAction/search_value/@Field1/search_element/xnat:mrSessionData/search_field/xnat:mrSessionData.ID",
+                "inserts": [
+                    {
+                        "name": "Field1",
+                        "value": "xnat_mrsessiondata_session_id"
+                    }
+                ]
+            },
+            {
+                "name": "ONCLICK",
+                "value": "return rpt('@Field1','xnat:mrSessionData','xnat:mrSessionData.ID');",
+                "inserts": [
+                    {
+                        "name": "Field1",
+                        "value": "xnat_mrsessiondata_session_id"
+                    }
+                ]
+            },
+            {
+                "name": "TITLE",
+                "value": "Inserted: @Field1 (@Field2)",
+                "inserts": [
+                    {
+                        "name": "Field2",
+                        "value": "xnat_mrsessiondata_insert_user"
+                    },
+                    {
+                        "name": "Field1",
+                        "value": "xnat_mrsessiondata_insert_date"
+                    }
+                ]
+            }
+        ],
+        "type": "string",
+        "header": "Label",
+        "id": "LABEL",
+        "xPATH": "xnat:mrSessionData.LABEL",
+        "element_name": "xnat:mrSessionData"
+    },
+    {
+        "key": "xnat_mrsessiondata_operator",
+        "clickable": null,
+        "linkProps": null,
+        "type": "string",
+        "header": "Operator",
+        "id": "OPERATOR",
+        "xPATH": "xnat:mrSessionData.OPERATOR",
+        "element_name": "xnat:mrSessionData"
+    },
+    {
+        "key": "xnat_mrsessiondata_scanner",
+        "clickable": null,
+        "linkProps": null,
+        "type": "string",
+        "header": "Scanner",
+        "id": "SCANNER",
+        "xPATH": "xnat:mrSessionData.SCANNER",
+        "element_name": "xnat:mrSessionData"
+    },
+    {
+        "key": "xnat_mrsessiondata_marker",
+        "clickable": null,
+        "linkProps": null,
+        "type": "string",
+        "header": "Marker",
+        "id": "MARKER",
+        "xPATH": "xnat:mrSessionData.MARKER",
+        "element_name": "xnat:mrSessionData"
+    },
+    {
+        "key": "xnat_mrsessiondata_stabilization",
+        "clickable": null,
+        "linkProps": null,
+        "type": "string",
+        "header": "Stabilization",
+        "id": "STABILIZATION",
+        "xPATH": "xnat:mrSessionData.STABILIZATION",
+        "element_name": "xnat:mrSessionData"
+    }
+]
