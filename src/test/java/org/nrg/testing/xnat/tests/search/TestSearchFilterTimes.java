@@ -8,6 +8,7 @@ import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.pogo.search.ComparisonType;
 import org.nrg.xnat.pogo.search.SearchColumn;
+import org.nrg.xnat.pogo.search.SearchField;
 import org.nrg.xnat.pogo.search.SearchFieldTypes;
 import org.nrg.xnat.pogo.search.SearchRow;
 import org.nrg.xnat.pogo.search.XdatCriteria;
@@ -28,10 +29,15 @@ import static org.nrg.xnat.pogo.search.SortOrder.DESC;
 @AddedIn(Xnat_1_8_0.class)
 public class TestSearchFilterTimes extends BaseSearchFilterTest {
 
+    private final SearchField mrStartTimeSearchField = new SearchField()
+            .fieldId(MR_SCAN_DISPLAY_FIELD_ID)
+            .elementName(DataType.MR_SCAN)
+            .type(SearchFieldTypes.TIME)
+            .header(MR_SCAN_START_TIME_DISPLAY_NAME);
+    private final SearchColumn mrStartTimeSearchColumn = mrStartTimeSearchField.generateExpectedSearchColumn(true, true);
     private final BiFunction<Scan, SearchRow, Boolean> scanCheckerFunction = (scan, row) -> scan.getSession().getLabel().equals(row.get("session_label"))
             && scan.getId().equals(row.get("id"))
             && StringUtils.equals(serialize(scan.getStartTime()), row.get(MR_SCAN_DISPLAY_FIELD_ID.toLowerCase()));
-    private final SearchColumn mrStartTimeSearchColumn = buildExpectedSearchColumn(MR_SCAN_DISPLAY_FIELD_ID.toLowerCase(), SearchFieldTypes.TIME, DataType.MR_SCAN, MR_SCAN_START_TIME_DISPLAY_NAME);
 
     private final XnatSearchDocument mrStartTimeDisplayFieldSearchDocument = readSearchFromFile();
     private final SearchValidator<Scan> mrStartTimeDisplayFieldSearchValidator = new SearchValidator<>(
@@ -39,7 +45,7 @@ public class TestSearchFilterTimes extends BaseSearchFilterTest {
             mrStartTimeDisplayFieldSearchDocument,
             scanCheckerFunction
     );
-    private final XdatCriteria mrStartTimeDisplayFieldSearchCriteria = new XdatCriteria().schemaField(DataType.MR_SCAN.getXsiType() + "." + MR_SCAN_DISPLAY_FIELD_ID);
+    private final XdatCriteria mrStartTimeDisplayFieldSearchCriteria = new XdatCriteria().schemaField(mrStartTimeSearchColumn.getXpath());
     
     private final XnatSearchDocument mrStartTimeSchemaFieldSearchDocument = readSearchFromFile();
     private final SearchValidator<Scan> mrStartTimeSchemaFieldSearchValidator = new SearchValidator<>(

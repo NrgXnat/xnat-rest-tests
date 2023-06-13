@@ -4,11 +4,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.testing.TestGroups;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.ExpectedFailure;
-import org.nrg.xnat.pogo.DataType;
+import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.search.ComparisonType;
 import org.nrg.xnat.pogo.search.SearchColumn;
-import org.nrg.xnat.pogo.search.SearchFieldTypes;
 import org.nrg.xnat.pogo.search.SearchRow;
 import org.nrg.xnat.pogo.search.XdatCriteria;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
@@ -34,20 +33,22 @@ public class TestSearchFilterDates extends BaseSearchFilterTest {
 
     private static final List<DateTimeFormatter> supportedFormatters = Arrays.asList(UNAMBIGUOUS_DATE, AMERICAN_DATE);
 
-    private final BiFunction<MRSession, SearchRow, Boolean> mrCheckerFunction = (session, row) -> mrMatchesLabel.apply(session, row)
-            && StringUtils.equals((session.getDate() == null) ? "" : UNAMBIGUOUS_DATE.format(session.getDate()), row.get(MR_DATE_DISPLAY_FIELD_ID.toLowerCase()));
-    private final SearchColumn mrDateSearchColumn = buildExpectedSearchColumn(MR_DATE_DISPLAY_FIELD_ID.toLowerCase(), SearchFieldTypes.DATE, DataType.MR_SESSION, MR_DATE_DISPLAY_NAME);
+    private final SearchColumn mrDateSearchColumn = mrDateSearchField.generateExpectedSearchColumn(true, true);
+    private final BiFunction<ImagingSession, SearchRow, Boolean> mrCheckerFunction = and(Arrays.asList(
+            mrMatchesLabel,
+            (session, row) -> StringUtils.equals((session.getDate() == null) ? "" : UNAMBIGUOUS_DATE.format(session.getDate()), row.get(mrDateSearchColumn.getKey()))
+    ));
 
     private final XnatSearchDocument mrDateDisplayFieldSearchDocument = readSearchFromFile();
-    private final SearchValidator<MRSession> mrDateDisplayFieldSearchValidator = new SearchValidator<>(
+    private final SearchValidator<ImagingSession> mrDateDisplayFieldSearchValidator = new SearchValidator<>(
             mrDateSearchColumn,
             mrDateDisplayFieldSearchDocument,
             mrCheckerFunction
     );
-    private final XdatCriteria mrDateDisplayFieldSearchCriteria = new XdatCriteria().schemaField(DataType.MR_SESSION.getXsiType() + "." + MR_DATE_DISPLAY_FIELD_ID);
+    private final XdatCriteria mrDateDisplayFieldSearchCriteria = new XdatCriteria().schemaField(mrDateSearchColumn.getXpath());
     
     private final XnatSearchDocument mrDateSchemaFieldSearchDocument = readSearchFromFile();
-    private final SearchValidator<MRSession> mrDateSchemaFieldSearchValidator = new SearchValidator<>(
+    private final SearchValidator<ImagingSession> mrDateSchemaFieldSearchValidator = new SearchValidator<>(
             mrDateSearchColumn,
             mrDateSchemaFieldSearchDocument,
             mrCheckerFunction
@@ -250,7 +251,7 @@ public class TestSearchFilterDates extends BaseSearchFilterTest {
     @Test
     public void testSearchEngineSortingDateDisplayField() {
         final XnatSearchDocument sortingSearchDocument = readSearchFromFile();
-        final SearchValidator<MRSession> sortingSearchValidator = new SearchValidator<>(
+        final SearchValidator<ImagingSession> sortingSearchValidator = new SearchValidator<>(
                 mrDateSearchColumn,
                 sortingSearchDocument,
                 mrCheckerFunction

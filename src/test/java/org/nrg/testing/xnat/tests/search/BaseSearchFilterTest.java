@@ -11,6 +11,7 @@ import org.nrg.xnat.pogo.experiments.scans.MRScan;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.experiments.sessions.PETSession;
 import org.nrg.xnat.pogo.search.SearchColumn;
+import org.nrg.xnat.pogo.search.SearchField;
 import org.nrg.xnat.pogo.search.SearchFieldTypes;
 import org.nrg.xnat.pogo.search.SearchResponse;
 import org.nrg.xnat.pogo.search.SearchRow;
@@ -38,20 +39,19 @@ public class BaseSearchFilterTest extends BaseSearchTest {
     private static boolean setupDone = false;
     protected static final String GROUP_DISPLAY_NAME = "Group";
     protected static final String GROUP_DISPLAY_FIELD_ID = "SUB_GROUP";
-    protected static final String GROUP_SCHEMA_PATH = DataType.SUBJECT + "/group";
+    protected static final String GROUP_SCHEMA_PATH = "xnat:subjectData/group";
     protected static final String MR_SCANNER_SCHEMA_PATH = "xnat:mrSessionData/scanner";
     protected static final String MR_WEIGHT_SCHEMA_PATH = "xnat:mrSessionData/dcmPatientWeight";
-    protected static final String WEIGHT_COLUMN_NAME = "xnat_col_mrsessiondatadcmpatientweight";
     protected static final String WEIGHT_DISPLAY_NAME = "DICOM Patient Weight";
     protected static final String T1_SCAN_COUNT_DISPLAY_NAME = "T1 Scan Count";
     protected static final String MR_T1_SCAN_COUNT_FIELD_ID = "SCAN_COUNT_TYPE=T1";
-    protected static final String T1_SCAN_COUNT_COLUMN_NAME = "scan_count_type_t1";
     protected static final String MR_DELAY_SCHEMA_PATH = "xnat:mrSessionData/delay";
-    protected static final String DELAY_COLUMN_NAME = "xnat_col_mrsessiondatadelay";
     protected static final String DELAY_DISPLAY_NAME = "Experiment Delay Field";
     protected static final String MR_DATE_SCHEMA_PATH = "xnat:mrSessionData/date";
     protected static final String MR_DATE_DISPLAY_NAME = "Date";
     protected static final String MR_DATE_DISPLAY_FIELD_ID = "DATE";
+    protected static final String MR_LABEL_FIELD_ID = "LABEL";
+    protected static final String MR_LABEL_DISPLAY_NAME = "Label";
     protected static final String MR_SCAN_START_TIME_DISPLAY_NAME = "startTime";
     protected static final String MR_SCAN_START_TIME_SCHEMA_PATH = "xnat:mrScanData/startTime";
     protected static final String MR_SCAN_DISPLAY_FIELD_ID = "STARTTIME";
@@ -70,10 +70,10 @@ public class BaseSearchFilterTest extends BaseSearchTest {
     protected static final LocalDate march20th2020 = LocalDate.parse("2020-03-20");
     protected static final LocalDate july7th2018 = LocalDate.parse("2018-07-07");
     protected static final LocalDate february2nd2021 = LocalDate.parse("2021-02-02");
-    protected static final MRSession mrSession1305Pounds = mrWithFields("130.5", "10000", march20th2020, "");
-    protected static final MRSession mrSession150Pounds = mrWithFields("150", "5000", july7th2018, "");
-    protected static final MRSession mrSession200Pounds = mrWithFields("200.0", "1234", february2nd2021, "");
-    protected static final MRSession mrSessionNoWeight = mrWithFields("", "", null, "SCANNING MRI DEVICE");
+    protected static final MRSession mrSession1305Pounds = mrWithFields(subjectNull, "130.5", "10000", march20th2020, "");
+    protected static final MRSession mrSession150Pounds = mrWithFields(subjectNull, "150", "5000", july7th2018, "");
+    protected static final MRSession mrSession200Pounds = mrWithFields(subjectFrobenius, "200.0", "1234", february2nd2021, "");
+    protected static final MRSession mrSessionNoWeight = mrWithFields(subjectNull, "", "", null, "SCANNING MRI DEVICE");
     protected static final Scan t1At012345 = new MRScan(mrSession1305Pounds, "1").seriesDescription(T1).type(T1).startTime(LocalTime.parse("01:23:45"));
     protected static final Scan t1At090909 = new MRScan(mrSession1305Pounds, "2").seriesDescription(T1).type(T1).startTime(LocalTime.parse("09:09:09"));
     protected static final Scan t2At101010 = new MRScan(mrSession1305Pounds, "3").seriesDescription(T2).type(T2).startTime(LocalTime.parse("10:10:10"));
@@ -92,14 +92,55 @@ public class BaseSearchFilterTest extends BaseSearchTest {
     protected static final PETSession pet20160102T200000 = petWithFields(TIMESTAMP_20160102T200000);
     protected static final PETSession petTimeless = petWithFields("");
 
+    protected static final SearchField groupSearchField = new SearchField()
+            .elementName(DataType.SUBJECT)
+            .fieldId(GROUP_DISPLAY_FIELD_ID)
+            .type(SearchFieldTypes.STRING)
+            .header(GROUP_DISPLAY_NAME);
+
+    protected static final SearchField weightSearchField = new SearchField()
+            .elementName(DataType.MR_SESSION)
+            .fieldId(MR_WEIGHT_SCHEMA_PATH)
+            .type(SearchFieldTypes.FLOAT)
+            .header(WEIGHT_DISPLAY_NAME);
+
+    protected static final SearchField t1CountSearchField = new SearchField()
+            .elementName(DataType.MR_SESSION)
+            .fieldId(MR_T1_SCAN_COUNT_FIELD_ID)
+            .type(SearchFieldTypes.INTEGER)
+            .header(T1_SCAN_COUNT_DISPLAY_NAME);
+
+    protected static final SearchField delaySearchField = new SearchField()
+            .elementName(DataType.MR_SESSION)
+            .fieldId(MR_DELAY_SCHEMA_PATH)
+            .type(SearchFieldTypes.INTEGER)
+            .header(DELAY_DISPLAY_NAME);
+
+    protected static final SearchField mrDateSearchField = new SearchField()
+            .elementName(DataType.MR_SESSION)
+            .fieldId(MR_DATE_DISPLAY_FIELD_ID)
+            .type(SearchFieldTypes.DATE)
+            .header(MR_DATE_DISPLAY_NAME);
+
+    protected static final SearchField mrLabelSearchField = new SearchField()
+            .elementName(DataType.MR_SESSION)
+            .fieldId(MR_LABEL_FIELD_ID)
+            .type(SearchFieldTypes.STRING)
+            .header(MR_LABEL_DISPLAY_NAME);
+
+    protected static final SearchColumn groupSearchColumn = groupSearchField.generateExpectedSearchColumn(true, true);
+    protected static final SearchColumn weightSearchColumn = weightSearchField.generateExpectedSearchColumn(false, true);
+    protected static final SearchColumn t1SearchColumn = t1CountSearchField.generateExpectedSearchColumn(true, true);
+    protected static final SearchColumn delaySearchColumn = delaySearchField.generateExpectedSearchColumn(false, true);
+
     protected static final BiFunction<Subject, SearchRow, Boolean> subjectMatchesLabel =
             (subject, row) -> subject.getLabel().equals(row.getSubjectLabelInProject(subject.getProject()));
     protected static final BiFunction<Subject, SearchRow, Boolean> subjectMatchesGroup =
             (subject, row) -> StringUtils.equals(subject.getGroup(), row.get(GROUP_DISPLAY_FIELD_ID.toLowerCase()));
     protected static final BiFunction<ImagingSession, SearchRow, Boolean> mrMatchesLabel =
-            (session, row) -> session.getLabel().equals(row.getMrSessionLabelInProject(testProject));
+            (session, row) -> session.getLabel().equals(row.getMrSessionLabelInProject(session.getPrimaryProject()));
     protected static final BiFunction<ImagingSession, SearchRow, Boolean> mrMatchesWeight =
-            (session, row) -> StringUtils.equals(session.getSpecificFields().get(MR_WEIGHT_SCHEMA_PATH), row.get(WEIGHT_COLUMN_NAME));
+            (session, row) -> StringUtils.equals(session.getSpecificFields().get(MR_WEIGHT_SCHEMA_PATH), row.get(weightSearchColumn.getKey()));
     protected static final BiFunction<ImagingSession, SearchRow, Boolean> mrMatchesT1Count =
             (session, row) -> {
                 final long scanCount = session
@@ -107,20 +148,10 @@ public class BaseSearchFilterTest extends BaseSearchTest {
                         .stream()
                         .filter(scan -> T1.equals(scan.getType()))
                         .count();
-                return row.get(T1_SCAN_COUNT_COLUMN_NAME).equals(scanCount == 0 ? "" : String.valueOf(scanCount));
+                return row.get(t1SearchColumn.getKey()).equals(scanCount == 0 ? "" : String.valueOf(scanCount));
             };
     protected static final BiFunction<ImagingSession, SearchRow, Boolean> mrMatchesDelay =
-            (session, row) -> StringUtils.equals(session.getSpecificFields().get(MR_DELAY_SCHEMA_PATH), row.get(DELAY_COLUMN_NAME));
-    protected static final SearchColumn groupSearchColumn = buildExpectedSearchColumn(GROUP_DISPLAY_FIELD_ID.toLowerCase(), SearchFieldTypes.STRING, DataType.SUBJECT, GROUP_DISPLAY_NAME);
-    protected static final SearchColumn weightSearchColumn = buildExpectedSearchColumn(WEIGHT_COLUMN_NAME, SearchFieldTypes.FLOAT, DataType.MR_SESSION, WEIGHT_DISPLAY_NAME);
-    protected static final SearchColumn t1SearchColumn = new SearchColumn()
-            .key(T1_SCAN_COUNT_COLUMN_NAME)
-            .type(SearchFieldTypes.INTEGER)
-            .xpath(DataType.MR_SESSION.getXsiType() + "." + MR_T1_SCAN_COUNT_FIELD_ID.split("=")[0])
-            .elementName(DataType.MR_SESSION.getXsiType())
-            .header(T1_SCAN_COUNT_DISPLAY_NAME)
-            .id(MR_T1_SCAN_COUNT_FIELD_ID);
-    protected static final SearchColumn delaySearchColumn = buildExpectedSearchColumn(DELAY_COLUMN_NAME, SearchFieldTypes.INTEGER, DataType.MR_SESSION, DELAY_DISPLAY_NAME);
+            (session, row) -> StringUtils.equals(session.getSpecificFields().get(MR_DELAY_SCHEMA_PATH), row.get(delaySearchColumn.getKey()));
 
     @BeforeClass(groups = TestGroups.SEARCH)
     protected void setup() {
@@ -137,12 +168,12 @@ public class BaseSearchFilterTest extends BaseSearchTest {
                 .allMatch(function -> function.apply(session, row));
     }
 
-    protected static MRSession mrWithFields(String weight, String delay, LocalDate date, String scanner) {
+    protected static MRSession mrWithFields(Subject subject, String weight, String delay, LocalDate date, String scanner) {
         final Map<String, String> fieldMap = new HashMap<>();
         fieldMap.put(MR_WEIGHT_SCHEMA_PATH, weight);
         fieldMap.put(MR_DELAY_SCHEMA_PATH, delay);
         fieldMap.put(MR_SCANNER_SCHEMA_PATH, scanner);
-        return new MRSession(testProject, subjectNull)
+        return new MRSession(testProject, subject)
                 .specificFields(fieldMap)
                 .date(date);
     }
@@ -161,12 +192,17 @@ public class BaseSearchFilterTest extends BaseSearchTest {
             this(Collections.singletonList(searchColumnToCheck), searchDocument, responseChecker);
         }
 
+        SearchValidator(BiFunction<X, SearchRow, Boolean> responseChecker) {
+            this(new ArrayList<>(), null, responseChecker);
+        }
+
         SearchValidator(List<SearchColumn> searchColumnsToCheck, XnatSearchDocument searchDocument, BiFunction<X, SearchRow, Boolean> responseChecker) {
             this.searchColumnsToCheck = new ArrayList<>(searchColumnsToCheck); // make sure it's mutable
             this.searchDocument = searchDocument;
             this.responseChecker = responseChecker;
         }
 
+        @SuppressWarnings("UnusedReturnValue")
         SearchValidator<X> addSearchColumn(SearchColumn searchColumn) {
             searchColumnsToCheck.add(searchColumn);
             return this;
@@ -194,38 +230,29 @@ public class BaseSearchFilterTest extends BaseSearchTest {
             assertEquals("all items expected to validate should be unique", expectedItems.size(), new HashSet<>(expectedItems).size()); // double check test developer error
             if (performExtraChecks) {
                 assertEquals(expectedItems.size(), searchResponse.getTotalRecords());
-            }
-            assertEquals(expectedItems.size(), searchResponse.getResult().size());
-            if (performExtraChecks) {
                 for (SearchColumn searchColumnToCheck : searchColumnsToCheck) {
                     assertTrue(searchResponse.getColumns().contains(searchColumnToCheck));
                 }
             }
+            validateSearchResponseResult(enforceOrder, searchResponse.getResult(), expectedItems);
+        }
+
+        protected void validateSearchResponseResult(boolean enforceOrder, List<SearchRow> searchResponseResult, List<X> expectedItems) {
+            assertEquals(expectedItems.size(), searchResponseResult.size());
             if (enforceOrder) {
                 for (int i = 0; i < expectedItems.size(); i++) {
-                    assertTrue(responseChecker.apply(expectedItems.get(i), searchResponse.getResult().get(i)));
+                    assertTrue(responseChecker.apply(expectedItems.get(i), searchResponseResult.get(i)));
                 }
             } else {
                 for (X expectedObject : expectedItems) {
                     assertTrue(
-                            searchResponse
-                                    .getResult()
+                            searchResponseResult
                                     .stream()
                                     .anyMatch(row -> responseChecker.apply(expectedObject, row))
                     );
                 }
             }
         }
-    }
-
-    protected static SearchColumn buildExpectedSearchColumn(String expectedColumnName, String expectedType, DataType dataType, String expectedDisplayName) {
-        return new SearchColumn()
-                .key(expectedColumnName)
-                .type(expectedType)
-                .xpath(dataType.getXsiType() + "." + expectedColumnName.toUpperCase())
-                .elementName(dataType.getXsiType())
-                .header(expectedDisplayName)
-                .id(expectedColumnName.toUpperCase());
     }
 
 }

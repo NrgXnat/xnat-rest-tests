@@ -7,6 +7,8 @@ import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.experiments.sessions.PETSession;
 import org.nrg.xnat.pogo.search.ComparisonType;
 import org.nrg.xnat.pogo.search.SearchColumn;
+import org.nrg.xnat.pogo.search.SearchField;
+import org.nrg.xnat.pogo.search.SearchFieldTypes;
 import org.nrg.xnat.pogo.search.SearchRow;
 import org.nrg.xnat.pogo.search.XdatCriteria;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
@@ -26,7 +28,12 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
 
     private final BiFunction<PETSession, SearchRow, Boolean> petCheckerFunction = (session, row) -> session.getLabel().equals(row.get("xnat_petsessiondata_project_identifier_" + testProject.getId().toLowerCase()))
             && session.getSpecificFields().get(PET_TRACER_START_SCHEMA_PATH).equals(row.get(PET_TRACER_START_FIELD_ID.toLowerCase()));
-    private final SearchColumn petStartSearchColumn = buildExpectedSearchColumn(PET_TRACER_START_FIELD_ID.toLowerCase(), "dateTime", DataType.PET_SESSION, PET_TRACER_START_DISPLAY_NAME);
+    private final SearchField petStartSearchField = new SearchField()
+            .fieldId(PET_TRACER_START_FIELD_ID)
+            .elementName(DataType.PET_SESSION)
+            .type(SearchFieldTypes.DATETIME)
+            .header(PET_TRACER_START_DISPLAY_NAME);
+    private final SearchColumn petStartSearchColumn = petStartSearchField.generateExpectedSearchColumn(true, true);
 
     private SearchValidator<PETSession> petTracerStartDisplayFieldSearchValidator;
     private final XdatCriteria petTracerStartDisplayFieldSearchCriteria = new XdatCriteria().schemaField(DataType.PET_SESSION.getXsiType() + "." + PET_TRACER_START_FIELD_ID);

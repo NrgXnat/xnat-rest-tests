@@ -33,16 +33,16 @@ import static org.nrg.xnat.pogo.search.SortOrder.DESC;
 public class TestSearchFilterIntegers extends BaseSearchFilterTest {
 
     private final XnatSearchDocument t1SearchDocument = readSearchFromFile()
-            .addSearchField(DataType.MR_SESSION, MR_T1_SCAN_COUNT_FIELD_ID, SearchFieldTypes.INTEGER, T1_SCAN_COUNT_DISPLAY_NAME);
+            .addSearchField(t1CountSearchField);
     private final SearchValidator<ImagingSession> t1SearchValidator = new SearchValidator<>(
             t1SearchColumn,
             t1SearchDocument,
             and(Arrays.asList(mrMatchesLabel, mrMatchesT1Count))
     );
-    private final XdatCriteria t1SearchCriteria = new XdatCriteria().schemaField(DataType.MR_SESSION.getXsiType() + "." + MR_T1_SCAN_COUNT_FIELD_ID);
+    private final XdatCriteria t1SearchCriteria = new XdatCriteria().schemaField(t1SearchColumn.getElementName() + "." + t1SearchColumn.getId()); // xpath field truncates the full needed value
 
     private final XnatSearchDocument delaySearchDocument = readSearchFromFile()
-            .addSearchField(DataType.MR_SESSION, MR_DELAY_SCHEMA_PATH, SearchFieldTypes.INTEGER, DELAY_DISPLAY_NAME);
+            .addSearchField(delaySearchField);
     private final SearchValidator<ImagingSession> delaySearchValidator = new SearchValidator<>(
             delaySearchColumn,
             delaySearchDocument,

@@ -1,13 +1,12 @@
 package org.nrg.testing.xnat.tests.search;
 
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.testing.TestGroups;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.search.ComparisonType;
-import org.nrg.xnat.pogo.search.SearchColumn;
+import org.nrg.xnat.pogo.search.SearchField;
 import org.nrg.xnat.pogo.search.SearchFieldTypes;
 import org.nrg.xnat.pogo.search.SearchRow;
 import org.nrg.xnat.pogo.search.XdatCriteria;
@@ -30,16 +29,21 @@ public class TestSearchFilterStrings extends BaseSearchFilterTest {
     private final BiFunction<Subject, SearchRow, Boolean> subjectCheckerFunction = and(Arrays.asList(subjectMatchesLabel, subjectMatchesGroup));
 
     private final XnatSearchDocument groupSearchDocument = readSearchFromFile()
-            .addSearchField(DataType.SUBJECT, GROUP_DISPLAY_FIELD_ID, SearchFieldTypes.STRING, GROUP_DISPLAY_NAME);
+            .addSearchField(groupSearchField);
     private final SearchValidator<Subject> groupSearchValidator = new SearchValidator<>(
             groupSearchColumn,
             groupSearchDocument,
             subjectCheckerFunction
     );
-    private final XdatCriteria groupSearchCriteria = new XdatCriteria().schemaField(DataType.SUBJECT.getXsiType() + "." + GROUP_DISPLAY_FIELD_ID);
+    private final XdatCriteria groupSearchCriteria = new XdatCriteria().schemaField(groupSearchColumn.getXpath());
 
+    private final SearchField groupSchemaSearchField = new SearchField()
+            .elementName(DataType.SUBJECT)
+            .type(SearchFieldTypes.STRING)
+            .fieldId(GROUP_SCHEMA_PATH)
+            .header(GROUP_DISPLAY_NAME);
     private final XnatSearchDocument groupSchemaSearchDocument = readSearchFromFile()
-            .addSearchField(DataType.SUBJECT, GROUP_SCHEMA_PATH, SearchFieldTypes.STRING, GROUP_DISPLAY_NAME);
+            .addSearchField(groupSchemaSearchField);
     private final SearchValidator<Subject> groupSchemaSearchValidator = new SearchValidator<>(
             groupSearchColumn,
             groupSchemaSearchDocument,
