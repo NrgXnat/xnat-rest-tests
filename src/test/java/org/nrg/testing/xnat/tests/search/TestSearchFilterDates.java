@@ -34,10 +34,10 @@ public class TestSearchFilterDates extends BaseSearchFilterTest {
     private static final List<DateTimeFormatter> supportedFormatters = Arrays.asList(UNAMBIGUOUS_DATE, AMERICAN_DATE);
 
     private final SearchColumn mrDateSearchColumn = mrDateSearchField.generateExpectedSearchColumn(true, true);
-    private final BiFunction<ImagingSession, SearchRow, Boolean> mrCheckerFunction = and(Arrays.asList(
+    private final BiFunction<ImagingSession, SearchRow, Boolean> mrCheckerFunction = and(
             mrMatchesLabel,
             (session, row) -> StringUtils.equals((session.getDate() == null) ? "" : UNAMBIGUOUS_DATE.format(session.getDate()), row.get(mrDateSearchColumn.getKey()))
-    ));
+    );
 
     private final XnatSearchDocument mrDateDisplayFieldSearchDocument = readSearchFromFile();
     private final SearchValidator<ImagingSession> mrDateDisplayFieldSearchValidator = new SearchValidator<>(

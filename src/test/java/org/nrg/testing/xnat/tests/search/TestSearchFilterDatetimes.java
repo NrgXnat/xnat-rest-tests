@@ -4,7 +4,7 @@ import org.nrg.testing.TestGroups;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.xnat.pogo.DataType;
-import org.nrg.xnat.pogo.experiments.sessions.PETSession;
+import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.search.ComparisonType;
 import org.nrg.xnat.pogo.search.SearchColumn;
 import org.nrg.xnat.pogo.search.SearchField;
@@ -14,6 +14,7 @@ import org.nrg.xnat.pogo.search.XdatCriteria;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
 import org.nrg.xnat.pogo.search.XnatSearchParams;
 import org.nrg.xnat.versions.Xnat_1_8_0;
+import org.nrg.xnat.versions.Xnat_1_8_9;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -26,8 +27,10 @@ import static org.nrg.xnat.pogo.search.SortOrder.DESC;
 @AddedIn(Xnat_1_8_0.class)
 public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
 
-    private final BiFunction<PETSession, SearchRow, Boolean> petCheckerFunction = (session, row) -> session.getLabel().equals(row.get("xnat_petsessiondata_project_identifier_" + testProject.getId().toLowerCase()))
-            && session.getSpecificFields().get(PET_TRACER_START_SCHEMA_PATH).equals(row.get(PET_TRACER_START_FIELD_ID.toLowerCase()));
+    private final BiFunction<ImagingSession, SearchRow, Boolean> petCheckerFunction = and(
+            petMatchesLabel,
+            (session, row) -> session.getSpecificFields().get(PET_TRACER_START_SCHEMA_PATH).equals(row.get(PET_TRACER_START_FIELD_ID.toLowerCase()))
+    );
     private final SearchField petStartSearchField = new SearchField()
             .fieldId(PET_TRACER_START_FIELD_ID)
             .elementName(DataType.PET_SESSION)
@@ -35,10 +38,10 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
             .header(PET_TRACER_START_DISPLAY_NAME);
     private final SearchColumn petStartSearchColumn = petStartSearchField.generateExpectedSearchColumn(true, true);
 
-    private SearchValidator<PETSession> petTracerStartDisplayFieldSearchValidator;
+    private SearchValidator<ImagingSession> petTracerStartDisplayFieldSearchValidator;
     private final XdatCriteria petTracerStartDisplayFieldSearchCriteria = new XdatCriteria().schemaField(DataType.PET_SESSION.getXsiType() + "." + PET_TRACER_START_FIELD_ID);
 
-    private SearchValidator<PETSession> petTracerStartSchemaFieldSearchValidator;
+    private SearchValidator<ImagingSession> petTracerStartSchemaFieldSearchValidator;
     private final XdatCriteria petTracerStartSchemaFieldSearchCriteria = new XdatCriteria().schemaField(PET_TRACER_START_SCHEMA_PATH);
 
     @BeforeClass(groups = TestGroups.SEARCH)
@@ -67,7 +70,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "XNAT-7786")
+    @AddedIn(Xnat_1_8_9.class)
     public void testSearchEngineFilterDateTimeDisplayFieldEquals() {
         petTracerStartDisplayFieldSearchCriteria
                 .comparisonType(ComparisonType.EQUALS)
@@ -76,7 +79,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "XNAT-7786")
+    @AddedIn(Xnat_1_8_9.class)
     public void testSearchEngineFilterDateTimeDisplayFieldNotEquals() {
         petTracerStartDisplayFieldSearchCriteria
                 .comparisonType(ComparisonType.NOT_EQUALS)
@@ -85,7 +88,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "XNAT-7786")
+    @AddedIn(Xnat_1_8_9.class)
     public void testSearchEngineFilterDateTimeDisplayFieldGreaterThan() {
         petTracerStartDisplayFieldSearchCriteria
                 .comparisonType(ComparisonType.GREATER_THAN)
@@ -94,7 +97,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "XNAT-7786")
+    @AddedIn(Xnat_1_8_9.class)
     public void testSearchEngineFilterDateTimeDisplayFieldGreaterThanOrEquals() {
         petTracerStartDisplayFieldSearchCriteria
                 .comparisonType(ComparisonType.GREATER_THAN_OR_EQUALS)
@@ -103,7 +106,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "XNAT-7786")
+    @AddedIn(Xnat_1_8_9.class)
     public void testSearchEngineFilterDateTimeDisplayFieldLessThan() {
         petTracerStartDisplayFieldSearchCriteria
                 .comparisonType(ComparisonType.LESS_THAN)
@@ -112,7 +115,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
     }
 
     @Test
-    @ExpectedFailure(jiraIssue = "XNAT-7786")
+    @AddedIn(Xnat_1_8_9.class)
     public void testSearchEngineFilterDateTimeDisplayFieldLessThanOrEquals() {
         petTracerStartDisplayFieldSearchCriteria
                 .comparisonType(ComparisonType.LESS_THAN_OR_EQUALS)
@@ -230,7 +233,7 @@ public class TestSearchFilterDatetimes extends BaseSearchFilterTest {
     @Test
     public void testSearchEngineSortingDateTimeDisplayField() {
         final XnatSearchDocument petTracerStartDisplayFieldSearchDocument = readSearchFromRest();
-        final SearchValidator<PETSession> sortingSearchValidator = new SearchValidator<>(
+        final SearchValidator<ImagingSession> sortingSearchValidator = new SearchValidator<>(
                 petStartSearchColumn,
                 petTracerStartDisplayFieldSearchDocument,
                 petCheckerFunction

@@ -26,7 +26,7 @@ import static org.nrg.xnat.pogo.search.SortOrder.DESC;
 @AddedIn(Xnat_1_8_0.class)
 public class TestSearchFilterStrings extends BaseSearchFilterTest {
 
-    private final BiFunction<Subject, SearchRow, Boolean> subjectCheckerFunction = and(Arrays.asList(subjectMatchesLabel, subjectMatchesGroup));
+    private final BiFunction<Subject, SearchRow, Boolean> subjectCheckerFunction = and(subjectMatchesLabel, subjectMatchesGroup);
 
     private final XnatSearchDocument groupSearchDocument = readSearchFromFile()
             .addSearchField(groupSearchField);
@@ -184,7 +184,7 @@ public class TestSearchFilterStrings extends BaseSearchFilterTest {
     @Test
     public void testSearchEngineSortingStringDisplayField() {
         final XnatSearchDocument sortingSearchDocument = readSearchFromFile()
-                .addSearchField(DataType.SUBJECT, GROUP_DISPLAY_FIELD_ID, SearchFieldTypes.STRING, GROUP_DISPLAY_NAME);
+                .addSearchField(groupSearchField);
         final SearchValidator<Subject> sortingSearchValidator = new SearchValidator<>(
                 groupSearchColumn,
                 sortingSearchDocument,

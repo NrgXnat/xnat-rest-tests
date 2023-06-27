@@ -37,7 +37,7 @@ public class TestSearchFilterIntegers extends BaseSearchFilterTest {
     private final SearchValidator<ImagingSession> t1SearchValidator = new SearchValidator<>(
             t1SearchColumn,
             t1SearchDocument,
-            and(Arrays.asList(mrMatchesLabel, mrMatchesT1Count))
+            and(mrMatchesLabel, mrMatchesT1Count)
     );
     private final XdatCriteria t1SearchCriteria = new XdatCriteria().schemaField(t1SearchColumn.getElementName() + "." + t1SearchColumn.getId()); // xpath field truncates the full needed value
 
@@ -46,7 +46,7 @@ public class TestSearchFilterIntegers extends BaseSearchFilterTest {
     private final SearchValidator<ImagingSession> delaySearchValidator = new SearchValidator<>(
             delaySearchColumn,
             delaySearchDocument,
-            and(Arrays.asList(mrMatchesLabel, mrMatchesDelay))
+            and(mrMatchesLabel, mrMatchesDelay)
     );
     private final XdatCriteria delaySearchCriteria = new XdatCriteria().schemaField(MR_DELAY_SCHEMA_PATH);
 
@@ -234,7 +234,7 @@ public class TestSearchFilterIntegers extends BaseSearchFilterTest {
         final SearchValidator<ImagingSession> sortingSearchValidator = new SearchValidator<>(
                 t1SearchColumn,
                 sortingSearchDocument,
-                and(Arrays.asList(mrMatchesLabel, mrMatchesT1Count))
+                and(mrMatchesLabel, mrMatchesT1Count)
         );
 
         final XnatSearchParams searchParams = new XnatSearchParams()

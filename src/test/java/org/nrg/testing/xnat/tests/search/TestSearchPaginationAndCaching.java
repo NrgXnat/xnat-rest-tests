@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class TestSearchPaginationAndCaching extends BaseSearchFilterTest {
 
     private final SearchValidator<Subject> subjectSearchValidator = new SearchValidator<>(
-            and(Arrays.asList(subjectMatchesLabel, subjectMatchesGroup))
+            and(subjectMatchesLabel, subjectMatchesGroup)
     );
 
     @Test

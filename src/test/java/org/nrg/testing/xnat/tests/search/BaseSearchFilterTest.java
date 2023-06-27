@@ -8,6 +8,7 @@ import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.pogo.experiments.scans.MRScan;
+import org.nrg.xnat.pogo.experiments.scans.PETScan;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.experiments.sessions.PETSession;
 import org.nrg.xnat.pogo.search.SearchColumn;
@@ -31,8 +32,8 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 import static org.nrg.xnat.pogo.DataType.MR_SCAN;
-import static org.testng.AssertJUnit.assertEquals;
-import static org.testng.AssertJUnit.assertTrue;
+import static org.nrg.xnat.pogo.DataType.PET_SCAN;
+import static org.testng.AssertJUnit.*;
 
 public class BaseSearchFilterTest extends BaseSearchTest {
 
@@ -82,6 +83,7 @@ public class BaseSearchFilterTest extends BaseSearchTest {
     protected static final Scan t1At202020 = new MRScan(mrSessionNoWeight, "2").seriesDescription(T1).type(T1).startTime(LocalTime.parse("20:20:20"));
     protected static final Scan t1At080808 = new MRScan(mrSessionNoWeight, "3").seriesDescription(T1).type(T1).startTime(LocalTime.parse("08:08:08"));
     protected static final Scan t2At111111 = new MRScan(mrSessionNoWeight, "4").seriesDescription(T2).type(T2).startTime(LocalTime.parse("11:11:11"));
+    protected static final Scan otherPetScan = new PETScan(mrSessionNoWeight, "5").seriesDescription("PET SCAN");
     protected static final String TIMESTAMP_20110101T030000 = "2011-01-01 03:00:00.0";
     protected static final String TIMESTAMP_20110101T030001 = "2011-01-01 03:00:01.0";
     protected static final String TIMESTAMP_20120202T130001 = "2012-02-02 13:00:01.0";
@@ -128,6 +130,11 @@ public class BaseSearchFilterTest extends BaseSearchTest {
             .type(SearchFieldTypes.STRING)
             .header(MR_LABEL_DISPLAY_NAME);
 
+    protected static final BiFunction<Scan, SearchRow, Boolean> scanMatchesIdAndSession = and(
+            (scan, row) -> scan.getSession().getLabel().equals(row.get("session_label")),
+            (scan, row) -> scan.getId().equals(row.get("id"))
+    );
+
     protected static final SearchColumn groupSearchColumn = groupSearchField.generateExpectedSearchColumn(true, true);
     protected static final SearchColumn weightSearchColumn = weightSearchField.generateExpectedSearchColumn(false, true);
     protected static final SearchColumn t1SearchColumn = t1CountSearchField.generateExpectedSearchColumn(true, true);
@@ -139,6 +146,8 @@ public class BaseSearchFilterTest extends BaseSearchTest {
             (subject, row) -> StringUtils.equals(subject.getGroup(), row.get(GROUP_DISPLAY_FIELD_ID.toLowerCase()));
     protected static final BiFunction<ImagingSession, SearchRow, Boolean> mrMatchesLabel =
             (session, row) -> session.getLabel().equals(row.getMrSessionLabelInProject(session.getPrimaryProject()));
+    protected static final BiFunction<ImagingSession, SearchRow, Boolean> petMatchesLabel =
+            (session, row) -> session.getLabel().equals(row.get("xnat_petsessiondata_project_identifier_" + session.getPrimaryProject().getId().toLowerCase()));
     protected static final BiFunction<ImagingSession, SearchRow, Boolean> mrMatchesWeight =
             (session, row) -> StringUtils.equals(session.getSpecificFields().get(MR_WEIGHT_SCHEMA_PATH), row.get(weightSearchColumn.getKey()));
     protected static final BiFunction<ImagingSession, SearchRow, Boolean> mrMatchesT1Count =
@@ -159,11 +168,21 @@ public class BaseSearchFilterTest extends BaseSearchTest {
             mainInterface().createProject(testProject);
             mrSession150Pounds.getSpecificFields().put(MR_WEIGHT_SCHEMA_PATH, "150.0"); // we want to set it up as 150 in initial setup, but it should behave as a float when filtering/retrieving
             mainAdminInterface().setupDataType(MR_SCAN);
+            mainAdminInterface().setupDataType(PET_SCAN);
             setupDone = true;
         }
     }
 
-    protected <X> BiFunction<X, SearchRow, Boolean> and(List<BiFunction<X, SearchRow, Boolean>> functions) {
+    protected static <X> BiFunction<X, SearchRow, Boolean> and(BiFunction<X, SearchRow, Boolean> function1, BiFunction<X, SearchRow, Boolean> function2) {
+        return and(
+                Arrays.asList(
+                        function1,
+                        function2
+                )
+        );
+    }
+
+    protected static <X> BiFunction<X, SearchRow, Boolean> and(List<BiFunction<X, SearchRow, Boolean>> functions) {
         return (session, row) -> functions.stream()
                 .allMatch(function -> function.apply(session, row));
     }
@@ -244,13 +263,24 @@ public class BaseSearchFilterTest extends BaseSearchTest {
                     assertTrue(responseChecker.apply(expectedItems.get(i), searchResponseResult.get(i)));
                 }
             } else {
-                for (X expectedObject : expectedItems) {
-                    assertTrue(
-                            searchResponseResult
-                                    .stream()
-                                    .anyMatch(row -> responseChecker.apply(expectedObject, row))
-                    );
-                }
+                validateSearchResponseResultContains(searchResponseResult, expectedItems, new ArrayList<>());
+            }
+        }
+
+        protected void validateSearchResponseResultContains(List<SearchRow> searchResponseResult, List<X> expectedItems, List<X> expectedItemsToNotBePresent) {
+            for (X expectedObject : expectedItems) {
+                assertTrue(
+                        searchResponseResult
+                                .stream()
+                                .anyMatch(row -> responseChecker.apply(expectedObject, row))
+                );
+            }
+            for (X missingItem : expectedItemsToNotBePresent) {
+                assertFalse(
+                        searchResponseResult
+                                .stream()
+                                .anyMatch(row -> responseChecker.apply(missingItem, row))
+                );
             }
         }
     }

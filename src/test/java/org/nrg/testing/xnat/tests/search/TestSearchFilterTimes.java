@@ -21,6 +21,7 @@ import org.testng.annotations.Test;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.function.BiFunction;
 
 import static org.nrg.xnat.pogo.search.SortOrder.ASC;
@@ -35,9 +36,10 @@ public class TestSearchFilterTimes extends BaseSearchFilterTest {
             .type(SearchFieldTypes.TIME)
             .header(MR_SCAN_START_TIME_DISPLAY_NAME);
     private final SearchColumn mrStartTimeSearchColumn = mrStartTimeSearchField.generateExpectedSearchColumn(true, true);
-    private final BiFunction<Scan, SearchRow, Boolean> scanCheckerFunction = (scan, row) -> scan.getSession().getLabel().equals(row.get("session_label"))
-            && scan.getId().equals(row.get("id"))
-            && StringUtils.equals(serialize(scan.getStartTime()), row.get(MR_SCAN_DISPLAY_FIELD_ID.toLowerCase()));
+    private final BiFunction<Scan, SearchRow, Boolean> scanCheckerFunction = and(
+            scanMatchesIdAndSession,
+            (scan, row) -> StringUtils.equals(serialize(scan.getStartTime()), row.get(MR_SCAN_DISPLAY_FIELD_ID.toLowerCase()))
+    );
 
     private final XnatSearchDocument mrStartTimeDisplayFieldSearchDocument = readSearchFromFile();
     private final SearchValidator<Scan> mrStartTimeDisplayFieldSearchValidator = new SearchValidator<>(

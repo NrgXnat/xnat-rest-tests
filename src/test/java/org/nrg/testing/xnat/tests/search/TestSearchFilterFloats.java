@@ -22,7 +22,7 @@ public class TestSearchFilterFloats extends BaseSearchFilterTest {
     private final SearchValidator<ImagingSession> sessionSearchValidator = new SearchValidator<>(
             weightSearchColumn,
             weightSearchDocument,
-            and(Arrays.asList(mrMatchesLabel, mrMatchesWeight))
+            and(mrMatchesLabel, mrMatchesWeight)
     );
     private final XdatCriteria weightSearchCriteria = new XdatCriteria().schemaField(MR_WEIGHT_SCHEMA_PATH);
 
