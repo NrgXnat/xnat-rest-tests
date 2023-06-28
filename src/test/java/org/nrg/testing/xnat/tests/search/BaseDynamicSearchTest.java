@@ -1,5 +1,6 @@
 package org.nrg.testing.xnat.tests.search;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.testing.TimeUtils;
 import org.nrg.xnat.pogo.search.SearchResponse;
 import org.nrg.xnat.pogo.search.SearchRow;
@@ -132,7 +133,7 @@ public class BaseDynamicSearchTest extends BaseSearchPermissionsTest {
     }
 
     protected static String nullFallback(String value) {
-        return value == null ? "" : value;
+        return StringUtils.defaultIfEmpty(value, "");
     }
 
     protected static String serializeLocalDate(LocalDate localDate) {
