@@ -10,7 +10,6 @@ import org.nrg.xnat.pogo.search.SearchColumn;
 import org.nrg.xnat.pogo.search.SearchField;
 import org.nrg.xnat.pogo.search.SearchFieldTypes;
 import org.nrg.xnat.pogo.search.SearchResponse;
-import org.nrg.xnat.pogo.search.SearchRow;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.testng.annotations.Test;
 
@@ -18,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.BiFunction;
 
 import static org.nrg.testing.TestGroups.PERMISSIONS;
 import static org.nrg.testing.TestGroups.SEARCH;
@@ -127,6 +125,17 @@ public class TestSearchPermissions extends BaseSearchPermissionsTest {
                 mainInterface().getDefaultSearch(customUserGroupProject, DataType.MR_SCAN),
                 scanMatchesIdAndSession
         ).performAndValidateSearch(customGroupMrSessionMrScan);
+    }
+
+    @Test(groups = {SEARCH, PERMISSIONS})
+    public void testScanSearchNoFilters() {
+        new SearchValidator<>(
+                scanMatchesIdAndSession
+        ).validateSearchResponseResultContains(
+                mainInterface().performSearch(mainInterface().getDefaultSearch(testProject, DataType.MR_SCAN)).getResult(),
+                Arrays.asList(t1At012345, t1At090909, t2At101010, t1At012346, t1Timeless, t1At202020, t1At080808, t2At111111),
+                Arrays.asList(customGroupMrSessionPetScan, customGroupPetSessionMrScan, customGroupPetSessionPetScan, protectedMrScan, privateMrScan, otherPetScan)
+        );
     }
 
     private void searchAndCheckSessions(DataType dataType, List<ImagingSession> sessionsToBeIncluded, List<ImagingSession> sessionsToBeExcluded) {
