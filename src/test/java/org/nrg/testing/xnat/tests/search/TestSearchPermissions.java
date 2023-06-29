@@ -134,7 +134,7 @@ public class TestSearchPermissions extends BaseSearchPermissionsTest {
         ).validateSearchResponseResultContains(
                 mainInterface().performSearch(mainInterface().getDefaultSearch(testProject, DataType.MR_SCAN)).getResult(),
                 Arrays.asList(t1At012345, t1At090909, t2At101010, t1At012346, t1Timeless, t1At202020, t1At080808, t2At111111),
-                Arrays.asList(customGroupMrSessionPetScan, customGroupPetSessionMrScan, customGroupPetSessionPetScan, protectedMrScan, privateMrScan, otherPetScan)
+                Arrays.asList(customGroupMrSessionPetScan, customGroupPetSessionMrScan, customGroupPetSessionPetScan, protectedMrScan, privateMrScan, publicMrScan, otherPetScan)
         );
     }
 
