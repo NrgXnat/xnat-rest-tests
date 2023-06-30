@@ -1,0 +1,35 @@
+{
+    "rsnStatus": "NONCOMPLIANT",
+    "xsiType": "xnat:mrSessionData",
+    "resourceLabel": "DICOM",
+    "resourceUri": "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/4/DICOM/scan_4_catalog.xml",
+    "scanLabel": "4",
+    "scanDescription": "t1_mpr_1mm_p2_pos50",
+    "surveyReport": {
+        "totalEntries": 2,
+        "totalUids": 1,
+        "totalBadFiles": 0,
+        "totalMismatchedFiles": 0,
+        "totalDuplicates": 0,
+        "totalFilesInDuplicates": 0,
+        "totalNonActionableDuplicates": 1,
+        "totalFilesInNonActionableDuplicates": 2,
+        "uids": {
+            "1.2.840.10008.5.1.4.1.1.4": [
+                "1.3.12.2.1107.5.2.32.35177.3.2006121409365951632817982"
+            ]
+        },
+        "badFiles": null,
+        "mismatchedFiles": null,
+        "duplicates": null,
+        "nonActionableDuplicates": {
+            "1.2.840.10008.5.1.4.1.1.4": {
+                "1.3.12.2.1107.5.2.32.35177.3.2006121409365951632817982": {
+                    "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-1-1qs88hj.dcm": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-1-1qs88hj.dcm",
+                    "$ARCHIVE/$PROJECT/arc001/Sample_ID/SCANS/4/DICOM/1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-2-1qs88hj.dcm": "1.3.12.2.1107.5.2.32.35177.30000006121218324675000000034-4-2-1qs88hj.dcm"
+                }
+            }
+        }
+    },
+    "mitigationReport": null
+}

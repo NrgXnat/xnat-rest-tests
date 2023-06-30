@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.dcm4che3.data.DatasetWithFMI;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
+import org.nrg.testing.DicomUtils;
 import org.nrg.testing.LocalTestDicom;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
@@ -37,6 +38,7 @@ import org.nrg.xnat.pogo.resources.ScanResource;
 import org.nrg.xnat.pogo.users.User;
 import org.nrg.xnat.prearchive.SessionData;
 import org.nrg.xnat.versions.Xnat_1_8_7;
+import org.nrg.xnat.versions.Xnat_1_8_9;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -70,9 +72,10 @@ import static org.testng.AssertJUnit.*;
 public class TestFileMitigation extends BaseFileNamerTest {
 
     private static final String DICOM = "DICOM";
-    private static final List<ResourceSurveyRequest.Status> NO_RESOURCE_ACTION_ACTIVE = Arrays.asList(CONFORMING, DIVERGENT, CANCELED);
+    private static final List<ResourceSurveyRequest.Status> NO_RESOURCE_ACTION_ACTIVE = Arrays.asList(CONFORMING, DIVERGENT, CANCELED, NONCOMPLIANT);
     private static final String SIMPLE_PET_FILE_SPEC = "simple_pet.json";
     private static final String SAMPLE1_SUBSET_FILE_SPEC = "sample1_subset.json";
+    private static final String SAMPLE1_SUBSET_NONCONFORMING_FILE_SPEC = "sample1_nonconforming.json";
     private static final String SAMPLE1_SUBSET_INSTANCE_NUM_FILE_SPEC = "sample1_subset_instance_num.json";
     private static final String SAMPLE1_PRIVATE_SOP_CLASS_FILE_SPEC = "sample1_private_sop_class.json";
     private static final String SAMPLE1_SUBJECT = "Sample_Patient";
@@ -114,6 +117,7 @@ public class TestFileMitigation extends BaseFileNamerTest {
     private final ResourceSurveyRequest SAMPLE1_SERIES_5_SUBSET_SURVEY_AND_MITIGATION = readSurveyWithMitigation("sample1_series_5_subset_si.json");
     private final ResourceSurveyRequest SAMPLE1_SERIES_6_SUBSET_SURVEY_AND_MITIGATION = readSurveyWithMitigation("sample1_series_6_subset_si.json");
     private final ResourceSurveyRequest SAMPLE1_PRIVATE_SOP_CLASS_SURVEY_AND_MITIGATION = readSurveyWithMitigation("sample1_private_sop_class.json");
+    private final ResourceSurveyRequest SAMPLE1_SERIES_4_NONACTIONABLE_SURVEY = readSurveyRequest("sample1_series_4_subset_nonactionable.json");
     private String archivePath;
     private String cachePath;
 
@@ -305,6 +309,50 @@ public class TestFileMitigation extends BaseFileNamerTest {
                         )
                 ).expectedFilesAfterMitigation(
                         new SessionFileMapping().add(mrSession, SAMPLE1_PRIVATE_SOP_CLASS_FILE_SPEC)
+                ).run();
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_9.class) // see XNAT-7794
+    public void testSimpleFileMitigationNoncompliantDuplicates() {
+        final String transformId = "noncompliant-duplicate-instance";
+        final LocallyCacheableDicomTransformation dicomTransformation = new LocallyCacheableDicomTransformation(transformId)
+                .data(TestData.SAMPLE_1_SCAN_4)
+                .createZip()
+                .transformations(
+                        new DicomTransformation(transformId)
+                                .prefilter(DicomFilters.subsetWithInstanceNumber(1))
+                                .transformFunction(
+                                        TransformFunction.generalTransform(fullInstances -> {
+                                            final List<DatasetWithFMI> instancePlusCopy = new ArrayList<>();
+                                            final DatasetWithFMI originalInstance = fullInstances.get(0);
+                                            instancePlusCopy.add(originalInstance);
+                                            final DatasetWithFMI clone = DicomUtils.clone(originalInstance);
+                                            clone.getDataset().setInt(Tag.InstanceNumber, VR.IS, 2);
+                                            instancePlusCopy.add(clone);
+                                            return instancePlusCopy;
+                                        })
+                                )
+                ).build();
+
+        final Project project = registerTempProject();
+        final Subject subject = new Subject(project, SAMPLE1_SUBJECT);
+        final ImagingSession mrSession = new MRSession(project, subject, SAMPLE1_SESSION);
+        new FullWorkflowMitigationTest()
+                .project(project)
+                .postProjectAction(cstoreAndArchive(dicomTransformation, project))
+                .expectedSurveyMap(
+                        new SurveyMapping().add(
+                                mrSession,
+                                SAMPLE1_SERIES_4_NONACTIONABLE_SURVEY
+                        )
+                ).expectedSurveysWithMitigation(
+                        new SurveyMapping().add(
+                                mrSession,
+                                SAMPLE1_SERIES_4_NONACTIONABLE_SURVEY
+                        )
+                ).expectedFilesAfterMitigation(
+                        new SessionFileMapping().add(mrSession, SAMPLE1_SUBSET_NONCONFORMING_FILE_SPEC)
                 ).run();
     }
 
@@ -674,6 +722,9 @@ public class TestFileMitigation extends BaseFileNamerTest {
                     assertEquals(expectedReport.getTotalBadFiles(), actualReport.getTotalBadFiles());
                     assertEquals(expectedReport.getTotalMismatchedFiles(), actualReport.getTotalMismatchedFiles());
                     assertEquals(expectedReport.getTotalDuplicates(), actualReport.getTotalDuplicates());
+                    // TODO: how to handle new field "totalFilesInDuplicates"?
+                    assertEquals(expectedReport.getTotalNonActionableDuplicates(), actualReport.getTotalNonActionableDuplicates());
+                    assertEquals(expectedReport.getTotalFilesInNonActionableDuplicates(), actualReport.getTotalFilesInNonActionableDuplicates());
 
                     if (expectedReport.getUids() == null) {
                         assertNull(actualReport.getUids());
@@ -706,26 +757,8 @@ public class TestFileMitigation extends BaseFileNamerTest {
                         );
                     }
 
-                    if (expectedReport.getDuplicates() == null) {
-                        assertNull(actualReport.getDuplicates());
-                    } else {
-                        assertEquals(expectedReport.getDuplicates().keySet(), actualReport.getDuplicates().keySet()); // SOP Class UIDs match
-                        for (Map.Entry<String, Map<String, Map<File, String>>> expectedEntry : expectedReport.getDuplicates().entrySet()) {
-                            final String sopClassUid = expectedEntry.getKey();
-                            final Map<String, Map<File, String>> expectedSopInstanceMap = expectedEntry.getValue();
-                            final Map<String, Map<File, String>> actualSopInstanceMap = actualReport.getDuplicates().get(sopClassUid);
-                            assertEquals(expectedSopInstanceMap.keySet(), actualSopInstanceMap.keySet()); // SOP Instance UIDs for SOP Class UID match
-                            for (Map.Entry<String, Map<File, String>> expectedFileMapEntry : expectedSopInstanceMap.entrySet()) {
-                                final String sopInstanceUid = expectedFileMapEntry.getKey();
-                                final Map<File, String> expectedFileMap = expectedFileMapEntry.getValue();
-                                final Map<File, String> actualFileMap = actualSopInstanceMap.get(sopInstanceUid);
-                                assertEquals(
-                                        populatePossiblePlaceholders(expectedFileMap, session, actualSurvey),
-                                        coerceToStringMap(actualFileMap)
-                                );
-                            }
-                        }
-                    }
+                    validateDuplicates(expectedReport.getDuplicates(), actualReport.getDuplicates(), session, actualSurvey);
+                    validateDuplicates(expectedReport.getNonActionableDuplicates(), actualReport.getNonActionableDuplicates(), session, actualSurvey);
 
                     // validate mitigation report
                     final ResourceMitigationReport expectedMitigation = expectedSurvey.getMitigationReport();
@@ -792,6 +825,30 @@ public class TestFileMitigation extends BaseFileNamerTest {
                 }
             }
             assertEquals(surveysProcessed, actualSurveys.size());
+        }
+
+        // valid for nonactionable as well
+        private void validateDuplicates(Map<String, Map<String, Map<File, String>>> expected, Map<String, Map<String, Map<File, String>>> actual, ImagingSession session, ResourceSurveyRequest actualSurvey) {
+            if (expected == null) {
+                assertNull(actual);
+            } else {
+                assertEquals(expected.keySet(), actual.keySet()); // SOP Class UIDs match
+                for (Map.Entry<String, Map<String, Map<File, String>>> expectedEntry : expected.entrySet()) {
+                    final String sopClassUid = expectedEntry.getKey();
+                    final Map<String, Map<File, String>> expectedSopInstanceMap = expectedEntry.getValue();
+                    final Map<String, Map<File, String>> actualSopInstanceMap = actual.get(sopClassUid);
+                    assertEquals(expectedSopInstanceMap.keySet(), actualSopInstanceMap.keySet()); // SOP Instance UIDs for SOP Class UID match
+                    for (Map.Entry<String, Map<File, String>> expectedFileMapEntry : expectedSopInstanceMap.entrySet()) {
+                        final String sopInstanceUid = expectedFileMapEntry.getKey();
+                        final Map<File, String> expectedFileMap = expectedFileMapEntry.getValue();
+                        final Map<File, String> actualFileMap = actualSopInstanceMap.get(sopInstanceUid);
+                        assertEquals(
+                                populatePossiblePlaceholders(expectedFileMap, session, actualSurvey),
+                                coerceToStringMap(actualFileMap)
+                        );
+                    }
+                }
+            }
         }
 
         private SurveyMapping merge(SurveyMapping other) {
