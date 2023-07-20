@@ -30,6 +30,7 @@ import javax.annotation.Nullable;
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -452,9 +453,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
     }
 
     private void testProjectRouting(ApiUploadFn uploadFn, String handler) {
-        // Because XNAT cannot delete and read a project with the same ID, we have to include a random component in
-        // the project id. Hopefully 0-99 is sufficient to ensure no conflicts within a given test run/rerun.
-        String rand = Integer.toString(new Random().nextInt(100));
+        String rand = new SimpleDateFormat("mmssSSS").format(new Date()); // unique project id
         for (String key : cfgMapProject.keySet()) {
             String cfg = cfgMapProject.get(key).replaceAll(REPLACE_STR, rand);
             mainAdminInterface().setProjectDicomRoutingConfig(cfg);
