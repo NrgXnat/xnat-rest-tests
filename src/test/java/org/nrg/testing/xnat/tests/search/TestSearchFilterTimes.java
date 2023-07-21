@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.testing.TestGroups;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.ExpectedFailure;
+import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.pogo.search.ComparisonType;
@@ -15,13 +16,13 @@ import org.nrg.xnat.pogo.search.XdatCriteria;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
 import org.nrg.xnat.pogo.search.XnatSearchParams;
 import org.nrg.xnat.versions.Xnat_1_8_0;
+import org.nrg.xnat.versions.Xnat_1_8_9;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.function.BiFunction;
 
 import static org.nrg.xnat.pogo.search.SortOrder.ASC;
@@ -30,6 +31,7 @@ import static org.nrg.xnat.pogo.search.SortOrder.DESC;
 @AddedIn(Xnat_1_8_0.class)
 public class TestSearchFilterTimes extends BaseSearchFilterTest {
 
+    private static final DateTimeFormatter TIME_FORMATTER_WITH_FRACTIONAL_COMPONENT = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private final SearchField mrStartTimeSearchField = new SearchField()
             .fieldId(MR_SCAN_DISPLAY_FIELD_ID)
             .elementName(DataType.MR_SCAN)
@@ -253,7 +255,13 @@ public class TestSearchFilterTimes extends BaseSearchFilterTest {
     }
 
     private String serialize(LocalTime localTime) {
-        return (localTime == null) ? "" : DateTimeFormatter.ISO_TIME.format(localTime);
+        if (localTime == null) {
+            return "";
+        } else if (XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_8_9.class)) { // see XNAT-7784
+            return DateTimeFormatter.ISO_TIME.format(localTime);
+        } else {
+            return TIME_FORMATTER_WITH_FRACTIONAL_COMPONENT.format(localTime);
+        }
     }
 
     private XnatSearchDocument readSearchFromFile() {
