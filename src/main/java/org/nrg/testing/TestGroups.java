@@ -33,6 +33,7 @@ public class TestGroups {
     public static final String USERS = "users";
     public static final String VALIDATION = "validation";
     public static final String WORKFLOWS = "workflows";
+    public static final String XML = "xml";
     public static final String CUSTOM_FORMS = "custom_forms";
 
 }

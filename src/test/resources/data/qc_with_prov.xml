@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xnat:QCAssessment ID="%ID%" project="%PROJECT%" label="%LABEL%" xmlns:arc="http://nrg.wustl.edu/arc" xmlns:val="http://nrg.wustl.edu/val" xmlns:pipe="http://nrg.wustl.edu/pipe" xmlns:wrk="http://nrg.wustl.edu/workflow" xmlns:scr="http://nrg.wustl.edu/scr" xmlns:xdat="http://nrg.wustl.edu/security" xmlns:cat="http://nrg.wustl.edu/catalog" xmlns:prov="http://www.nbirn.net/prov" xmlns:xnat="http://nrg.wustl.edu/xnat" xmlns:xnat_a="http://nrg.wustl.edu/xnat_assessments" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://nrg.wustl.edu/workflow http://nrg.wustl.edu/catalog http://nrg.wustl.edu/pipe http://nrg.wustl.edu/scr http://nrg.wustl.edu/arc http://nrg.wustl.edu/sets http://nrg.wustl.edu/val http://nrg.wustl.edu/xnat http://nrg.wustl.edu/xsync http://nrg.wustl.edu/ml http://nrg.wustl.edu/xnat_assessments http://www.nbirn.net/prov http://nrg.wustl.edu/security">
+    <xnat:imageSession_ID>%SESSION_ID%</xnat:imageSession_ID>
+    <xnat:provenance>
+        <prov:processStep>
+            <prov:program arguments="-s -all" version="">recon-all -all</prov:program>
+            <prov:timestamp>%TIMESTAMP%</prov:timestamp>
+            <prov:cvs/>
+            <prov:user>1</prov:user>
+            <prov:machine>cube</prov:machine>
+            <prov:platform>linux</prov:platform>
+        </prov:processStep>
+    </xnat:provenance>
+</xnat:QCAssessment>
