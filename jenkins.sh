@@ -28,7 +28,7 @@ EOF
 
 # set config per test expectations
 basicAuth=$ADMIN_USER:$ADMIN_PWD
-curl -s -X POST -u $basicAuth -H "Content-Type: application/json" $URL/xapi/siteConfig -d '{"uiAllowNonAdminProjectCreation":true,"requireChangeJustification":false,"security.prevent-data-deletion":false,"securityAllowNonPrivateProjects":true,"crPreventMerge":false,"projectAllowAutoArchive":true,"passwordComplexity":"^.*$","defaultProjectAutoArchiveSetting":4}'
+curl -s -X POST -u $basicAuth -H "Content-Type: application/json" $URL/xapi/siteConfig -d '{"uiAllowNonAdminProjectCreation":true,"requireChangeJustification":false,"security.prevent-data-deletion":false,"securityAllowNonPrivateProjects":true,"crPreventMerge":false,"projectAllowAutoArchive":true,"passwordComplexity":"^.*$","defaultProjectAutoArchiveSetting":4,"uiDefaultCompressedUploaderImporter":"SI"}'
 
 # disable routing configs
 for cfg in projectRules subjectRules sessionRules; do
