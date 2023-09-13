@@ -9,6 +9,7 @@ import org.nrg.testing.DicomUtils;
 import org.nrg.testing.FileIOUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
+import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.dicom.transform.DicomFilters;
 import org.nrg.testing.dicom.transform.DicomTransformation;
 import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
@@ -71,6 +72,8 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
     private final TestComponent CSTORE_SAMPLE1 = new CstoreStep(TestData.SAMPLE_1);
     private final TestComponent DICOM_ZIP_SAMPLE1_WITH_RENAME = new DicomZipStep(TestData.SAMPLE_1, true);
     private final TestComponent DICOM_ZIP_SAMPLE1_WITHOUT_RENAME = new DicomZipStep(TestData.SAMPLE_1, false);
+    private final TestComponent REBUILD = new RebuildOnlySessionInPrearc();
+    private final TestComponent ARCHIVE = new ArchiveSession();
     private final TestComponent VALIDATE_SAMPLE1_IN_PREARC = new ValidateNamesInPrearc(SAMPLE1_NAME_SPEC);
     private final TestComponent VALIDATE_SAMPLE1_IN_ARCHIVE = new ValidateNamesInArchive(SAMPLE1_NAME_SPEC);
     private final TestComponent VALIDATE_SAMPLE1_ORIG_NAMES_PREARC = new ValidateNamesInPrearc(SAMPLE1_ORIG_NAMES);
@@ -503,6 +506,24 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         }
     }
 
+    private class CstoreStep implements TestComponent {
+        private final File data;
+
+        CstoreStep(TestData data) {
+            this.data = data.toDirectory();
+        }
+
+        CstoreStep(LocallyCacheableDicomTransformation dicomTransformation) {
+            dicomTransformation.build();
+            data = dicomTransformation.locateBaseDirForTransformedData(dicomTransformation.getIdentifier()).toFile();
+        }
+
+        @Override
+        public void perform(BaseXnatRestTest xnatRestTest, Project project) {
+            new XnatCStore().data(data).sendDICOMToProject(project);
+        }
+    }
+
     private class SessionImporterStep implements TestComponent {
         private final File data;
         private final MergeBehavior overwrite;
@@ -532,6 +553,78 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         }
     }
 
+    private class DicomZipStep implements TestComponent {
+        private final File data;
+        private final boolean rename;
+
+        DicomZipStep(TestData data, boolean rename) {
+            this(data.toFile(), rename);
+        }
+
+        DicomZipStep(File zip, boolean rename) {
+            data = zip;
+            this.rename = rename;
+        }
+
+        @Override
+        public void perform(BaseXnatRestTest xnatRestTest, Project project) {
+            mainInterface().callImporter(
+                    new DicomZipRequest()
+                            .file(data)
+                            .project(project)
+                            .rename(rename)
+            );
+        }
+    }
+
+    private class RebuildOnlySessionInPrearc implements TestComponent {
+        @Override
+        public void perform(BaseXnatRestTest xnatRestTest, Project project) {
+            final SessionData prearcSession = expectSinglePrearchiveResultForProject(project);
+            mainInterface().rebuildSession(prearcSession, false);
+        }
+    }
+
+    private abstract class ValidateNames implements TestComponent {
+        private final String expectedFileList;
+
+        ValidateNames(String expectedFileList) {
+            this.expectedFileList = expectedFileList;
+        }
+
+        @Override
+        public void perform(BaseXnatRestTest xnatRestTest, Project project) {
+            validateFilesInScansMatchExpectedNames(
+                    expectedFileList,
+                    produceActualScans(project)
+            );
+        }
+
+        abstract List<Scan> produceActualScans(Project project);
+    }
+
+    private class ValidateNamesInPrearc extends ValidateNames {
+        ValidateNamesInPrearc(String expectedFileList) {
+            super(expectedFileList);
+        }
+
+        @Override
+        List<Scan> produceActualScans(Project project) {
+            return mainInterface().readScansForPrearchiveSession(expectSinglePrearchiveResultForProject(project));
+        }
+    }
+
+    private class ValidateNamesInArchive extends ValidateNames {
+        ValidateNamesInArchive(String expectedFileList) {
+            super(expectedFileList);
+        }
+
+        @Override
+        List<Scan> produceActualScans(Project project) {
+            return mainInterface().readProject(project.getId()).getSubjects().get(0).getSessions().get(0).getScans();
+        }
+    }
+
     private class ValidateResourceSizeInArchive implements TestComponent {
         long expectedSize;
         String scanId;
@@ -548,6 +641,13 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
             final Scan scan = mainInterface().readProject(project.getId()).getSubjects().get(0).getSessions().get(0).findScan(scanId);
             final Resource scanResource = scan.getScanResources().stream().filter(resource -> resource.getFolder().equals(resourceLabel)).findFirst().orElseThrow(RuntimeException::new);
             assertEquals(expectedSize, scanResource.getFileSize());
+        }
+    }
+
+    private class ArchiveSession implements TestComponent {
+        @Override
+        public void perform(BaseXnatRestTest xnatRestTest, Project project) {
+            mainInterface().archiveSession(expectSinglePrearchiveResultForProject(project));
         }
     }
 
@@ -586,6 +686,19 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         @Override
         public void perform(BaseXnatRestTest xnatRestTest, Project project) {
             mainAdminInterface().setUseSopInstanceUidToUniquelyIdentifyDicom(false);
+        }
+    }
+
+    private class UpdateFileNamer implements TestComponent {
+        private final String template;
+
+        UpdateFileNamer(String template) {
+            this.template = template;
+        }
+
+        @Override
+        public void perform(BaseXnatRestTest xnatRestTest, Project project) {
+            mainAdminInterface().updateDicomFileNamer(template);
         }
     }
 
