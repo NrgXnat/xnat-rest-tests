@@ -21,21 +21,20 @@ import org.nrg.testing.xnat.components.SiteAnon;
 import org.nrg.testing.xnat.components.TestComponent;
 import org.nrg.xnat.enums.MergeBehavior;
 import org.nrg.xnat.enums.PrearchiveCode;
-import org.nrg.xnat.importer.importers.DicomZipRequest;
 import org.nrg.xnat.importer.importers.SessionImporterRequest;
 import org.nrg.xnat.pogo.ArchiveParams;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.pogo.resources.Resource;
-import org.nrg.xnat.prearchive.SessionData;
 import org.nrg.xnat.versions.Xnat_1_8_6_1;
 import org.nrg.xnat.versions.Xnat_1_8_7;
 import org.testng.annotations.Test;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.stream.Collectors;
 
 import static org.nrg.testing.TestGroups.IMPORTER;

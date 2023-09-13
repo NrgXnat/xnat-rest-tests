@@ -21,6 +21,8 @@ import org.nrg.xnat.interfaces.XnatInterface;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
+import org.nrg.xnat.pogo.dicom.FilterMode;
+import org.nrg.xnat.pogo.dicom.SeriesImportFilter;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.search.SearchResponse;
@@ -29,6 +31,7 @@ import org.nrg.xnat.pogo.search.XnatSearchParams;
 import org.nrg.xnat.prearchive.*;
 import org.testng.annotations.Test;
 
+import java.nio.file.Paths;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -123,6 +126,12 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                                         )
                                 )
                 );
+        final Runnable clearProject = () -> {
+            restDriver.clearPrearchiveSessions(mainAdminUser, project);
+            mainAdminInterface().deleteAllProjectData(project);
+            mainAdminInterface().disableProjectAnonScript(project);
+        };
+
         performanceScenario()
                 .setup(setupForCStoreToProject(project))
                 .tests(
@@ -146,7 +155,17 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                         new SimpleTimedAction("anonymize-via-relabel-de6-alterPixels")
                                 .title(String.format("Relabel and DicomEdit6 pixel anonymization of study containing %d MR images", totalNumInstances))
                                 .asUser(mainAdminUser)
-                                .performanceTestAction(anonActionViaRelabel(project, DicomEditVersion.DE_6, BASIC_PIXEL_ANON_SCRIPT))
+                                .performanceTestAction(anonActionViaRelabel(project, DicomEditVersion.DE_6, BASIC_PIXEL_ANON_SCRIPT)),
+                        new SimpleTimedAction("cstore-large-study-sif")
+                                .title(String.format("CSTORE of %d MR images with Series Import Filter", totalNumInstances))
+                                .asUser(mainAdminUser)
+                                .withSetup(clearProject)
+                                .performanceTestAction(setSiteImportFilterAndCstore("realistic_filter.txt", dicomTransformation)),
+                        new SimpleTimedAction("cstore-large-study-sif-worst-case")
+                                .title(String.format("CSTORE of %d MR images with worst case Series Import Filter", totalNumInstances))
+                                .asUser(mainAdminUser)
+                                .withSetup(clearProject)
+                                .performanceTestAction(setSiteImportFilterAndCstore("worst_case.txt", dicomTransformation))
                 ).run();
     }
 
@@ -221,6 +240,18 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
             final Subject subject = xnatInterface.readProject(project.getId()).getSubjects().get(0);
             final ImagingSession session = subject.getSessions().get(0);
             xnatInterface.relabelSubjectAssessor(project, subject, session, session.getLabel() + "_1");
+        };
+    }
+
+    private BiConsumer<XnatInterface, ActionMonitor> setSiteImportFilterAndCstore(String filterName, LocallyCacheableDicomTransformation dicomTransformation) {
+        return (xnatInterface, actionMonitor) -> {
+            mainAdminInterface().setSiteSeriesImportFilter(
+                    new SeriesImportFilter()
+                            .enabled(true)
+                            .filterBody(readDataFile(Paths.get("series_import_filters", filterName).toString()))
+                            .filterMode(FilterMode.BLACKLIST)
+            );
+            cstoreDicomFromTransformation(dicomTransformation).accept(xnatInterface, actionMonitor);
         };
     }
 
