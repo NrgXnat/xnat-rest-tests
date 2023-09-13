@@ -201,7 +201,7 @@ public class TestContainerServiceSecrets extends BaseXnatRestTest {
                 .getInt("workflow-id");
 
         // Wait for container to finish successfully
-        mainAdminInterface().waitForWorkflowComplete(workflowId);
+        mainAdminInterface().waitForWorkflowComplete(workflowId, 300);
 
         // Container id from workflow comments
         final Workflow workflow = mainAdminInterface().readWorkflow(workflowId);
