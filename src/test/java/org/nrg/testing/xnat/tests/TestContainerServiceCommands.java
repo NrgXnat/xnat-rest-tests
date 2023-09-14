@@ -1,5 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
+import org.hamcrest.Matchers;
 import org.nrg.testing.annotations.PluginRequirement;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
@@ -50,7 +51,12 @@ public class TestContainerServiceCommands extends BaseXnatRestTest {
                 .get(formatXapiUrl("projects", project.getId(), "wrappers", String.valueOf(testedWrapper.getId()), "launch"))
                 .then()
                 .assertThat()
-                .statusCode(200);
+                .statusCode(200)
+                .and()
+                .body(
+                        "input-values.find { it.name = \"project\" }.values[0].children[0].values.label",
+                        Matchers.containsInAnyOrder(subject1.getLabel(), subject2.getLabel())
+                );
     }
 
 }
