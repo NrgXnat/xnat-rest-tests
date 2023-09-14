@@ -1,0 +1,69 @@
+{
+    "name": "debug-fork-derived-input",
+    "label": "debug-fork-derived-input",
+    "description": "Runs a user-provided command, without output",
+    "version": "1.6",
+    "schema-version": "1.0",
+    "image": "xnat/debug-command:latest",
+    "type": "docker",
+    "command-line": "#COMMAND#",
+    "override-entrypoint": true,
+    "mounts": [
+        {
+            "name": "in",
+            "writable": false,
+            "path": "/input"
+        }
+    ],
+    "environment-variables": {},
+    "ports": {},
+    "inputs": [
+        {
+            "name": "command",
+            "description": "The command to run",
+            "type": "string",
+            "default-value": "echo hello world",
+            "required": true,
+            "replacement-key": "#COMMAND#",
+            "select-values": []
+        }
+    ],
+    "outputs": [],
+    "xnat": [
+        {
+            "name": "debug-fork-derived-input",
+            "label": "Debug",
+            "description": "Run the debug container with a project mounted, deriving subject",
+            "contexts": [
+                "xnat:projectData"
+            ],
+            "external-inputs": [
+                {
+                    "name": "project",
+                    "description": "Input project",
+                    "type": "Project",
+                    "required": true,
+                    "provides-files-for-command-mount": "in",
+                    "load-children": true
+                }
+            ],
+            "derived-inputs": [
+                {
+                    "name": "Subject",
+                    "description": "derived input to match multiple entities for testing",
+                    "type": "Subject",
+                    "required": true,
+                    "user-settable": true,
+                    "load-children": true,
+                    "derived-from-wrapper-input": "project",
+                    "multiple": false
+                }
+            ],
+            "output-handlers": []
+        }
+    ],
+    "container-labels": {},
+    "generic-resources": {},
+    "ulimits": {},
+    "secrets": []
+}
