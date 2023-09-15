@@ -174,7 +174,7 @@ public class TestContainerServiceSecrets extends BaseXnatRestTest {
         final String command = "{" +
                 "\"image\": \"busybox:latest\", " +
                 "\"name\": \"" + name + "\", " +
-                "\"command-line\": \"/bin/sh -c 'echo $" + secretEnvName + "'\", " +
+                "\"command-line\": \"/bin/sh -c 'sleep 3 && echo $" + secretEnvName + "'\", " +
                 "\"xnat\": [{" +
                     "\"name\": \"" + name + "\", " +
                     "\"contexts\": [\"site\"]" +
