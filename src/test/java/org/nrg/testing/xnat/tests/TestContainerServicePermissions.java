@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableMap;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.conf.Settings;
+import org.nrg.testing.xnat.containers.ContainerTestUtils;
 import org.nrg.xnat.enums.Accessibility;
 import org.nrg.xnat.enums.DataAccessLevel;
 import org.nrg.xnat.pogo.DataType;
@@ -74,8 +76,10 @@ public class TestContainerServicePermissions extends BaseXnatRestTest {
 
     @BeforeClass
     public void setupCompute() {
+        final Backend preferredComputeBackend = Settings.CS_PREFERRED_BACKEND;
+
         final DockerServer dockerServer = mainAdminInterface().readDockerServer();
-        dockerServer.setBackend(Backend.DOCKER);
+        dockerServer.setBackend(preferredComputeBackend);
         mainAdminInterface().updateDockerServer(dockerServer);
 
         final List<Image> installedImages = mainAdminInterface().readImages();
@@ -88,15 +92,13 @@ public class TestContainerServicePermissions extends BaseXnatRestTest {
             }
         }
 
-        assertEquals(
-                1,
-                mainAdminInterface().pullImage(DEBUG_IMG).readCommands(DEBUG_IMG).size()
-        );
-        mainAdminInterface().pullImage(QC_IMG, false);
-        mainAdminInterface().pullImage(SCAN_IMG, true);
-
-        mainAdminInterface().addCommand(getDataFile("debug_command_no_output.json"));
-        mainAdminInterface().addCommand(getDataFile("sample_qc_assessor.json"));
+        for (Image testImage : TEST_IMAGES) {
+            ContainerTestUtils.installFreshImageIfNecessary(this, testImage, preferredComputeBackend);
+        }
+        
+        for (String commandFile : Arrays.asList("debug_command_no_output.json", "debug_command.json", "sample_qc_assessor.json", "generate_scan.json")) {
+            mainAdminInterface().addCommand(getDataFile(commandFile));
+        }
 
         final Map<String, Wrapper> allTestWrappers = TEST_IMAGES.stream()
                 .map(image -> mainAdminInterface().readCommands(image))

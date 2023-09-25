@@ -4,12 +4,14 @@ import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.containers.ContainerTestUtils;
 import org.nrg.xnat.enums.Gender;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.containers.Backend;
+import org.nrg.xnat.pogo.containers.Command;
 import org.nrg.xnat.pogo.containers.CommandSummaryForContext;
 import org.nrg.xnat.pogo.containers.Image;
 import org.nrg.xnat.pogo.containers.Orchestration;
@@ -48,7 +50,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
 
     @BeforeClass
     private void setup() {
-        ContainerTestUtils.setServerBackend(this, Backend.DOCKER);
+        ContainerTestUtils.setServerBackend(this, Settings.CS_PREFERRED_BACKEND);
     }
 
     @BeforeMethod
@@ -67,8 +69,10 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
 
         // Add images and commands
         deleteAllImages();
-        mainAdminInterface().pullImage(DEBUG_IMG);
-        mainAdminInterface().pullImage(ALT_IMG);
+        ContainerTestUtils.installFreshImageIfNecessary(this, DEBUG_IMG, Settings.CS_PREFERRED_BACKEND);
+        ContainerTestUtils.installFreshImageIfNecessary(this, ALT_IMG, Settings.CS_PREFERRED_BACKEND);
+        mainAdminInterface().addCommand(getDataFile("debug_command.json"));
+        mainAdminInterface().addCommand(getDataFile("sample_qc_assessor.json"));
 
         // Enable on site
         List<CommandSummaryForContext> wrapperSummaries = mainInterface().readAvailableCommands(DataType.MR_SESSION);
@@ -90,6 +94,9 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
         final List<Image> imagesWithCommands = mainAdminInterface().readImages(IMAGES_WITH_COMMANDS_JSON_PATH);
 
         for (Image image : imagesWithCommands) {
+            for (Command command : image.getCommands()) {
+                mainAdminInterface().deleteCommand(command);
+            }
             mainAdminInterface().deleteImage(image, true);
         }
     }

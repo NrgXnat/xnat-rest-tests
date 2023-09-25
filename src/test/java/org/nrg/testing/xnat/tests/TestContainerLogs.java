@@ -20,13 +20,10 @@ import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -112,19 +109,6 @@ public class TestContainerLogs extends BaseXnatRestTest {
     @AfterClass
     private void cleanup() {
         deleteCommands();
-    }
-
-    @DataProvider
-    public static Object[][] backend() {
-        final List<Backend[]> backends = new ArrayList<>();
-        backends.add(new Backend[] {Backend.DOCKER});
-        if (Settings.getBooleanProperty(XNATProperties.CS_SWARM_CAN_ENABLE, false)) {
-            backends.add(new Backend[] {Backend.SWARM});
-        }
-        if (Settings.getBooleanProperty("cs.k8s.canEnable", false)) {
-            backends.add(new Backend[] {Backend.KUBERNETES});
-        }
-        return backends.toArray(new Object[backends.size()][1] );
     }
 
     public void testAfterContainerFinishesFetchLogs(final Backend backend) throws IOException {

@@ -3,6 +3,7 @@ package org.nrg.testing.xnat.tests;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
+import org.nrg.testing.TestGroups;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
@@ -39,7 +40,7 @@ import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertFalse;
 import static org.testng.AssertJUnit.assertNotNull;
 
-@TestRequires(plugins = "containers", trueProperties = "cs.k8s.canEnable")
+@TestRequires(plugins = CONTAINERS, supportedContainerBackends = Backend.KUBERNETES)
 @AddedIn(Xnat_1_8_5.class)
 @Test(groups = CONTAINERS)
 public class TestContainerServiceKubernetes extends BaseXnatRestTest {
@@ -66,7 +67,12 @@ public class TestContainerServiceKubernetes extends BaseXnatRestTest {
         // Delete all images + commands
         ContainerTestUtils.deleteAllImagesWithCommands(this);
 
-        debug = setUpDebugCommand();
+        ContainerTestUtils.installFreshImageIfNecessary(this, ContainerTestUtils.DEBUG_IMG, Backend.KUBERNETES);
+        mainAdminInterface().addCommand(getDataFile("debug_command.json"));
+
+        debug = mainInterface().readCommands(ContainerTestUtils.DEBUG_IMG).stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Could not find debug command"));
 
         // Set up model objects
         project = registerTempProject();
@@ -112,15 +118,6 @@ public class TestContainerServiceKubernetes extends BaseXnatRestTest {
 
     private void setServerToKubernetesMode() {
         ContainerTestUtils.setServerBackend(this, Backend.KUBERNETES);
-    }
-
-    private Command setUpDebugCommand() {
-        // Pull debug image which will also set up command (if not there already)
-        ContainerTestUtils.pullDebugImage(this);
-
-        return mainInterface().readCommands(ContainerTestUtils.DEBUG_IMG).stream()
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Could not find debug command"));
     }
 
     private void enableCommandWrappersOnProject(final Command command, final Project project) {

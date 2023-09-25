@@ -1,0 +1,128 @@
+{
+    "name": "generate-test-scan",
+    "description": "Generate a fake SCAN for testing",
+    "version": "1.0",
+    "schema-version": "1.0",
+    "image": "xnat/generatescan:1.0",
+    "type": "docker",
+    "command-line": "generate_scan.py #SESSION_ID# #SESSION_LABEL# #PROJECT# $XNAT_HOST $XNAT_USER $XNAT_PASS /mount scan.xml",
+    "override-entrypoint": true,
+    "mounts": [
+        {
+            "name": "mount",
+            "writable": true,
+            "path": "/mount"
+        }
+    ],
+    "environment-variables": {},
+    "ports": {},
+    "inputs": [
+        {
+            "name": "SESSION_ID",
+            "description": "ID of a session",
+            "type": "string",
+            "required": true,
+            "select-values": []
+        },
+        {
+            "name": "SESSION_LABEL",
+            "description": "Label of a session",
+            "type": "string",
+            "required": true,
+            "select-values": []
+        },
+        {
+            "name": "PROJECT",
+            "description": "Project in which session and scan live",
+            "type": "string",
+            "required": true,
+            "select-values": []
+        }
+    ],
+    "outputs": [
+        {
+            "name": "SCAN_XML",
+            "description": "SCAN XML file",
+            "required": true,
+            "mount": "mount",
+            "path": "scan.xml"
+        },
+        {
+            "name": "snapshot",
+            "description": "snapshot files",
+            "required": true,
+            "mount": "mount",
+            "path": "test_upload.jpg"
+        }
+    ],
+    "xnat": [
+        {
+            "name": "generate-test-scan",
+            "description": "Generate test scan and upload to session",
+            "contexts": [
+                "xnat:imageSessionData"
+            ],
+            "external-inputs": [
+                {
+                    "name": "session",
+                    "type": "Session",
+                    "required": true,
+                    "load-children": true
+                }
+            ],
+            "derived-inputs": [
+                {
+                    "name": "session_id",
+                    "type": "string",
+                    "required": true,
+                    "provides-value-for-command-input": "SESSION_ID",
+                    "load-children": true,
+                    "derived-from-wrapper-input": "session",
+                    "derived-from-xnat-object-property": "id",
+                    "multiple": false
+                },
+                {
+                    "name": "session_label",
+                    "type": "string",
+                    "required": true,
+                    "provides-value-for-command-input": "SESSION_LABEL",
+                    "load-children": true,
+                    "derived-from-wrapper-input": "session",
+                    "derived-from-xnat-object-property": "label",
+                    "multiple": false
+                },
+                {
+                    "name": "project",
+                    "type": "string",
+                    "required": true,
+                    "provides-value-for-command-input": "PROJECT",
+                    "load-children": true,
+                    "derived-from-wrapper-input": "session",
+                    "derived-from-xnat-object-property": "project-id",
+                    "multiple": false
+                }
+            ],
+            "output-handlers": [
+                {
+                    "name": "scan",
+                    "accepts-command-output": "SCAN_XML",
+                    "as-a-child-of": "session",
+                    "type": "Scan",
+                    "tags": []
+                },
+                {
+                    "name": "scan_snapshot",
+                    "accepts-command-output": "snapshot",
+                    "as-a-child-of": "scan",
+                    "type": "Resource",
+                    "label": "SNAPSHOTS",
+                    "tags": []
+                }
+            ]
+        }
+    ],
+    "container-labels": {},
+    "generic-resources": {},
+    "ulimits": {},
+    "secrets": []
+}

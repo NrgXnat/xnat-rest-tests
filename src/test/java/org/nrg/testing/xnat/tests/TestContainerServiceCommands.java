@@ -4,11 +4,11 @@ import org.hamcrest.Matchers;
 import org.nrg.testing.annotations.PluginRequirement;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.containers.ContainerTestUtils;
 import org.nrg.xnat.pogo.PluginRegistry;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
-import org.nrg.xnat.pogo.containers.Backend;
 import org.nrg.xnat.pogo.containers.Command;
 import org.nrg.xnat.pogo.containers.Wrapper;
 import org.testng.annotations.Test;
@@ -26,9 +26,8 @@ public class TestContainerServiceCommands extends BaseXnatRestTest {
         final Subject subject2 = new Subject(project);
         mainInterface().createProject(project);
 
-        ContainerTestUtils.setServerBackend(this, Backend.DOCKER);
-        mainAdminInterface().deleteAllCommands();
-        ContainerTestUtils.pullDebugImage(this);
+        ContainerTestUtils.setServerBackend(this, Settings.CS_PREFERRED_BACKEND);
+        ContainerTestUtils.installFreshImageIfNecessary(this, ContainerTestUtils.DEBUG_IMG, Settings.CS_PREFERRED_BACKEND);
         mainAdminInterface().addCommand(getDataFile("debug_command_derived_input.json"));
 
         final Wrapper testedWrapper = mainAdminInterface()

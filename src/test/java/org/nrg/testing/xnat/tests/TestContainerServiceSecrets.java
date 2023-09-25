@@ -8,6 +8,7 @@ import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsMapContaining;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.containers.ContainerTestUtils;
 import org.nrg.xnat.pogo.Workflow;
 import org.nrg.xnat.pogo.containers.Backend;
@@ -46,18 +47,15 @@ public class TestContainerServiceSecrets extends BaseXnatRestTest {
     private String triggerId = null;
 
     @BeforeClass
-    public void setupClass() {
+    private void setupClass() {
         // Clean up all commands from previous tests
         mainAdminInterface().deleteAllCommands();
 
-        // Set to docker backend
-        // There is no reason to suspect that the test would run differently on different backends,
-        //  so it suffices to run it on the backend with the simplest external configuration
-        ContainerTestUtils.setServerBackend(this, Backend.DOCKER);
+        ContainerTestUtils.setServerBackend(this, Settings.CS_PREFERRED_BACKEND);
     }
 
     @AfterClass
-    public void cleanUpClass() {
+    private void cleanUpClass() {
         // Clean up all commands
         mainAdminInterface().deleteAllCommands();
 
