@@ -8,6 +8,7 @@ import org.nrg.testing.annotations.*;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.processing.files.resources.GenericResource;
+import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
 import org.nrg.xnat.pogo.PluginRegistry;
 import org.nrg.xnat.pogo.containers.Backend;
 import org.nrg.xnat.versions.Xnat_1_7_7;
@@ -55,7 +56,19 @@ public class TestContainerService extends BaseXnatRestTest {
     @BeforeClass
     private void setupCommands() {
         mainAdminInterface().deleteAllCommands();
-        mainAdminInterface().addCommand(getDataFile("debug_command.json"));
+        final String csVersion = installedPlugins()
+                .stream()
+                .filter(plugin -> plugin.getId().equals(PluginRegistry.CS_PLUGIN_ID))
+                .findFirst()
+                .orElseThrow(RuntimeException::new)
+                .getVersion();
+        if (csVersion.compareTo("3.2") < 0) {
+            ContainerTestUtils.setServerBackend(this, Settings.CS_PREFERRED_BACKEND);
+            mainAdminInterface().pullImage(ContainerTestUtils.DEBUG_IMG, false);
+        }
+        mainAdminInterface().addCommand(getDataFile(
+                XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_8_0.class) ? "debug_command_1.5.json" : "debug_command.json"
+        ));
     }
 
     @BeforeMethod
