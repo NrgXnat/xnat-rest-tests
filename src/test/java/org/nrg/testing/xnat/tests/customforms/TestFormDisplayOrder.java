@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.customforms.pojo.CustomFormPojo;
@@ -19,7 +20,9 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.nrg.testing.TestGroups.CUSTOM_FORMS;
 import static org.nrg.testing.TestGroups.PERMISSIONS;
 
@@ -189,8 +192,20 @@ public class TestFormDisplayOrder extends BaseCustomFormRestTest {
     @Test(groups = {CUSTOM_FORMS})
     public void testDisplayOrderTieBreaker() throws IOException {
         XnatInterface mainAdminInterface = mainAdminInterface();
+
         final Project project = registerTempProject();
         mainAdminInterface.createProject(project);
+
+        Map<String, String> queryParams = new HashMap();
+        queryParams.put("xsiType", "xnat:subjectData");
+        queryParams.put("id", "null");
+        queryParams.put("appendPrevNextButtons", "true");
+        queryParams.put("projectId", project.getId());
+        queryParams.put("visitId", "null");
+        queryParams.put("subtype", "null");
+        queryParams.put("format", "json");
+
+        JsonNode priortoTest = getComponents(mainAdminInterface, queryParams, true);
 
         String form1RandomNumber = String.valueOf(ThreadLocalRandom.current().nextInt());
         String form1 = CustomFormConstants.EXCLUSIVE_TO_PROJECT_SUBJECT_FORM.replaceAll(CustomFormConstants.APPEND_FORM_NUMBER, form1RandomNumber);
@@ -202,30 +217,43 @@ public class TestFormDisplayOrder extends BaseCustomFormRestTest {
         form2 = form2.replaceAll("PROJECT_ID_HERE", project.getId());
         String formUUID2 = saveFormAndAssert(mainAdminInterface, form2, 201);
 
-        Map<String, String> queryParams = new HashMap();
-        queryParams.put("xsiType", "xnat:subjectData");
-        queryParams.put("id", "null");
-        queryParams.put("appendPrevNextButtons", "true");
-        queryParams.put("projectId", project.getId());
-        queryParams.put("visitId", "null");
-        queryParams.put("subtype", "null");
-        queryParams.put("format", "json");
+        int expectedSize = (priortoTest == null) ? 2 : (((ArrayNode)priortoTest).size() + 2);
 
-        String response = getJsonResponse(mainAdminInterface, "customforms/element", queryParams, 200);
-        ObjectMapper objectMapper = getObjectMapper();
-        JsonNode rootNode = objectMapper.readTree(response);
-        assertNotNull(rootNode);
-        JsonNode components = rootNode.at("/components");
-        if (components instanceof ArrayNode) {
-            assertEquals(((ArrayNode)components).size(), 2);
-            String firstFormLabel = ((ArrayNode)components).get(0).get("label").asText();
-            String secondFormLabel = ((ArrayNode)components).get(1).get("label").asText();
-            assertEquals(firstFormLabel, "Form"+form2RandomNumber);
-            assertEquals(secondFormLabel, "Form"+form1RandomNumber);
+        ArrayNode components = (ArrayNode) getComponents(mainAdminInterface, queryParams, false);
+        if (components != null) {
+            assertEquals(components.size(), expectedSize);
+
+            //check order without forcing them to be 0 and 1.
+            //if other tests leave a site-wide form around, it may show up first.
+            int form1Index = getIndexOfForm(components, "Form" + form1RandomNumber);
+            int form2Index = getIndexOfForm(components, "Form" + form2RandomNumber);
+            assertTrue("Forms order is incorrect", (form2Index < form1Index));
+            assertFalse("Form missing", (form2Index == -1 || form1Index == -1));
         }
     }
 
-    private void verifyDisplayOrder(final List<CustomFormPojo> formsOnSite,  final String desiredFormDisplayOrder) throws JsonProcessingException, IOException {
+    private int getIndexOfForm(final ArrayNode components, final String label){
+        for (int i=0; i<components.size(); i++) {
+            String s = components.get(i).get("label").asText();
+            if (StringUtils.equals(s,label)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private JsonNode getComponents(final XnatInterface mainAdminInterface, final Map<String, String> queryParams, boolean allowNull) throws JsonProcessingException {
+        String response = getJsonResponse(mainAdminInterface, "customforms/element", queryParams, 200);
+        ObjectMapper objectMapper = getObjectMapper();
+        JsonNode rootNode = objectMapper.readTree(response);
+        if (allowNull && rootNode == null) {
+            return null;
+        }
+        assertNotNull(rootNode);
+        return rootNode.at("/components");
+    }
+
+    private void verifyDisplayOrder(final List<CustomFormPojo> formsOnSite, final String desiredFormDisplayOrder) throws JsonProcessingException, IOException {
         formsOnSite.stream()
                 .filter(form -> generatedFormUUIDs.contains(form.getFormUUID()))
                 .forEach(form -> assertEquals(new Long(form.getFormDisplayOrder()).longValue(), Long.parseLong(desiredFormDisplayOrder)));
