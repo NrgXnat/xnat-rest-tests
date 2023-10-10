@@ -205,6 +205,7 @@ public class TestFormDisplayOrder extends BaseCustomFormRestTest {
         queryParams.put("subtype", "null");
         queryParams.put("format", "json");
 
+        //This could be a MissingNode object or an ArrayNode or null
         JsonNode priortoTest = getComponents(mainAdminInterface, queryParams, true);
 
         String form1RandomNumber = String.valueOf(ThreadLocalRandom.current().nextInt());
@@ -217,19 +218,22 @@ public class TestFormDisplayOrder extends BaseCustomFormRestTest {
         form2 = form2.replaceAll("PROJECT_ID_HERE", project.getId());
         String formUUID2 = saveFormAndAssert(mainAdminInterface, form2, 201);
 
-        int expectedSize = (priortoTest == null) ? 2 : (((ArrayNode)priortoTest).size() + 2);
+        int expectedSize = (priortoTest != null && priortoTest instanceof ArrayNode) ? (((ArrayNode)priortoTest).size() + 2) : 2;
 
-        ArrayNode components = (ArrayNode) getComponents(mainAdminInterface, queryParams, false);
-        if (components != null) {
-            assertEquals(components.size(), expectedSize);
+        //This could be a MissingNode object or an ArrayNode
+        //Should it throw an error if it is?  Old code didn't...
+        JsonNode components = getComponents(mainAdminInterface, queryParams, false);
+        assertTrue("Missing expected form.", (components instanceof ArrayNode));
 
-            //check order without forcing them to be 0 and 1.
-            //if other tests leave a site-wide form around, it may show up first.
-            int form1Index = getIndexOfForm(components, "Form" + form1RandomNumber);
-            int form2Index = getIndexOfForm(components, "Form" + form2RandomNumber);
-            assertTrue("Forms order is incorrect", (form2Index < form1Index));
-            assertFalse("Form missing", (form2Index == -1 || form1Index == -1));
-        }
+        ArrayNode arrayNode = (ArrayNode) components;
+        assertEquals(arrayNode.size(), expectedSize);
+
+        //check order without forcing them to be 0 and 1.
+        //if other tests leave a site-wide form around, it may show up first.
+        int form1Index = getIndexOfForm(arrayNode, "Form" + form1RandomNumber);
+        int form2Index = getIndexOfForm(arrayNode, "Form" + form2RandomNumber);
+        assertTrue("Forms order is incorrect", (form2Index < form1Index));
+        assertFalse("Form missing", (form2Index == -1 || form1Index == -1));
     }
 
     private int getIndexOfForm(final ArrayNode components, final String label){
