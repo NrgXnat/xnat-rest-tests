@@ -8,7 +8,7 @@ public class Anon2NoOp extends SimplestDicomScriptValidation {
     protected RootDicomObject generateValidationObject() {
         final RootDicomObject root = new RootDicomObject();
 
-        root.putValueEqualCheck("(0008,0008)", "ORIGINAL\\PRIMARY\\PROTON_DENSITY\\NONE");
+        root.putValueEqualCheck("(0008,0008)", AnonConstants.ANON2_IMAGE_TYPE);
         root.putValueEqualCheck("(0008,0060)", "MR");
         root.putValueEqualCheck("(0008,9208)", "MAGNITUDE");
 
