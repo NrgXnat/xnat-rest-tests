@@ -565,7 +565,7 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
     private class ArchiveOverrideExceptions implements TestComponent {
         @Override
         public void perform(BaseXnatRestTest xnatRestTest, Project project) {
-            mainInterface().archiveSession(expectSinglePrearchiveResultForProject(project), new ArchiveParams().delete());
+            mainInterface().archiveSession(mainInterface().expectSinglePrearchiveResultForProject(project), new ArchiveParams().delete());
         }
     }
 

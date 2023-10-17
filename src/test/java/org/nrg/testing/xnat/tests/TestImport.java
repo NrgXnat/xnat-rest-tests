@@ -27,6 +27,7 @@ import org.nrg.xnat.importer.importers.SessionImporterRequest;
 import org.nrg.xnat.interfaces.XnatInterface;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
+import org.nrg.xnat.pogo.SiteConfigProps;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.Scan;
@@ -77,15 +78,19 @@ public class TestImport extends BaseXnatRestTest {
     private final File zipContainingNonDicom = getDataFile("mr_1_with_txt.zip");
     private final String nonDicomFilename = "non_dicom_text_file.dcm";
     private int mrCount = 0;
+    private int conflictStatus = 409;
     private static final Logger LOGGER = Logger.getLogger(TestImport.class);
 
-    @BeforeClass
-    private void setupImportProject() {
+    @BeforeClass(groups = IMPORTER)
+    private void setupImportEnvironment() {
         mainInterface().createProject(project);
         mainAdminInterface().disableSiteAnonScript();
+        if ("DICOM-zip".equals(mainAdminInterface().readSiteConfig().getUiDefaultCompressedUploaderImporter())) {
+            conflictStatus = 400;
+        }
     }
 
-    @BeforeClass
+    @BeforeClass(groups = IMPORTER)
     private void setupZip() throws IOException {
         if (zipContainingNonDicom.exists()) {
             //noinspection ResultOfMethodCallIgnored
@@ -101,8 +106,8 @@ public class TestImport extends BaseXnatRestTest {
         }
     }
 
-    @BeforeMethod(alwaysRun = true) // clear out prearchive/archive for each test
-    @AfterClass(alwaysRun = true) // ... and then clear them out when we're all done
+    @BeforeMethod(groups = IMPORTER, alwaysRun = true) // clear out prearchive/archive for each test
+    @AfterClass(groups = IMPORTER, alwaysRun = true) // ... and then clear them out when we're all done
     private void clearArchives() {
         try {
             restDriver.clearPrearchiveSessions(mainUser, project);
@@ -117,7 +122,7 @@ public class TestImport extends BaseXnatRestTest {
         }
     }
 
-    @AfterClass(alwaysRun = true)
+    @AfterClass(groups = IMPORTER, alwaysRun = true)
     private void tearDownImportTests() {
         restDriver.deleteProjectSilently(mainAdminUser, project);
     }
@@ -229,7 +234,7 @@ public class TestImport extends BaseXnatRestTest {
             mainInterface().callImporter(defaultRequestFor(session).file(testZip));
             failOnImproperSuccess();
         } catch (ImportException importException) {
-            assertEquals(409, importException.getStatusCode());
+            assertEquals(conflictStatus, importException.getStatusCode());
         }
 
         mainInterface().deleteSubjectAssessor(session);
@@ -252,7 +257,7 @@ public class TestImport extends BaseXnatRestTest {
             mainInterface().callImporter(overwriteRequest);
             failOnImproperSuccess();
         } catch (ImportException importException) {
-            assertEquals(409, importException.getStatusCode());
+            assertEquals(conflictStatus, importException.getStatusCode());
         }
 
         if (XnatTestingVersionManager.testedVersionFollows(Xnat_1_7_6.class)) {
@@ -283,7 +288,7 @@ public class TestImport extends BaseXnatRestTest {
             mainInterface().callImporter(repeatedRequest);
             failOnImproperSuccess();
         } catch (ImportException importException) {
-            assertEquals(409, importException.getStatusCode());
+            assertEquals(conflictStatus, importException.getStatusCode());
         }
 
         mainInterface().deleteSubjectAssessor(session);
@@ -300,7 +305,7 @@ public class TestImport extends BaseXnatRestTest {
             mainInterface().callImporter(request.overwrite(MergeBehavior.APPEND));
             failOnImproperSuccess();
         } catch (ImportException importException) {
-            assertEquals(409, importException.getStatusCode());
+            assertEquals(conflictStatus, importException.getStatusCode());
         }
 
         mainInterface().deleteSubjectAssessor(session);
@@ -373,7 +378,7 @@ public class TestImport extends BaseXnatRestTest {
             mainInterface().callImporter(importerRequest.file(scan1Last6Files).overwrite(MergeBehavior.APPEND));
             failOnImproperSuccess(); // fails with overwrite=append and duplicate files
         } catch (ImportException importException) {
-            assertEquals(409, importException.getStatusCode());
+            assertEquals(conflictStatus, importException.getStatusCode());
         }
     }
 

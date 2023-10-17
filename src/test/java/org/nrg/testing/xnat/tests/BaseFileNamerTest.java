@@ -157,7 +157,7 @@ public class BaseFileNamerTest extends BaseXnatRestTest {
 
         @Override
         List<Scan> produceActualScans(Project project) {
-            return mainInterface().readScansForPrearchiveSession(expectSinglePrearchiveResultForProject(project));
+            return mainInterface().readScansForPrearchiveSession(mainInterface().expectSinglePrearchiveResultForProject(project));
         }
     }
 
@@ -175,14 +175,14 @@ public class BaseFileNamerTest extends BaseXnatRestTest {
     protected class ArchiveSession implements TestComponent {
         @Override
         public void perform(BaseXnatRestTest xnatRestTest, Project project) {
-            mainInterface().archiveSession(expectSinglePrearchiveResultForProject(project));
+            mainInterface().archiveSession(mainInterface().expectSinglePrearchiveResultForProject(project));
         }
     }
 
     protected class RebuildOnlySessionInPrearc implements TestComponent {
         @Override
         public void perform(BaseXnatRestTest xnatRestTest, Project project) {
-            final SessionData prearcSession = expectSinglePrearchiveResultForProject(project);
+            final SessionData prearcSession = mainInterface().expectSinglePrearchiveResultForProject(project);
             mainInterface().rebuildSession(prearcSession, false);
         }
     }
@@ -208,10 +208,6 @@ public class BaseFileNamerTest extends BaseXnatRestTest {
         for (ScanFileNameRecord fileNameRecord : scanFileNameRecords) {
             fileNameRecord.identifySelfAndValidate(actualScans);
         }
-    }
-
-    protected SessionData expectSinglePrearchiveResultForProject(Project project) {
-        return mainInterface().queryPrearchiveForSingularResult(new PrearchiveQuery().scope(PrearchiveQueryScope.forProject(project)));
     }
 
 }

@@ -10,10 +10,15 @@ import org.nrg.testing.dicom.ScriptValidation;
 import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
 import org.nrg.testing.dicom.transform.TransformFunction;
 import org.nrg.testing.enums.TestData;
+import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.XnatObjectUtils;
+import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.xnat.enums.DicomEditVersion;
 import org.nrg.xnat.pogo.DicomDataSet;
+import org.nrg.xnat.pogo.dicom.DicomScpReceiver;
+import org.nrg.xnat.pogo.experiments.sessions.MRSession;
+import org.nrg.xnat.prearchive.SessionData;
 import org.nrg.xnat.versions.*;
 import org.nrg.xnat.pogo.AnonScript;
 import org.nrg.xnat.pogo.Project;
@@ -39,6 +44,10 @@ import static org.nrg.xnat.enums.DicomEditVersion.*;
 public class TestDicomAnonymization extends BaseXnatRestTest {
 
     private static final LocallyCacheableDicomTransformation ANON_DATA_WITH_EXTRA_PRIVATE_ELEMENTS = defineAnonDataWithExtraPrivateElements();
+    private static final LocallyCacheableDicomTransformation ANON_DATA_FOR_BLANK_KNOWN_PHI = defineBlankKnownPhiData();
+    private static final LocallyCacheableDicomTransformation ANON_DATA_LATE_ELEMENTS = defineAnonDataWithExtraLateElements();
+    private static final ScriptValidation COMMON_PROJECT_VALIDATION = new ProjectScript();
+    private static final ScriptValidation COMMON_SITE_VALIDATION = new SiteScript();
     private Project anonProject = new Project();
     private final File anonData = TestData.ANON_2.toFile();
     private final File evleData = anonData;
@@ -48,7 +57,7 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     private final AnonScript projectAnonDE6 = XnatObjectUtils.anonScriptFromFile(DE_6, "projectAnon.das");
     private final AnonScript siteAnonDE4 = XnatObjectUtils.anonScriptFromFile(DE_4, "siteAnon.das");
     private final AnonScript siteAnonDE6 = XnatObjectUtils.anonScriptFromFile(DE_6, "siteAnon.das");
-    private final Map<AnonScript, ScriptValidation> scriptValidationMap = new HashMap<>();
+    private final List<DicomScpReceiver> createdReceivers = new ArrayList<>();
     boolean projectCreated = false;
 
     @BeforeMethod
@@ -57,10 +66,10 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         mainInterface().createProject(anonProject);
         projectCreated = true;
         mainInterface().regenerateUserSession(); // hack for XNAT-5187
-        scriptValidationMap.put(projectAnonDE4, new ProjectScript());
-        scriptValidationMap.put(projectAnonDE6, new ProjectScript());
-        scriptValidationMap.put(siteAnonDE4, new SiteScript());
-        scriptValidationMap.put(siteAnonDE6, new SiteScript());
+        mainAdminInterface().disableProjectDicomRoutingConfig();
+        mainAdminInterface().disableSubjectDicomRoutingConfig();
+        mainAdminInterface().disableSessionDicomRoutingConfig();
+        mainAdminInterface().setSessionXmlRebuilderTimes(1, 5000);
     }
 
     @AfterMethod(alwaysRun = true)
@@ -76,6 +85,9 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     private void resetAnon() {
         mainAdminInterface().enableSiteAnonScript();
         mainAdminInterface().setSiteAnonScript(restDriver.getDefaultXnatAnonScript());
+        for (DicomScpReceiver dicomScpReceiver : createdReceivers) {
+            mainAdminInterface().deleteDicomScpReceiver(dicomScpReceiver);
+        }
     }
 
     @Test(groups = SMOKE)
@@ -650,6 +662,135 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         performBasicScriptTest(DE_6, "sequenceItemWildcardAssignIfExists.das", new SequenceItemWildcardAssignIfExistsScript());
     }
 
+    @Test
+    @AddedIn(Xnat_1_8_10.class)
+    public void testBlankKnownPhiSingleStandardTag() {
+        performBasicScriptTest(DE_6, "blankKnownPhiSingleStandardTag.das", new BlankKnownPhiSingleStandardTag());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_10.class)
+    public void testBlankKnownPhiSingleStandardTagList() {
+        performBasicScriptTest(DE_6, "blankKnownPhiSingleStandardTagList.das", new BlankKnownPhiSingleStandardTag());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_10.class)
+    public void testBlankKnownPhiVariable() {
+        performBasicScriptTest(DE_6, "blankKnownPhiVariable.das", new BlankKnownPhiSingleStandardTag());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_10.class)
+    public void testBlankKnownPhiNoArguments() {
+        performBasicScriptTest(DE_6, "blankKnownPhiNoArguments.das", new Anon2NoOp());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_10.class)
+    public void testBlankKnownPhiSingleStandardTagpath() {
+        performBasicScriptTest(
+                DE_6,
+                "blankKnownPhiSingleStandardTagpath.das",
+                new BlankKnownPhiSingleStandardTagpath(),
+                ANON_DATA_FOR_BLANK_KNOWN_PHI.build().locateOverallZip().toFile()
+        );
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_10.class)
+    public void testBlankKnownPhiMixedArguments() {
+        performBasicScriptTest(
+                DE_6,
+                "blankKnownPhiMixedArgs.das",
+                new BlankKnownPhiSeveralElements(),
+                ANON_DATA_FOR_BLANK_KNOWN_PHI.build().locateOverallZip().toFile()
+        );
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_10.class)
+    public void testBlankKnownPhiMixedArgumentsList() {
+        performBasicScriptTest(
+                DE_6,
+                "blankKnownPhiMixedArgsList.das",
+                new BlankKnownPhiSeveralElements(),
+                ANON_DATA_FOR_BLANK_KNOWN_PHI.build().locateOverallZip().toFile()
+        );
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_10.class)
+    public void testBlankKnownPhiWildcards() {
+        performBasicScriptTest(DE_6, "blankKnownPhiWildcards.das", new BlankKnownPhiWildcards());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_10.class)
+    public void testBlankKnownPhiPrivateElements() {
+        performBasicScriptTest(DE_6, "blankKnownPhiPrivateElements.das", new BlankKnownPhiPrivateElements());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_9_2.class)
+    public void testCustomProcessingSiteAnonAllPrivateElements() {
+        performSiteAnonReceiverTest(
+                newDefaultReceiver().customProcessing(true),
+                DE_6,
+                "post00324000AnonAllPrivate.das",
+                new LateAnonAllPrivateElements(),
+                ANON_DATA_LATE_ELEMENTS.build().locateBaseDirForOnlyTransformation().toFile()
+        );
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_9_2.class)
+    public void testCustomProcessingSiteAnonTargetedPrivateElements() {
+        performSiteAnonReceiverTest(
+                newDefaultReceiver().customProcessing(true),
+                DE_6,
+                "post00324000AnonTargetedPrivateElements.das",
+                new LateAnonTargetedPrivateElements(),
+                ANON_DATA_LATE_ELEMENTS.build().locateBaseDirForOnlyTransformation().toFile()
+        );
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_9_2.class)
+    public void testCustomProcessingSiteAnonTargetedPrivateElementsDE4() {
+        performSiteAnonReceiverTest(
+                newDefaultReceiver().customProcessing(true),
+                DE_4,
+                "post00324000AnonTargetedPrivateElements.das",
+                new LateAnonTargetedPrivateElements(false),
+                ANON_DATA_LATE_ELEMENTS.build().locateBaseDirForOnlyTransformation().toFile()
+        );
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_9_2.class)
+    public void testCustomProcessingSiteAnonPixelEdit() {
+        performSiteAnonReceiverTest(
+                newDefaultReceiver().customProcessing(true),
+                DE_6,
+                "alterPixelsBasic.das",
+                new AlterPixelsBasicScript(),
+                TestData.SAMPLE_1.toDirectory()
+        );
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_9_2.class)
+    public void testCustomProcessingSiteAnonClientScript() {
+        performClientLikeScriptTest(false);
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_9_2.class)
+    public void testCustomProcessingDirectArchiveSiteAnonClientScript() {
+        performClientLikeScriptTest(true);
+    }
+
     private void performSubjectRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
         mainAdminInterface().setSiteAnonScript(siteScript);
         mainInterface().setProjectAnonScript(anonProject, projectScript);
@@ -657,13 +798,13 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         mainAdminInterface().disableSiteAnonScript();
 
         final ImagingSession session = importAnonSession();
-        validateAnon(session, null, Arrays.asList(projectScript, siteScript));
+        validateAnon(session, null, Arrays.asList(COMMON_PROJECT_VALIDATION, COMMON_SITE_VALIDATION));
         mainInterface().waitForAutoRun(session);
 
         mainInterface().enableProjectAnonScript(anonProject);
 
         mainInterface().relabelSubject(session.getSubject(), "NEWLABEL");
-        validateAnon(session, Collections.singletonList(projectScript), Collections.singletonList(siteScript));
+        validateAnon(session, Collections.singletonList(COMMON_PROJECT_VALIDATION), Collections.singletonList(COMMON_SITE_VALIDATION));
     }
 
     private void performSessionRelabelAnonTest(AnonScript projectScript, AnonScript siteScript) {
@@ -673,22 +814,21 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         mainAdminInterface().disableSiteAnonScript();
 
         final ImagingSession session = importAnonSession();
-        validateAnon(session, null, Arrays.asList(projectScript, siteScript));
+        validateAnon(session, null, Arrays.asList(COMMON_PROJECT_VALIDATION, COMMON_SITE_VALIDATION));
         mainInterface().waitForAutoRun(session);
 
         mainInterface().enableProjectAnonScript(anonProject);
 
         mainInterface().relabelSubjectAssessor(session, "NEWLABEL");
-        validateAnon(session, Collections.singletonList(projectScript), Collections.singletonList(siteScript));
+        validateAnon(session, Collections.singletonList(COMMON_PROJECT_VALIDATION), Collections.singletonList(COMMON_SITE_VALIDATION));
     }
 
     private void performBasicScriptTest(DicomEditVersion deVersion, String scriptName, ScriptValidation scriptValidation, File testData) {
         final AnonScript script = XnatObjectUtils.anonScriptFromFile(deVersion, scriptName);
-        scriptValidationMap.put(script, scriptValidation);
         mainInterface().setProjectAnonScript(anonProject, script);
         mainAdminInterface().disableSiteAnonScript();
 
-        validateAnon(importSession(testData), Collections.singletonList(script), null);
+        validateAnon(importSession(testData), Collections.singletonList(scriptValidation), null);
     }
 
     private void performBasicScriptTest(DicomEditVersion deVersion, String scriptName, ScriptValidation scriptValidation) {
@@ -698,12 +838,47 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     private void performXnatVariableScriptTest(DicomEditVersion deVersion) {
         final AnonScript script = XnatObjectUtils.anonScriptFromFile(deVersion, "xnatVariables.das");
         final XnatVariablesScript scriptValidation = new XnatVariablesScript();
-        scriptValidationMap.put(script, scriptValidation);
         mainInterface().setProjectAnonScript(anonProject, script);
         mainAdminInterface().disableSiteAnonScript();
         final ImagingSession session = importSession(anonData);
         scriptValidation.session(session);
-        validateAnon(session, Collections.singletonList(script), null);
+        validateAnon(session, Collections.singletonList(scriptValidation), null);
+    }
+
+    private void performClientLikeScriptTest(boolean directArchive) {
+        mainAdminInterface().setSubjectDicomRoutingConfig("(0018,0015):(.*)");
+        mainAdminInterface().setSessionDicomRoutingConfig("(0018,0023):(.*)");
+        final Subject subject = new Subject(anonProject, "BRAIN");
+        final ImagingSession session = new MRSession(anonProject, subject, "2D");
+
+        performSiteAnonReceiverTest(
+                newDefaultReceiver().customProcessing(true).directArchive(directArchive),
+                DE_4,
+                "clientLikeScript.das",
+                new LateAnonClientLikeScript().session(session),
+                TestData.ANON_2.toDirectory()
+        );
+    }
+
+    private void performSiteAnonReceiverTest(DicomScpReceiver scpReceiverSpecification, DicomEditVersion deVersion, String scriptName, ScriptValidation scriptValidation, File testDirectory) {
+        mainAdminInterface().createDicomScpReceiver(scpReceiverSpecification);
+        createdReceivers.add(scpReceiverSpecification);
+        final AnonScript script = XnatObjectUtils.anonScriptFromFile(deVersion, scriptName);
+        mainAdminInterface().enableSiteAnonScript();
+        mainAdminInterface().setSiteAnonScript(script);
+        new XnatCStore(scpReceiverSpecification).data(testDirectory).sendDICOMToProject(anonProject);
+        if (scpReceiverSpecification.isDirectArchive()) {
+            restDriver.waitForDirectArchiveEmpty(mainUser, anonProject, 120);
+        } else {
+            final SessionData prearcSession = mainInterface().expectSinglePrearchiveResultForProject(anonProject);
+            mainInterface().rebuildSession(prearcSession, false);
+            mainInterface().archiveSession(prearcSession);
+        }
+        validateAnon(
+                mainInterface().readProject(anonProject.getId()).getSubjects().get(0).getSessions().get(0),
+                Collections.singletonList(scriptValidation),
+                null
+        );
     }
 
     private ImagingSession importAnonSession() {
@@ -718,18 +893,25 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
         return session;
     }
 
-    private void validateAnon(ImagingSession session, List<AnonScript> enabledScripts, List<AnonScript> disabledScripts) {
+    private void validateAnon(ImagingSession session, List<ScriptValidation> enabledScripts, List<ScriptValidation> disabledScripts) {
         final List<File> dicom = restDriver.downloadAllDicomFromSession(mainUser, anonProject, session.getSubject(), session);
         if (enabledScripts != null) {
-            for (AnonScript script : enabledScripts) {
-                scriptValidationMap.get(script).validateScriptRan(dicom);
+            for (ScriptValidation script : enabledScripts) {
+                script.validateScriptRan(dicom);
             }
         }
         if (disabledScripts != null) {
-            for (AnonScript script : disabledScripts) {
-                scriptValidationMap.get(script).validateScriptDidntRun(dicom);
+            for (ScriptValidation script : disabledScripts) {
+                script.validateScriptDidntRun(dicom);
             }
         }
+    }
+
+    private DicomScpReceiver newDefaultReceiver() {
+        return new DicomScpReceiver()
+                .host(Settings.DICOM_HOST)
+                .aeTitle(RandomHelper.randomID(10))
+                .port(Settings.DICOM_PORT);
     }
 
     private static LocallyCacheableDicomTransformation defineAnonDataWithExtraPrivateElements() {
@@ -749,6 +931,37 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
                             final Attributes nestedSequenceItem = new Attributes();
                             nestedSequenceItem.setString(creatorId, 0x00991050, VR.LO, "LEVEL TWO");
                             nestedSequence.add(nestedSequenceItem);
+                        })
+                );
+    }
+
+    private static LocallyCacheableDicomTransformation defineBlankKnownPhiData() {
+        return new LocallyCacheableDicomTransformation("anon2-blank-known-add")
+                .createZip()
+                .data(TestData.ANON_2)
+                .simpleTransform(
+                        TransformFunction.simple((dicom) -> {
+                            dicom.getDataset().setString(0x00180034, VR.LO, "SOMETHING");
+                        })
+                );
+    }
+
+    private static LocallyCacheableDicomTransformation defineAnonDataWithExtraLateElements() {
+        final String privateCreatorId = "Anonymization tests";
+        return new LocallyCacheableDicomTransformation("anon2-extra-late-elements")
+                .data(TestData.ANON_2)
+                .simpleTransform(
+                        TransformFunction.simple((dicom) -> {
+                            dicom.getDataset().setString(privateCreatorId, 0x00151020, VR.LO, "ABC");
+                            dicom.getDataset().setString(privateCreatorId, 0x00151021, VR.LO, "XYZ");
+                            dicom.getDataset().setString(privateCreatorId, 0x97531050, VR.LO, "blah blah");
+                            dicom.getDataset().setString(privateCreatorId, 0x97531051, VR.LO, "blah blah again");
+                            final Sequence sequence = dicom.getDataset().newSequence(Tag.DigitalSignaturesSequence, 1);
+                            final Attributes sequenceItem = new Attributes();
+                            sequence.add(sequenceItem);
+                            sequenceItem.setInt(Tag.MACIDNumber, VR.US, 1000);
+                            sequenceItem.setString(Tag.CertificateType, VR.CS, "X509_1993_SIG");
+                            sequenceItem.setString(Tag.CertifiedTimestampType, VR.CS, "CMS_TSP");
                         })
                 );
     }

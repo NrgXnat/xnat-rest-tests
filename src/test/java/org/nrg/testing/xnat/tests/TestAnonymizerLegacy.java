@@ -255,7 +255,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
         restDriver.clearUnassignedPrearchiveSessions(mainAdminUser, UIDList.uids);
 
         final String sessionUri = mainInterface().callImporter(
-                new DefaultImporterRequest().triggerPipelines(false).file(testZip)
+                new DefaultImporterRequest().triggerPipelines(false).file(testZip).param("action", "commit")
         );
 
         final File downloadedDicom = saveDicomFile(mainAdminUser, formatXnatUrl(sessionUri));

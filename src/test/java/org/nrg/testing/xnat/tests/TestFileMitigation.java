@@ -986,7 +986,7 @@ public class TestFileMitigation extends BaseFileNamerTest {
     private Runnable cstoreAndArchive(File dir, Project project) {
         return () -> {
             new XnatCStore().data(dir).sendDICOMToProject(project);
-            final SessionData prearcSession = expectSinglePrearchiveResultForProject(project);
+            final SessionData prearcSession = mainInterface().expectSinglePrearchiveResultForProject(project);
             mainInterface().rebuildSession(prearcSession, false);
             mainInterface().archiveSession(prearcSession, new ArchiveParams().delete());
         };
