@@ -1,3 +1,3 @@
 version "6.6"
-tag_to_remove := "(0018,9020)"
-blankKnownPHI[tag_to_remove]
+tags_to_remove := {(0018,9020), (0044,0001), (0018,9011), (0018,9100)}
+blankKnownPHI[tags_to_remove]

@@ -677,7 +677,31 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     @Test
     @AddedIn(Xnat_1_8_10.class)
     public void testBlankKnownPhiVariable() {
-        performBasicScriptTest(DE_6, "blankKnownPhiVariable.das", new BlankKnownPhiSingleStandardTag());
+        performBasicScriptTest(DE_6, "blankKnownPhiVariable.das", new BlankKnownPhiVariable());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_10.class)
+    public void testBlankKnownPhiMultipleVariables() {
+        performBasicScriptTest(DE_6, "blankKnownPhiMultipleVariables.das", new BlankKnownPhiVariable());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_10.class)
+    public void testBlankKnownPhiNestedLists() {
+        performBasicScriptTest(DE_6, "blankKnownPhiNestedLists.das", new BlankKnownPhiVariable());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_10.class)
+    public void testBlankKnownPhiNestedWithOverlap() {
+        performBasicScriptTest(DE_6, "blankKnownPhiNestedWithOverlap.das", new BlankKnownPhiVariable());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_10.class)
+    public void testBlankKnownPhiMultilineList() {
+        performBasicScriptTest(DE_6, "blankKnownPhiMultilineList.das", new BlankKnownPhiVariable());
     }
 
     @Test
@@ -729,6 +753,20 @@ public class TestDicomAnonymization extends BaseXnatRestTest {
     @AddedIn(Xnat_1_8_10.class)
     public void testBlankKnownPhiPrivateElements() {
         performBasicScriptTest(DE_6, "blankKnownPhiPrivateElements.das", new BlankKnownPhiPrivateElements());
+    }
+
+    @Test
+    @AddedIn(Xnat_1_8_10.class)
+    public void testBlankKnownPhiVrPreservation() {
+        final LocallyCacheableDicomTransformation modifiedData = new LocallyCacheableDicomTransformation("anon2_vr_data")
+                .data(TestData.ANON_2)
+                .createZip()
+                .simpleTransform(TransformFunction.simple((dicom) -> {
+                    dicom.getDataset().setInt(Tag.InstanceNumber, VR.IS, 1);
+                    dicom.getDataset().setString(0x00181204, VR.DA, "20100430");
+                })).build();
+
+        performBasicScriptTest(DE_6, "blankKnownPhiVrPreservation.das", new BlankKnownPhiVrPreservation(), modifiedData.locateOverallZip().toFile());
     }
 
     @Test
