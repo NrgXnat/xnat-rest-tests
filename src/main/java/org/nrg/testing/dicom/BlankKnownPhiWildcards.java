@@ -74,7 +74,7 @@ public class BlankKnownPhiWildcards extends SimplestDicomScriptValidation {
                 }, (thirdItem) -> {
                     thirdItem.putSequenceCheck("(0018,9226)", commonMrImageFrameTypeSequenceItem);
                     thirdItem.putSequenceCheck("(0028,9132)", (innerSequenceItem) -> {
-                        innerSequenceItem.putValueEqualCheck("(0028,1050)", "1086"); // should be 1087, fix and delete comment
+                        innerSequenceItem.putValueEqualCheck("(0028,1050)", "1087");
                         innerSequenceItem.putValueEqualCheck("(0028,1051)", "1890");
                     });
                     thirdItem.putSequenceCheck("(2005,140f)", commonPrivateSequenceItem);
