@@ -33,8 +33,6 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
     private final String subjectName = "SPP_0x220790";
     private final String sessionName = "SPP_0x220790_MR2";
     private final Project project1 = new Project().prearchiveCode(PrearchiveCode.MANUAL);
-    private final Project project2 = new Project().prearchiveCode(PrearchiveCode.MANUAL);
-    private final Project project3 = new Project().prearchiveCode(PrearchiveCode.MANUAL);
     private final Subject subject1 = new Subject(project1, "1");
     private final Subject subject2 = new Subject(project1, "2");
     private final Subject subject3 = new Subject(project1, "3");
@@ -46,8 +44,6 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
     @BeforeClass
     private void addPrearchiveMgmtProjects() {
         mainInterface().createProject(project1);
-        mainInterface().createProject(project2);
-        mainInterface().createProject(project3);
 
         for (Subject subject : project1.getSubjects()) {
             for (SubjectAssessor session : subject.getExperiments()) {
@@ -67,9 +63,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
 
     @AfterClass(alwaysRun = true)
     private void removePrearchiveMgmtProjects() {
-        for (Project project : new Project[]{project1, project2, project3}) {
-            restDriver.deleteProjectSilently(mainUser, project);
-        }
+        restDriver.deleteProjectSilently(mainUser, project1);
         mainAdminQueryBase().put(formatRestUrl("prearchive"));
     }
 
