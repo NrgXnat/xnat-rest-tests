@@ -27,7 +27,6 @@ import org.nrg.xnat.importer.importers.SessionImporterRequest;
 import org.nrg.xnat.interfaces.XnatInterface;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
-import org.nrg.xnat.pogo.SiteConfigProps;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.Scan;
@@ -41,7 +40,7 @@ import org.nrg.xnat.pogo.resources.Resource;
 import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.nrg.xnat.pogo.resources.ScanResource;
 import org.nrg.xnat.pogo.resources.SubjectAssessorResource;
-import org.nrg.xnat.pogo.users.User;
+import org.nrg.xnat.prearchive.SessionData;
 import org.nrg.xnat.rest.NotFoundException;
 import org.nrg.xnat.versions.*;
 import org.testng.annotations.*;
@@ -56,6 +55,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.nrg.testing.TestGroups.*;
 import static org.testng.Assert.assertNotEquals;
@@ -398,21 +398,51 @@ public class TestImport extends BaseXnatRestTest {
         }
     }
 
+    /**
+     * Tests uploading a series to the prearchive and then merging a different series with a different Study Instance UID
+     * into it. This breaks some critical assumptions about a session containing a single DICOM study, but is permitted
+     * by SI.
+     */
     @Test(groups = {PREARCHIVE, MERGE})
-    public void testPrearcMergeDiffUID() {
-        final String timestamp = "20000101_100001";
-        final String session = newLabel();
-        final SessionImporterRequest importerRequest = new DefaultImporterRequest().
-                triggerPipelines(false).
-                overwrite(MergeBehavior.APPEND).
-                destPrearchive(project, timestamp, session);
-        mainInterface().callImporter(importerRequest.file(scan1));
-        mainInterface().callImporter(importerRequest.file(scan2DiffUID));
+    public void testPrearcMergeDiffUidSi() {
+        testPrearcDodgyUidMerge(
+                () -> {
+                    final String timestamp = "20000101_100001";
+                    final String session = newLabel();
+                    final SessionImporterRequest importerRequest = new SessionImporterRequest()
+                            .triggerPipelines(false)
+                            .overwrite(MergeBehavior.APPEND)
+                            .destPrearchive(project, timestamp, session);
+                    mainInterface().callImporter(importerRequest.file(scan1));
+                    mainInterface().callImporter(importerRequest.file(scan2DiffUID));
+                }, true
+        );
+    }
 
-        for (int i = 1; i <= 2; i++) {
-            restDriver.validateUpload(mainUser, formatRestUrl("prearchive/projects", project.getId(), timestamp, session, "scans", Integer.toString(i), "resources/DICOM/files/000000.dcm"),
-                    getDataFile(String.format("%s/000000.dcm", (i == 1) ? "scan1" : "scan2_diffUID")));
-        }
+    /**
+     * Tests uploading a series to the prearchive and then merging a different series with a different Study Instance UID
+     * into it. This breaks some critical assumptions about a session containing a single DICOM study, and is not permitted
+     * by DICOM-zip.
+     */
+    @Test(groups = {PREARCHIVE, MERGE})
+    public void testPrearcMergeDiffUidDicomZip() {
+        testPrearcDodgyUidMerge(
+                () -> {
+                    final String timestamp = "20000101_100001";
+                    final String session = newLabel();
+                    final DicomZipRequest importerRequest = new DicomZipRequest()
+                            .overwrite(MergeBehavior.APPEND)
+                            .destPrearchive(project, timestamp, session);
+                    mainInterface().callImporter(importerRequest.file(scan1));
+
+                    try {
+                        mainInterface().callImporter(importerRequest.file(scan2DiffUID));
+                        failOnImproperSuccess();
+                    } catch (ImportException importException) {
+                        assertEquals(conflictStatus, importException.getStatusCode());
+                    }
+                }, false
+        );
     }
 
     /**
@@ -533,14 +563,15 @@ public class TestImport extends BaseXnatRestTest {
         mainInterface().regenerateUserSession(); // make sure we have a good JSESSIONID
 
         mainInterface().callImporter(
-                new DefaultImporterRequest().
-                        overwrite(MergeBehavior.APPEND).
-                        httpSessionListener(transactionId).
-                        triggerPipelines(false).
-                        project(project).
-                        subject("SUBJ_0010").
-                        session(newLabel()).
-                        file(testZip)
+                new DefaultImporterRequest()
+                        .overwrite(MergeBehavior.APPEND)
+                        .httpSessionListener(transactionId)
+                        .triggerPipelines(false)
+                        .project(project)
+                        .subject("SUBJ_0010")
+                        .session(newLabel())
+                        .param("action", "commit")
+                        .file(testZip)
         );
 
         mainInterface().jsonQuery().get(formatRestUrl("status", transactionId)).then().
@@ -559,7 +590,12 @@ public class TestImport extends BaseXnatRestTest {
         final ImagingSession session = new MRSession(project, subject, newLabel()).date(LocalDate.parse("2000-01-01"));
         final Scan scan1 = new MRScan(session, "1");
         final Scan scan1MR1 = new MRScan(session, "1-MR1");
-        final SessionImporterRequest requestBase = defaultRequestFor(session);
+        /*
+           Technically this is going to be a DICOM-zip request if that's what the site default is set to. The test framework hasn't been updated
+           to fully handle new expectations, but we need to ignore unparseable files within the zip in the DICOM-zip case.
+           That behavior is implicit in SI for which this test was originally written.
+         */
+        final SessionImporterRequest requestBase = defaultRequestFor(session).param("Ignore-Unparsable", true);
 
         // upload frame 1, should create scan 1
         mainInterface().callImporter(
@@ -712,6 +748,29 @@ public class TestImport extends BaseXnatRestTest {
     @AddedIn(Xnat_1_8_3.class)
     public void testUploadIgnoreUnparsableTrue() {
         runUnparsableTest(true, true);
+    }
+
+    private void testPrearcDodgyUidMerge(Runnable importWorkflow, boolean acceptableForImporter) {
+        final String fileToCheck = "000000.dcm";
+        importWorkflow.run();
+        final SessionData sessionData = mainInterface().expectSinglePrearchiveResultForProject(project);
+        final List<Scan> prearcScans = mainInterface()
+                .readScansForPrearchiveSession(sessionData)
+                .stream()
+                .sorted(Comparator.comparing(Scan::getId))
+                .collect(Collectors.toList());
+
+        assertEquals(acceptableForImporter ? 2 : 1, prearcScans.size());
+
+        for (int i = 0; i < 2; i++) {
+            if (i == 0 || acceptableForImporter) {
+                restDriver.validateUpload(
+                        mainUser,
+                        mainInterface().resourceFileUrl(prearcScans.get(i).getScanResources().get(0), new ResourceFile().name(fileToCheck)),
+                        getDataFile(Paths.get((i == 0) ? "scan1" : "scan2_diffUID", fileToCheck))
+                );
+            }
+        }
     }
 
     private UserCacheTestObject setupForUserCacheUpload(XnatInterface xnatInterface) {
