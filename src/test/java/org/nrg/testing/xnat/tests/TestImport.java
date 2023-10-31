@@ -439,7 +439,7 @@ public class TestImport extends BaseXnatRestTest {
                         mainInterface().callImporter(importerRequest.file(scan2DiffUID));
                         failOnImproperSuccess();
                     } catch (ImportException importException) {
-                        assertEquals(conflictStatus, importException.getStatusCode());
+                        assertEquals(400, importException.getStatusCode());
                     }
                 }, false
         );
