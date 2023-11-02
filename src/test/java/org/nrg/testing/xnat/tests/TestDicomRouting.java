@@ -1,8 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
-import io.restassured.specification.RequestSpecification;
 import org.apache.log4j.Logger;
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.DatasetWithFMI;
 import org.dcm4che3.data.VR;
@@ -16,6 +15,7 @@ import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
+import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.enums.PrearchiveCode;
 import org.nrg.xnat.pogo.Project;
@@ -44,7 +44,7 @@ import static org.nrg.testing.TestGroups.*;
 @Test(groups = {DICOM_SCP, DICOM_ROUTING, IMPORTER})
 public class TestDicomRouting extends BaseXnatRestTest {
 
-    private final Project project = new Project().prearchiveCode(PrearchiveCode.AUTO_ARCHIVE_OVERWRITE);
+    private final Project project = registerTempProject().prearchiveCode(PrearchiveCode.AUTO_ARCHIVE_OVERWRITE);
     private final Path tmpDir = Paths.get(Settings.TEMP_SUBDIR);
     private final File testZip = getDataFile("mr_1.zip");
     private final List<File> filesToRemove = new ArrayList<>();
@@ -53,6 +53,20 @@ public class TestDicomRouting extends BaseXnatRestTest {
     private static final String accessionNumStripped = "497684894126";
     private static final Logger LOGGER = Logger.getLogger(TestDicomRouting.class);
     private static final String REPLACE_STR = "X";
+    private static final String DICOM_ZIP = "DICOM-zip";
+    private static final String SI = "SI";
+    private static final String IMPORT_PROVIDER = "import-provider";
+
+    /*
+        Legacy (1.7.7) tests are only run with DICOM-zip here. Many of the previous @AddedIn(Xnat_1_8_0.class)
+        usages are replaced by the parameterization provided by this method.
+     */
+    @DataProvider(name = IMPORT_PROVIDER)
+    private String[][] getZipImportHandlers() {
+        final String[] dicomZip = new String[]{ DICOM_ZIP };
+        final String[] si = new String[] { SI };
+        return XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_8_0.class) ? new String[][]{ dicomZip } : new String[][]{ dicomZip, si };
+    }
 
     private final Map<String, String> cfgMapProject = Stream.of(new String[][] {
             { accessionNumStripped.replaceAll("6", REPLACE_STR),
@@ -107,50 +121,28 @@ public class TestDicomRouting extends BaseXnatRestTest {
 
     @AfterClass(alwaysRun = true)
     private void tearDownImportTests() {
-        restDriver.deleteProjectSilently(mainAdminUser, project);
         mainAdminInterface().enableSiteAnonScript();
     }
 
-    @Test(groups = SMOKE)
+    @Test(groups = SMOKE, dataProvider = IMPORT_PROVIDER)
     @AddedIn(Xnat_1_8_0.class)
     @Basic
-    public void testProjectRoutingSessionImporter() {
-        testProjectRouting(this::uploadViaImporter, null);
+    public void testProjectRoutingImportApi(String handler) {
+        testProjectRouting(this::uploadViaImporter, handler);
     }
 
-    @Test(groups = SMOKE)
+    @Test(groups = SMOKE, dataProvider = IMPORT_PROVIDER)
     @AddedIn(Xnat_1_8_0.class)
     @Basic
-    public void testProjectRoutingDicomZip() {
-        testProjectRouting(this::uploadViaImporter, "DICOM-zip");
+    public void testSubjectRoutingImportApi(String handler) {
+        testSubjectRouting(this::uploadViaImporter, handler);
     }
 
-    @Test(groups = SMOKE)
+    @Test(groups = SMOKE, dataProvider = IMPORT_PROVIDER)
     @AddedIn(Xnat_1_8_0.class)
     @Basic
-    public void testSubjectRoutingSessionImporter() {
-        testSubjectRouting(this::uploadViaImporter, null);
-    }
-
-    @Test(groups = SMOKE)
-    @AddedIn(Xnat_1_8_0.class)
-    @Basic
-    public void testSubjectRoutingDicomZip() {
-        testSubjectRouting(this::uploadViaImporter, "DICOM-zip");
-    }
-
-    @Test(groups = SMOKE)
-    @AddedIn(Xnat_1_8_0.class)
-    @Basic
-    public void testSessionRoutingSessionImporter() {
-        testSessionRouting(this::uploadViaImporter, null);
-    }
-
-    @Test(groups = SMOKE)
-    @AddedIn(Xnat_1_8_0.class)
-    @Basic
-    public void testSessionRoutingDicomZip() {
-        testSessionRouting(this::uploadViaImporter, "DICOM-zip");
+    public void testSessionRoutingImportApi(String handler) {
+        testSessionRouting(this::uploadViaImporter, handler);
     }
 
     @Test
@@ -191,7 +183,8 @@ public class TestDicomRouting extends BaseXnatRestTest {
             TestData.SAMPLE_1_SCAN_4
     })
     public void testXnatDefaultRoutingPatientComments() {
-        testXnatDefaultRouting(Tag.PatientComments, true, this::uploadViaDicomScp);
+        new XnatDefaultRoutingTest(Tag.PatientComments, true, this::uploadViaDicomScp)
+                .run();
     }
 
     @Test
@@ -199,7 +192,9 @@ public class TestDicomRouting extends BaseXnatRestTest {
             TestData.SAMPLE_1_SCAN_4
     })
     public void testXnatDefaultRoutingStudyComments() {
-        testXnatDefaultRouting(Tag.StudyComments, true, this::uploadViaDicomScp, Tag.PatientComments);
+        new XnatDefaultRoutingTest(Tag.StudyComments, true, this::uploadViaDicomScp)
+                .tagsToClear(Tag.PatientComments)
+                .run();
     }
 
     @Test
@@ -208,8 +203,9 @@ public class TestDicomRouting extends BaseXnatRestTest {
     })
     @AddedIn(Xnat_1_8_0.class)
     public void testXnatDefaultRoutingAddlPatHist() {
-        testXnatDefaultRouting(Tag.AdditionalPatientHistory, true, this::uploadViaDicomScp,
-                Tag.StudyComments, Tag.PatientComments);
+        new XnatDefaultRoutingTest(Tag.AdditionalPatientHistory, true, this::uploadViaDicomScp)
+                .tagsToClear(Tag.StudyComments, Tag.PatientComments)
+                .run();
     }
 
     @Test
@@ -217,8 +213,9 @@ public class TestDicomRouting extends BaseXnatRestTest {
             TestData.SAMPLE_1_SCAN_4
     })
     public void testXnatDefaultRoutingStudyDesc() {
-        testXnatDefaultRouting(Tag.StudyDescription, false, this::uploadViaDicomScp,
-                Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments);
+        new XnatDefaultRoutingTest(Tag.StudyDescription, false, this::uploadViaDicomScp)
+                .tagsToClear(Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments)
+                .run();
     }
 
     @Test
@@ -226,121 +223,131 @@ public class TestDicomRouting extends BaseXnatRestTest {
             TestData.SAMPLE_1_SCAN_4
     })
     public void testXnatDefaultRoutingAccession() {
-        testXnatDefaultRouting(Tag.AccessionNumber, false, this::uploadViaDicomScp,
-                Tag.StudyDescription, Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments);
+        new XnatDefaultRoutingTest(Tag.AccessionNumber, false, this::uploadViaDicomScp)
+                .tagsToClear(Tag.StudyDescription, Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments)
+                .run();
     }
 
-    @Test
-    public void testXnatDefaultRoutingPatientCommentsDicomZip() {
-        testXnatDefaultRouting(Tag.PatientComments, true, this::uploadViaImporter, "DICOM-zip", testZip);
+    @Test(dataProvider = IMPORT_PROVIDER)
+    public void testXnatDefaultRoutingPatientCommentsImportApi(String handler) {
+        new XnatDefaultRoutingTest(Tag.PatientComments, true, this::uploadViaImporter)
+                .handler(handler)
+                .run();
     }
 
-    @Test
-    public void testXnatDefaultRoutingStudyCommentsDicomZip() {
-        testXnatDefaultRouting(Tag.StudyComments, true, this::uploadViaImporter, "DICOM-zip", testZip, 
-                Tag.PatientComments);
+    @Test(dataProvider = IMPORT_PROVIDER)
+    public void testXnatDefaultRoutingStudyCommentsImportApi(String handler) {
+        new XnatDefaultRoutingTest(Tag.StudyComments, true, this::uploadViaImporter)
+                .handler(handler)
+                .tagsToClear(Tag.PatientComments)
+                .run();
     }
 
-    @Test
+    @Test(dataProvider = IMPORT_PROVIDER)
     @AddedIn(Xnat_1_8_0.class)
-    public void testXnatDefaultRoutingAddlPatHistDicomZip() {
-        testXnatDefaultRouting(Tag.AdditionalPatientHistory, true, this::uploadViaImporter, "DICOM-zip", testZip,
-                Tag.StudyComments, Tag.PatientComments);
+    public void testXnatDefaultRoutingAddlPatHistImportApi(String handler) {
+        new XnatDefaultRoutingTest(Tag.AdditionalPatientHistory, true, this::uploadViaImporter)
+                .handler(handler)
+                .tagsToClear(Tag.StudyComments, Tag.PatientComments)
+                .run();
     }
 
-    @Test
-    public void testXnatDefaultRoutingStudyDescDicomZip() {
-        testXnatDefaultRouting(Tag.StudyDescription, false, this::uploadViaImporter, "DICOM-zip", testZip,
-                Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments);
+    @Test(dataProvider = IMPORT_PROVIDER)
+    public void testXnatDefaultRoutingStudyDescImportApi(String handler) {
+        new XnatDefaultRoutingTest(Tag.StudyDescription, false, this::uploadViaImporter)
+                .handler(handler)
+                .tagsToClear(Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments)
+                .run();
     }
 
     @Test
     public void testXnatDefaultRoutingAccessionDicomZip() {
-        testXnatDefaultRouting(Tag.AccessionNumber, false, this::uploadViaImporter, "DICOM-zip", testZip,
-                Tag.StudyDescription, Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments);
-    }
-
-    @Test
-    @AddedIn(Xnat_1_8_0.class)
-    public void testXnatDefaultRoutingPatientCommentsSessionImporter() {
-        testXnatDefaultRouting(Tag.PatientComments, true, this::uploadViaImporter, null, testZip);
-    }
-
-    @Test
-    @AddedIn(Xnat_1_8_0.class)
-    public void testXnatDefaultRoutingStudyCommentsSessionImporter() {
-        testXnatDefaultRouting(Tag.StudyComments, true, this::uploadViaImporter, null, testZip,
-                Tag.PatientComments);
-    }
-
-    @Test
-    @AddedIn(Xnat_1_8_0.class)
-    public void testXnatDefaultRoutingAddlPatHistSessionImporter() {
-        testXnatDefaultRouting(Tag.AdditionalPatientHistory, true, this::uploadViaImporter, null, testZip,
-                Tag.StudyComments, Tag.PatientComments);
-    }
-
-    @Test
-    @AddedIn(Xnat_1_8_0.class)
-    public void testXnatDefaultRoutingStudyDescSessionImporter() {
-        testXnatDefaultRouting(Tag.StudyDescription, false, this::uploadViaImporter, null, testZip,
-                Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments);
+        new XnatDefaultRoutingTest(Tag.AccessionNumber, false, this::uploadViaImporter)
+                .handler(DICOM_ZIP)
+                .tagsToClear(Tag.StudyDescription, Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments)
+                .run();
     }
 
     @Test
     @ExpectedFailure(jiraIssue = "XNAT-6469")
     public void testXnatDefaultRoutingAccessionSessionImporter() {
-        testXnatDefaultRouting(Tag.AccessionNumber, false, this::uploadViaImporter, null,
-                testZip, Tag.StudyDescription, Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments);
+        new XnatDefaultRoutingTest(Tag.AccessionNumber, false, this::uploadViaImporter)
+                .handler(SI)
+                .tagsToClear(Tag.StudyDescription, Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments)
+                .run();
     }
 
     @Test
     @AddedIn(Xnat_1_8_0.class)
     public void testXnatDefaultRoutingAccessionSessionImporterAlt() {
-        testXnatDefaultRouting(Tag.AccessionNumber, false, this::uploadViaImporter, null, "",
-                testZip, Tag.StudyDescription, Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments);
+        new XnatDefaultRoutingTest(Tag.AccessionNumber, false, this::uploadViaImporter)
+                .handler(SI)
+                .replaceVal("")
+                .tagsToClear(Tag.StudyDescription, Tag.AdditionalPatientHistory, Tag.StudyComments, Tag.PatientComments)
+                .run();
     }
 
-    private void testXnatDefaultRouting(int tag, boolean combined, UploadFn uploadFn, int... tagsToClear) {
-        testXnatDefaultRouting(tag, combined, uploadFn, null, null, tagsToClear);
-    }
+    private class XnatDefaultRoutingTest {
+        int tag;
+        boolean combined;
+        UploadFn uploadFn;
+        String handler;
+        String replaceVal = "notPatternOrProject";
+        File zipFile = testZip; // will be ignored for CSTORE uploads
+        int[] tagsToClear = new int[]{};
 
-    private void testXnatDefaultRouting(int tag, boolean combined, UploadFn uploadFn, String handler,
-                                        File zipFile, int... tagsToClear) {
-        testXnatDefaultRouting(tag, combined, uploadFn, handler, "notPatternOrProject", zipFile, tagsToClear);
-    }
-
-    private void testXnatDefaultRouting(int tag, boolean combined, UploadFn uploadFn, String handler, String replaceVal,
-                                        File zipFile, int... tagsToClear) {
-        final String listener = Long.toString(System.currentTimeMillis());
-        final Project project = new Project(listener).prearchiveCode(PrearchiveCode.AUTO_ARCHIVE);
-        mainInterface().createProject(project);
-        final Subject   subject = new Subject(project, "su" + listener);
-        final MRSession session = new MRSession(project, subject, "se" + listener);
-
-        // update headers
-        Map<Integer, String> hdr = new HashMap<>();
-        if (combined) {
-            hdr.put(tag, String.format("Project:%s Subject:%s Session:%s",
-                    project.getId(), subject.getLabel(), session.getLabel()));
-        } else {
-            hdr.put(tag, project.getId());
-            hdr.put(Tag.PatientName, subject.getLabel());
-            hdr.put(Tag.PatientID, session.getLabel());
-        }
-        for (int t : tagsToClear) {
-            hdr.put(t, replaceVal);
+        XnatDefaultRoutingTest(int tag, boolean combined, UploadFn uploadFn) {
+            this.tag = tag;
+            this.combined = combined;
+            this.uploadFn = uploadFn;
         }
 
-        // upload
-        uploadFn.accept(hdr, project, zipFile, handler);
+        XnatDefaultRoutingTest handler(String handler) {
+            this.handler = handler;
+            return this;
+        }
 
-        // verify
-        verifyImport(session);
+        XnatDefaultRoutingTest replaceVal(String replaceVal) {
+            this.replaceVal = replaceVal;
+            return this;
+        }
 
-        // cleanup
-        mainInterface().waitForAutoRun(session);
-        restDriver.deleteProjectSilently(mainUser, project);
+        XnatDefaultRoutingTest tagsToClear(int... tagsToClear) {
+            this.tagsToClear = tagsToClear;
+            return this;
+        }
+
+        void run() {
+            final String listener = Long.toString(System.currentTimeMillis());
+            final Project project = new Project(listener).prearchiveCode(PrearchiveCode.AUTO_ARCHIVE);
+            mainInterface().createProject(project);
+            final Subject subject = new Subject(project, "su" + listener);
+            final MRSession session = new MRSession(project, subject, "se" + listener);
+
+            // update headers
+            final Map<Integer, String> hdr = new HashMap<>();
+            if (combined) {
+                hdr.put(tag, String.format("Project:%s Subject:%s Session:%s",
+                        project.getId(), subject.getLabel(), session.getLabel()));
+            } else {
+                hdr.put(tag, project.getId());
+                hdr.put(Tag.PatientName, subject.getLabel());
+                hdr.put(Tag.PatientID, session.getLabel());
+            }
+            for (int t : tagsToClear) {
+                hdr.put(t, replaceVal);
+            }
+
+            // upload
+            uploadFn.accept(hdr, project, zipFile, handler);
+
+            // verify
+            verifyImport(session);
+
+            // cleanup
+            mainInterface().waitForAutoRun(session);
+            restDriver.deleteProjectSilently(mainUser, project);
+        }
     }
 
     private void uploadViaImporter(@Nullable Project project, @Nullable String handler, boolean sendProjectId) {
@@ -351,7 +358,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
         uploadViaImporter(hdr, project, zip, handler, false);
     }
 
-    private void uploadViaImporter(Map<Integer, String> hdr, Project project, File zip, @Nullable String handler, 
+    private void uploadViaImporter(Map<Integer, String> hdr, Project project, File zip, @Nullable String handler,
                                    boolean sendProjectId) {
         if (hdr != null) {
             try {
@@ -362,18 +369,20 @@ public class TestDicomRouting extends BaseXnatRestTest {
             }
         }
 
-        RequestSpecification request = mainCredentials();
+        final Map<String, String> queryParams = new HashMap<>();
         if (handler != null) {
-            request.queryParam("import-handler", handler);
+            queryParams.put("import-handler", handler);
         }
         if (sendProjectId) {
-            request.queryParam("PROJECT_ID", project.getId());
+            queryParams.put("PROJECT_ID", project.getId());
         }
-        request.multiPart(zip)
+        mainQueryBase()
+                .queryParams(queryParams)
+                .multiPart(zip)
                 .post(formatRestUrl("services/import"))
                 .then().assertThat().statusCode(200);
         
-        if (handler != null) {
+        if (DICOM_ZIP.equals(handler)) {
             waitForDicomRecieve(project);
         }
     }
@@ -484,7 +493,7 @@ public class TestDicomRouting extends BaseXnatRestTest {
     private void verifyImport(SubjectAssessor session) {
         // if session can be retrieved at this URL, then project, subject, session are all labelled properly
         TimeUtils.sleep(1000); // sleep for 1s to accommodate a little gap between prearchive being empty and session being accessible
-        mainCredentials().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
+        mainQueryBase().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
     }
 
     @FunctionalInterface
@@ -496,4 +505,5 @@ public class TestDicomRouting extends BaseXnatRestTest {
     public interface UploadFn {
         void accept(Map<Integer, String> hdr, Project project, File zip, String handler);
     }
+
 }
