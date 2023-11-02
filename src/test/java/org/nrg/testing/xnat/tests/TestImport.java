@@ -425,6 +425,7 @@ public class TestImport extends BaseXnatRestTest {
      * by DICOM-zip.
      */
     @Test(groups = {PREARCHIVE, MERGE})
+    @AddedIn(Xnat_1_8_10.class)
     public void testPrearcMergeDiffUidDicomZip() {
         testPrearcDodgyUidMerge(
                 () -> {
