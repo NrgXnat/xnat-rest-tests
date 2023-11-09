@@ -17,7 +17,7 @@ public class BlankKnownPhiVrPreservation extends SimplestDicomScriptValidation {
         root.putValueEqualCheck("(0028,9001)", "", VR.UL);
         root.putValueEqualCheck("(2001,1013)", "", VR.SL);
         root.putValueEqualCheck("(2001,1014)", "", VR.SL);
-        root.putValueEqualCheck("(2001,1015)", "", VR.SL);
+        root.putValueEqualCheck("(2001,1015)", "", VR.SS);
         root.putValueEqualCheck("(2001,1018)", "3", VR.SL);
         root.putValueEqualCheck("(2001,101d)", "", VR.IS);
         root.putSequenceCheck("(2001,105f)", (item) -> {
