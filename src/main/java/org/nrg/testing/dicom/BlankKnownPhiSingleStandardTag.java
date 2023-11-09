@@ -22,6 +22,7 @@ public class BlankKnownPhiSingleStandardTag extends SimplestDicomScriptValidatio
         final DicomObject sharedFunctionalGroupsSequenceItem = new DicomObject();
         sharedFunctionalGroupsSequenceItem.putSequenceCheck("(0018,9006)", new DicomSequence(mrImagingModifierSequenceItem));
         root.putSequenceCheck("(5200,9229)", new DicomSequence(sharedFunctionalGroupsSequenceItem));
+        root.putNonexistenceChecks("(0010,0217)"); // for testBlankKnownPhiNonexistentElement, which reuses this class
 
         return root;
     }

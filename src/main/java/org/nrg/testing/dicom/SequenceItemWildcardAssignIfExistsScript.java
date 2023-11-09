@@ -4,12 +4,10 @@ import org.nrg.testing.dicom.values.DicomSequence;
 
 import java.util.Arrays;
 
-public class SequenceItemWildcardAssignIfExistsScript extends SimplestDicomScriptValidation {
+public class SequenceItemWildcardAssignIfExistsScript extends SimpleInjectibleDicomValidation{
 
     @Override
-    protected RootDicomObject generateValidationObject() {
-        final RootDicomObject root = new RootDicomObject();
-
+    protected void validation(RootDicomObject root) {
         root.putValueEqualCheck("(0010,0010)", "Watermelon");
         root.putValueEqualCheck("(0010,0020)", "Watermelon_MR1");
 
@@ -29,8 +27,6 @@ public class SequenceItemWildcardAssignIfExistsScript extends SimplestDicomScrip
         otherPatientIdsSequenceNestedItem.putValueEqualCheck("(0010,0020)", "NEW ID");
         otherPatientIdsSequenceItem3.putValueEqualCheck("(0010,0020)", "PERSON_0004");
         root.putSequenceCheck("(0010,1002)", new DicomSequence(otherPatientIdsSequenceItem0, otherPatientIdsSequenceItem1, otherPatientIdsSequenceItem2, otherPatientIdsSequenceItem3));
-
-        return root;
     }
 
 }

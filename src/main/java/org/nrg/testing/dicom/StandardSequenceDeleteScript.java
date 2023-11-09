@@ -4,12 +4,10 @@ import org.nrg.testing.dicom.values.DicomSequence;
 import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
 import org.nrg.xnat.versions.Xnat_1_8_7;
 
-public class StandardSequenceDeleteScript extends SimplestDicomScriptValidation {
+public class StandardSequenceDeleteScript extends SimpleInjectibleDicomValidation {
 
     @Override
-    protected RootDicomObject generateValidationObject() {
-        final RootDicomObject root = new RootDicomObject();
-
+    protected void validation(RootDicomObject root){
         final DicomObject interventionDrugInfoSeqItem1 = new DicomObject();
         interventionDrugInfoSeqItem1.putValueEqualCheck("(0018,0028)", "150000");
         interventionDrugInfoSeqItem1.putValueEqualCheck("(0018,0034)", "CHOCOLATE");
@@ -39,8 +37,6 @@ public class StandardSequenceDeleteScript extends SimplestDicomScriptValidation 
         performedProtocolCodeSeqItem.putValueEqualCheck("(0008,0100)", "UNDEFINED");
         performedProtocolCodeSeqItem.putNonexistenceChecks("(0008,010b)");
         root.putSequenceCheck("(0040,0260)", new DicomSequence(performedProtocolCodeSeqItem));
-
-        return root;
     }
 
 }

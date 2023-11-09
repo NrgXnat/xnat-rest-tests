@@ -2,7 +2,7 @@ package org.nrg.testing.dicom;
 
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 
-public abstract class GenericXnatVariablesScript extends SimplestDicomScriptValidation {
+public abstract class GenericXnatVariablesScript extends SimpleInjectibleDicomValidation {
 
     protected String project;
     protected String subject;

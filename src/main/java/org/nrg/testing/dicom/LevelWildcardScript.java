@@ -2,12 +2,10 @@ package org.nrg.testing.dicom;
 
 import org.nrg.testing.dicom.values.DicomSequence;
 
-public class LevelWildcardScript extends SimplestDicomScriptValidation {
+public class LevelWildcardScript extends SimpleInjectibleDicomValidation {
 
     @Override
-    protected RootDicomObject generateValidationObject() {
-        final RootDicomObject root = new RootDicomObject();
-
+    protected void validation(RootDicomObject root) {
         root.putValueEqualCheck("(0010,0020)", "Watermelon_MR1");
         root.putValueEqualCheck("(0008,0102)", "DCM");
         root.putValueEqualCheck("(0018,0015)", "BRAIN");
@@ -53,8 +51,6 @@ public class LevelWildcardScript extends SimplestDicomScriptValidation {
         dimensionIndexSeqItem1.putValueEqualCheck("(0020,9167)", "00209111");
         dimensionIndexSeqItem1.putNonexistenceChecks("(0020,9421)");
         root.putSequenceCheck("(0020,9222)", new DicomSequence(dimensionIndexSeqItem0, dimensionIndexSeqItem1));
-
-        return root;
     }
 
 }

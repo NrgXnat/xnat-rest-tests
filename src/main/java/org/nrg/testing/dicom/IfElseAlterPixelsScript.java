@@ -18,4 +18,5 @@ public class IfElseAlterPixelsScript extends GenericAlterPixelsScript {
         }
         return x >= 25 && x < 75 && y >= 10 && y < 40;
     }
+
 }

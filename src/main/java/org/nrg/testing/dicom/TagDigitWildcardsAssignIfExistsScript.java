@@ -6,12 +6,10 @@ import org.nrg.testing.dicom.values.DicomSequence;
 import java.util.Arrays;
 import java.util.List;
 
-public class TagDigitWildcardsAssignIfExistsScript extends SimplestDicomScriptValidation {
+public class TagDigitWildcardsAssignIfExistsScript extends SimpleInjectibleDicomValidation {
 
     @Override
-    protected RootDicomObject generateValidationObject() {
-        final RootDicomObject root = new RootDicomObject();
-
+    protected void validation(RootDicomObject root) {
         addGeneralNonexistenceCheckWithExceptions(root, "(0008,000X)", Arrays.asList("5", "8"));
         root.putValueEqualCheck("(0008,0005)", "ISO_IR 100");
         root.putValueEqualCheck("(0008,0008)", "FANTASTIC");
@@ -35,8 +33,6 @@ public class TagDigitWildcardsAssignIfExistsScript extends SimplestDicomScriptVa
         referencedPerformedProcedureStepSequenceItem.putValueEqualCheck("(0008,0014)", "1.3.46.670589.11.5730.5");
         referencedPerformedProcedureStepSequenceItem.putValueEqualCheck("(0008,1150)", UID.ModalityPerformedProcedureStepSOPClass);
         root.putSequenceCheck("(0008,1111)", new DicomSequence(referencedPerformedProcedureStepSequenceItem));
-
-        return root;
     }
 
     // only supports a single X wildcard

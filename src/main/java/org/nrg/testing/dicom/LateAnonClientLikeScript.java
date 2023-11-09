@@ -3,9 +3,7 @@ package org.nrg.testing.dicom;
 public class LateAnonClientLikeScript extends GenericXnatVariablesScript {
 
     @Override
-    protected RootDicomObject generateValidationObject() {
-        final RootDicomObject root = new RootDicomObject();
-
+    protected void validation(RootDicomObject root) {
         root.putValueEqualCheck("(0008,0008)", AnonConstants.ANON2_IMAGE_TYPE);
         root.putNonexistenceChecks("(0010,1010)", "(0044,000a)");
         root.putValueEqualCheck("(0012,0020)", project);
@@ -17,8 +15,6 @@ public class LateAnonClientLikeScript extends GenericXnatVariablesScript {
         root.putNonexistenceChecks("(2001,1010)", "(2005,144f)");
         root.putValueEqualCheck("(2001,1012)", "N");
         root.putValueEqualCheck("(2005,144e)", "N");
-
-        return root;
     }
 
 }

@@ -4,7 +4,7 @@ import org.nrg.testing.dicom.values.DicomSequence;
 
 import java.util.Arrays;
 
-public class LevelWildcardAssignIfExistsScript extends SimplestDicomScriptValidation {
+public class LevelWildcardAssignIfExistsScript extends SimpleInjectibleDicomValidation {
 
     private final SequenceLevelWildcard wildcard;
 
@@ -13,9 +13,7 @@ public class LevelWildcardAssignIfExistsScript extends SimplestDicomScriptValida
     }
 
     @Override
-    protected RootDicomObject generateValidationObject() {
-        final RootDicomObject root = new RootDicomObject();
-
+    protected void validation(RootDicomObject root) {
         root.putNonexistenceChecks("(0008,0068)", "(0008,1150)", "(0008,010b)");
         root.putValueEqualCheck("(0008,0080)", wildcard.includesRootLevel ? "only in root" : "BU SCHOOL OF MEDICINE");
         root.putValueEqualCheck("(0010,0010)", wildcard.includesRootLevel ? "renamed" : "Watermelon");
@@ -78,8 +76,6 @@ public class LevelWildcardAssignIfExistsScript extends SimplestDicomScriptValida
         customPrivateNestedSequenceItem.putNonexistenceChecks("(0008,0068)", "(0008,0080)", "(0008,1150)", "(0010,0010)", "(0008,010b)");
         customPrivateSequenceItem.putSequenceCheck("(0099,1051)", new DicomSequence(customPrivateNestedSequenceItem));
         root.putSequenceCheck("(0099,1051)", new DicomSequence(customPrivateSequenceItem));
-
-        return root;
     }
 
 }

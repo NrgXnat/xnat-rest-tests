@@ -35,4 +35,5 @@ public class MapReferencedUIDsScript extends SimplestDicomScriptValidation {
     protected List<InterfileDicomValidation> interfileChecksWhen(boolean scriptRan) {
         return (scriptRan) ? Collections.singletonList(new FixedTagValue(Tag.StudyInstanceUID)) : new ArrayList<>();
     }
+
 }
