@@ -1,6 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
-import org.dcm4che3.data.DatasetWithFMI;
+import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.nrg.testing.annotations.AddedIn;
@@ -32,22 +32,20 @@ public class TestSeriesImportFilters extends BaseFileNamerTest {
     private static final LocallyCacheableDicomTransformation FULL_FEATURE_DATA = new LocallyCacheableDicomTransformation("full-sif-feature-data")
             .data(TestData.SAMPLE_1_SCAN_4)
             .simpleTransform(
-                    TransformFunction.simple(
-                            (dicomInstance) -> {
-                                if (instanceNumberWithin(dicomInstance, Arrays.asList(8, 9, 10))) {
-                                    dicomInstance.getDataset().setString(Tag.ReceiveCoilName, VR.SH, "Something");
-                                }
-                                if (!instanceNumberEquals(dicomInstance, 25)) {
-                                    dicomInstance.getDataset().setString(Tag.BeatRejectionFlag, VR.CS, "N");
-                                }
-                                if (instanceNumberEquals(dicomInstance, 50)) {
-                                    dicomInstance.getDataset().setString(Tag.ImageType, VR.CS, "ORIGINAL", "MODIFIED", "SECONDARY");
-                                }
-                                if (instanceNumberEquals(dicomInstance, 60)) {
-                                    dicomInstance.getDataset().setString(Tag.ImageType, VR.CS, "MODIFIED", "DERIVED");
-                                }
-                            }
-                    )
+                    (dicomInstance) -> {
+                        if (instanceNumberWithin(dicomInstance, Arrays.asList(8, 9, 10))) {
+                            dicomInstance.setString(Tag.ReceiveCoilName, VR.SH, "Something");
+                        }
+                        if (!instanceNumberEquals(dicomInstance, 25)) {
+                            dicomInstance.setString(Tag.BeatRejectionFlag, VR.CS, "N");
+                        }
+                        if (instanceNumberEquals(dicomInstance, 50)) {
+                            dicomInstance.setString(Tag.ImageType, VR.CS, "ORIGINAL", "MODIFIED", "SECONDARY");
+                        }
+                        if (instanceNumberEquals(dicomInstance, 60)) {
+                            dicomInstance.setString(Tag.ImageType, VR.CS, "MODIFIED", "DERIVED");
+                        }
+                    }
             );
 
     @Test(groups = IMPORTER)
@@ -103,17 +101,15 @@ public class TestSeriesImportFilters extends BaseFileNamerTest {
         final LocallyCacheableDicomTransformation dicomTransformation = new LocallyCacheableDicomTransformation("sif-sequence-data")
                 .data(TestData.SAMPLE_1)
                 .simpleTransform(
-                        TransformFunction.simple(
-                                (dicomInstance) -> { // series 4 fails the first check, series 5 fails the second check, series 6 passes both
-                                    final int seriesNum = dicomInstance.getDataset().getInt(Tag.SeriesNumber, 0);
-                                    if (seriesNum == 4) {
-                                        dicomInstance.getDataset().newSequence(Tag.AnatomicRegionSequence, 0);
-                                    }
-                                    if (seriesNum != 5) {
-                                        dicomInstance.getDataset().newSequence(Tag.PrimaryAnatomicStructureSequence, 0);
-                                    }
-                                }
-                        )
+                        (dicomInstance) -> { // series 4 fails the first check, series 5 fails the second check, series 6 passes both
+                            final int seriesNum = dicomInstance.getInt(Tag.SeriesNumber, 0);
+                            if (seriesNum == 4) {
+                                dicomInstance.newSequence(Tag.AnatomicRegionSequence, 0);
+                            }
+                            if (seriesNum != 5) {
+                                dicomInstance.newSequence(Tag.PrimaryAnatomicStructureSequence, 0);
+                            }
+                        }
                 );
 
         genericCstoreFilterTest(
@@ -139,19 +135,17 @@ public class TestSeriesImportFilters extends BaseFileNamerTest {
         final LocallyCacheableDicomTransformation dicomTransformation = new LocallyCacheableDicomTransformation("sif-cstore-whitelist-data")
                 .data(TestData.SAMPLE_1_SCAN_4)
                 .simpleTransform(
-                        TransformFunction.simple(
-                                (dicomInstance) -> {
-                                    if (instanceNumberEquals(dicomInstance, 1)) {
-                                        dicomInstance.getDataset().setInt(Tag.Rows, VR.US, 128);
-                                    }
-                                    if (instanceNumberEquals(dicomInstance, 4)) {
-                                        dicomInstance.getDataset().setString(Tag.ReceiveCoilName, VR.SH, "Something");
-                                    }
-                                    if (!instanceNumberEquals(dicomInstance, 5)) {
-                                        dicomInstance.getDataset().setString(Tag.BeatRejectionFlag, VR.CS, "N");
-                                    }
-                                }
-                        )
+                        (dicomInstance) -> {
+                            if (instanceNumberEquals(dicomInstance, 1)) {
+                                dicomInstance.setInt(Tag.Rows, VR.US, 128);
+                            }
+                            if (instanceNumberEquals(dicomInstance, 4)) {
+                                dicomInstance.setString(Tag.ReceiveCoilName, VR.SH, "Something");
+                            }
+                            if (!instanceNumberEquals(dicomInstance, 5)) {
+                                dicomInstance.setString(Tag.BeatRejectionFlag, VR.CS, "N");
+                            }
+                        }
                 );
         genericCstoreFilterTest(
                 filterFromFile("whitelist_checks.txt").filterMode(FilterMode.WHITELIST),
@@ -167,16 +161,14 @@ public class TestSeriesImportFilters extends BaseFileNamerTest {
                 .data(TestData.SAMPLE_1)
                 .createZip()
                 .simpleTransform(
-                        TransformFunction.simple(
-                                (dicomInstance) -> {
-                                    if (dicomInstance.getDataset().getInt(Tag.SeriesNumber, 0) == 5 && instanceNumberEquals(dicomInstance, 1)) {
-                                        addBlockSlabItems(dicomInstance);
-                                    }
-                                    if (dicomInstance.getDataset().getInt(Tag.SeriesNumber, 0) == 6) {
-                                        addBlockSlabItems(dicomInstance);
-                                    }
-                                }
-                        )
+                        (dicomInstance) -> {
+                            if (dicomInstance.getInt(Tag.SeriesNumber, 0) == 5 && instanceNumberEquals(dicomInstance, 1)) {
+                                addBlockSlabItems(dicomInstance);
+                            }
+                            if (dicomInstance.getInt(Tag.SeriesNumber, 0) == 6) {
+                                addBlockSlabItems(dicomInstance);
+                            }
+                        }
                 );
         final String fileSpec = "sample1_partial_filtering.json";
 
@@ -217,8 +209,8 @@ public class TestSeriesImportFilters extends BaseFileNamerTest {
         ));
     }
 
-    private void addBlockSlabItems(DatasetWithFMI dicomInstance) {
-        dicomInstance.getDataset().setInt(Tag.NumberOfBlockSlabItems, VR.IS, 100);
+    private void addBlockSlabItems(Attributes dicomInstance) {
+        dicomInstance.setInt(Tag.NumberOfBlockSlabItems, VR.IS, 100);
     }
 
     private SeriesImportFilter filterFromFile(String filterName) {
@@ -240,11 +232,11 @@ public class TestSeriesImportFilters extends BaseFileNamerTest {
         }
     }
 
-    private static boolean instanceNumberWithin(DatasetWithFMI dicomInstance, List<Integer> possibleInstanceNumbers) {
-        return possibleInstanceNumbers.contains(dicomInstance.getDataset().getInt(Tag.InstanceNumber, 0));
+    private static boolean instanceNumberWithin(Attributes dicomInstance, List<Integer> possibleInstanceNumbers) {
+        return possibleInstanceNumbers.contains(dicomInstance.getInt(Tag.InstanceNumber, 0));
     }
 
-    private static boolean instanceNumberEquals(DatasetWithFMI dicomInstance, int instanceNum) {
+    private static boolean instanceNumberEquals(Attributes dicomInstance, int instanceNum) {
         return instanceNumberWithin(dicomInstance, Collections.singletonList(instanceNum));
     }
 

@@ -19,12 +19,9 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.nrg.testing.TestGroups.CUSTOM_FORMS;
 import static org.nrg.testing.TestGroups.PERMISSIONS;
+import static org.testng.AssertJUnit.*;
 
 @AddedIn(Xnat_1_8_8.class)
 public class TestFormDisplayOrder extends BaseCustomFormRestTest {

@@ -35,8 +35,8 @@ import java.nio.file.Paths;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import static org.junit.Assert.fail;
 import static org.testng.AssertJUnit.assertTrue;
+import static org.testng.AssertJUnit.fail;
 
 public class TestPerformanceDicom extends XnatPerformanceTests {
 
@@ -187,7 +187,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                                                 TransformFunction.strictlyTransformative(listOfDicom -> {
                                                     final String newStudyInstanceUid = UIDUtils.createUID();
                                                     for (int i = 0; i < numSeries; i++) {
-                                                        final Attributes dicom = listOfDicom.get(i).getDataset();
+                                                        final Attributes dicom = listOfDicom.get(i);
                                                         dicom.setString(Tag.StudyInstanceUID, VR.UI, newStudyInstanceUid);
                                                         dicom.setString(Tag.SeriesInstanceUID, VR.UI, UIDUtils.createUID());
                                                         dicom.setInt(Tag.SeriesNumber, VR.IS, i);
@@ -277,10 +277,9 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
 
     private TransformFunction hardcodeRoutingForProject(String projectId) {
         return TransformFunction.simple((dicom) -> {
-            final Attributes dataset = dicom.getDataset();
-            dataset.setString(Tag.StudyDescription, VR.LO, projectId);
-            dataset.setString(Tag.PatientName, VR.PN, dataset.getString(Tag.StudyInstanceUID));
-            dataset.setString(Tag.PatientID, VR.LO, dataset.getString(Tag.StudyInstanceUID));
+            dicom.setString(Tag.StudyDescription, VR.LO, projectId);
+            dicom.setString(Tag.PatientName, VR.PN, dicom.getString(Tag.StudyInstanceUID));
+            dicom.setString(Tag.PatientID, VR.LO, dicom.getString(Tag.StudyInstanceUID));
         });
     }
 

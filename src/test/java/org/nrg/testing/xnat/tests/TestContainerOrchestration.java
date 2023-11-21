@@ -10,7 +10,6 @@ import org.nrg.xnat.enums.Gender;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
-import org.nrg.xnat.pogo.containers.Backend;
 import org.nrg.xnat.pogo.containers.Command;
 import org.nrg.xnat.pogo.containers.CommandSummaryForContext;
 import org.nrg.xnat.pogo.containers.Image;
@@ -29,9 +28,9 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.nrg.testing.TestGroups.*;
+import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.assertNull;
 
 @TestRequires(plugins = {"containers", "batchLaunchPlugin"})
 @AddedIn(Xnat_1_8_2.class)

@@ -1,7 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.DatasetWithFMI;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
@@ -94,7 +93,7 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         final String identifier = "no-instance-num";
         final LocallyCacheableDicomTransformation dataWithoutInstanceNum = new LocallyCacheableDicomTransformation(identifier)
                 .data(TestData.SAMPLE_1)
-                .simpleTransform(TransformFunction.simple(dicom -> dicom.getDataset().remove(Tag.InstanceNumber)));
+                .simpleTransform(dicom -> dicom.remove(Tag.InstanceNumber));
         run(new FileNamerTest(
                 new CstoreStep(dataWithoutInstanceNum),
                 REBUILD,
@@ -460,9 +459,7 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         final String identifier = "sample1-1-no-pixel-data";
         final LocallyCacheableDicomTransformation sample1NoPixels = new LocallyCacheableDicomTransformation(identifier)
                 .data(TestData.SAMPLE_1)
-                .simpleTransform(TransformFunction.simple(
-                        (dicomInstance) -> dicomInstance.getDataset().remove(Tag.PixelData)
-                ));
+                .simpleTransform((dicomInstance) -> dicomInstance.remove(Tag.PixelData));
         run(new FileNamerTest(
                 new ProjectAnon(SCRIPT_HASH_UIDS),
                 new CstoreStep(sample1NoPixels),
@@ -626,14 +623,11 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
                                         TransformFunction.generalTransform(
                                                 dicomList -> dicomList.stream()
                                                         .map(original -> {
-                                                            final Attributes copyWithDifferentSopClass = DicomUtils.clone(original).getDataset();
+                                                            final Attributes copyWithDifferentSopClass = DicomUtils.clone(original);
                                                             copyWithDifferentSopClass.setString(Tag.SOPClassUID, VR.UI, targetSopClassUid);
                                                             return Arrays.asList(
                                                                     original,
-                                                                    new DatasetWithFMI(
-                                                                            copyWithDifferentSopClass.createFileMetaInformation(UID.ExplicitVRLittleEndian),
-                                                                            copyWithDifferentSopClass
-                                                                    )
+                                                                    copyWithDifferentSopClass
                                                             );
                                                         }).flatMap(Collection::stream)
                                                         .collect(Collectors.toList())

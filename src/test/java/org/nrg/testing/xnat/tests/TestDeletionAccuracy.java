@@ -115,7 +115,7 @@ public class TestDeletionAccuracy extends BaseXnatRestTest {
         for (ResourceFile file : dicomResource.getResourceFiles()) {
             assertEquals(
                     TestData.SAMPLE_1.getStudyInstanceUid(),
-                    DicomUtils.readDicom(mainInterface().streamResourceFile(dicomResource, file)).getDataset().getString(Tag.StudyInstanceUID));
+                    DicomUtils.readDicom(mainInterface().streamResourceFile(dicomResource, file)).getString(Tag.StudyInstanceUID));
         }
     }
 

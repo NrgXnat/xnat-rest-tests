@@ -3,7 +3,6 @@ package org.nrg.testing.xnat.tests;
 import org.apache.log4j.Logger;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.DatasetWithFMI;
 import org.dcm4che3.data.VR;
 import org.nrg.testing.DicomUtils;
 import org.nrg.testing.TimeUtils;
@@ -38,8 +37,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import static org.junit.Assert.fail;
 import static org.nrg.testing.TestGroups.*;
+import static org.testng.AssertJUnit.fail;
 
 @Test(groups = {DICOM_SCP, DICOM_ROUTING, IMPORTER})
 public class TestDicomRouting extends BaseXnatRestTest {
@@ -397,14 +396,13 @@ public class TestDicomRouting extends BaseXnatRestTest {
                 if (ze.isDirectory()) {
                     continue;
                 }
-                DatasetWithFMI dcm;
+                Attributes dcm;
                 try (InputStream is = zf.getInputStream(ze)) {
                     dcm = DicomUtils.readDicom(is);
                 }
-                Attributes attr = dcm.getDataset();
                 for (Integer tag : hdr.keySet()) {
-                    VR vr = attr.getVR(tag);
-                    attr.setString(tag, vr == null ? VR.LT : vr, hdr.get(tag));
+                    VR vr = dcm.getVR(tag);
+                    dcm.setString(tag, vr == null ? VR.LT : vr, hdr.get(tag));
                 }
                 File f = DicomUtils.writeDicomToFile(dcm);
                 try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(f))) {

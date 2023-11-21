@@ -25,7 +25,7 @@ import java.util.Map;
 import static io.restassured.http.Method.DELETE;
 import static io.restassured.http.Method.GET;
 import static io.restassured.http.Method.PUT;
-import static org.junit.Assert.assertEquals;
+import static org.testng.AssertJUnit.assertEquals;
 
 @AddedIn(Xnat_1_8_8.class)
 public class TestCustomFieldUsage extends BaseCustomFieldsRestTest {

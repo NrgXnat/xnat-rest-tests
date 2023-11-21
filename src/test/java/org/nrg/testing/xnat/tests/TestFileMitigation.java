@@ -3,7 +3,7 @@ package org.nrg.testing.xnat.tests;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.dcm4che3.data.DatasetWithFMI;
+import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.nrg.testing.DicomUtils;
@@ -286,8 +286,8 @@ public class TestFileMitigation extends BaseFileNamerTest {
                                 .prefilter(DicomFilters.subsetWithInstanceNumber(1))
                                 .transformFunction(
                                         TransformFunction.simple(fullInstance -> {
-                                            fullInstance.getFileMetaInformation().setString(Tag.MediaStorageSOPClassUID, VR.UI, privateSopClassUid);
-                                            fullInstance.getDataset().setString(Tag.SOPClassUID, VR.UI, privateSopClassUid);
+                                            fullInstance.setString(Tag.MediaStorageSOPClassUID, VR.UI, privateSopClassUid);
+                                            fullInstance.setString(Tag.SOPClassUID, VR.UI, privateSopClassUid);
                                         })
                                 )
                 ).build();
@@ -324,11 +324,11 @@ public class TestFileMitigation extends BaseFileNamerTest {
                                 .prefilter(DicomFilters.subsetWithInstanceNumber(1))
                                 .transformFunction(
                                         TransformFunction.generalTransform(fullInstances -> {
-                                            final List<DatasetWithFMI> instancePlusCopy = new ArrayList<>();
-                                            final DatasetWithFMI originalInstance = fullInstances.get(0);
+                                            final List<Attributes> instancePlusCopy = new ArrayList<>();
+                                            final Attributes originalInstance = fullInstances.get(0);
                                             instancePlusCopy.add(originalInstance);
-                                            final DatasetWithFMI clone = DicomUtils.clone(originalInstance);
-                                            clone.getDataset().setInt(Tag.InstanceNumber, VR.IS, 2);
+                                            final Attributes clone = DicomUtils.clone(originalInstance);
+                                            clone.setInt(Tag.InstanceNumber, VR.IS, 2);
                                             instancePlusCopy.add(clone);
                                             return instancePlusCopy;
                                         })
@@ -1002,11 +1002,11 @@ public class TestFileMitigation extends BaseFileNamerTest {
         };
     }
 
-    private static Function<List<DatasetWithFMI>, List<DatasetWithFMI>> sample1MidSubsetForSeries(int seriesNum) {
+    private static Function<List<Attributes>, List<Attributes>> sample1MidSubsetForSeries(int seriesNum) {
         return datasetWithFmis -> LocalTestDicom.SAMPLE1_MIDDLEISH_INSTANCES
                 .apply(datasetWithFmis)
                 .stream()
-                .filter(instance -> instance.getDataset().getInt(Tag.SeriesNumber, -1) == seriesNum)
+                .filter(instance -> instance.getInt(Tag.SeriesNumber, -1) == seriesNum)
                 .collect(Collectors.toList());
     }
 

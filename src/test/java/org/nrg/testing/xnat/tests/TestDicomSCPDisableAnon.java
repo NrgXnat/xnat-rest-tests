@@ -33,9 +33,9 @@ import org.nrg.testing.TimeUtils;
 import java.io.File;
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
 import static org.nrg.testing.TestGroups.*;
 import static org.nrg.xnat.enums.DicomEditVersion.DE_6;
+import static org.testng.AssertJUnit.assertEquals;
 
 @AddedIn(Xnat_1_8_5.class)
 @TestRequires(admin = true, data = TestData.ANON_2)
@@ -164,9 +164,9 @@ public class TestDicomSCPDisableAnon extends BaseXnatRestTest {
 
 
     private void waitForAutoArchive(){
-        final long startTime      = System.currentTimeMillis();
-        while((System.currentTimeMillis() - startTime) < FIVE_MINUTES ) {
-            if(mainInterface().getPrearchiveEntriesForProject(project).size() == 0){
+        final long startTime = System.currentTimeMillis();
+        while ((System.currentTimeMillis() - startTime) < FIVE_MINUTES) {
+            if (mainInterface().getPrearchiveEntriesForProject(project).isEmpty()) {
                 return;
             }
             LOG.debug("Session not in archive. Waiting 30 seconds.");

@@ -36,12 +36,12 @@ public abstract class GenericAlterPixelsScript extends ScriptValidation {
         final Map<String, File> sourceDicom = new HashMap<>();
         final Map<String, String> tempNameMap = new HashMap<>();
         for (File sourceDicomFile : expectedDicomInstances) {
-            final String sopInstanceUid = DicomUtils.readDicom(sourceDicomFile).getDataset().getString(Tag.SOPInstanceUID);
+            final String sopInstanceUid = DicomUtils.readDicom(sourceDicomFile).getString(Tag.SOPInstanceUID);
             sourceDicom.put(sopInstanceUid, sourceDicomFile);
             tempNameMap.put(sopInstanceUid, sourceDicomFile.getName());
         }
         for (File dicomFile : dicomFiles) {
-            final String sopInstanceUID = DicomUtils.readDicom(dicomFile).getDataset().getString(Tag.SOPInstanceUID);
+            final String sopInstanceUID = DicomUtils.readDicom(dicomFile).getString(Tag.SOPInstanceUID);
             LOGGER.info("Checking PixelData for DICOM instance " + tempNameMap.get(sopInstanceUID));
             try {
                 DiffedImage diffedImage = new DiffedImage(sourceDicom.get(sopInstanceUID), dicomFile, ImageType.DICOM, true);

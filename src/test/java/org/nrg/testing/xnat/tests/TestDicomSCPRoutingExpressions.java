@@ -27,9 +27,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.restassured.http.ContentType.JSON;
-import static org.junit.Assert.*;
 import static org.nrg.testing.TestGroups.*;
 import static org.nrg.testing.TestGroups.IMPORTER;
+import static org.testng.AssertJUnit.*;
 
 
 /**
@@ -336,7 +336,7 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
         mainInterface().createProject(project);
 
         String projectRoutingExpression = String.format("(0020,000E):(.*):1 t:.+ r:%s", projectId);
-        String subjectRoutingExpression = String.format("(0010,4001):(.*):1 t:.+ r:subj_rtd1\n(0020,000E):(.*):1 t:.+ r:subj_rtd2");
+        String subjectRoutingExpression = "(0010,4001):(.*):1 t:.+ r:subj_rtd1\n(0020,000E):(.*):1 t:.+ r:subj_rtd2";
         someRoutesReceiver.routingExpressionsEnabled(true);
         someRoutesReceiver.setProjectRoutingExpression(projectRoutingExpression);
         someRoutesReceiver.setSubjectRoutingExpression(subjectRoutingExpression);
@@ -366,7 +366,7 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
     private void verifyImport(SubjectAssessor session) {
         // if session can be retrieved at this URL, then project, subject, session are all labelled properly
         TimeUtils.sleep(1000); // sleep for 1s to accommodate a little gap between prearchive being empty and session being accessible
-        mainCredentials().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
+        mainQueryBase().get(mainInterface().subjectAssessorUrl(session)).then().assertThat().statusCode(200);
     }
 
     private void compareProjects(Project expectedProject, Project actualProject) {

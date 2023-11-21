@@ -11,7 +11,6 @@ import org.nrg.testing.dicom.AnonConstants;
 import org.nrg.testing.dicom.LateAnonClientLikeScript;
 import org.nrg.testing.dicom.RootDicomObject;
 import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
-import org.nrg.testing.dicom.transform.TransformFunction;
 import org.nrg.testing.enums.TestData;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
@@ -154,18 +153,18 @@ public class TestAnonymizationCustomProcessing extends BaseAnonymizationTest {
         return new LocallyCacheableDicomTransformation("anon2-extra-late-elements")
                 .data(TestData.ANON_2)
                 .simpleTransform(
-                        TransformFunction.simple((dicom) -> {
-                            dicom.getDataset().setString(privateCreatorId, 0x00151020, VR.LO, "ABC");
-                            dicom.getDataset().setString(privateCreatorId, 0x00151021, VR.LO, "XYZ");
-                            dicom.getDataset().setString(privateCreatorId, 0x97531050, VR.LO, "blah blah");
-                            dicom.getDataset().setString(privateCreatorId, 0x97531051, VR.LO, "blah blah again");
-                            final Sequence sequence = dicom.getDataset().newSequence(Tag.DigitalSignaturesSequence, 1);
+                        (dicom) -> {
+                            dicom.setString(privateCreatorId, 0x00151020, VR.LO, "ABC");
+                            dicom.setString(privateCreatorId, 0x00151021, VR.LO, "XYZ");
+                            dicom.setString(privateCreatorId, 0x97531050, VR.LO, "blah blah");
+                            dicom.setString(privateCreatorId, 0x97531051, VR.LO, "blah blah again");
+                            final Sequence sequence = dicom.newSequence(Tag.DigitalSignaturesSequence, 1);
                             final Attributes sequenceItem = new Attributes();
                             sequence.add(sequenceItem);
                             sequenceItem.setInt(Tag.MACIDNumber, VR.US, 1000);
                             sequenceItem.setString(Tag.CertificateType, VR.CS, "X509_1993_SIG");
                             sequenceItem.setString(Tag.CertifiedTimestampType, VR.CS, "CMS_TSP");
-                        })
+                        }
                 );
     }
 

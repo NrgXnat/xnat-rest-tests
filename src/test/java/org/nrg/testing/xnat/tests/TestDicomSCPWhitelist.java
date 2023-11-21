@@ -26,8 +26,7 @@ import java.net.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-
+import static org.testng.AssertJUnit.assertEquals;
 
 @AddedIn(Xnat_1_8_5.class)
 @TestRequires(admin = true, data = TestData.SAMPLE_1_SCAN_4)

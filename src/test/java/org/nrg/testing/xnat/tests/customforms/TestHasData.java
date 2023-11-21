@@ -6,7 +6,6 @@ import org.nrg.xnat.interfaces.XnatInterface;
 import org.nrg.xnat.pogo.CustomFieldScope;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
-import org.nrg.xnat.rest.SerializationUtils;
 import org.nrg.xnat.versions.Xnat_1_8_8;
 import org.testng.annotations.*;
 
@@ -14,7 +13,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static org.junit.Assert.*;
+import static org.testng.AssertJUnit.assertFalse;
+import static org.testng.AssertJUnit.assertTrue;
 
 @AddedIn(Xnat_1_8_8.class)
 public class TestHasData extends BaseCustomFormRestTest {

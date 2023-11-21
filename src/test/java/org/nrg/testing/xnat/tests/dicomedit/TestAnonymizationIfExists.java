@@ -11,7 +11,6 @@ import org.nrg.testing.dicom.SequenceItemWildcardAssignIfExistsScript;
 import org.nrg.testing.dicom.SequenceLevelWildcard;
 import org.nrg.testing.dicom.TagDigitWildcardsAssignIfExistsScript;
 import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
-import org.nrg.testing.dicom.transform.TransformFunction;
 import org.nrg.testing.enums.TestData;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.versions.Xnat_1_8_7;
@@ -102,11 +101,10 @@ public class TestAnonymizationIfExists extends BaseAnonymizationTest {
                 .createZip()
                 .data(TestData.ANON_2)
                 .simpleTransform(
-                        TransformFunction.simple((dicom) -> {
+                        (dicom) -> {
                             final String creatorId = "REST tests";
-                            final Attributes dataset = dicom.getDataset();
-                            dataset.setString(creatorId, 0x00991050, VR.LO, "ROOT VALUE");
-                            final Sequence sequence = dataset.newSequence(creatorId, 0x00991051, 1);
+                            dicom.setString(creatorId, 0x00991050, VR.LO, "ROOT VALUE");
+                            final Sequence sequence = dicom.newSequence(creatorId, 0x00991051, 1);
                             final Attributes sequenceItem = new Attributes();
                             sequenceItem.setString(creatorId, 0x00991050, VR.LO, "LEVEL ONE");
                             sequence.add(sequenceItem);
@@ -114,7 +112,7 @@ public class TestAnonymizationIfExists extends BaseAnonymizationTest {
                             final Attributes nestedSequenceItem = new Attributes();
                             nestedSequenceItem.setString(creatorId, 0x00991050, VR.LO, "LEVEL TWO");
                             nestedSequence.add(nestedSequenceItem);
-                        })
+                        }
                 );
     }
 

@@ -14,7 +14,6 @@ import org.nrg.testing.dicom.BlankKnownPhiWildcards;
 import org.nrg.testing.dicom.DicomObject;
 import org.nrg.testing.dicom.RootDicomObject;
 import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
-import org.nrg.testing.dicom.transform.TransformFunction;
 import org.nrg.testing.enums.TestData;
 import org.nrg.xnat.versions.Xnat_1_8_10;
 
@@ -69,11 +68,7 @@ public class TestAnonymizationBlankKnownPhi extends BaseAnonymizationTest {
     private static final LocallyCacheableDicomTransformation ANON2_PLUS_RECENT_ELEMENT = new LocallyCacheableDicomTransformation("anon2-blank-known-add")
             .createZip()
             .data(TestData.ANON_2)
-            .simpleTransform(
-                    TransformFunction.simple((dicom) -> {
-                        dicom.getDataset().setString(0x00180034, VR.LO, "SOMETHING");
-                    })
-            );
+            .simpleTransform((dicom) -> dicom.setString(0x00180034, VR.LO, "SOMETHING"));
 
     public void testBlankKnownPhiSingleStandardTag() {
         new BasicAnonymizationTest("blankKnownPhiSingleStandardTag.das")
@@ -180,10 +175,10 @@ public class TestAnonymizationBlankKnownPhi extends BaseAnonymizationTest {
                         new LocallyCacheableDicomTransformation("anon2_vr_data")
                                 .data(TestData.ANON_2)
                                 .createZip()
-                                .simpleTransform(TransformFunction.simple((dicom) -> {
-                                    dicom.getDataset().setInt(Tag.InstanceNumber, VR.IS, 1);
-                                    dicom.getDataset().setString(0x00181204, VR.DA, "20100430");
-                                }))
+                                .simpleTransform((dicom) -> {
+                                    dicom.setInt(Tag.InstanceNumber, VR.IS, 1);
+                                    dicom.setString(0x00181204, VR.DA, "20100430");
+                                })
                 ).run();
     }
 
@@ -232,11 +227,11 @@ public class TestAnonymizationBlankKnownPhi extends BaseAnonymizationTest {
                         new LocallyCacheableDicomTransformation("anon2_group2_test")
                                 .data(TestData.ANON_2)
                                 .createZip()
-                                .simpleTransform(TransformFunction.simple((dicom) -> {
-                                    dicom.getFileMetaInformation().setString(Tag.ReceivingApplicationEntityTitle, VR.AE, "CHOCOLATE");
-                                    dicom.getFileMetaInformation().setString(Tag.SendingApplicationEntityTitle, VR.AE, "UNAFFECTED");
-                                    dicom.getDataset().setString(Tag.PatientAddress, VR.LO, "DicomBrowser");
-                                }))
+                                .simpleTransform((dicom) -> {
+                                    dicom.setString(Tag.ReceivingApplicationEntityTitle, VR.AE, "CHOCOLATE");
+                                    dicom.setString(Tag.SendingApplicationEntityTitle, VR.AE, "UNAFFECTED");
+                                    dicom.setString(Tag.PatientAddress, VR.LO, "DicomBrowser");
+                                })
                 ).run();
     }
 
@@ -267,11 +262,11 @@ public class TestAnonymizationBlankKnownPhi extends BaseAnonymizationTest {
                         new LocallyCacheableDicomTransformation("anon2_un_ascii")
                                 .data(TestData.ANON_2)
                                 .createZip()
-                                .simpleTransform(TransformFunction.simple((dicom) -> {
-                                    dicom.getDataset().setString(0x00490010, VR.LO, "Ascii test");
-                                    dicom.getDataset().setBytes(0x00491010, VR.UN, new byte[]{ 0x43, 0x48, 0x4f, 0x43, 0x4f, 0x4c, 0x41, 0x54, 0x45, 0x00 }); // ASCII for "CHOCOLATE", plus a null byte for padding
-                                    dicom.getDataset().setBytes(0x00491011, VR.UN, new byte[]{ 0x43, 0x48, 0x4f, 0x43, 0x4f, 0x4c, 0x41, 0x54, 0x54, 0x45 }); // ASCII for "CHOCOLATTE"
-                                }))
+                                .simpleTransform((dicom) -> {
+                                    dicom.setString(0x00490010, VR.LO, "Ascii test");
+                                    dicom.setBytes(0x00491010, VR.UN, new byte[]{ 0x43, 0x48, 0x4f, 0x43, 0x4f, 0x4c, 0x41, 0x54, 0x45, 0x00 }); // ASCII for "CHOCOLATE", plus a null byte for padding
+                                    dicom.setBytes(0x00491011, VR.UN, new byte[]{ 0x43, 0x48, 0x4f, 0x43, 0x4f, 0x4c, 0x41, 0x54, 0x54, 0x45 }); // ASCII for "CHOCOLATTE"
+                                })
                 ).run();
     }
 
@@ -303,11 +298,11 @@ public class TestAnonymizationBlankKnownPhi extends BaseAnonymizationTest {
                         new LocallyCacheableDicomTransformation("anon2_ae_whitespace")
                                 .data(TestData.ANON_2)
                                 .createZip()
-                                .simpleTransform(TransformFunction.simple((dicom) -> {
-                                    dicom.getDataset().setString(Tag.RetrieveAETitle, VR.AE, "DEVICE");
-                                    dicom.getDataset().setString(Tag.StationAETitle, VR.AE, " DEVICE ");
-                                    dicom.getDataset().setString(Tag.ModalityLUTType, VR.LO, rwvMapping);
-                                }))
+                                .simpleTransform((dicom) -> {
+                                    dicom.setString(Tag.RetrieveAETitle, VR.AE, "DEVICE");
+                                    dicom.setString(Tag.StationAETitle, VR.AE, " DEVICE ");
+                                    dicom.setString(Tag.ModalityLUTType, VR.LO, rwvMapping);
+                                })
                 ).run();
     }
 
@@ -328,10 +323,10 @@ public class TestAnonymizationBlankKnownPhi extends BaseAnonymizationTest {
                         new LocallyCacheableDicomTransformation("anon2_capitalization")
                                 .data(TestData.ANON_2)
                                 .createZip()
-                                .simpleTransform(TransformFunction.simple((dicom) -> {
-                                    dicom.getDataset().setString(Tag.InstitutionName, VR.LO, institutionNameVal);
-                                    dicom.getDataset().setString(Tag.InstitutionAddress, VR.ST, institutionAddressVal);
-                                }))
+                                .simpleTransform((dicom) -> {
+                                    dicom.setString(Tag.InstitutionName, VR.LO, institutionNameVal);
+                                    dicom.setString(Tag.InstitutionAddress, VR.ST, institutionAddressVal);
+                                })
                 ).run();
     }
 

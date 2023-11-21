@@ -35,7 +35,7 @@ import static org.testng.AssertJUnit.assertEquals;
 @Test(groups = {IMPORTER, METADATA_EXTRACTION})
 public class TestDicomModalityAssignment extends BaseXnatRestTest {
 
-    private final Attributes baseDicom = DicomUtils.readDicom(getDataFile("scan1/000000.dcm")).getDataset();
+    private final Attributes baseDicom = DicomUtils.readDicom(getDataFile("scan1/000000.dcm"));
     private final Project testProject = new Project();
     private static final String CR = "CR";
     private static final String CT = "CT";
@@ -197,7 +197,7 @@ public class TestDicomModalityAssignment extends BaseXnatRestTest {
         void run(DataType expectedSessionType) {
             final String studyInstanceUid = UIDUtils.createUID();
             int seriesIndex = 0;
-            final List<DatasetWithFMI> dicomInstances = new ArrayList<>();
+            final List<Attributes> dicomInstances = new ArrayList<>();
             for (SeriesSpec series : seriesSpecs) {
                 for (InstanceSpec instance : series.instances) {
                     final Attributes dicomForInstance = new Attributes();
@@ -208,12 +208,7 @@ public class TestDicomModalityAssignment extends BaseXnatRestTest {
                     dicomForInstance.setString(Tag.SOPClassUID, VR.UI, instance.sopClassUid);
                     dicomForInstance.setString(Tag.Modality, VR.CS, series.modality);
                     dicomForInstance.setInt(Tag.SeriesNumber, VR.IS, seriesIndex);
-                    dicomInstances.add(
-                            new DatasetWithFMI(
-                                    dicomForInstance.createFileMetaInformation(UID.ExplicitVRLittleEndian),
-                                    dicomForInstance
-                            )
-                    );
+                    dicomInstances.add(dicomForInstance);
                 }
                 seriesIndex++;
             }

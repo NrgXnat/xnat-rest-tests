@@ -3,6 +3,7 @@ package org.nrg.testing.xnat.tests.dicomedit;
 import org.dcm4che3.data.UID;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
+import org.nrg.testing.dicom.AnonConstants;
 import org.nrg.testing.dicom.RootDicomObject;
 import org.nrg.testing.enums.TestData;
 import org.nrg.xnat.versions.Xnat_1_8_0;
@@ -32,7 +33,7 @@ public class TestAnonymizationGroup2 extends BaseAnonymizationTest {
                        here because I'm assigning SOP Instance UID from a hash of the previous value. I overlooked giving the 2 test instances different
                        instance UIDs when originally preparing the data.
                     */
-                    final String expectedSOPInstanceUID = "2.25.18971457369541893112737536732177973003";
+                    final String expectedSOPInstanceUID = AnonConstants.ANON2_HASHED_SOP_INSTANCE_UID;
 
                     root.putValueEqualCheck("(0002,0002)", UID.MRImageStorage);
                     root.putValueEqualCheck("(0008,0016)", UID.MRImageStorage);

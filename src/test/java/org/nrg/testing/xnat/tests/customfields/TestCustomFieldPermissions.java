@@ -19,7 +19,7 @@ import org.testng.annotations.Test;
 
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
+import static org.testng.AssertJUnit.assertEquals;
 
 @AddedIn(Xnat_1_8_8.class)
 public class TestCustomFieldPermissions extends BaseCustomFieldsRestTest {

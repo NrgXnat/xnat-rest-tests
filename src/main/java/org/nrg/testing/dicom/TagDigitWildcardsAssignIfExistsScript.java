@@ -31,7 +31,7 @@ public class TagDigitWildcardsAssignIfExistsScript extends SimpleInjectibleDicom
         referencedPerformedProcedureStepSequenceItem.putValueEqualCheck("(0008,0012)", "20100719");
         referencedPerformedProcedureStepSequenceItem.putValueEqualCheck("(0008,0013)", "131758");
         referencedPerformedProcedureStepSequenceItem.putValueEqualCheck("(0008,0014)", "1.3.46.670589.11.5730.5");
-        referencedPerformedProcedureStepSequenceItem.putValueEqualCheck("(0008,1150)", UID.ModalityPerformedProcedureStepSOPClass);
+        referencedPerformedProcedureStepSequenceItem.putValueEqualCheck("(0008,1150)", UID.ModalityPerformedProcedureStep);
         root.putSequenceCheck("(0008,1111)", new DicomSequence(referencedPerformedProcedureStepSequenceItem));
     }
 

@@ -4,7 +4,6 @@ import io.restassured.http.ContentType;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Ignore;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.Accessibility;

@@ -35,10 +35,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
 import static org.nrg.testing.TestGroups.*;
 import static org.nrg.testing.TestGroups.IMPORTER;
 import static org.testng.Assert.assertTrue;
+import static org.testng.AssertJUnit.assertEquals;
 
 @AddedIn(Xnat_1_8_3.class)
 @Test(groups = {DICOM_SCP, DICOM_ROUTING, IMPORTER, DIRECT_ARCHIVE})
