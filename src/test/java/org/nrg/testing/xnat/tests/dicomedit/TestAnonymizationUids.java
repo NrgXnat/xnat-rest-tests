@@ -68,7 +68,7 @@ public class TestAnonymizationUids extends BaseAnonymizationTest {
 
         new BasicAnonymizationTest("deleteFunction.das")
                 .withData(jpglosslessData)
-                .withValidation(new TransferSyntaxScript(UID.JPEGLossless))
+                .withValidation(new TransferSyntaxScript(UID.JPEGLosslessSV1))
                 .run();
 
         new BasicAnonymizationTest("alterPixelsXferSyntax.das")
