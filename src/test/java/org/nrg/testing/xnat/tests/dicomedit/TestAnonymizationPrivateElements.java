@@ -1,5 +1,6 @@
 package org.nrg.testing.xnat.tests.dicomedit;
 
+import org.dcm4che3.data.VR;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.testing.annotations.TestRequires;
@@ -8,6 +9,7 @@ import org.nrg.testing.dicom.RemoveAllPrivateTags;
 import org.nrg.testing.dicom.RootDicomObject;
 import org.nrg.testing.enums.TestData;
 import org.nrg.xnat.versions.Xnat_1_7_7;
+import org.nrg.xnat.versions.Xnat_1_8_10;
 import org.nrg.xnat.versions.Xnat_1_8_7;
 
 import java.util.function.Consumer;
@@ -64,6 +66,14 @@ public class TestAnonymizationPrivateElements extends BaseAnonymizationTest {
                     root.putValueEqualCheck("(0039,0011)", "ANOTHER");
                     root.putValueEqualCheck("(0039,1199)", "Meow");
                     root.putValueEqualCheck("(0039,11ee)", "Much Meow");
+                }).run();
+    }
+
+    @AddedIn(Xnat_1_8_10.class)
+    public void testPrivateAssignmentPreexisting() {
+        new BasicAnonymizationTest("privateAssignmentPreexisting.das")
+                .withValidation((root) -> {
+                    root.putValueEqualCheck("(2001,1063)", "HERE", VR.CS);
                 }).run();
     }
 

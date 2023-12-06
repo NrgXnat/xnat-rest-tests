@@ -319,7 +319,7 @@ public class TestAnonymizationUids extends BaseAnonymizationTest {
      */
     @AddedIn(Xnat_1_8_10.class)
     public void testHashUidListUnknownElement() {
-        final int tag = 0x38720018;
+        final int tag = AnonConstants.FAKE_DICOM_TAG;
         new BasicAnonymizationTest("hashUIDListUnknownElement.das")
                 .withData(
                         new LocallyCacheableDicomTransformation("anon2_made_up_standard_uid")
