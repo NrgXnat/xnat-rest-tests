@@ -8,6 +8,8 @@ import org.nrg.testing.annotations.DeprecatedIn;
 import org.nrg.testing.annotations.RequireXnatVersion;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.PetMrProcessingSetting;
+import org.nrg.xnat.importer.importers.DicomZipRequest;
+import org.nrg.xnat.interfaces.XnatInterface;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -15,16 +17,23 @@ import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.pogo.extensions.subject_assessor.DicomZipImportExtension;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
+import org.nrg.xnat.pogo.extensions.subject_assessor.SubjectAssessorExtension;
+import org.nrg.xnat.versions.Xnat_1_8_10;
 import org.nrg.xnat.versions.Xnat_1_8_4;
 import org.nrg.xnat.versions.Xnat_1_8_5;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -67,171 +76,268 @@ public class TestDicomModalityAssignment extends BaseXnatRestTest {
         restDriver.deleteProjectSilently(mainUser, testProject);
     }
 
+    @AfterMethod
+    private void clearData() {
+        mainAdminInterface().deleteAllProjectData(testProject);
+    }
+
     public void testModalityExtractionStandardMr() {
-        new DicomModalityTest(
-                new SeriesSpec(MR, DataType.MR_SCAN).consistentInstances(UID.MRImageStorage, 10),
-                new SeriesSpec(MR, DataType.MR_SCAN).consistentInstances(UID.MRImageStorage, 15)
-        ).run(DataType.MR_SESSION);
+        new SimpleDicomModalityTest(DataType.MR_SESSION)
+                .withSeries(
+                        new SeriesSpec(MR, DataType.MR_SCAN).consistentInstances(UID.MRImageStorage, 10),
+                        new SeriesSpec(MR, DataType.MR_SCAN).consistentInstances(UID.MRImageStorage, 15)
+                ).run();
     }
 
     public void testModalityExtractionStandardPet() {
-        new DicomModalityTest(
-                new SeriesSpec(PT, DataType.PET_SCAN).consistentInstances(UID.PositronEmissionTomographyImageStorage, 1)
-        ).run(DataType.PET_SESSION);
+        new SimpleDicomModalityTest(DataType.PET_SESSION)
+                .withSeries(
+                        new SeriesSpec(PT, DataType.PET_SCAN).consistentInstances(UID.PositronEmissionTomographyImageStorage, 1)
+                ).run();
     }
 
     public void testModalityExtractionSecondaryCapture() {
-        new DicomModalityTest(
-                new SeriesSpec(CT, SECONDARY_CAPTURE_SCAN).consistentInstances(UID.SecondaryCaptureImageStorage, 2)
-        ).run(DataType.CT_SESSION);
+        new SimpleDicomModalityTest(DataType.CT_SESSION)
+                .withSeries(
+                        new SeriesSpec(CT, SECONDARY_CAPTURE_SCAN).consistentInstances(UID.SecondaryCaptureImageStorage, 2)
+                ).run();
     }
 
     public void testModalityExtractionSecondaryCaptureUnmappableModality() {
-        new DicomModalityTest(
-                new SeriesSpec("SC", SECONDARY_CAPTURE_SCAN).consistentInstances(UID.SecondaryCaptureImageStorage, 1)
-        ).run(OTHER_SESSION);
+        new SimpleDicomModalityTest(OTHER_SESSION)
+                .withSeries(
+                        new SeriesSpec("SC", SECONDARY_CAPTURE_SCAN).consistentInstances(UID.SecondaryCaptureImageStorage, 1)
+                ).run();
     }
 
     @AddedIn(Xnat_1_8_4.class) // might actually work on earlier versions of 1.8.x
     public void testModalityExtractionMrAndRt() {
-        new DicomModalityTest(
-                new SeriesSpec(RTSTRUCT, RT_SCAN).consistentInstances(UID.RTStructureSetStorage, 1),
-                new SeriesSpec(MR, DataType.MR_SCAN).consistentInstances(UID.EnhancedMRImageStorage, 1)
-        ).run(DataType.MR_SESSION);
+        new SimpleDicomModalityTest(DataType.MR_SESSION)
+                .withSeries(
+                        new SeriesSpec(RTSTRUCT, RT_SCAN).consistentInstances(UID.RTStructureSetStorage, 1),
+                        new SeriesSpec(MR, DataType.MR_SCAN).consistentInstances(UID.EnhancedMRImageStorage, 1)
+                ).run();
     }
 
     public void testModalityExtractionMrInconsistentSopClass() {
-        new DicomModalityTest(
-                new SeriesSpec(MR, DataType.MR_SCAN).instances(
-                        new InstanceSpec(UID.RawDataStorage),
-                        new InstanceSpec(UID.MRImageStorage)
-                )
-        ).run(DataType.MR_SESSION);
+        new SimpleDicomModalityTest(DataType.MR_SESSION)
+                .withSeries(
+                        new SeriesSpec(MR, DataType.MR_SCAN).instances(
+                                new InstanceSpec(UID.RawDataStorage),
+                                new InstanceSpec(UID.MRImageStorage)
+                        )
+                ).run();
     }
 
     public void testModalityExtractionXa() {
-        new DicomModalityTest(
-                new SeriesSpec(XA, XA_SCAN).consistentInstances(UID.XRayAngiographicImageStorage, 1)
-        ).run(XA_SESSION);
+        new SimpleDicomModalityTest(XA_SESSION)
+                .withSeries(
+                        new SeriesSpec(XA, XA_SCAN).consistentInstances(UID.XRayAngiographicImageStorage, 1)
+                ).run();
     }
 
     @AddedIn(Xnat_1_8_5.class)
     public void testModalityExtractionXa3d() {
-        new DicomModalityTest(
-                new SeriesSpec(XA, XA_SCAN).consistentInstances(UID.XRay3DAngiographicImageStorage, 1)
-        ).run(XA_SESSION);
+        new SimpleDicomModalityTest(XA_SESSION)
+                .withSeries(
+                        new SeriesSpec(XA, XA_SCAN).consistentInstances(UID.XRay3DAngiographicImageStorage, 1)
+                ).run();
     }
 
     @DeprecatedIn(Xnat_1_8_5.class)
     public void testModalityExtractionXa3dLegacy() {
-        new DicomModalityTest(
-                new SeriesSpec(XA, OTHER_SCAN).consistentInstances(UID.XRay3DAngiographicImageStorage, 1)
-        ).run(XA_SESSION);
+        new SimpleDicomModalityTest(XA_SESSION)
+                .withSeries(
+                        new SeriesSpec(XA, OTHER_SCAN).consistentInstances(UID.XRay3DAngiographicImageStorage, 1)
+                ).run();
     }
 
     public void testModalityExtractionCr() {
-        new DicomModalityTest(
-                new SeriesSpec(CR, CR_SCAN).consistentInstances(UID.ComputedRadiographyImageStorage, 2)
-        ).run(DataType.CR_SESSION);
+        new SimpleDicomModalityTest(DataType.CR_SESSION)
+                .withSeries(
+                        new SeriesSpec(CR, CR_SCAN).consistentInstances(UID.ComputedRadiographyImageStorage, 2)
+                ).run();
     }
 
     @AddedIn(Xnat_1_8_5.class)
     public void testModalityExtractionMrSopClassMissingModality() {
-        new DicomModalityTest(
-                new SeriesSpec("", DataType.MR_SCAN).consistentInstances(UID.MRImageStorage, 4)
-        ).run(DataType.MR_SESSION);
+        new SimpleDicomModalityTest(DataType.MR_SESSION)
+                .withSeries(
+                        new SeriesSpec("", DataType.MR_SCAN).consistentInstances(UID.MRImageStorage, 4)
+                ).run();
     }
 
     @RequireXnatVersion(allowedVersions = Xnat_1_8_4.class) // might actually work on earlier versions of 1.8.x
     public void testModalityExtractionMrSopClassMissingModalityLegacy() {
-        new DicomModalityTest(
-                new SeriesSpec("", DataType.MR_SCAN).consistentInstances(UID.MRImageStorage, 4)
-        ).run(OTHER_SESSION);
+        new SimpleDicomModalityTest(OTHER_SESSION)
+                .withSeries(
+                        new SeriesSpec("", DataType.MR_SCAN).consistentInstances(UID.MRImageStorage, 4)
+                ).run();
     }
 
     public void testModalityExtractionPetCt() {
-        new DicomModalityTest(
-                new SeriesSpec(PT, DataType.PET_SCAN).consistentInstances(UID.PositronEmissionTomographyImageStorage, 5),
-                new SeriesSpec(CT, DataType.CT_SCAN).consistentInstances(UID.CTImageStorage, 10)
-        ).run(DataType.PET_SESSION);
+        new SimpleDicomModalityTest(DataType.PET_SESSION)
+                .withSeries(
+                        new SeriesSpec(PT, DataType.PET_SCAN).consistentInstances(UID.PositronEmissionTomographyImageStorage, 5),
+                        new SeriesSpec(CT, DataType.CT_SCAN).consistentInstances(UID.CTImageStorage, 10)
+                ).run();
     }
 
     @AddedIn(Xnat_1_8_4.class) // might actually work on earlier versions of 1.8.x
     public void testModalityExtractionPetCtRt() {
-        new DicomModalityTest(
-                new SeriesSpec(RTSTRUCT, RT_SCAN).consistentInstances(UID.RTStructureSetStorage, 1),
-                new SeriesSpec(PT, DataType.PET_SCAN).consistentInstances(UID.PositronEmissionTomographyImageStorage, 5),
-                new SeriesSpec(CT, DataType.CT_SCAN).consistentInstances(UID.CTImageStorage, 10)
-        ).run(DataType.PET_SESSION);
+        new SimpleDicomModalityTest(DataType.PET_SESSION)
+                .withSeries(
+                        new SeriesSpec(RTSTRUCT, RT_SCAN).consistentInstances(UID.RTStructureSetStorage, 1),
+                        new SeriesSpec(PT, DataType.PET_SCAN).consistentInstances(UID.PositronEmissionTomographyImageStorage, 5),
+                        new SeriesSpec(CT, DataType.CT_SCAN).consistentInstances(UID.CTImageStorage, 10)
+                ).run();
     }
 
     public void testModalityExtractionPetMr() {
         mainAdminInterface().setProjectPetMrSetting(testProject, PetMrProcessingSetting.AS_PET_MR);
-        new DicomModalityTest(
-                new SeriesSpec(PT, DataType.PET_SCAN).consistentInstances(UID.PositronEmissionTomographyImageStorage, 2),
-                new SeriesSpec(MR, DataType.MR_SCAN).consistentInstances(UID.MRImageStorage, 3)
-        ).usingDicomZipImporter().run(DataType.PET_MR_SESSION);
+        new SimpleDicomModalityTest(DataType.PET_MR_SESSION)
+                .withSeries(
+                        new SeriesSpec(PT, DataType.PET_SCAN).consistentInstances(UID.PositronEmissionTomographyImageStorage, 2),
+                        new SeriesSpec(MR, DataType.MR_SCAN).consistentInstances(UID.MRImageStorage, 3)
+                ).usingDicomZipImporter()
+                .run();
     }
 
     public void testModalityExtractionPetMrAsPet() {
         mainAdminInterface().setProjectPetMrSetting(testProject, PetMrProcessingSetting.AS_PET);
-        new DicomModalityTest(
-                new SeriesSpec(PT, DataType.PET_SCAN).consistentInstances(UID.PositronEmissionTomographyImageStorage, 2),
-                new SeriesSpec(MR, DataType.MR_SCAN).consistentInstances(UID.MRImageStorage, 3)
-        ).usingDicomZipImporter().run(DataType.PET_SESSION);
+        new SimpleDicomModalityTest(DataType.PET_SESSION)
+                .withSeries(
+                        new SeriesSpec(PT, DataType.PET_SCAN).consistentInstances(UID.PositronEmissionTomographyImageStorage, 2),
+                        new SeriesSpec(MR, DataType.MR_SCAN).consistentInstances(UID.MRImageStorage, 3)
+                ).usingDicomZipImporter()
+                .run();
     }
 
-    private class DicomModalityTest {
-        private final List<SeriesSpec> seriesSpecs;
+    @AddedIn(Xnat_1_8_10.class)
+    public void testModalityExtractionPetMrSplit() {
+        final Map<DataType, List<SeriesSpec>> seriesSpecs = new HashMap<>();
+        seriesSpecs.put(
+                DataType.MR_SESSION,
+                Arrays.asList(
+                        new SeriesSpec(MR, DataType.MR_SCAN).consistentInstances(UID.MRImageStorage, 3),
+                        new SeriesSpec(RTSTRUCT, RT_SCAN).consistentInstances(UID.RTStructureSetStorage, 1)
+                )
+        );
+        seriesSpecs.put(
+                DataType.PET_SESSION,
+                Arrays.asList(
+                        new SeriesSpec(PT, DataType.PET_SCAN).consistentInstances(UID.PositronEmissionTomographyImageStorage, 5),
+                        new SeriesSpec(PT, DataType.PET_SCAN).consistentInstances(UID.PositronEmissionTomographyImageStorage, 3)
+                )
+        );
+        mainAdminInterface().setProjectPetMrSetting(testProject, PetMrProcessingSetting.SPLIT);
+        new GeneralDicomModalityTest<>()
+                .withSeries(seriesSpecs)
+                .withCustomUploadMethod((session, sessionZip) -> {
+                    return new SubjectAssessorExtension(session) {
+                        @Override
+                        public void create(XnatInterface xnatInterface, Project project, Subject subject) {
+                            xnatInterface.callImporter(
+                                    new DicomZipRequest()
+                                            .file(sessionZip)
+                                            .destArchive()
+                                            .project(project)
+                                            .subject(subject)
+                                            .param("action", "commit")
+                            );
+                        }
+                    };
+                }).run();
+    }
+
+    @SuppressWarnings("unchecked")
+    private class GeneralDicomModalityTest<X extends GeneralDicomModalityTest<X>> {
+        private Map<DataType, List<SeriesSpec>> seriesSpecs;
         private boolean useDicomZipImporter = false;
+        private BiFunction<ImagingSession, File, SubjectAssessorExtension> customUpload;
 
-        DicomModalityTest(SeriesSpec... seriesSpecs) {
-            this.seriesSpecs = Arrays.asList(seriesSpecs);
+        X withSeries(Map<DataType, List<SeriesSpec>> seriesSpecs) {
+            this.seriesSpecs = seriesSpecs;
+            return (X) this;
         }
 
-        DicomModalityTest usingDicomZipImporter() {
+        X usingDicomZipImporter() {
             useDicomZipImporter = true;
-            return this;
+            return (X) this;
         }
 
-        void run(DataType expectedSessionType) {
+        X withCustomUploadMethod(BiFunction<ImagingSession, File, SubjectAssessorExtension> customUpload) {
+            this.customUpload = customUpload;
+            return (X) this;
+        }
+
+        void run() {
             final String studyInstanceUid = UIDUtils.createUID();
             int seriesIndex = 0;
             final List<Attributes> dicomInstances = new ArrayList<>();
-            for (SeriesSpec series : seriesSpecs) {
-                for (InstanceSpec instance : series.instances) {
-                    final Attributes dicomForInstance = new Attributes();
-                    dicomForInstance.addAll(baseDicom);
-                    dicomForInstance.setString(Tag.StudyInstanceUID, VR.UI, studyInstanceUid);
-                    dicomForInstance.setString(Tag.SeriesInstanceUID, VR.UI, series.seriesInstanceUid);
-                    dicomForInstance.setString(Tag.SOPInstanceUID, VR.UI, instance.sopInstanceUid);
-                    dicomForInstance.setString(Tag.SOPClassUID, VR.UI, instance.sopClassUid);
-                    dicomForInstance.setString(Tag.Modality, VR.CS, series.modality);
-                    dicomForInstance.setInt(Tag.SeriesNumber, VR.IS, seriesIndex);
-                    dicomInstances.add(dicomForInstance);
+            for (List<SeriesSpec> specs : seriesSpecs.values()) {
+                for (SeriesSpec series : specs) {
+                    for (InstanceSpec instance : series.instances) {
+                        final Attributes dicomForInstance = new Attributes();
+                        dicomForInstance.addAll(baseDicom);
+                        dicomForInstance.setString(Tag.StudyInstanceUID, VR.UI, studyInstanceUid);
+                        dicomForInstance.setString(Tag.SeriesInstanceUID, VR.UI, series.seriesInstanceUid);
+                        dicomForInstance.setString(Tag.SOPInstanceUID, VR.UI, instance.sopInstanceUid);
+                        dicomForInstance.setString(Tag.SOPClassUID, VR.UI, instance.sopClassUid);
+                        dicomForInstance.setString(Tag.Modality, VR.CS, series.modality);
+                        dicomForInstance.setInt(Tag.SeriesNumber, VR.IS, seriesIndex);
+                        dicomInstances.add(dicomForInstance);
+                    }
+                    seriesIndex++;
                 }
-                seriesIndex++;
             }
 
             final File sessionZip = DicomUtils.composeDicomInstanceToZip(dicomInstances);
 
             final Subject subject = new Subject(testProject);
             final ImagingSession session = new ImagingSession(testProject, subject);
-            if (useDicomZipImporter) {
+            if (customUpload != null) {
+                customUpload.apply(session, sessionZip);
+            } else if (useDicomZipImporter) {
                 new DicomZipImportExtension(session, sessionZip);
             } else {
                 new SessionImportExtension(session, sessionZip);
             }
             mainInterface().createSubject(subject);
 
-            final ImagingSession sessionAsExistsInXnat = (ImagingSession) mainInterface().readSubjectAssessors(testProject, subject).get(0);
-            assertEquals(expectedSessionType.getXsiType(), sessionAsExistsInXnat.getDataType().getXsiType());
+            final List<ImagingSession> sessionsInXnat = mainInterface().readProject(testProject.getId()).findSubject(subject.getLabel()).getSessions();
+            assertEquals(
+                    seriesSpecs.keySet().stream().map(DataType::getXsiType).collect(Collectors.toSet()),
+                    sessionsInXnat.stream().map(sessionObj -> sessionObj.getDataType().getXsiType()).collect(Collectors.toSet())
+            );
+            assertEquals(seriesSpecs.size(), sessionsInXnat.size());
             // TODO: assert modality? complication: can't just add modality as a column to read for subject assessors since that will cause the results to only include sessions
 
-            for (SeriesSpec series : seriesSpecs) {
-                final Scan scanAsExistsInXnat = sessionAsExistsInXnat.findSeriesByUid(series.seriesInstanceUid);
-                assertEquals(series.expectedXsiType, scanAsExistsInXnat.getXsiType());
+            for (Map.Entry<DataType, List<SeriesSpec>> expectedStudyEntry : seriesSpecs.entrySet()) {
+                final ImagingSession sessionAsExistsInXnat = sessionsInXnat
+                        .stream()
+                        .filter(candidate -> candidate.getDataType().getXsiType().equals(expectedStudyEntry.getKey().getXsiType()))
+                        .findFirst()
+                        .orElseThrow(RuntimeException::new);
+                assertEquals(expectedStudyEntry.getValue().size(), sessionAsExistsInXnat.getScans().size());
+
+                for (SeriesSpec series : expectedStudyEntry.getValue()) {
+                    final Scan scanAsExistsInXnat = sessionAsExistsInXnat.findSeriesByUid(series.seriesInstanceUid);
+                    assertEquals(series.expectedXsiType, scanAsExistsInXnat.getXsiType());
+                }
             }
+        }
+    }
+
+    private class SimpleDicomModalityTest extends GeneralDicomModalityTest<SimpleDicomModalityTest> {
+        private final DataType expectedDataType;
+
+        SimpleDicomModalityTest(DataType expectedDataType) {
+            this.expectedDataType = expectedDataType;
+        }
+
+        SimpleDicomModalityTest withSeries(SeriesSpec... series) {
+            return withSeries(Collections.singletonMap(expectedDataType, Arrays.asList(series)));
         }
     }
 
