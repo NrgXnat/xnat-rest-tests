@@ -1,0 +1,33 @@
+\documentclass[margin=5mm]{standalone}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{pgfplots}
+\usepackage{tikz}
+\usepackage[tikz]{ocgx2}
+
+\pgfplotsset{compat=1.18}
+\begin{document}
+
+\begin{tikzpicture}
+    \begin{axis}[
+        legend pos = north west,
+        legend cell align = left,
+        xlabel = Number of projects created,
+        ylabel = Cumulative time in seconds,
+        xtick pos = left,
+        ytick pos = left,
+        xmin = 0,
+        ymin = 0,
+        title = {Cumulative time for admin creating projects, extra data types enabled},
+        legend entries={\switchocg{1.8.10}{1.8.10}}]
+        \begin{scope}[ocg = {ref = 1.8.10, status = visible}]
+            \addplot[
+                only marks,
+                color = black,
+                mark = *,
+                mark size = 1.5 pt
+            ]coordinates {(10,12.218)(20,22.878)(30,36.82)(40,48.61)(50,59.365)(60,70.829)(70,82.404)(80,94.449)(90,107.638)(100,120.836)(110,134.13)(120,147.725)(130,161.796)(140,176.521)(150,191.496)(160,206.996)(170,222.369)(180,239.002)(190,255.816)(200,273.607)(210,293.519)(220,311.978)(230,331.03)(240,351.039)(250,371.198)(260,392.55)(270,413.829)(280,435.286)(290,457.334)(300,480.598)(310,503.843)(320,528.609)(330,553.664)(340,579.245)(350,605.051)(360,631.06)(370,658.02)(380,685.944)(390,716.667)(400,746.06)(410,775.598)(420,806.758)(430,839.627)(440,871.47)(450,906.035)(460,938.947)(470,973.277)(480,1012.079)(490,1046.619)(500,1082.985)(510,1119.11)(520,1158.567)(530,1197.014)(540,1237.565)(550,1276.239)(560,1315.755)(570,1357.567)(580,1403.251)(590,1444.012)(600,1487.281)(610,1529.487)(620,1572.412)(630,1617.16)(640,1662.18)(650,1706.722)(660,1753.132)(670,1801.799)(680,1852.053)(690,1898.72)(700,1946.313)(710,1996.243)(720,2045.374)(730,2097.19)(740,2149.083)(750,2200.308)};
+        \end{scope}
+    \end{axis}
+\end{tikzpicture}
+
+\end{document}
