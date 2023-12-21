@@ -11,15 +11,16 @@
         width = \textwidth,
         xlabel = XNAT version,
         ylabel = Overall time in seconds,
-        symbolic x coords = {1.8.10},
+        symbolic x coords = {1.8.10,1.8.10-DEVELOP},
         nodes near coords,
-        xtick = {1.8.10},
+        xtick = {1.8.10,1.8.10-DEVELOP},
         ymin = 0,
         xtick pos = left,
         ytick pos = left,
         xticklabel style = {major tick length = 0pt},
         title = {CSTORE of 2000 MR images with worst case Series Import Filter}]
         \addplot[ybar,fill=blue] coordinates {(1.8.10, 91.7)};
+        \addplot[ybar,fill=blue] coordinates {(1.8.10-DEVELOP, 88.6)};
     \end{axis}
 \end{tikzpicture}
 
