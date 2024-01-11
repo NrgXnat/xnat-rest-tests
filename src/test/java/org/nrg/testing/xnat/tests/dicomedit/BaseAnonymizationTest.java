@@ -24,6 +24,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -90,9 +91,9 @@ public class BaseAnonymizationTest extends BaseXnatRestTest {
             withEnabledScripts(scriptContainer);
         }
 
-        BasicAnonymizationTest(String scriptName) {
+        BasicAnonymizationTest(String requiredComponent, String... additionalComponents) {
             this();
-            this.scriptName = scriptName;
+            scriptName = Paths.get(requiredComponent, additionalComponents).toString();
         }
 
         BasicAnonymizationTest withDicomEditVersion(DicomEditVersion dicomEditVersion) {
