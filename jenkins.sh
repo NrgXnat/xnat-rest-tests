@@ -21,6 +21,7 @@ xnat.admin.password=$ADMIN_PWD
 xnat.version=$XNAT_LINEAGE
 xnat.setupMrscan=true
 xnat.testBehavior.expectedFailures=ignore
+xnat.temp=/var/lib/jenkins/tmp
 cs.backends=docker,swarm
 cs.swarm.timeout=10
 cs.swarm.constraints=false,engine.labels.instance.spot,==,False;false,engine.labels.instance.type,==,m5.large
