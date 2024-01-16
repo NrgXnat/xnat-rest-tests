@@ -39,6 +39,7 @@ public class BaseAnonymizationTest extends BaseXnatRestTest {
     protected final File anonData = TestData.ANON_2.toFile();
     protected final List<DicomScpReceiver> createdReceivers = new ArrayList<>();
     protected boolean projectCreated = false;
+    protected static final String RETAIN_PRIVATE_TAGS = "retainPrivateTags";
 
     @BeforeMethod(groups = ANONYMIZATION)
     protected void createProject() {
