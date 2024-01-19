@@ -6,11 +6,11 @@ import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.Anon2NoOp;
 import org.nrg.testing.dicom.AnonConstants;
-import org.nrg.testing.dicom.BlankKnownPhiPrivateElements;
-import org.nrg.testing.dicom.BlankKnownPhiSeveralElements;
-import org.nrg.testing.dicom.BlankKnownPhiSingleStandardTag;
-import org.nrg.testing.dicom.BlankKnownPhiSingleStandardTagpath;
-import org.nrg.testing.dicom.BlankKnownPhiWildcards;
+import org.nrg.testing.dicom.BlankValuesPrivateElements;
+import org.nrg.testing.dicom.BlankValuesSeveralElements;
+import org.nrg.testing.dicom.BlankValuesSingleStandardTag;
+import org.nrg.testing.dicom.BlankValuesSingleStandardTagpath;
+import org.nrg.testing.dicom.BlankValuesWildcards;
 import org.nrg.testing.dicom.DicomObject;
 import org.nrg.testing.dicom.RootDicomObject;
 import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 
 @TestRequires(admin = true, data = TestData.ANON_2)
 @AddedIn(Xnat_1_8_10.class)
-public class TestAnonymizationBlankKnownPhi extends BaseAnonymizationTest {
+public class TestAnonymizationCollectBlankValues extends BaseAnonymizationTest {
 
     private static final Consumer<RootDicomObject> VARIABLE_SCRIPT_VALIDATION = (root) -> {
         root.putEmptyChecks("(0018,9020)", "(0044,0001)", "(0018,9011)", "(0018,9100)");
@@ -70,89 +70,101 @@ public class TestAnonymizationBlankKnownPhi extends BaseAnonymizationTest {
             .data(TestData.ANON_2)
             .simpleTransform((dicom) -> dicom.setString(0x00180034, VR.LO, "SOMETHING"));
 
-    public void testBlankKnownPhiSingleStandardTag() {
-        new BasicAnonymizationTest("blankKnownPhiSingleStandardTag.das")
-                .withValidation(new BlankKnownPhiSingleStandardTag())
+    public void testBlankValuesSingleStandardTag() {
+        new CollectBlankValuesTest("singleStandardTag.das")
+                .withValidation(new BlankValuesSingleStandardTag())
                 .run();
     }
 
-    public void testBlankKnownPhiSingleStandardTagList() {
-        new BasicAnonymizationTest("blankKnownPhiSingleStandardTagList.das")
-                .withValidation(new BlankKnownPhiSingleStandardTag())
+    public void testBlankValuesSingleStandardTagDirect() {
+        new CollectBlankValuesTest("singleStandardTagDirect.das")
+                .withValidation(new BlankValuesSingleStandardTag())
                 .run();
     }
 
-    public void testBlankKnownPhiVariable() {
-        new BasicAnonymizationTest("blankKnownPhiVariable.das")
+    public void testBlankValuesSingleStandardTagList() {
+        new CollectBlankValuesTest("singleStandardTagList.das")
+                .withValidation(new BlankValuesSingleStandardTag())
+                .run();
+    }
+
+    public void testBlankValuesTagsVariable() {
+        new CollectBlankValuesTest("tagsVariable.das")
                 .withValidation(VARIABLE_SCRIPT_VALIDATION)
                 .run();
     }
 
-    public void testBlankKnownPhiMultipleVariables() {
-        new BasicAnonymizationTest("blankKnownPhiMultipleVariables.das")
+    public void testBlankValuesValuesVariable() {
+        new CollectBlankValuesTest("valuesVariable.das")
                 .withValidation(VARIABLE_SCRIPT_VALIDATION)
                 .run();
     }
 
-    public void testBlankKnownPhiNestedLists() {
-        new BasicAnonymizationTest("blankKnownPhiNestedLists.das")
+    public void testBlankValuesMultipleVariables() {
+        new CollectBlankValuesTest("multipleVariables.das")
                 .withValidation(VARIABLE_SCRIPT_VALIDATION)
                 .run();
     }
 
-    public void testBlankKnownPhiNestedWithOverlap() {
-        new BasicAnonymizationTest("blankKnownPhiNestedWithOverlap.das")
+    public void testBlankValuesNestedLists() {
+        new CollectBlankValuesTest("nestedLists.das")
                 .withValidation(VARIABLE_SCRIPT_VALIDATION)
                 .run();
     }
 
-    public void testBlankKnownPhiMultilineList() {
-        new BasicAnonymizationTest("blankKnownPhiMultilineList.das")
+    public void testBlankValuesNestedWithOverlap() {
+        new CollectBlankValuesTest("nestedWithOverlap.das")
                 .withValidation(VARIABLE_SCRIPT_VALIDATION)
                 .run();
     }
 
-    public void testBlankKnownPhiNoArguments() {
-        new BasicAnonymizationTest("blankKnownPhiNoArguments.das")
+    public void testBlankValuesMultilineListDirect() {
+        new CollectBlankValuesTest("multilineListDirect.das")
+                .withValidation(VARIABLE_SCRIPT_VALIDATION)
+                .run();
+    }
+
+    public void testBlankValuesNoArguments() {
+        new CollectBlankValuesTest("noArguments.das")
                 .withValidation(new Anon2NoOp())
                 .run();
     }
 
-    public void testBlankKnownPhiSingleStandardTagpath() {
-        new BasicAnonymizationTest("blankKnownPhiSingleStandardTagpath.das")
-                .withValidation(new BlankKnownPhiSingleStandardTagpath())
+    public void testBlankValuesSingleStandardTagpath() {
+        new CollectBlankValuesTest("singleStandardTagpath.das")
+                .withValidation(new BlankValuesSingleStandardTagpath())
                 .withData(ANON2_PLUS_RECENT_ELEMENT)
                 .run();
     }
 
-    public void testBlankKnownPhiMixedArguments() {
-        new BasicAnonymizationTest("blankKnownPhiMixedArgs.das")
-                .withValidation(new BlankKnownPhiSeveralElements())
+    public void testBlankValuesMixedArguments() {
+        new CollectBlankValuesTest("mixedArgs.das")
+                .withValidation(new BlankValuesSeveralElements())
                 .withData(ANON2_PLUS_RECENT_ELEMENT)
                 .run();
     }
 
-    public void testBlankKnownPhiMixedArgumentsList() {
-        new BasicAnonymizationTest("blankKnownPhiMixedArgsList.das")
-                .withValidation(new BlankKnownPhiSeveralElements())
+    public void testBlankValuesMixedArgumentsList() {
+        new CollectBlankValuesTest("mixedArgsList.das")
+                .withValidation(new BlankValuesSeveralElements())
                 .withData(ANON2_PLUS_RECENT_ELEMENT)
                 .run();
     }
 
-    public void testBlankKnownPhiWildcards() {
-        new BasicAnonymizationTest("blankKnownPhiWildcards.das")
-                .withValidation(new BlankKnownPhiWildcards())
+    public void testBlankValuesWildcards() {
+        new CollectBlankValuesTest("wildcards.das")
+                .withValidation(new BlankValuesWildcards())
                 .run();
     }
 
-    public void testBlankKnownPhiPrivateElements() {
-        new BasicAnonymizationTest("blankKnownPhiPrivateElements.das")
-                .withValidation(new BlankKnownPhiPrivateElements())
+    public void testBlankValuesPrivateElements() {
+        new CollectBlankValuesTest("privateElements.das")
+                .withValidation(new BlankValuesPrivateElements())
                 .run();
     }
 
-    public void testBlankKnownPhiVrPreservation() {
-        new BasicAnonymizationTest("blankKnownPhiVrPreservation.das")
+    public void testBlankValuesVrPreservation() {
+        new CollectBlankValuesTest("vrPreservation.das")
                 .withValidation((root) -> {
                     root.putValueEqualCheck("(0008,0020)", "", VR.DA);
                     root.putValueEqualCheck("(0008,0021)", "", VR.DA);
@@ -183,11 +195,11 @@ public class TestAnonymizationBlankKnownPhi extends BaseAnonymizationTest {
     }
 
     /**
-     * Tests the ability for a DicomEdit script to capture a value, blank it from the dataset, and then reintroduce
-     * it in a controlled fashion.
+     * Tests the ability for a DicomEdit script to capture a value, derive a value from it, and then blank the original
+     * value while maintaining the derived value.
      */
-    public void testBlankKnownPhiValuePreservation() {
-        new BasicAnonymizationTest("blankKnownPhiValuePreservation.das")
+    public void testBlankValuesValuePreservation() {
+        new CollectBlankValuesTest("valuePreservation.das")
                 .withValidation((root) -> {
                     root.putValueEqualCheck("(0008,0008)", AnonConstants.ANON2_IMAGE_TYPE);
                     root.putEmptyChecks("(0008,9207)");
@@ -199,8 +211,8 @@ public class TestAnonymizationBlankKnownPhi extends BaseAnonymizationTest {
     /**
      * Tests the ability for a DicomEdit script to appropriately blank a multivalued (VM > 1) DICOM element from the dataset.
      */
-    public void testBlankKnownPhiMultivaluedMatching() {
-        new BasicAnonymizationTest("blankKnownPhiMultivaluedMatching.das")
+    public void testBlankValuesMultivaluedMatching() {
+        new CollectBlankValuesTest("multivaluedMatching.das")
                 .withValidation((root) -> {
                     root.putEmptyChecks("(0008,0008)");
                     final Consumer<DicomObject> sequenceItemSpecifier = (dicomObject) -> {
@@ -217,8 +229,8 @@ public class TestAnonymizationBlankKnownPhi extends BaseAnonymizationTest {
      * Tests the ability for a DicomEdit script to blank a DICOM element in group 0002
      * (a file meta element), or to blank a value found therein for the entire dataset
      */
-    public void testBlankKnownPhiFmiMod() {
-        new BasicAnonymizationTest("blankKnownPhiFmi.das")
+    public void testBlankValuesFmiMod() {
+        new CollectBlankValuesTest("fmi.das")
                 .withValidation((root) -> {
                     root.putEmptyChecks("(0002,0016)", "(0002,0018)", "(0010,1040)", "(0044,0001)");
                     root.putValueEqualCheck("(0002,0017)", "UNAFFECTED");
@@ -240,8 +252,8 @@ public class TestAnonymizationBlankKnownPhi extends BaseAnonymizationTest {
      * with a VR of UN. This could conceivably be supported in the future, but is not for now, so the expected behavior
      * is that these are not considered matches.
      */
-    public void testBlankKnownPhiImplicitAscii() {
-        new BasicAnonymizationTest("blankKnownPhiImplicitAscii.das")
+    public void testBlankValuesImplicitAscii() {
+        new CollectBlankValuesTest("implicitAscii.das")
                 .withValidation((root) -> {
                     root.putEmptyChecks("(0044,0001)");
 
@@ -271,13 +283,13 @@ public class TestAnonymizationBlankKnownPhi extends BaseAnonymizationTest {
     }
 
     /**
-     * Tests the scenario where blankKnownPHI is called on an element that does not exist in the dataset. No changes to
+     * Tests the scenario where blankValues is called on an element that does not exist in the dataset. No changes to
      * the dataset are expected, including especially that the specified element should NOT be inserted. However, other
      * elements specified in the function invocation should still be processed as normal.
      */
-    public void testBlankKnownPhiNonexistentElement() {
-        new BasicAnonymizationTest("blankKnownPhiNonexistent.das")
-                .withValidation(new BlankKnownPhiSingleStandardTag())
+    public void testBlankValuesNonexistentElement() {
+        new CollectBlankValuesTest("nonexistent.das")
+                .withValidation(new BlankValuesSingleStandardTag())
                 .run();
     }
 
@@ -287,10 +299,10 @@ public class TestAnonymizationBlankKnownPhi extends BaseAnonymizationTest {
      *    would still be considered matches for "blanking matches". These are the AE values.
      * 2) A whitespace difference internal to the value, which is the LO value, is NOT a match.
      */
-    public void testBlankKnownPhiWhitespace() {
+    public void testBlankValuesWhitespace() {
         final String rwvMapping = "Philips Real WorldValue Mapping";
 
-        new BasicAnonymizationTest("blankKnownPhiWhitespace.das")
+        new CollectBlankValuesTest("whitespace.das")
                 .withValidation((root) -> {
                     root.putEmptyChecks("(0008,0054)", "(0008,0055)", "(0028,3003)");
                     root.putValueEqualCheck("(0028,3004)", rwvMapping);
@@ -307,14 +319,14 @@ public class TestAnonymizationBlankKnownPhi extends BaseAnonymizationTest {
     }
 
     /**
-     * Tests the scenario where values differ by only capitalization. For the blankKnownPHI function, these are
+     * Tests the scenario where values differ by only capitalization. For the blankValues function, these are
      * expected to NOT be considered matches.
      */
-    public void testBlankKnownPhiCapitalization() {
+    public void testBlankValuesCapitalization() {
         final String institutionNameVal = "PhilipS MeDicAl SyStems";
         final String institutionAddressVal = "philips medical systems";
 
-        new BasicAnonymizationTest("blankKnownPhiCapitalization.das")
+        new CollectBlankValuesTest("capitalization.das")
                 .withValidation((root) -> {
                     root.putEmptyChecks(Tag.Manufacturer);
                     root.putValueEqualCheck(Tag.InstitutionName, institutionNameVal);
@@ -328,6 +340,14 @@ public class TestAnonymizationBlankKnownPhi extends BaseAnonymizationTest {
                                     dicom.setString(Tag.InstitutionAddress, VR.ST, institutionAddressVal);
                                 })
                 ).run();
+    }
+
+    private class CollectBlankValuesTest extends BasicAnonymizationTest {
+
+        CollectBlankValuesTest(String scriptName) {
+            super("collectAndBlankValues", scriptName);
+        }
+
     }
 
 }

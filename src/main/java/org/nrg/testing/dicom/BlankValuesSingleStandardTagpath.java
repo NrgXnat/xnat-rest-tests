@@ -2,7 +2,7 @@ package org.nrg.testing.dicom;
 
 import org.nrg.testing.dicom.values.DicomSequence;
 
-public class BlankKnownPhiSingleStandardTagpath extends SimplestDicomScriptValidation {
+public class BlankValuesSingleStandardTagpath extends SimplestDicomScriptValidation {
 
     @Override
     protected RootDicomObject generateValidationObject() {

@@ -2,7 +2,7 @@ package org.nrg.testing.dicom;
 
 import java.util.function.Consumer;
 
-public class BlankKnownPhiPrivateElements extends SimplestDicomScriptValidation {
+public class BlankValuesPrivateElements extends SimplestDicomScriptValidation {
 
     @Override
     protected RootDicomObject generateValidationObject() {

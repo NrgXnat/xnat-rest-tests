@@ -3,11 +3,11 @@ package org.nrg.testing.dicom;
 import java.util.Arrays;
 import java.util.List;
 
-public class BlankKnownPhiSeveralElements extends CompositeScriptValidation {
+public class BlankValuesSeveralElements extends CompositeScriptValidation {
 
     @Override
     protected List<Class<? extends SimplestDicomScriptValidation>> componentScripts() {
-        return Arrays.asList(BlankKnownPhiSingleStandardTag.class, BlankKnownPhiSingleStandardTagpath.class);
+        return Arrays.asList(BlankValuesSingleStandardTag.class, BlankValuesSingleStandardTagpath.class);
     }
 
 }
