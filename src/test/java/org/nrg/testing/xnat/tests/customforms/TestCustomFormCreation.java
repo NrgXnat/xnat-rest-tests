@@ -2,6 +2,7 @@ package org.nrg.testing.xnat.tests.customforms;
 
 import org.apache.commons.io.FileUtils;
 import org.nrg.testing.annotations.AddedIn;
+import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.customforms.pojo.CustomFormPojo;
 import org.nrg.xnat.interfaces.XnatInterface;
@@ -66,8 +67,8 @@ public class TestCustomFormCreation extends BaseCustomFormRestTest {
         saveFormAndAssert(mainAdminInterface, rawTestString, 400);
     }
 
-
     @Test(groups = {CUSTOM_FORMS})
+    @ExpectedFailure(jiraIssue = "XNAT-7934")
     public void testFormStateOnDeletionOfProject() throws IOException {
         Set<String> generatedSiteFormUUIDs = new HashSet<>();
         Set<String> generatedProjectFormUUIDs = new HashSet<>();
@@ -85,7 +86,6 @@ public class TestCustomFormCreation extends BaseCustomFormRestTest {
         }
         deleteForms(mainAdminInterface(), generatedSiteFormUUIDs, 200);
     }
-
 
     @Test(groups = {CUSTOM_FORMS, PERMISSIONS})
     @TestRequires(users = 1)
