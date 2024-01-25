@@ -40,7 +40,6 @@ public class BaseAnonymizationTest extends BaseXnatRestTest {
     protected final List<DicomScpReceiver> createdReceivers = new ArrayList<>();
     protected boolean projectCreated = false;
     protected static final String RETAIN_PRIVATE_TAGS = "retainPrivateTags";
-    protected static final String SYNTAX_MISCELLANEA = "syntaxMiscellanea";
 
     @BeforeMethod(groups = ANONYMIZATION)
     protected void createProject() {
