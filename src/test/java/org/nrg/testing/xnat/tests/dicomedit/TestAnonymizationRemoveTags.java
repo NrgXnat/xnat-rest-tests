@@ -52,6 +52,29 @@ public class TestAnonymizationRemoveTags extends BaseAnonymizationTest {
     }
 
     /**
+     * Tests using the new removeTags function with a DicomEdit 6.6 list construct passed as a parameter. There are
+     * various flavors of comments within the list to ensure the syntax works as expected.
+     */
+    public void testRemoveTagsListComments() {
+        new BasicAnonymizationTest(SYNTAX_MISCELLANEA, "removeTagsList.das")
+                .withData(LocalTestDicom.SAMPLE1_SMALL_SUBSET)
+                .withValidation(COMMON_VALIDATION)
+                .run();
+    }
+
+    /**
+     * Tests using the new removeTags function with a DicomEdit 6.6 list construct passed as a parameter. The list is
+     * split across multiple lines without comments or explicit escaping of the new lines to ensure that the syntax
+     * works as expected.
+     */
+    public void testRemoveTagsListUnescaped() {
+        new BasicAnonymizationTest(SYNTAX_MISCELLANEA, "removeTagsListUnescaped.das")
+                .withData(LocalTestDicom.SAMPLE1_SMALL_SUBSET)
+                .withValidation(COMMON_VALIDATION)
+                .run();
+    }
+
+    /**
      * Tests using the new resolveTags function with a DicomEdit 6.6 list construct passed in as a variable.
      */
     public void testRemoveTagsListVariable() {
