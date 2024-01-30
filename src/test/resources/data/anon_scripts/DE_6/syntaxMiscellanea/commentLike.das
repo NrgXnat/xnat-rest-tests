@@ -1,0 +1,5 @@
+version "6.1"
+(0008,0100) := "//not a comment"
+(0008,0102) := "https://stillnotacomment"
+(0008,0103) := "/NOT/A/COMMENT//"
+(0008,0104) := "http//nope"
