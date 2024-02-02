@@ -368,6 +368,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     @Test(groups = {SMOKE, IMPORTER})
     @Basic
     public void testSubjectChange() throws IOException {
+        mainAdminInterface().enablePostArchiveAnon();
         final Subject testSubject = new Subject(currentProject, "00001");
         final Subject destinationSubject = new Subject(currentProject, "subj_mod");
         final ImagingSession testSession = new MRSession(currentProject, testSubject, "case01");
@@ -402,6 +403,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     @Test(groups = {SMOKE, IMPORTER})
     @Basic
     public void testLabelChange() throws IOException {
+        mainAdminInterface().enablePostArchiveAnon();
         final Subject testSubject = new Subject(currentProject, "00001");
         final ImagingSession testSession = new MRSession(currentProject, testSubject, "case01");
 
@@ -441,6 +443,7 @@ public class TestAnonymizerLegacy extends BaseXnatRestTest {
     @Test(groups = {SMOKE, IMPORTER})
     @Basic
     public void testProjectChange() throws IOException {
+        mainAdminInterface().enablePostArchiveAnon();
         otherProject = new Project();
         final Subject otherSubject = new Subject(otherProject, "filler");
         new MRSession(otherProject, otherSubject, "filler_MR1").date(LocalDate.parse("2000-01-01"));

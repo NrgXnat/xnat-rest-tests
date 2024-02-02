@@ -86,6 +86,7 @@ public class TestAnonymizationWorkflowSpecific extends BaseAnonymizationTest {
 
         new GenericAnonymizationTest<>()
                 .withSetup(() -> {
+                    mainAdminInterface().enablePostArchiveAnon();
                     mainInterface().waitForAutoRun(session);
                     mainInterface().enableProjectAnonScript(anonProject);
                     mainInterface().relabelSubject(session.getSubject(), "NEWLABEL");
@@ -108,6 +109,7 @@ public class TestAnonymizationWorkflowSpecific extends BaseAnonymizationTest {
 
         new GenericAnonymizationTest<>()
                 .withSetup(() -> {
+                    mainAdminInterface().enablePostArchiveAnon();
                     mainInterface().waitForAutoRun(session);
                     mainInterface().enableProjectAnonScript(anonProject);
                     mainInterface().relabelSubjectAssessor(session, "NEWLABEL");
