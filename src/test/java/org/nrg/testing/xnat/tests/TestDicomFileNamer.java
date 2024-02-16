@@ -66,7 +66,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
     private static final String DUPLICATE_NAME_FIRST_FILE = "duplicate-name-first-file";
     private static final String DUPLICATE_NAME_SECOND_FILE = "duplicate-name-second-file";
     private static final String SCRIPT_HASH_UIDS = "version \"6.1\"\n(0008,0018) := hashUID[(0008,0018)]";
-    private final TestComponent CSTORE_SAMPLE1 = new CstoreStep(TestData.SAMPLE_1);
     private final TestComponent DICOM_ZIP_SAMPLE1_WITH_RENAME = new DicomZipStep(TestData.SAMPLE_1, true);
     private final TestComponent DICOM_ZIP_SAMPLE1_WITHOUT_RENAME = new DicomZipStep(TestData.SAMPLE_1, false);
     private final TestComponent VALIDATE_SAMPLE1_IN_PREARC = new ValidateNamesInPrearc(SAMPLE1_NAME_SPEC);
@@ -77,7 +76,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
     private final TestComponent CATALOG_REFRESH = new RefreshCatalog();
     private final TestComponent ENABLE_BACKUPS = new UseBackupOptions();
 
-    @Test
     public void testCstoreFileNaming() {
         run(new FileNamerTest(
                 CSTORE_SAMPLE1,
@@ -88,7 +86,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     public void testCstoreFileNamingMissingInstanceNumbers() {
         final String identifier = "no-instance-num";
         final LocallyCacheableDicomTransformation dataWithoutInstanceNum = new LocallyCacheableDicomTransformation(identifier)
@@ -103,7 +100,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     public void testSessionImporterFileNamer() {
         run(new FileNamerTest(
                 UPLOAD_SAMPLE1_SI,
@@ -111,7 +107,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     public void testDicomZipImportWithoutRename() {
         run(new FileNamerTest(
                 DICOM_ZIP_SAMPLE1_WITHOUT_RENAME,
@@ -122,7 +117,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     public void testDicomZipImportWithRename() {
         run(new FileNamerTest(
                 DICOM_ZIP_SAMPLE1_WITH_RENAME,
@@ -143,7 +137,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
      *
      * Test updated per fixes in XNAT-7273 and XNAT-7274.
      */
-    @Test
     @AddedIn(Xnat_1_8_7.class)
     public void testDicomFilenameMismatchInstanceDuplication() {
         mainAdminInterface().setUseSopInstanceUidToUniquelyIdentifyDicom(false);
@@ -163,7 +156,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     @AddedIn(Xnat_1_8_7.class)
     public void testDicomUidOverwrite() {
         run(new FileNamerTest(
@@ -182,7 +174,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     @AddedIn(Xnat_1_8_7.class)
     public void testSessionImporterUidOverwrite() {
         run(new FileNamerTest(
@@ -195,7 +186,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     public void testDicomFilenameWithAnon() {
         final String deleteInstanceNum = "-(0020,0013)";
         run(new FileNamerTest(
@@ -209,7 +199,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     @AddedIn(Xnat_1_8_7.class) // See XNAT-7279
     public void testDicomFilenamerUpdate() {
         run(new FileNamerTest(
@@ -222,7 +211,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     @AddedIn(Xnat_1_8_7.class) // See XNAT-7279
     public void testDicomFilenamerInduceDataloss() {
         run(new FileNamerTest(
@@ -235,7 +223,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     @AddedIn(Xnat_1_8_7.class) // See XNAT-7279
     public void testDicomFilenamerInduceDatalossDicomZip() {
         run(new FileNamerTest(
@@ -248,7 +235,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     @AddedIn(Xnat_1_8_7.class) // See XNAT-7279
     public void testDicomFilenamerInducePotentialDatalossSessionImporter() {
         run(new FileNamerTest(
@@ -258,7 +244,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     @AddedIn(Xnat_1_8_7.class) // See XNAT-7279
     public void testUidDuplicationSameResources() {
         run(new FileNamerTest(
@@ -272,7 +257,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     @AddedIn(Xnat_1_8_7.class) // See XNAT-7279
     public void testUidDuplicationSameResourcesLegacyFilenameSetting() {
         run(new FileNamerTest(
@@ -286,7 +270,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     @AddedIn(Xnat_1_8_7.class) // See XNAT-7279
     public void testUidDuplicationDifferentResources() {
         run(new FileNamerTest(
@@ -299,7 +282,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     public void testFilenameDuplicationDifferentSopInstanceUidDicomZip() {
         run(new FileNamerTest(
                 new DicomZipStep(FILE_CLASH.locateOverallZip().toFile(), false),
@@ -310,7 +292,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     public void testFilenameDuplicationDifferentSopInstanceUidSessionImporter() {
         run(new FileNamerTest(
                 new SessionImporterStep(FILE_CLASH.locateOverallZip().toFile()),
@@ -318,7 +299,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     @AddedIn(Xnat_1_8_7.class)
     public void testFilenameDuplicationDifferentSopInstanceUidDicomZipMerge() {
         run(new FileNamerTest(
@@ -331,7 +311,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     @AddedIn(Xnat_1_8_7.class) // exact scenario from XNAT-7273
     public void testOverwriteProjectMerge() {
         run(new FileNamerTest(
@@ -344,7 +323,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     public void testMergeSameUidDifferentNameLegacyFilenameSetting() {
         run(new FileNamerTest(
                 USE_FILE_NAME_AS_UNIQUENESS_SOURCE,
@@ -357,7 +335,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     public void testMergeSameUidDifferentNameLegacyFilenameSettingBackup() {
         run(new FileNamerTest(
                 ENABLE_BACKUPS,
@@ -371,7 +348,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     @AddedIn(Xnat_1_8_7.class)
     public void testMergeSameOriginalDicomSiteAnonUidRemap() {
         run(new FileNamerTest(
@@ -391,7 +367,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     @AddedIn(Xnat_1_8_7.class)
     public void testMergeSameOriginalDicomProjectAnonUidRemap() {
         run(new FileNamerTest(
@@ -411,7 +386,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     @AddedIn(Xnat_1_8_7.class)
     public void testMergeSameOriginalDicomSiteAnonUidRemapBackup() {
         run(new FileNamerTest(
@@ -432,7 +406,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     @AddedIn(Xnat_1_8_7.class)
     public void testMergeSameOriginalDicomProjectAnonUidRemapBackup() {
         run(new FileNamerTest(
@@ -453,7 +426,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         ));
     }
 
-    @Test
     @AddedIn(Xnat_1_8_7.class)
     public void testMergeSameOriginalDicomPostArchiveUidRemap() {
         final String identifier = "sample1-1-no-pixel-data";

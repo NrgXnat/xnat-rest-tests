@@ -1,5 +1,7 @@
 package org.nrg.testing;
 
+import org.nrg.testing.enums.TestData;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -7,7 +9,8 @@ public class UIDList {
 
     public static final List<String> uids = Arrays.asList(
             "1.3.6.1.4.1.9328.50.16.45348789841732529083649427972134988661",
-            "1.3.6.1.4.1.9328.50.16.83289845615508509195881391030429356728"
+            "1.3.6.1.4.1.9328.50.16.83289845615508509195881391030429356728",
+            TestData.SAMPLE_1.getStudyInstanceUid()
     );
 
 }

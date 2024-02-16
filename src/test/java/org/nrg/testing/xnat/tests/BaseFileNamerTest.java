@@ -11,6 +11,7 @@ import org.nrg.testing.xnat.components.TestComponent;
 import org.nrg.testing.xnat.rest.XnatRestDriver;
 import org.nrg.xnat.importer.importers.DicomZipRequest;
 import org.nrg.xnat.pogo.Project;
+import org.nrg.xnat.pogo.dicom.DicomScpReceiver;
 import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.prearchive.PrearchiveQuery;
 import org.nrg.xnat.prearchive.PrearchiveQueryScope;
@@ -35,6 +36,7 @@ public class BaseFileNamerTest extends BaseXnatRestTest {
     protected static final String FILE_NAMER_EXPECTED_VALUE = "${StudyInstanceUID}-${SeriesNumber}-${InstanceNumber}-${HashSOPClassUIDWithSOPInstanceUID}";
     protected final TestComponent REBUILD = new RebuildOnlySessionInPrearc();
     protected final TestComponent ARCHIVE = new ArchiveSession();
+    protected final TestComponent CSTORE_SAMPLE1 = new CstoreStep(TestData.SAMPLE_1);
 
     /*
         This checks the file namer set currently. If the namer doesn't match the default, we reset it. We could just always make this POST and skip the GET,
@@ -91,51 +93,80 @@ public class BaseFileNamerTest extends BaseXnatRestTest {
     }
 
     protected class CstoreStep implements TestComponent {
-        private final File data;
+        protected final File data;
+        protected DicomScpReceiver receiver;
 
-        CstoreStep(TestData data) {
+        public CstoreStep(TestData data) {
             this.data = data.toDirectory();
         }
 
-        CstoreStep(LocallyCacheableDicomTransformation dicomTransformation) {
+        public CstoreStep(LocallyCacheableDicomTransformation dicomTransformation) {
             dicomTransformation.build();
             data = dicomTransformation.locateBaseDirForTransformedData(dicomTransformation.getIdentifier()).toFile();
         }
 
+        public CstoreStep to(DicomScpReceiver receiver) {
+            this.receiver = receiver;
+            return this;
+        }
+
         @Override
         public void perform(BaseXnatRestTest xnatRestTest, Project project) {
-            new XnatCStore().data(data).sendDICOMToProject(project);
+            (receiver != null ? new XnatCStore(receiver) : new XnatCStore()).data(data).sendDICOMToProject(project);
+        }
+    }
+
+    protected class CstoreWithoutRoutingStep extends CstoreStep {
+        public CstoreWithoutRoutingStep(TestData data) {
+            super(data);
+        }
+
+        public CstoreWithoutRoutingStep(LocallyCacheableDicomTransformation dicomTransformation) {
+            super(dicomTransformation);
+        }
+
+        @Override
+        public void perform(BaseXnatRestTest xnatRestTest, Project project) {
+            new XnatCStore().data(data).sendDICOM();
         }
     }
 
     protected class DicomZipStep implements TestComponent {
         private final File data;
         private final boolean rename;
+        private final boolean archive;
 
-        DicomZipStep(TestData data, boolean rename) {
+        public DicomZipStep(TestData data, boolean rename) {
             this(data.toFile(), rename);
         }
 
-        DicomZipStep(File zip, boolean rename) {
+        public DicomZipStep(File zip, boolean rename) {
+            this(zip, rename, false);
+        }
+
+        public DicomZipStep(File zip, boolean rename, boolean archive) {
             data = zip;
             this.rename = rename;
+            this.archive = archive;
         }
 
         @Override
         public void perform(BaseXnatRestTest xnatRestTest, Project project) {
-            mainInterface().callImporter(
-                    new DicomZipRequest()
-                            .file(data)
-                            .project(project)
-                            .rename(rename)
-            );
+            final DicomZipRequest request = new DicomZipRequest()
+                    .file(data)
+                    .project(project)
+                    .rename(rename);
+            if (archive) {
+                request.destArchive();
+            }
+            mainInterface().callImporter(request);
         }
     }
 
     protected abstract class ValidateNames implements TestComponent {
         private final String expectedFileList;
 
-        ValidateNames(String expectedFileList) {
+        public ValidateNames(String expectedFileList) {
             this.expectedFileList = expectedFileList;
         }
 
@@ -147,27 +178,27 @@ public class BaseFileNamerTest extends BaseXnatRestTest {
             );
         }
 
-        abstract List<Scan> produceActualScans(Project project);
+        abstract public List<Scan> produceActualScans(Project project);
     }
 
     protected class ValidateNamesInPrearc extends ValidateNames {
-        ValidateNamesInPrearc(String expectedFileList) {
+        public ValidateNamesInPrearc(String expectedFileList) {
             super(expectedFileList);
         }
 
         @Override
-        List<Scan> produceActualScans(Project project) {
+        public List<Scan> produceActualScans(Project project) {
             return mainInterface().readScansForPrearchiveSession(mainInterface().expectSinglePrearchiveResultForProject(project));
         }
     }
 
     protected class ValidateNamesInArchive extends ValidateNames {
-        ValidateNamesInArchive(String expectedFileList) {
+        public ValidateNamesInArchive(String expectedFileList) {
             super(expectedFileList);
         }
 
         @Override
-        List<Scan> produceActualScans(Project project) {
+        public List<Scan> produceActualScans(Project project) {
             return mainInterface().readProject(project.getId()).getSubjects().get(0).getSessions().get(0).getScans();
         }
     }

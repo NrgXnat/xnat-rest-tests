@@ -37,7 +37,6 @@ public class BaseAnonymizationTest extends BaseXnatRestTest {
 
     protected Project anonProject = new Project();
     protected final File anonData = TestData.ANON_2.toFile();
-    protected final List<DicomScpReceiver> createdReceivers = new ArrayList<>();
     protected boolean projectCreated = false;
     protected static final String RETAIN_PRIVATE_TAGS = "retainPrivateTags";
     protected static final String SYNTAX_MISCELLANEA = "syntaxMiscellanea";
@@ -67,16 +66,6 @@ public class BaseAnonymizationTest extends BaseXnatRestTest {
     protected void resetAnon() {
         mainAdminInterface().enableSiteAnonScript();
         mainAdminInterface().setSiteAnonScript(restDriver.getDefaultXnatAnonScript());
-        for (DicomScpReceiver dicomScpReceiver : createdReceivers) {
-            mainAdminInterface().deleteDicomScpReceiver(dicomScpReceiver);
-        }
-    }
-
-    protected DicomScpReceiver newDefaultReceiver() {
-        return new DicomScpReceiver()
-                .host(Settings.DICOM_HOST)
-                .aeTitle(RandomHelper.randomID(10))
-                .port(Settings.DICOM_PORT);
     }
 
     protected class BasicAnonymizationTest extends GenericAnonymizationTest<BasicAnonymizationTest> {
@@ -184,7 +173,6 @@ public class BaseAnonymizationTest extends BaseXnatRestTest {
         Runnable setup() {
             return () -> {
                 mainAdminInterface().createDicomScpReceiver(scpReceiverSpecification);
-                createdReceivers.add(scpReceiverSpecification);
                 final AnonScript script = XnatObjectUtils.anonScriptFromFile(dicomEditVersion, scriptName);
                 mainAdminInterface().enableSiteAnonScript();
                 mainAdminInterface().setSiteAnonScript(script);
@@ -199,6 +187,7 @@ public class BaseAnonymizationTest extends BaseXnatRestTest {
         private List<ScriptValidation> enabledScripts;
         private List<ScriptValidation> disabledScripts;
         protected Supplier<ImagingSession> uploadStep = defaultUploadStep();
+        protected Consumer<ImagingSession> optionalPostArchiveStep = null;
 
         X withSetup(Runnable setupStep) {
             this.setupStep = setupStep;
@@ -217,6 +206,11 @@ public class BaseAnonymizationTest extends BaseXnatRestTest {
 
         X withDisabledScripts(List<ScriptValidation> disabledScripts) {
             this.disabledScripts = disabledScripts;
+            return (X) this;
+        }
+
+        X withPostArchiveValidation(Consumer<ImagingSession> optionalPostArchiveStep) {
+            this.optionalPostArchiveStep = optionalPostArchiveStep;
             return (X) this;
         }
 
@@ -248,6 +242,9 @@ public class BaseAnonymizationTest extends BaseXnatRestTest {
             setupStep.run();
             final ImagingSession session = uploadStep.get();
             validate(session, enabledScripts, disabledScripts);
+            if (optionalPostArchiveStep != null) {
+                optionalPostArchiveStep.accept(session);
+            }
             return session;
         }
     }
