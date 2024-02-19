@@ -122,6 +122,8 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
 
     @BeforeMethod
     public void setupProjectNeeds() {
+        mainAdminInterface().assignUserToRoles(mainUser, "Dqr");
+
         project = new Project();
         mainInterface().createProject(project);
 
