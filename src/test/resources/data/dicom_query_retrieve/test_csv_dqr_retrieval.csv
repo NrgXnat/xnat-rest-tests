@@ -1,0 +1,4 @@
+Accession Number,Study Date,Patient ID,DOB,Modality,Study Instance UID,Subject,Session,Relabel Accession Number,Relabel Patient ID,Relabel Study ID,Relabel Study Date,Relabel Patient Birth Date
+585370152,,,,,,subject_relabel_one,,123456789,,,,
+,19971015,669376156,,MR,,,,,987654321,,20240101,
+,,,19561002,,2.25.39837004826281297885438269249933390833,,,,,non_session_label_id,,20230101
