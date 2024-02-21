@@ -1,6 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
 import lombok.extern.slf4j.Slf4j;
+import org.nrg.testing.util.Version;
 import org.nrg.testing.xnat.BaseXnatTest;
 import org.nrg.testing.xnat.containers.ContainerTestUtils;
 import org.nrg.testing.TimeUtils;
@@ -56,13 +57,7 @@ public class TestContainerService extends BaseXnatRestTest {
     @BeforeClass
     private void setupCommands() {
         mainAdminInterface().deleteAllCommands();
-        final String csVersion = installedPlugins()
-                .stream()
-                .filter(plugin -> plugin.getId().equals(PluginRegistry.CS_PLUGIN_ID))
-                .findFirst()
-                .orElseThrow(RuntimeException::new)
-                .getVersion();
-        if (csVersion.compareTo("3.2") < 0) {
+        if (getPluginVersion(PluginRegistry.CS_PLUGIN_ID).lessThan(new Version("3.2"))) {
             ContainerTestUtils.setServerBackend(this, Settings.CS_PREFERRED_BACKEND);
             mainAdminInterface().pullImage(ContainerTestUtils.DEBUG_IMG, false);
         }
