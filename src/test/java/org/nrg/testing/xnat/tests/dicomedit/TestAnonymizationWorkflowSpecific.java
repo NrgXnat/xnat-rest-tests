@@ -149,14 +149,18 @@ public class TestAnonymizationWorkflowSpecific extends BaseAnonymizationTest {
     }
 
     private class SessionMoveProjectAnonTest extends PostArchiveAnonTest {
+        private AnonScript projectScript;
+
         private SessionMoveProjectAnonTest(AnonScript projectScript, AnonScript siteScript, boolean enablePostArchiveAnon) {
             super(projectScript, siteScript, enablePostArchiveAnon);
+            this.projectScript = projectScript;
         }
 
         @Override
         protected void postArchiveAction(ImagingSession session) {
             final Project otherProject = registerTempProject();
             mainInterface().createProject(otherProject);
+            mainInterface().setProjectAnonScript(otherProject, projectScript);
             mainQueryBase()
                     .queryParam("primary", true)
                     .put(CommonStringUtils.formatUrl(mainInterface().subjectAssessorUrl(session), "projects", otherProject.getId()))
