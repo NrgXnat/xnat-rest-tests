@@ -18,7 +18,7 @@
         xmin = 0,
         ymin = 0,
         title = {Repeated 1000 subject listing access},
-        legend entries={\switchocg{1.7.6}{1.7.6},\switchocg{1.8.4}{1.8.4},\switchocg{1.8.5}{1.8.5},\switchocg{1.8.5.2}{1.8.5.2},\switchocg{1.8.6.1}{1.8.6.1},\switchocg{1.8.7}{1.8.7},\switchocg{1.8.10-RC}{1.8.10-RC}}]
+        legend entries={\switchocg{1.7.6}{1.7.6},\switchocg{1.8.4}{1.8.4},\switchocg{1.8.5}{1.8.5},\switchocg{1.8.5.2}{1.8.5.2},\switchocg{1.8.6.1}{1.8.6.1},\switchocg{1.8.7}{1.8.7},\switchocg{1.8.10-RC}{1.8.10-RC},\switchocg{1.8.9.2}{1.8.9.2}}]
         \begin{scope}[ocg = {ref = 1.7.6, status = visible}]
             \addplot[
                 only marks,
@@ -74,6 +74,14 @@
                 mark = triangle*,
                 mark size = 1.5 pt
             ]coordinates {(1,0.668)(2,1.108)(3,1.413)(4,1.734)(5,2.004)};
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.9.2, status = visible}]
+            \addplot[
+                only marks,
+                color = lime!70!black,
+                mark = triangle*,
+                mark size = 1.5 pt
+            ]coordinates {(1,0.863)(2,1.285)(3,1.577)(4,1.908)(5,2.202)};
         \end{scope}
     \end{axis}
 \end{tikzpicture}
