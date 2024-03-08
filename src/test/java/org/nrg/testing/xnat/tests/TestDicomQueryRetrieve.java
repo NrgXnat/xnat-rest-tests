@@ -191,8 +191,8 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
 
         assertTrue(checkIfImportsInHistory(listOfImportIds));
 
-        assertTrue(checkAllStudiesArePresent(listOfImports.stream().map(QueuedPacsRequest::getStudyId)
-                .collect(Collectors.toList())));
+        checkAllStudiesArePresent(listOfImports.stream().map(QueuedPacsRequest::getStudyId)
+                .collect(Collectors.toList()));
     }
 
     @Test
@@ -212,8 +212,8 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
 
         assertTrue(checkIfImportsInHistory(listOfImportIds));
 
-        assertTrue(checkAllStudiesArePresent(listOfImports.stream().map(QueuedPacsRequest::getStudyId)
-                .collect(Collectors.toList())));
+        checkAllStudiesArePresent(listOfImports.stream().map(QueuedPacsRequest::getStudyId)
+                .collect(Collectors.toList()));
     }
 
     @Test
@@ -239,7 +239,7 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
 
         assertTrue(checkIfImportsInHistory(listOfImportIds));
 
-        assertTrue(checkAllStudiesArePresent(namesOfSessionsToBeImported));
+        checkAllStudiesArePresent(namesOfSessionsToBeImported);
     }
 
     @Test
@@ -336,11 +336,15 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
                 .allMatch("RECEIVED"::equals);
     }
 
-    private boolean checkAllStudiesArePresent(List<String> allImportStudyLabels) {
-        Project checkImportProject = mainInterface().readProject(project.getId());
-        Set<String> experimentLabels = checkImportProject.getSubjects().stream().map(Subject::getExperiments)
-                .flatMap(Collection::stream).map(Experiment::getLabel).collect(Collectors.toSet());
-        return experimentLabels.containsAll(allImportStudyLabels);
+    private void checkAllStudiesArePresent(List<String> allImportStudyLabels) {
+        await().atMost(10, TimeUnit.SECONDS)
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .until(() -> {
+                    Project checkImportProject = mainInterface().readProject(project.getId());
+                    Set<String> experimentLabels = checkImportProject.getSubjects().stream().map(Subject::getExperiments)
+                            .flatMap(Collection::stream).map(Experiment::getLabel).collect(Collectors.toSet());
+                    return experimentLabels.containsAll(allImportStudyLabels);
+                });
     }
 
     private boolean checkVerboseRelabelMapChangesArePresent(Map<String, Map<String, String>> relabelMaps) {
