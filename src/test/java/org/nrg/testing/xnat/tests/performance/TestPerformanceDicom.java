@@ -95,7 +95,8 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                         new ErrorProneAggregatableAction(nameCstore)
                                 .withSetup(dicomTransformation)
                                 .asUser(mainAdminUser)
-                                .performanceTestAction(cstoreAndAutoarchiveAction),
+                                .performanceTestAction(cstoreAndAutoarchiveAction)
+                                .title("CSTORE and Autoarchive of 1000 single instance studies"),
                         new RepeatedMonitorableAction("subject-default-stored-search-1000-subjects")
                                 .title("Repeated 1000 subject listing access")
                                 .actionDescription("Call count")
@@ -145,6 +146,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(archiveActionForSingleSession(project)),
                         new SimpleTimedAction("anonymize-via-relabel-de4")
+                                .withSetup(() -> mainAdminInterface().enablePostArchiveAnon())
                                 .title(String.format("Relabel and DicomEdit4 anonymization of study containing %d MR images", totalNumInstances))
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(anonActionViaRelabel(project, DicomEditVersion.DE_4, SIMPLISTIC_ANON_SCRIPT)),
