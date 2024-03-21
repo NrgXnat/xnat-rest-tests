@@ -1,5 +1,6 @@
 package org.nrg.testing.xnat.tests.performance;
 
+import org.nrg.testing.annotations.PerformanceTestPlugin;
 import org.nrg.testing.xnat.performance.XnatPerformanceTests;
 import org.nrg.testing.xnat.performance.actions.*;
 import org.nrg.testing.xnat.performance.validator.PolynomialRegressionValidator;
@@ -25,6 +26,7 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
     private static final int NUM_ACCOUNTS_CREATING_PROJECTS = 750;
     private static final int NUM_PUBLIC_PROJECTS = 500;
     private static final int NUM_PROJECTS_TO_MAKE_PUBLIC = 40;
+    private static final String EXTRA_DATA_TYPE_ID = "create-projects-admin-500-extra-datatypes";
 
     @Test
     public void testCreateProjectsAsAdmin() {
@@ -32,6 +34,22 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
                 .tests(
                         new RepeatedMonitorableAction("create-projects-admin")
                                 .title("Cumulative time for admin creating projects")
+                                .actionDescription("Number of projects created")
+                                .asUser(mainAdminUser)
+                                .overallIterationCount(NUM_ADMIN_PROJECTS)
+                                .performanceTestAction(CREATE_PROJECT_ACTION)
+                                .validateUsing(PolynomialRegressionValidator.STRICT_QUADRATIC)
+                                .compareTo(EXTRA_DATA_TYPE_ID, "with 500 additional datatypes added", "500-types")
+                ).run();
+    }
+
+    @Test
+    @PerformanceTestPlugin("datatype-proliferation-1.0.0.jar")
+    public void testCreateProjectsExtraDatatypes() {
+        performanceScenario()
+                .tests(
+                        new RepeatedMonitorableAction(EXTRA_DATA_TYPE_ID)
+                                .title("Cumulative time for admin creating projects with 500 extra data types added")
                                 .actionDescription("Number of projects created")
                                 .asUser(mainAdminUser)
                                 .overallIterationCount(NUM_ADMIN_PROJECTS)
