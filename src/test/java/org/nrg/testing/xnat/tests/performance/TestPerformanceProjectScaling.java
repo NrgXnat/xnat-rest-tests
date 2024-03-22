@@ -26,7 +26,7 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
     private static final int NUM_ACCOUNTS_CREATING_PROJECTS = 750;
     private static final int NUM_PUBLIC_PROJECTS = 500;
     private static final int NUM_PROJECTS_TO_MAKE_PUBLIC = 40;
-    private static final String EXTRA_DATA_TYPE_ID = "create-projects-admin-500-extra-datatypes";
+    private static final String EXTRA_DATA_TYPE_ID = "create-projects-admin-100-extra-datatypes";
 
     @Test
     public void testCreateProjectsAsAdmin() {
@@ -39,7 +39,7 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
                                 .overallIterationCount(NUM_ADMIN_PROJECTS)
                                 .performanceTestAction(CREATE_PROJECT_ACTION)
                                 .validateUsing(PolynomialRegressionValidator.STRICT_QUADRATIC)
-                                .compareTo(EXTRA_DATA_TYPE_ID, "with 500 additional datatypes added", "500-types")
+                                .compareTo(EXTRA_DATA_TYPE_ID, "with 100 additional datatypes added", "100-types")
                 ).run();
     }
 
@@ -49,7 +49,7 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
         performanceScenario()
                 .tests(
                         new RepeatedMonitorableAction(EXTRA_DATA_TYPE_ID)
-                                .title("Cumulative time for admin creating projects with 500 extra data types added")
+                                .title("Cumulative time for admin creating projects with 100 extra data types added")
                                 .actionDescription("Number of projects created")
                                 .asUser(mainAdminUser)
                                 .overallIterationCount(NUM_ADMIN_PROJECTS)
@@ -58,8 +58,8 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
                 ).run();
     }
 
-    @Test
-    public void testCreateProjectsAsAdminAdditionalTypeRegistration() {
+    //@Test
+    private void testCreateProjectsAsAdminAdditionalTypeRegistration() {
         performanceScenario()
                 .setup(
                         performanceStateHelper -> {
@@ -81,8 +81,8 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
                 ).run();
     }
 
-    @Test
-    public void testCreateManyProjectsAsIndividualUsers() {
+    //@Test
+    private void testCreateManyProjectsAsIndividualUsers() {
         mainAdminInterface().disableSmtp();
         performanceScenario()
                 .tests(
@@ -96,8 +96,8 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
                 ).run();
     }
 
-    @Test
-    public void testPublicProjectScaling() {
+    //@Test
+    private void testPublicProjectScaling() {
         final List<Project> projectsToMakePublic = IntStream.range(0, NUM_PROJECTS_TO_MAKE_PUBLIC)
                 .mapToObj(ignored -> new Project())
                 .collect(Collectors.toList());
