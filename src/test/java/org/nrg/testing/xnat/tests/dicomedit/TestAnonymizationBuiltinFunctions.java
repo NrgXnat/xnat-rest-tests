@@ -6,12 +6,16 @@ import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.RootDicomObject;
 import org.nrg.testing.enums.TestData;
+import org.nrg.testing.xnat.XnatObjectUtils;
+import org.nrg.xnat.enums.DicomEditVersion;
+import org.nrg.xnat.pogo.AnonScript;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.versions.Xnat_1_8_1;
 
 import java.util.function.Consumer;
 
 import static org.nrg.xnat.enums.DicomEditVersion.DE_4;
+import static org.nrg.xnat.enums.DicomEditVersion.DE_6;
 
 @TestRequires(admin = true, data = TestData.ANON_2)
 public class TestAnonymizationBuiltinFunctions extends BaseAnonymizationTest {
@@ -20,8 +24,6 @@ public class TestAnonymizationBuiltinFunctions extends BaseAnonymizationTest {
             root.putValueEqualCheck("(0010,1000)", "mr_PDW_TSE_01204567_102030");
     private static final Consumer<RootDicomObject> URL_ENCODE_VALIDATOR = (root) ->
             root.putValueEqualCheck("(0010,1000)", "0%3D1");
-    private static final Consumer<RootDicomObject> GET_URL_VALIDATOR = (root) ->
-            root.putValueEqualCheck("(0010,1000)", "text_from_URL");
     private static final Consumer<RootDicomObject> MATCH_VALIDATOR = (root) ->
             root.putValueEqualCheck("(0010,1000)", "b");
 
@@ -53,16 +55,11 @@ public class TestAnonymizationBuiltinFunctions extends BaseAnonymizationTest {
     }
 
     public void testGetURLDE4() {
-        new BasicAnonymizationTest("getURL.das")
-                .withDicomEditVersion(DE_4)
-                .withValidation(GET_URL_VALIDATOR)
-                .run();
+        new GetUrlTest(DE_4).run();
     }
 
     public void testGetURLDE6() {
-        new BasicAnonymizationTest("getURL.das")
-                .withValidation(GET_URL_VALIDATOR)
-                .run();
+        new GetUrlTest(DE_6).run();
     }
 
     public void testMatchDE4() {
@@ -140,6 +137,24 @@ public class TestAnonymizationBuiltinFunctions extends BaseAnonymizationTest {
                         privateSeqItem0.putNonexistenceChecks("(2005,10a3)");
                     });
                 }).run();
+    }
+
+    private class GetUrlTest extends BasicAnonymizationTest {
+        private GetUrlTest(DicomEditVersion dicomEditVersion) {
+            super();
+            withSetup(() -> {
+                final AnonScript script = XnatObjectUtils.anonScriptFromFile(dicomEditVersion, "getURL.das");
+                script.setContents(script.getContents().replace(
+                        "%URL%",
+                        formatXapiUrl("siteConfig", "siteId")
+                ));
+                mainInterface().setProjectAnonScript(anonProject, script);
+                mainAdminInterface().disableSiteAnonScript();
+            });
+            withValidation((root) ->
+                    root.putValueEqualCheck("(0010,1000)", mainAdminInterface().readSiteConfigPreference("siteId"))
+            );
+        }
     }
 
 }
