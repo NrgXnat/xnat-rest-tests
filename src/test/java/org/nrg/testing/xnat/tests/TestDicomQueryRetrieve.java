@@ -2,14 +2,19 @@ package org.nrg.testing.xnat.tests;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Streams;
+import lombok.Builder;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.RandomStringUtils;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.Attributes;
 import org.nrg.testing.DicomUtils;
 import org.nrg.testing.annotations.PluginRequirement;
 import org.nrg.testing.annotations.TestRequires;
+import org.nrg.testing.util.Version;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
+import org.nrg.xnat.pogo.PluginRegistry;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.dicom.DicomScpReceiver;
@@ -21,6 +26,8 @@ import org.nrg.xnat.pogo.dqr.DqrProjectSettings;
 import org.nrg.xnat.pogo.dqr.DqrSearchResponse;
 import org.nrg.xnat.pogo.dqr.DqrSeriesSearchResponse;
 import org.nrg.xnat.pogo.dqr.DqrSeriesRepresentation;
+import org.nrg.xnat.pogo.dqr.DqrSettings;
+import org.nrg.xnat.pogo.dqr.DqrSettings1x;
 import org.nrg.xnat.pogo.dqr.DqrStudyRepresentation;
 import org.nrg.xnat.pogo.dqr.DqrPatientRepresentation;
 import org.nrg.xnat.pogo.dqr.ExecutedPacsRequest;
@@ -35,6 +42,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -53,20 +61,30 @@ import java.util.stream.Stream;
 
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
-import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertTrue;
 
+@Slf4j
 @TestRequires(specificPluginRequirements = {@PluginRequirement(pluginId = "dicom-query-retrieve")})
 public class TestDicomQueryRetrieve extends BaseXnatRestTest {
 
+    public static final String DQR_OBJECT_IDENTIFIER = "dqrObjectIdentifier";
+    public static final String DQR_USER_ROLE = "Dqr";
+    public static final Version DQR_2_0 = new Version("2.0");
+
+    private static final String AVAILABILITY_CHECK_FREQUENCY = "5 seconds";
+    private static final int MAX_PACS_REQUEST_ATTEMPTS = 1;
+    private static final String DEFAULT_CALLING_AE_TITLE = "XNAT";
+
     private Project project;
 
-    private final String PACS_AE_TITLE = Settings.DQR_PACS_AE_TITLE;
-    private final String PACS_IP_ADDRESS = Settings.DQR_PACS_IP_ADDRESS;
-    private final Integer PACS_PORT = Settings.DQR_PACS_PORT;
+    private final String PACS_DIMSE_AE_TITLE = Settings.DQR_PACS_DIMSE_AE_TITLE;
+    private final String PACS_DIMSE_HOST = Settings.DQR_PACS_DIMSE_HOST;
+    private final Integer PACS_DIMSE_PORT = Settings.DQR_PACS_DIMSE_PORT;
+    private final String PACS_DICOMWEB_AE_TITLE = Settings.DQR_PACS_DICOMWEB_AE_TITLE;
+    private final String PACS_DICOMWEB_ROOT_URL = Settings.DQR_PACS_DICOMWEB_ROOT_URL;
     private final String SCP_RECEIVER_AE_TITLE = Settings.DQR_SCP_RECEIVER_AE_TITLE;
     private final Integer SCP_RECEIVER_PORT = Settings.DQR_SCP_RECEIVER_PORT;
-    private Integer PACS_ID;
+
     private final String PATIENT_NAME = "Weaver, Frank";
     private final String BASIC_QUERY_STUDY_INSTANCE_UID = "2.25.37375090832796046021266229626258542660";
     private final List<String> UUIDS_FOR_MULTIPLE_STUDY_TEST = Arrays.asList("2.25.283693626620512335671062727446518124353",
@@ -86,55 +104,152 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
             {"Relabel Patient Birth Date", Tag.PatientBirthDate}})
             .collect(Collectors.toMap(entry -> (String) entry[0], entry -> (Integer) entry[1]));
 
+    @Data
+    @Builder
+    public static final class PacsTestData {
+        Integer pacsId;
+        String receiverAeTitle;
+        Integer receiverPort;
+    }
+    private static final String PACS_DATA_PROVIDER = "pacsDataProvider";
+    private final List<PacsTestData> data = new ArrayList<>();
+    private final List<PacsConnection> pacsesToDelete = new ArrayList<>();
+    @DataProvider(name = PACS_DATA_PROVIDER)
+    public Object[][] pacsDataProvider() {
+        return data.stream().map(pacsTestData -> new Object[] {pacsTestData}).toArray(Object[][]::new);
+    }
+
     @BeforeClass
     public void setupDQRNeeds() {
-        if (PACS_AE_TITLE == null || PACS_IP_ADDRESS == null ||SCP_RECEIVER_AE_TITLE == null) {
-            throw new SkipException("Skipping DQR tests due to lack of input configuration elements.");
+        final Version dqrVersion = getPluginVersion(PluginRegistry.DQR_ID);
+        final DqrSettings dqrSettings = (dqrVersion.lessThan(DQR_2_0) ? new DqrSettings1x() : new DqrSettings())
+                .pacsAvailabilityCheckFrequency(AVAILABILITY_CHECK_FREQUENCY)
+                .dqrMaxPacsRequestAttempts(MAX_PACS_REQUEST_ATTEMPTS)
+                .dqrCallingAe(SCP_RECEIVER_AE_TITLE != null ? SCP_RECEIVER_AE_TITLE : DEFAULT_CALLING_AE_TITLE);
+        mainAdminInterface().setDqrSettings(dqrSettings);
+
+        mainAdminInterface().assignUserToRoles(mainUser, DQR_USER_ROLE);
+
+        final List<PacsConnection> pacsConnections = mainAdminInterface().readAllPacsConnections();
+
+        if (PACS_DIMSE_AE_TITLE != null && PACS_DIMSE_HOST != null && SCP_RECEIVER_AE_TITLE != null) {
+            // Create or update DIMSE PACS connection
+            PacsConnection dimsePacs = null;
+            for (PacsConnection pacs : pacsConnections) {
+                if (PACS_DIMSE_AE_TITLE.equals(pacs.getAeTitle()) && PACS_DIMSE_HOST.equals(pacs.getHost())
+                    && !pacs.isDicomWebEnabled()) {
+                    dimsePacs = pacs;
+                    log.debug("Using existing DIMSE PACS {}", dimsePacs);
+                    break;
+                }
+            }
+            if (dimsePacs == null) {
+                // Create a new PACS
+                dimsePacs = new PacsConnection()
+                        .aeTitle(PACS_DIMSE_AE_TITLE)
+                        .host(PACS_DIMSE_HOST)
+                        .queryRetrievePort(PACS_DIMSE_PORT)
+                        .label(PACS_DIMSE_AE_TITLE + RandomStringUtils.randomAlphabetic(5))
+                        .queryable(true);
+                final int dimsePacsId = mainAdminInterface().registerPacs(dimsePacs);
+                dimsePacs.setId(dimsePacsId);
+                log.debug("Created new DIMSE PACS {}", dimsePacs);
+
+                // We can delete it at the end of the test
+                pacsesToDelete.add(dimsePacs);
+            }
+
+            addPacsAvailability(dimsePacs.getId());
+
+            final DicomScpReceiver receiver = new DicomScpReceiver()
+                    .aeTitle(SCP_RECEIVER_AE_TITLE)
+                    .port(SCP_RECEIVER_PORT)
+                    .enabled(true)
+                    .customProcessing(true)
+                    .directArchive(false)
+                    .identifier(DQR_OBJECT_IDENTIFIER)
+                    .anonymizationEnabled(true)
+                    .whitelistEnabled(false);
+            mainAdminInterface().createOrUpdateDicomScpReceiver(receiver);
+
+            data.add(PacsTestData.builder()
+                    .pacsId(dimsePacs.getId())
+                    .receiverAeTitle(SCP_RECEIVER_AE_TITLE)
+                    .receiverPort(SCP_RECEIVER_PORT)
+                    .build());
         }
-        String aeTitle = PACS_AE_TITLE +RandomStringUtils.randomAlphabetic(5);
-        PacsConnection pacsConnection = new PacsConnection();
-        pacsConnection.aeTitle(aeTitle);
-        pacsConnection.setHost(PACS_IP_ADDRESS);
-        pacsConnection.setQueryRetrievePort(PACS_PORT);
-        pacsConnection.setLabel(aeTitle);
-        pacsConnection.queryable(true);
-        pacsConnection.setDefaultQrAe(true);
-        PACS_ID = mainAdminInterface().registerPacs(pacsConnection);
 
-        DicomScpReceiver receiver = new DicomScpReceiver()
-                .aeTitle(SCP_RECEIVER_AE_TITLE)
-                .port(SCP_RECEIVER_PORT)
-                .enabled(true)
-                .customProcessing(true)
-                .directArchive(false)
-                .identifier("dqrObjectIdentifier")
-                .anonymizationEnabled(true)
-                .whitelistEnabled(false);
-        mainAdminInterface().createOrUpdateDicomScpReceiver(receiver);
+        if (getPluginVersion(PluginRegistry.DQR_ID).greaterThanOrEqualTo(DQR_2_0) &&
+                PACS_DICOMWEB_AE_TITLE != null && PACS_DICOMWEB_ROOT_URL != null) {
+            PacsConnection dicomwebPacs = null;
+            for (PacsConnection pacs : pacsConnections) {
+                if (pacs.isDicomWebEnabled() &&
+                        PACS_DICOMWEB_AE_TITLE.equals(pacs.getAeTitle()) &&
+                        PACS_DICOMWEB_ROOT_URL.equals(pacs.getDicomWebRootUrl())) {
+                    dicomwebPacs = pacs;
+                    log.debug("Found existing DICOMweb PACS {}", dicomwebPacs);
+                    break;
+                }
+            }
+            if (dicomwebPacs == null) {
+                // Create a new PACS
+                dicomwebPacs = new PacsConnection()
+                        .aeTitle(PACS_DICOMWEB_AE_TITLE)
+                        .label(PACS_DICOMWEB_AE_TITLE + RandomStringUtils.randomAlphabetic(5))
+                        .queryable(true)
+                        .dicomWebEnabled(true)
+                        .dicomWebRootUrl(PACS_DICOMWEB_ROOT_URL)
+                        .dicomObjectIdentifier(DQR_OBJECT_IDENTIFIER);
+                final int dicomwebPacsId = mainAdminInterface().registerPacs(dicomwebPacs);
+                dicomwebPacs.setId(dicomwebPacsId);
+                log.debug("Created new DICOMweb PACS {}", dicomwebPacs);
 
-        //providing one thread of availability to PACS for all days of the week
-        for (DayOfWeek day : DayOfWeek.values()) {
-            PacsAvailability pacsAvailability = PacsAvailability.withDefaultOptions(day, PACS_ID);
-            mainAdminInterface().configurePacsAvailability(pacsAvailability);
+                // We can delete it at the end of the test
+                pacsesToDelete.add(dicomwebPacs);
+            }
+
+            addPacsAvailability(dicomwebPacs.getId());
+
+            data.add(PacsTestData.builder()
+                    .pacsId(dicomwebPacs.getId())
+                    .receiverAeTitle(PACS_DICOMWEB_AE_TITLE)
+                    .build());
         }
 
+        if (data.isEmpty()) {
+            throw new SkipException("No PACS test parameters defined");
+        }
+    }
+
+    private void addPacsAvailability(Integer pacsId) {
+        // Remove all existing availability
+        mainAdminInterface().readPacsAvailability(pacsId).values().stream()
+                .flatMap(List::stream)
+                .forEach(availability -> mainAdminInterface().deletePacsAvailability(pacsId, availability.getId()));
+        // create one thread of availability to PACS for all days of the week
+        Arrays.stream(DayOfWeek.values()).forEach(
+                day -> mainAdminInterface().configurePacsAvailability(PacsAvailability.withDefaultOptions(day, pacsId))
+        );
     }
 
     @BeforeMethod
-    public void setupProjectNeeds() {
-        mainAdminInterface().assignUserToRoles(mainUser, "Dqr");
+    public void setupProjectNeeds(final Object[] testArgs) {
+        final PacsTestData testData = (PacsTestData) testArgs[0];
+        if (!mainInterface().pingPacs(testData.getPacsId()).isSuccessful()) {
+            throw new SkipException("Could not ping PACS " + testData.getPacsId());
+        }
 
         project = new Project();
         mainInterface().createProject(project);
-
-        assertTrue(mainInterface().pingPacs(PACS_ID).isSuccessful());
 
         mainAdminInterface().enableDqrForProject(project);
     }
 
     @AfterClass
     public void teardownDQRNeeds() {
-        mainAdminInterface().deletePacsConnection(PACS_ID);
+        pacsesToDelete.forEach(
+                pacs -> mainAdminInterface().deletePacsConnection(pacs.getId())
+        );
     }
 
     @AfterMethod
@@ -144,28 +259,28 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
         restDriver.deleteProjectSilently(mainAdminUser, project);
     }
 
-    @Test
-    public void testProjectSettings() {
+    @Test(dataProvider = PACS_DATA_PROVIDER)
+    public void testProjectSettings(final PacsTestData testData) {
         assertTrue(mainAdminInterface().readDqrProjectSettings().stream().map(DqrProjectSettings::getProjectId)
                 .collect(Collectors.toList()).contains(project.getId()));
         assertTrue(mainAdminInterface().readDqrForProject(project).getDqrEnabled());
         assertTrue(mainAdminInterface().readDqrEnabledStatusOnProject(project));
     }
 
-    @Test
-    public void testBasicQuery() {
+    @Test(dataProvider = PACS_DATA_PROVIDER)
+    public void testBasicQuery(final PacsTestData testData) {
         PacsSearchCriteria searchCriteria = new PacsSearchCriteria();
-        searchCriteria.pacsId(PACS_ID);
+        searchCriteria.pacsId(testData.getPacsId());
         searchCriteria.patientName(PATIENT_NAME);
         List<DqrStudyRepresentation> listOfStudies = mainInterface().studyCFind(searchCriteria);
         assertTrue(listOfStudies.stream().map(DqrStudyRepresentation::getPatient).map(DqrPatientRepresentation::getName)
                 .allMatch(PATIENT_NAME::equals));
     }
 
-    @Test
-    public void testDateRangeQuery() {
+    @Test(dataProvider = PACS_DATA_PROVIDER)
+    public void testDateRangeQuery(final PacsTestData testData) {
         PacsSearchCriteria searchCriteria = new PacsSearchCriteria();
-        searchCriteria.pacsId(PACS_ID);
+        searchCriteria.pacsId(testData.getPacsId());
         searchCriteria.patientName(PATIENT_NAME);
         DqrDateRange dateRange = new DqrDateRange();
         dateRange.setStart(START_DATE);
@@ -176,12 +291,15 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
                 .allMatch(PATIENT_NAME::equals));
     }
 
-    @Test
-    public void testBasicDQRImport() {
-        DqrSeriesSearchResponse resp = getSeriesForImport(Collections.singletonList(BASIC_QUERY_STUDY_INSTANCE_UID));
+    @Test(dataProvider = PACS_DATA_PROVIDER)
+    public void testBasicDQRImport(final PacsTestData testData) {
+        DqrSeriesSearchResponse resp = getSeriesForImport(testData.getPacsId(), Collections.singletonList(BASIC_QUERY_STUDY_INSTANCE_UID));
         DqrImportRequestStudy elementsForImportStudy = getElementsForImportStudy(BASIC_QUERY_STUDY_INSTANCE_UID, resp,
                 Collections.emptyMap());
-        DqrCMoveSpec importRequestCommands = setupImportRequestCommands(Collections.singletonList(elementsForImportStudy));
+        DqrCMoveSpec importRequestCommands = setupImportRequestCommands(
+                testData.getPacsId(), testData.getReceiverAeTitle(), testData.getReceiverPort(),
+                Collections.singletonList(elementsForImportStudy)
+        );
 
         List<QueuedPacsRequest> listOfImports = mainInterface().issueCMove(importRequestCommands);
 
@@ -195,14 +313,17 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
                 .collect(Collectors.toList()));
     }
 
-    @Test
-    public void testImportMultipleStudies() {
-        DqrSeriesSearchResponse resp = getSeriesForImport(UUIDS_FOR_MULTIPLE_STUDY_TEST);
+    @Test(dataProvider = PACS_DATA_PROVIDER)
+    public void testImportMultipleStudies(final PacsTestData testData) {
+        DqrSeriesSearchResponse resp = getSeriesForImport(testData.getPacsId(), UUIDS_FOR_MULTIPLE_STUDY_TEST);
         List<DqrImportRequestStudy> seriesSortedByStudy = new ArrayList<>();
         for (String uuid : UUIDS_FOR_MULTIPLE_STUDY_TEST) {
             seriesSortedByStudy.add(getElementsForImportStudy(uuid, resp, Collections.emptyMap()));
         }
-        DqrCMoveSpec importRequestCommands = setupImportRequestCommands(seriesSortedByStudy);
+        DqrCMoveSpec importRequestCommands = setupImportRequestCommands(
+                testData.getPacsId(), testData.getReceiverAeTitle(), testData.getReceiverPort(),
+                seriesSortedByStudy
+        );
 
         List<QueuedPacsRequest> listOfImports = mainInterface().issueCMove(importRequestCommands);
 
@@ -216,9 +337,9 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
                 .collect(Collectors.toList()));
     }
 
-    @Test
-    public void testImportWithRelabeling() {
-        DqrSeriesSearchResponse resp = getSeriesForImport(UUIDS_FOR_TEST_WITH_RELABEL);
+    @Test(dataProvider = PACS_DATA_PROVIDER)
+    public void testImportWithRelabeling(final PacsTestData testData) {
+        DqrSeriesSearchResponse resp = getSeriesForImport(testData.getPacsId(), UUIDS_FOR_TEST_WITH_RELABEL);
         List<DqrImportRequestStudy> seriesSortedByStudy = new ArrayList<>();
         List<String> namesOfSessionsToBeImported = new ArrayList<>();
         for (String uuid : UUIDS_FOR_TEST_WITH_RELABEL) {
@@ -229,7 +350,10 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
             namesOfSessionsToBeImported.add(relabeledSessionName);
         }
 
-        DqrCMoveSpec importRequestCommands = setupImportRequestCommands(seriesSortedByStudy);
+        DqrCMoveSpec importRequestCommands = setupImportRequestCommands(
+                testData.getPacsId(), testData.getReceiverAeTitle(), testData.getReceiverPort(),
+                seriesSortedByStudy
+        );
 
         List<QueuedPacsRequest> listOfImports = mainInterface().issueCMove(importRequestCommands);
 
@@ -242,9 +366,9 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
         checkAllStudiesArePresent(namesOfSessionsToBeImported);
     }
 
-    @Test
-    public void testImportUsingCSVMethod() {
-        List<DqrCFindRow> csvSearchResponses = mainInterface().studyCFindByCsv(PACS_ID, testCsvImportFile);
+    @Test(dataProvider = PACS_DATA_PROVIDER)
+    public void testImportUsingCSVMethod(final PacsTestData testData) {
+        List<DqrCFindRow> csvSearchResponses = mainInterface().studyCFindByCsv(testData.getPacsId(), testCsvImportFile);
         List<String> studyInstanceUids = csvSearchResponses.stream().map(DqrCFindRow::getStudies)
                 .flatMap(Collection::stream).map(DqrStudyRepresentation::getStudyInstanceUid)
                 .collect(Collectors.toList());
@@ -254,14 +378,17 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
                 .zip(studyInstanceUids.stream(), relabelMaps.stream(), Maps::immutableEntry)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        DqrSeriesSearchResponse seriesSearchResponse = getSeriesForImport(studyInstanceUids);
+        DqrSeriesSearchResponse seriesSearchResponse = getSeriesForImport(testData.getPacsId(), studyInstanceUids);
         List<DqrImportRequestStudy> seriesSortedByStudy = new ArrayList<>();
         for (String uuid : studyInstanceUids) {
             Map<String, String> relabelMapForUUID = uidToRelabelMapMap.get(uuid);
             seriesSortedByStudy.add(getElementsForImportStudy(uuid, seriesSearchResponse, relabelMapForUUID));
         }
 
-        DqrCMoveSpec importRequestCommands = setupImportRequestCommands(seriesSortedByStudy);
+        DqrCMoveSpec importRequestCommands = setupImportRequestCommands(
+                testData.getPacsId(), testData.getReceiverAeTitle(), testData.getReceiverPort(),
+                seriesSortedByStudy
+        );
 
         //Need to disable the sitewide anonymization script in order to ensure that the Patient ID
         //header does not fail to work (these two can interfere with each other).
@@ -306,19 +433,22 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
         return importRequestStudy;
     }
 
-    private DqrCMoveSpec setupImportRequestCommands(List<DqrImportRequestStudy> studies) {
+    private DqrCMoveSpec setupImportRequestCommands(final Integer pacsId,
+                                                    final String receiverAeTitle,
+                                                    final Integer receiverPort,
+                                                    final List<DqrImportRequestStudy> studies) {
         DqrCMoveSpec importSpecification = new DqrCMoveSpec();
-        importSpecification.aeTitle(SCP_RECEIVER_AE_TITLE);
+        importSpecification.aeTitle(receiverAeTitle);
         importSpecification.forceImport(true);
-        importSpecification.pacsId(PACS_ID);
-        importSpecification.port(SCP_RECEIVER_PORT);
+        importSpecification.pacsId(pacsId);
+        importSpecification.port(receiverPort);
         importSpecification.projectId(project.getId());
         importSpecification.studies(studies);
         return importSpecification;
     }
 
-    private DqrSeriesSearchResponse getSeriesForImport(List<String> studyInstanceUids) {
-        return mainInterface().aggregatedSeriesCFinds(PACS_ID, studyInstanceUids);
+    private DqrSeriesSearchResponse getSeriesForImport(final Integer pacsId, final List<String> studyInstanceUids) {
+        return mainInterface().aggregatedSeriesCFinds(pacsId, studyInstanceUids);
     }
 
     private boolean runUntilImportNoLongerInQueue(List<Long> idsForCurrentRequest) {
@@ -337,8 +467,8 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
     }
 
     private void checkAllStudiesArePresent(List<String> allImportStudyLabels) {
-        await().atMost(10, TimeUnit.SECONDS)
-                .pollInterval(100, TimeUnit.MILLISECONDS)
+        await().atMost(30, TimeUnit.SECONDS)
+                .pollInterval(500, TimeUnit.MILLISECONDS)
                 .until(() -> {
                     Project checkImportProject = mainInterface().readProject(project.getId());
                     Set<String> experimentLabels = checkImportProject.getSubjects().stream().map(Subject::getExperiments)
