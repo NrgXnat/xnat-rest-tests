@@ -46,6 +46,19 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
     private static final String MANY_SERIES_PROJECT_ID = "MANY_SERIES";
     private static final String SIMPLISTIC_ANON_SCRIPT = "simplisticDelete.das";
     private static final String BASIC_PIXEL_ANON_SCRIPT = "alterPixelsSimplistic.das";
+    private static final int INSTANCE_COUNT_LARGE_STUDY = 2000;
+    private static final LocallyCacheableDicomTransformation LARGE_STUDY_HARDCODED_ROUTING = new LocallyCacheableDicomTransformation("large-study")
+            .data(TestData.SAMPLE_1_SCAN_4)
+            .transformations(
+                    new DicomTransformation("duplicate")
+                            .prefilter(DicomFilters.ONLY_ONE_FILE)
+                            .transformFunction(
+                                    TransformFunction.composition(
+                                            DicomTransforms.duplicateInstance(INSTANCE_COUNT_LARGE_STUDY),
+                                            hardcodeRoutingForProject(PREARCHIVE_PROJECT_ID)
+                                    )
+                            )
+            );
 
     @Test
     @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
@@ -111,22 +124,8 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
     @Test
     @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
     public void testLargeSession() {
-        final int totalNumInstances = 2000;
-        final String name = "large-study";
         final Project project = new Project(PREARCHIVE_PROJECT_ID).prearchiveCode(PrearchiveCode.MANUAL);
 
-        final LocallyCacheableDicomTransformation dicomTransformation = new LocallyCacheableDicomTransformation(name)
-                .data(TestData.SAMPLE_1_SCAN_4)
-                .transformations(
-                        new DicomTransformation("duplicate")
-                                .prefilter(DicomFilters.ONLY_ONE_FILE)
-                                .transformFunction(
-                                        TransformFunction.composition(
-                                                DicomTransforms.duplicateInstance(totalNumInstances),
-                                                hardcodeRoutingForProject(project.getId())
-                                        )
-                                )
-                );
         final Runnable clearProject = () -> {
             restDriver.clearPrearchiveSessions(mainAdminUser, project);
             mainAdminInterface().deleteAllProjectData(project);
@@ -137,37 +136,45 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                 .setup(setupForCStoreToProject(project))
                 .tests(
                         new SimpleTimedAction("cstore-large-study")
-                                .title(String.format("CSTORE of %d MR images", totalNumInstances))
-                                .withSetup(dicomTransformation)
+                                .title(String.format("CSTORE of %d MR images", INSTANCE_COUNT_LARGE_STUDY))
+                                .withSetup(LARGE_STUDY_HARDCODED_ROUTING)
                                 .asUser(mainAdminUser)
-                                .performanceTestAction(cstoreDicomFromTransformation(dicomTransformation)),
+                                .performanceTestAction(cstoreDicomFromTransformation(LARGE_STUDY_HARDCODED_ROUTING)),
                         new SimpleTimedAction("rebuild-and-archive-large-study")
-                                .title(String.format("Rebuild and archive of study containing %d MR images", totalNumInstances))
+                                .title(String.format("Rebuild and archive of study containing %d MR images", INSTANCE_COUNT_LARGE_STUDY))
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(archiveActionForSingleSession(project)),
                         new SimpleTimedAction("anonymize-via-relabel-de4")
                                 .withSetup(() -> mainAdminInterface().enablePostArchiveAnon())
-                                .title(String.format("Relabel and DicomEdit4 anonymization of study containing %d MR images", totalNumInstances))
+                                .title(String.format("Relabel and DicomEdit4 anonymization of study containing %d MR images", INSTANCE_COUNT_LARGE_STUDY))
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(anonActionViaRelabel(project, DicomEditVersion.DE_4, SIMPLISTIC_ANON_SCRIPT)),
                         new SimpleTimedAction("anonymize-via-relabel-de6")
-                                .title(String.format("Relabel and DicomEdit6 anonymization of study containing %d MR images", totalNumInstances))
+                                .title(String.format("Relabel and DicomEdit6 anonymization of study containing %d MR images", INSTANCE_COUNT_LARGE_STUDY))
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(anonActionViaRelabel(project, DicomEditVersion.DE_6, SIMPLISTIC_ANON_SCRIPT)),
                         new SimpleTimedAction("anonymize-via-relabel-de6-alterPixels")
-                                .title(String.format("Relabel and DicomEdit6 pixel anonymization of study containing %d MR images", totalNumInstances))
+                                .title(String.format("Relabel and DicomEdit6 pixel anonymization of study containing %d MR images", INSTANCE_COUNT_LARGE_STUDY))
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(anonActionViaRelabel(project, DicomEditVersion.DE_6, BASIC_PIXEL_ANON_SCRIPT)),
                         new SimpleTimedAction("cstore-large-study-sif")
-                                .title(String.format("CSTORE of %d MR images with Series Import Filter", totalNumInstances))
+                                .title(String.format("CSTORE of %d MR images with Series Import Filter", INSTANCE_COUNT_LARGE_STUDY))
                                 .asUser(mainAdminUser)
                                 .withSetup(clearProject)
-                                .performanceTestAction(setSiteImportFilterAndCstore("realistic_filter.txt", dicomTransformation)),
+                                .performanceTestAction(setSiteImportFilterAndCstore("realistic_filter.txt", LARGE_STUDY_HARDCODED_ROUTING)),
                         new SimpleTimedAction("cstore-large-study-sif-worst-case")
-                                .title(String.format("CSTORE of %d MR images with worst case Series Import Filter", totalNumInstances))
+                                .title(String.format("CSTORE of %d MR images with worst case Series Import Filter", INSTANCE_COUNT_LARGE_STUDY))
                                 .asUser(mainAdminUser)
                                 .withSetup(clearProject)
-                                .performanceTestAction(setSiteImportFilterAndCstore("worst_case.txt", dicomTransformation))
+                                .performanceTestAction(setSiteImportFilterAndCstore("worst_case.txt", LARGE_STUDY_HARDCODED_ROUTING)),
+                        new SimpleTimedAction("cstore-large-study-site-anon")
+                                .title(String.format("CSTORE and DicomEdit6 anonymization of study containing %d MR images", INSTANCE_COUNT_LARGE_STUDY))
+                                .asUser(mainAdminUser)
+                                .withSetup(() -> {
+                                    clearProject.run();
+                                    mainAdminInterface().setSiteAnonScript(XnatObjectUtils.anonScriptFromFile(DicomEditVersion.DE_6, SIMPLISTIC_ANON_SCRIPT));
+                                    mainAdminInterface().enableSiteAnonScript();
+                                }).performanceTestAction(cstoreDicomFromTransformation(LARGE_STUDY_HARDCODED_ROUTING))
                 ).run();
     }
 
@@ -277,7 +284,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
         };
     }
 
-    private TransformFunction hardcodeRoutingForProject(String projectId) {
+    private static TransformFunction hardcodeRoutingForProject(String projectId) {
         return TransformFunction.simple((dicom) -> {
             dicom.setString(Tag.StudyDescription, VR.LO, projectId);
             dicom.setString(Tag.PatientName, VR.PN, dicom.getString(Tag.StudyInstanceUID));
