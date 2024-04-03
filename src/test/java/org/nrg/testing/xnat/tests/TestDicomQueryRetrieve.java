@@ -307,7 +307,7 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
 
         assertTrue(runUntilImportNoLongerInQueue(listOfImportIds));
 
-        assertTrue(checkIfImportsInHistory(listOfImportIds));
+        waitForImportsReceivedStatus(listOfImportIds);
 
         checkAllStudiesArePresent(listOfImports.stream().map(QueuedPacsRequest::getStudyId)
                 .collect(Collectors.toList()));
@@ -331,7 +331,7 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
 
         assertTrue(runUntilImportNoLongerInQueue(listOfImportIds));
 
-        assertTrue(checkIfImportsInHistory(listOfImportIds));
+        waitForImportsReceivedStatus(listOfImportIds);
 
         checkAllStudiesArePresent(listOfImports.stream().map(QueuedPacsRequest::getStudyId)
                 .collect(Collectors.toList()));
@@ -361,7 +361,7 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
 
         assertTrue(runUntilImportNoLongerInQueue(listOfImportIds));
 
-        assertTrue(checkIfImportsInHistory(listOfImportIds));
+        waitForImportsReceivedStatus(listOfImportIds);
 
         checkAllStudiesArePresent(namesOfSessionsToBeImported);
     }
@@ -400,7 +400,7 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
 
         assertTrue(runUntilImportNoLongerInQueue(listOfImportIds));
 
-        assertTrue(checkIfImportsInHistory(listOfImportIds));
+        waitForImportsReceivedStatus(listOfImportIds);
 
         assertTrue(checkVerboseRelabelMapChangesArePresent(uidToRelabelMapMap));
     }
@@ -459,11 +459,13 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
                 == null;
     }
 
-    private boolean checkIfImportsInHistory(List<Long> idsOfImportInHistory) {
-        return mainInterface().readDqrHistory().stream()
-                .filter(req -> idsOfImportInHistory.contains(req.getId()))
-                .map(ExecutedPacsRequest::getStatus)
-                .allMatch("RECEIVED"::equals);
+    private void waitForImportsReceivedStatus(List<Long> idsOfImportInHistory) {
+        await().atMost(60, TimeUnit.SECONDS)
+                .pollInterval(500, TimeUnit.MILLISECONDS)
+                .until(() -> mainInterface().readDqrHistory().stream()
+                        .filter(req -> idsOfImportInHistory.contains(req.getId()))
+                        .map(ExecutedPacsRequest::getStatus)
+                        .allMatch("RECEIVED"::equals));
     }
 
     private void checkAllStudiesArePresent(List<String> allImportStudyLabels) {
