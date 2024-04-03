@@ -10,7 +10,8 @@
       "3" : 1270,
       "4" : 1589,
       "5" : 1880
-    }
+    },
+    "chartGrouping" : null
   }, {
     "@type" : ".CumulativeTimeSeriesData",
     "baseline" : false,
@@ -22,7 +23,8 @@
       "3" : 1488,
       "4" : 1776,
       "5" : 2093
-    }
+    },
+    "chartGrouping" : null
   }, {
     "@type" : ".CumulativeTimeSeriesData",
     "baseline" : false,
@@ -34,7 +36,8 @@
       "3" : 1989,
       "4" : 2554,
       "5" : 3076
-    }
+    },
+    "chartGrouping" : null
   }, {
     "@type" : ".CumulativeTimeSeriesData",
     "baseline" : false,
@@ -46,7 +49,8 @@
       "3" : 1322,
       "4" : 1631,
       "5" : 1974
-    }
+    },
+    "chartGrouping" : null
   }, {
     "@type" : ".CumulativeTimeSeriesData",
     "baseline" : false,
@@ -58,7 +62,8 @@
       "3" : 1307,
       "4" : 1623,
       "5" : 1948
-    }
+    },
+    "chartGrouping" : null
   }, {
     "@type" : ".CumulativeTimeSeriesData",
     "baseline" : false,
@@ -70,6 +75,20 @@
       "3" : 1473,
       "4" : 1796,
       "5" : 2088
-    }
+    },
+    "chartGrouping" : null
+  }, {
+    "@type" : ".CumulativeTimeSeriesData",
+    "baseline" : false,
+    "timestamp" : 1712095168959,
+    "xnatVersion" : "1.8.9.2-TEST",
+    "timeSeriesData" : {
+      "1" : 734,
+      "2" : 1145,
+      "3" : 1498,
+      "4" : 1859,
+      "5" : 2149
+    },
+    "chartGrouping" : null
   } ]
 }

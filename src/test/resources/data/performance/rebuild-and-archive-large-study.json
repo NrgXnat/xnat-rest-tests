@@ -4,42 +4,56 @@
     "baseline" : false,
     "timestamp" : 1681311706798,
     "xnatVersion" : "1.7.6",
-    "overallTimeInMillis" : 13007
+    "overallTimeInMillis" : 13007,
+    "chartGrouping" : null
   }, {
     "@type" : ".SimpleOverallTimeRecord",
     "baseline" : false,
     "timestamp" : 1681328734568,
     "xnatVersion" : "1.8.0",
-    "overallTimeInMillis" : 44113
+    "overallTimeInMillis" : 44113,
+    "chartGrouping" : null
   }, {
     "@type" : ".SimpleOverallTimeRecord",
     "baseline" : false,
     "timestamp" : 1681397378827,
     "xnatVersion" : "1.8.4",
-    "overallTimeInMillis" : 43948
+    "overallTimeInMillis" : 43948,
+    "chartGrouping" : null
   }, {
     "@type" : ".SimpleOverallTimeRecord",
     "baseline" : false,
     "timestamp" : 1681419601635,
     "xnatVersion" : "1.8.5",
-    "overallTimeInMillis" : 45576
+    "overallTimeInMillis" : 45576,
+    "chartGrouping" : null
   }, {
     "@type" : ".SimpleOverallTimeRecord",
     "baseline" : false,
     "timestamp" : 1681485579380,
     "xnatVersion" : "1.8.5.2",
-    "overallTimeInMillis" : 44672
+    "overallTimeInMillis" : 44672,
+    "chartGrouping" : null
   }, {
     "@type" : ".SimpleOverallTimeRecord",
     "baseline" : false,
     "timestamp" : 1681493600369,
     "xnatVersion" : "1.8.6.1",
-    "overallTimeInMillis" : 44434
+    "overallTimeInMillis" : 44434,
+    "chartGrouping" : null
   }, {
     "@type" : ".SimpleOverallTimeRecord",
     "baseline" : false,
     "timestamp" : 1681504259346,
     "xnatVersion" : "1.8.7",
-    "overallTimeInMillis" : 45981
+    "overallTimeInMillis" : 45981,
+    "chartGrouping" : null
+  }, {
+    "@type" : ".SimpleOverallTimeRecord",
+    "baseline" : false,
+    "timestamp" : 1712095500645,
+    "xnatVersion" : "1.8.9.2-TEST",
+    "overallTimeInMillis" : 54365,
+    "chartGrouping" : null
   } ]
 }
