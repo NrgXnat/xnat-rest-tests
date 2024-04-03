@@ -85,7 +85,7 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
                         new RepeatedMonitorableAction("create-many-projects-one-per-user")
                                 .title("Cumulative time for unique users each creating a single project")
                                 .actionDescription("Number of projects created")
-                                .withUserProvider(new SequentialUserProvider(createGenericUsers(NUM_ACCOUNTS_CREATING_PROJECTS)))
+                                .withUserProvider(new SequentialUserProvider(NUM_ACCOUNTS_CREATING_PROJECTS))
                                 .overallIterationCount(NUM_ACCOUNTS_CREATING_PROJECTS)
                                 .performanceTestAction(CREATE_PROJECT_ACTION)
                                 .validateUsing(PolynomialRegressionValidator.STRICT_QUADRATIC)
