@@ -9,5 +9,6 @@ local.properties
 src/test/resources/data/local_data_cache
 src/test/resources/config/*.properties
 !src/test/resources/config/dev.properties
-!src/test/resources/performance/*.tex
-!src/test/resources/performance/*.json
+src/test/resources/data/performance/*
+!src/test/resources/data/performance/*.tex
+!src/test/resources/data/performance/*.json
