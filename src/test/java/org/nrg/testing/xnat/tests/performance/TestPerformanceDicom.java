@@ -141,7 +141,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                                 .withSetup(LARGE_STUDY_HARDCODED_ROUTING)
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(cstoreDicomFromTransformation(LARGE_STUDY_HARDCODED_ROUTING))
-                                .compareTo(cstoreWithAnonId, "with site anon", null),
+                                .compareTo(cstoreWithAnonId, "with site anon"),
                         new SimpleTimedAction("rebuild-and-archive-large-study")
                                 .title(String.format("Rebuild and archive of study containing %d MR images", INSTANCE_COUNT_LARGE_STUDY))
                                 .asUser(mainAdminUser)
