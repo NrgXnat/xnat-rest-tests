@@ -4,6 +4,7 @@
     "baseline" : false,
     "timestamp" : 1681321589899,
     "xnatVersion" : "1.7.6",
+    "overallTimeInMillis" : 1299697,
     "timeSeriesData" : {
       "1" : 31140,
       "2" : 61241,
@@ -51,6 +52,7 @@
     "baseline" : false,
     "timestamp" : 1681340801419,
     "xnatVersion" : "1.8.0",
+    "overallTimeInMillis" : 1308306,
     "timeSeriesData" : {
       "1" : 31685,
       "2" : 62108,
@@ -98,6 +100,7 @@
     "baseline" : false,
     "timestamp" : 1681410347540,
     "xnatVersion" : "1.8.4",
+    "overallTimeInMillis" : 1818342,
     "timeSeriesData" : {
       "1" : 42475,
       "2" : 83972,
@@ -145,6 +148,7 @@
     "baseline" : false,
     "timestamp" : 1681432831886,
     "xnatVersion" : "1.8.5",
+    "overallTimeInMillis" : 1824271,
     "timeSeriesData" : {
       "1" : 43071,
       "2" : 84356,
@@ -192,6 +196,7 @@
     "baseline" : false,
     "timestamp" : 1681492342305,
     "xnatVersion" : "1.8.5.2",
+    "overallTimeInMillis" : 572794,
     "timeSeriesData" : {
       "1" : 14362,
       "2" : 27633,
@@ -239,6 +244,7 @@
     "baseline" : false,
     "timestamp" : 1681500441906,
     "xnatVersion" : "1.8.6.1",
+    "overallTimeInMillis" : 563259,
     "timeSeriesData" : {
       "1" : 13957,
       "2" : 26891,
@@ -286,6 +292,7 @@
     "baseline" : false,
     "timestamp" : 1681511088178,
     "xnatVersion" : "1.8.7",
+    "overallTimeInMillis" : 565398,
     "timeSeriesData" : {
       "1" : 13869,
       "2" : 26893,
@@ -327,6 +334,54 @@
       "38" : 536378,
       "39" : 550876,
       "40" : 565398
+    }
+  }, {
+    "@type" : ".CumulativeTimeSeriesData",
+    "baseline" : false,
+    "timestamp" : 1712974191733,
+    "xnatVersion" : "1.8.9.2-att2",
+    "overallTimeInMillis" : 636996,
+    "timeSeriesData" : {
+      "1" : 15052,
+      "2" : 29974,
+      "3" : 44823,
+      "4" : 63303,
+      "5" : 78178,
+      "6" : 93227,
+      "7" : 108539,
+      "8" : 123553,
+      "9" : 138894,
+      "10" : 154262,
+      "11" : 169753,
+      "12" : 185187,
+      "13" : 200691,
+      "14" : 216216,
+      "15" : 232803,
+      "16" : 248477,
+      "17" : 264309,
+      "18" : 280234,
+      "19" : 295816,
+      "20" : 311943,
+      "21" : 328172,
+      "22" : 343777,
+      "23" : 360318,
+      "24" : 376722,
+      "25" : 392953,
+      "26" : 408973,
+      "27" : 425103,
+      "28" : 440977,
+      "29" : 456968,
+      "30" : 473136,
+      "31" : 489167,
+      "32" : 506063,
+      "33" : 522238,
+      "34" : 538493,
+      "35" : 554710,
+      "36" : 571055,
+      "37" : 587564,
+      "38" : 603905,
+      "39" : 620411,
+      "40" : 636996
     }
   } ]
 }

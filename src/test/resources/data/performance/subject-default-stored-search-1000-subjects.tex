@@ -9,63 +9,142 @@
 
 \begin{tikzpicture}
     \begin{axis}[
+        align = center,
         legend pos = north west,
         legend cell align = left,
         xlabel = Call count,
         ylabel = Cumulative time in seconds,
-        xtick pos=left,
-        ytick pos=left,
+        xtick pos = left,
+        ytick pos = left,
+        scaled ticks = false,
+        xmin = 0,
+        ymin = 0,
         title = {Repeated 1000 subject listing access},
-        legend entries={\switchocg{1.7.6}{1.7.6},\switchocg{1.8.4}{1.8.4},\switchocg{1.8.5}{1.8.5},\switchocg{1.8.5.2}{1.8.5.2},\switchocg{1.8.6.1}{1.8.6.1},\switchocg{1.8.7}{1.8.7}}]
-        \begin{scope}[ocg = {ref = 1.7.6, status = visible}]
-        \addplot[
-            only marks,
-            color = black,
-            mark = *,
-            mark size = 1.5 pt
-        ]coordinates {(1,0.538)(2,0.941)(3,1.27)(4,1.589)(5,1.88)};
-    \end{scope}
-        \begin{scope}[ocg = {ref = 1.8.4, status = visible}]
-        \addplot[
-            only marks,
-            color = red,
-            mark = *,
-            mark size = 1.5 pt
-        ]coordinates {(1,0.72)(2,1.136)(3,1.488)(4,1.776)(5,2.093)};
-    \end{scope}
-        \begin{scope}[ocg = {ref = 1.8.5, status = visible}]
-        \addplot[
-            only marks,
-            color = blue!80!white,
-            mark = *,
-            mark size = 1.5 pt
-        ]coordinates {(1,0.855)(2,1.492)(3,1.989)(4,2.554)(5,3.076)};
-    \end{scope}
-        \begin{scope}[ocg = {ref = 1.8.5.2, status = visible}]
-        \addplot[
-            only marks,
-            color = lime!70!black,
-            mark = *,
-            mark size = 1.5 pt
-        ]coordinates {(1,0.547)(2,0.948)(3,1.322)(4,1.631)(5,1.974)};
-    \end{scope}
-        \begin{scope}[ocg = {ref = 1.8.6.1, status = visible}]
-        \addplot[
-            only marks,
-            color = black,
-            mark = triangle*,
-            mark size = 1.5 pt
-        ]coordinates {(1,0.567)(2,0.941)(3,1.307)(4,1.623)(5,1.948)};
-    \end{scope}
+        title style = {text width = 0.8\textwidth},
+        legend entries={\switchocg{1.8.9.2-att2}{1.8.9.2-att2},\switchocg{1.8.7}{1.8.7},\switchocg{1.8.5.2}{1.8.5.2},\switchocg{1.8.5}{1.8.5},\switchocg{1.8.4}{1.8.4},\switchocg{1.7.6}{1.7.6}}]
+        \begin{scope}[ocg = {ref = 1.8.9.2-att2-Lin, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.42710000000000036823877280767192132771015167236328125 + 0.35049999999999992272847748608910478651523590087890625*(\x)^1});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.9.2-att2-Quad, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.303600000000000924682552749800379388034343719482421875 + 0.456357142857142517033963713402044959366321563720703125*(\x)^1 + -0.0176428571428571025203613231724375509656965732574462890625*(\x)^2});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.9.2-att2-Cub, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.191600000000001602362686980995931662619113922119140625 + 0.6136904761904748983880608648178167641162872314453125*(\x)^1 + -0.077642857142856736007985318792634643614292144775390625*(\x)^2 + 0.006666666666666628930648652584523006225936114788055419921875*(\x)^3});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.9.2-att2, status = visible}]
+            \addplot[
+                only marks,
+                color = red,
+                mark = triangle*,
+                mark size = 1.5 pt
+            ]coordinates {(1,0.731)(2,1.175)(3,1.494)(4,1.844)(5,2.149)};
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.7-Lin, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.25020000000000075512929242904647253453731536865234375 + 0.379999999999999948929740867242799140512943267822265625*(\x)^1});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.7-Quad, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.037200000000001065547650114240241236984729766845703125 + 0.5625714285714280560313227397273294627666473388671875*(\x)^1 + -0.03042857142857134655766770947593613527715206146240234375*(\x)^2});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.7-Cub, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.10720000000000219630980069496217765845358371734619140625 + 0.4642380952380935621448543315636925399303436279296875*(\x)^1 + 0.00707142857142909093959293187481307541020214557647705078125*(\x)^2 + -0.004166666666666716915823354128178834798745810985565185546875*(\x)^3});
+        \end{scope}
         \begin{scope}[ocg = {ref = 1.8.7, status = visible}]
-        \addplot[
-            only marks,
-            color = red,
-            mark = triangle*,
-            mark size = 1.5 pt
-        ]coordinates {(1,0.578)(2,1.016)(3,1.473)(4,1.796)(5,2.088)};
-    \end{scope}
+            \addplot[
+                only marks,
+                color = black,
+                mark = triangle*,
+                mark size = 1.5 pt
+            ]coordinates {(1,0.578)(2,1.016)(3,1.473)(4,1.796)(5,2.088)};
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.5.2-Lin, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.22330000000000060911276023034588433802127838134765625 + 0.353699999999999903366187936626374721527099609375*(\x)^1});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.5.2-Quad, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.1328000000000011393552767913206480443477630615234375 + 0.43127142857142819476479189688689075410366058349609375*(\x)^1 + -0.01292857142857139172986702391199287376366555690765380859375*(\x)^2});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.5.2-Cub, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.047400000000001447919562025390405324287712574005126953125 + 0.5512380952380941945278891580528579652309417724609375*(\x)^1 + -0.058678571428571135726315333158709108829498291015625*(\x)^2 + 0.005083333333333307779700049877646961249411106109619140625*(\x)^3});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.5.2, status = visible}]
+            \addplot[
+                only marks,
+                color = lime!70!black,
+                mark = *,
+                mark size = 1.5 pt
+            ]coordinates {(1,0.547)(2,0.948)(3,1.322)(4,1.631)(5,1.974)};
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.5-Lin, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.341999999999999804156658456122386269271373748779296875 + 0.55040000000000011137757383039570413529872894287109375*(\x)^1});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.5-Quad, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.26100000000000012079226507921703159809112548828125 + 0.6198285714285713954296852534753270447254180908203125*(\x)^1 + -0.0115714285714285554373947917383702588267624378204345703125*(\x)^2});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.5-Cub, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.1252000000000013379963803572536562569439411163330078125 + 0.8105952380952368141464603468193672597408294677734375*(\x)^1 + -0.08432142857142808922699117601951002143323421478271484375*(\x)^2 + 0.0080833333333332861581066453027233364991843700408935546875*(\x)^3});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.5, status = visible}]
+            \addplot[
+                only marks,
+                color = blue!80!white,
+                mark = *,
+                mark size = 1.5 pt
+            ]coordinates {(1,0.855)(2,1.492)(3,1.989)(4,2.554)(5,3.076)};
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.4-Lin, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.426799999999999679634044014164828695356845855712890625 + 0.33860000000000012310152897043735720217227935791015625*(\x)^1});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.4-Quad, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.29579999999999995186072965225321240723133087158203125 + 0.450885714285714389593096029784646816551685333251953125*(\x)^1 + -0.0187142857142857214902686990853908355347812175750732421875*(\x)^2});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.4-Cub, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.1656000000000001914912672873470000922679901123046875 + 0.63378571428571406354279815786867402493953704833984375*(\x)^1 + -0.08846428571428559262113111572034540586173534393310546875*(\x)^2 + 0.00774999999999998780142451693109251209534704685211181640625*(\x)^3});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.4, status = visible}]
+            \addplot[
+                only marks,
+                color = red,
+                mark = *,
+                mark size = 1.5 pt
+            ]coordinates {(1,0.72)(2,1.136)(3,1.488)(4,1.776)(5,2.093)};
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.7.6-Lin, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.244000000000000494271290563119691796600818634033203125 + 0.3331999999999999406696815640316344797611236572265625*(\x)^1});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.7.6-Quad, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.1270000000000007511768984613809152506291866302490234375 + 0.433485714285714085480805124461767263710498809814453125*(\x)^1 + -0.016714285714285702366677099917069426737725734710693359375*(\x)^2});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.7.6-Cub, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.062600000000001265743065914648468606173992156982421875 + 0.5239523809523800590426390044740401208400726318359375*(\x)^1 + -0.051214285714285427697500807653341325931251049041748046875*(\x)^2 + 0.003833333333333304067391811287279779207892715930938720703125*(\x)^3});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.7.6, status = visible}]
+            \addplot[
+                only marks,
+                color = black,
+                mark = *,
+                mark size = 1.5 pt
+            ]coordinates {(1,0.538)(2,0.941)(3,1.27)(4,1.589)(5,1.88)};
+        \end{scope}
     \end{axis}
+    \begin{scope}
+        \addtolength{\tabcolsep}{-0.3em}
+        \node [below right, shape=rectangle, align=left](regressiontable) at (7,6) {
+            Add regression options: \\
+            \begin{tabular}{|llll|}
+                \hline
+                1.8.9.2-att2 & \switchocg{1.8.9.2-att2-Lin}{Lin} & \switchocg{1.8.9.2-att2-Quad}{Quad} & \switchocg{1.8.9.2-att2-Cub}{Cub} \\
+                1.8.7 & \switchocg{1.8.7-Lin}{Lin} & \switchocg{1.8.7-Quad}{Quad} & \switchocg{1.8.7-Cub}{Cub} \\
+                1.8.5.2 & \switchocg{1.8.5.2-Lin}{Lin} & \switchocg{1.8.5.2-Quad}{Quad} & \switchocg{1.8.5.2-Cub}{Cub} \\
+                1.8.5 & \switchocg{1.8.5-Lin}{Lin} & \switchocg{1.8.5-Quad}{Quad} & \switchocg{1.8.5-Cub}{Cub} \\
+                1.8.4 & \switchocg{1.8.4-Lin}{Lin} & \switchocg{1.8.4-Quad}{Quad} & \switchocg{1.8.4-Cub}{Cub} \\
+                1.7.6 & \switchocg{1.7.6-Lin}{Lin} & \switchocg{1.7.6-Quad}{Quad} & \switchocg{1.7.6-Cub}{Cub} \\
+                \hline
+            \end{tabular}
+        };
+    \end{scope}
+    \begin{scope}[every node/.style = {font=\footnotesize}, right]
+        \node[text width = 13.5 cm] at (-1.2,-3) {In order to keep the number of shown datasets at a reasonable level, some datasets have been hidden entirely. From comparing the data, they were found to be very similar to one of the datasets that is shown as a representative example. These include:};
+        \node at (-1,-4.0) {$\bullet$ 1.8.5.2 also closely represents 1.8.6.1};
+    \end{scope}
 \end{tikzpicture}
 
 \end{document}
