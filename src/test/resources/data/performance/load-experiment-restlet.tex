@@ -1,0 +1,31 @@
+\documentclass[margin=5mm]{standalone}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{pgfplots}
+\usepackage{tikz}
+
+\pgfplotsset{compat=1.18}
+\begin{document}
+
+\begin{tikzpicture}
+    \begin{axis}[
+        align = center,
+        xlabel = Average time in seconds,
+        ylabel = XNAT version,
+        xtick pos = left,
+        ytick pos = left,
+        ytick = data,
+        xmin = 0,
+        enlarge x limits = {value = 0.2, upper}, % make node labels not overlap with axes
+        title = {Average time for non-admin retrieving project-level experiment restlet listing for 3000 sessions},
+        title style = {text width = 0.8\textwidth},
+        nodes near coords,
+        nodes near coords align = horizontal,
+        symbolic y coords = {1.8.9.2-att2},
+        y = 0.8cm,
+        point meta=x
+    ]
+        \addplot[xbar, fill = blue!20!white] coordinates { (0.0,1.8.9.2-att2) };
+    \end{axis}
+\end{tikzpicture}
+
+\end{document}
