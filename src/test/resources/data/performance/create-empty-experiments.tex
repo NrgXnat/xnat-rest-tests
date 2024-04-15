@@ -1,0 +1,56 @@
+\documentclass[margin=5mm]{standalone}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{pgfplots}
+\usepackage{tikz}
+\usepackage[tikz]{ocgx2}
+
+\pgfplotsset{compat=1.18}
+\begin{document}
+
+\begin{tikzpicture}
+    \begin{axis}[
+        align = center,
+        legend pos = north west,
+        legend cell align = left,
+        xlabel = Number of sessions created,
+        ylabel = Cumulative time in seconds,
+        xtick pos = left,
+        ytick pos = left,
+        scaled ticks = false,
+        xmin = 0,
+        ymin = 0,
+        title = {Cumulative time for non-admin creating empty MR Sessions under 1 subject},
+        title style = {text width = 0.8\textwidth},
+        legend entries={\switchocg{1.8.9.2-att2}{1.8.9.2-att2}}]
+        \begin{scope}[ocg = {ref = 1.8.9.2-att2-Lin, status = invisible}]
+            \plot[domain=0:3150,->,forget plot] (\x,{8.7765169491526027201189208426512777805328369140625 + 0.04378756265629339672340591960164601914584636688232421875*(\x)^1});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.9.2-att2-Quad, status = invisible}]
+            \plot[domain=0:3150,->,forget plot] (\x,{4.9297403565167190464535451610572636127471923828125 + 0.05123293670655637566113682623836211860179901123046875*(\x)^1 + -0.0000024411062459878613963644607143255171877171960659325122833251953125*(\x)^2});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.9.2-att2-Cub, status = invisible}]
+            \plot[domain=0:3150,->,forget plot] (\x,{2.70657866642064792728206157335080206394195556640625 + 0.05963457064606136892592758158571086823940277099609375*(\x)^1 + -0.0000092710960773121554759183815530576566743548028171062469482421875*(\x)^2 + 0.0000000014928939522020309107437669677372234222634261868734029121696949005126953125*(\x)^3});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.9.2-att2, status = visible}]
+            \addplot[
+                only marks,
+                color = black,
+                mark = *,
+                mark size = 1.5 pt
+            ]coordinates {(50,4.846)(100,8.236)(150,11.54)(200,14.405)(250,17.424)(300,20.386)(350,22.868)(400,25.284)(450,27.929)(500,30.6)(550,33.166)(600,35.645)(650,38.021)(700,40.287)(750,42.787)(800,45.145)(850,47.424)(900,49.661)(950,52.017)(1000,54.251)(1050,56.577)(1100,58.989)(1150,61.098)(1200,63.485)(1250,65.613)(1300,67.835)(1350,69.964)(1400,72.156)(1450,74.188)(1500,76.259)(1550,78.303)(1600,80.663)(1650,82.818)(1700,84.816)(1750,86.75)(1800,88.986)(1850,91.089)(1900,92.967)(1950,94.883)(2000,96.871)(2050,98.861)(2100,100.756)(2150,102.791)(2200,104.914)(2250,106.833)(2300,108.843)(2350,110.935)(2400,112.982)(2450,114.911)(2500,117.135)(2550,119.205)(2600,121.26)(2650,123.369)(2700,125.664)(2750,127.855)(2800,129.999)(2850,132.104)(2900,134.163)(2950,136.153)(3000,138.188)};
+        \end{scope}
+    \end{axis}
+    \begin{scope}
+        \addtolength{\tabcolsep}{-0.3em}
+        \node [below right, shape=rectangle, align=left](regressiontable) at (7,6) {
+            Add regression options: \\
+            \begin{tabular}{|llll|}
+                \hline
+                1.8.9.2-att2 & \switchocg{1.8.9.2-att2-Lin}{Lin} & \switchocg{1.8.9.2-att2-Quad}{Quad} & \switchocg{1.8.9.2-att2-Cub}{Cub} \\
+                \hline
+            \end{tabular}
+        };
+    \end{scope}
+\end{tikzpicture}
+
+\end{document}
