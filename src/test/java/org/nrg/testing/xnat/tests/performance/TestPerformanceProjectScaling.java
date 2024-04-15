@@ -192,7 +192,7 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
                 .asUser(nonadmin ? Settings.DEFAULT_XNAT_CONFIG.getMainUser() : Settings.DEFAULT_XNAT_CONFIG.getMainAdminUser())
                 .overallIterationCount(10)
                 .actionsPerSnapshot(1)
-                .performanceTestAction(xnatInterface -> xnatInterface.jsonQuery().get(xnatInterface.formatRestUrl("/projects/$ID/experiments")))
+                .performanceTestAction(xnatInterface -> xnatInterface.jsonQuery().get(xnatInterface.projectExperimentsUrl(EXPT_CREATE_PROJECT)))               
                 .validateUsing(PolynomialRegressionValidator.LINEAR)
                 .chartUsing(AveragedCumulativeTimeSeriesCharter.INSTANCE)
                 .title(chartTitle);
