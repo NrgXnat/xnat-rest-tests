@@ -280,14 +280,13 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
 
     @Test(dataProvider = PACS_DATA_PROVIDER)
     public void testDQRPermissions(final PacsTestData testData) {
-        List<User> testuser1 = createGenericUsers(1);
-        User newuser = testuser1.get(0);
+        User newUser = createGenericUsers(1).get(0);
         PacsSearchCriteria searchCriteria = new PacsSearchCriteria();
         searchCriteria.pacsId(testData.getPacsId());
         searchCriteria.patientName(PATIENT_NAME);
-        expect403(() -> interfaceFor(newuser).studyCFind(searchCriteria));
-        mainAdminInterface().assignUserToRoles(newuser, DQR_USER_ROLE);
-        List<DqrStudyRepresentation> listOfStudies = interfaceFor(newuser).studyCFind(searchCriteria);
+        expect403(() -> interfaceFor(newUser).studyCFind(searchCriteria));
+        mainAdminInterface().assignUserToRoles(newUser, DQR_USER_ROLE);
+        List<DqrStudyRepresentation> listOfStudies = interfaceFor(newUser).studyCFind(searchCriteria);
         assertTrue(listOfStudies.stream().map(DqrStudyRepresentation::getPatient).map(DqrPatientRepresentation::getName)
                 .allMatch(PATIENT_NAME::equals));
     }
