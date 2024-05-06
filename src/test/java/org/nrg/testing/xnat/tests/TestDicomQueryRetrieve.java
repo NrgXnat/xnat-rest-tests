@@ -38,7 +38,6 @@ import org.nrg.xnat.pogo.dqr.QueuedPacsRequest;
 import org.nrg.xnat.pogo.experiments.Experiment;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.users.User;
-import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
