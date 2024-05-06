@@ -37,6 +37,8 @@ import org.nrg.xnat.pogo.dqr.PacsSearchCriteria;
 import org.nrg.xnat.pogo.dqr.QueuedPacsRequest;
 import org.nrg.xnat.pogo.experiments.Experiment;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
+import org.nrg.xnat.pogo.users.User;
+import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -273,6 +275,20 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
         searchCriteria.pacsId(testData.getPacsId());
         searchCriteria.patientName(PATIENT_NAME);
         List<DqrStudyRepresentation> listOfStudies = mainInterface().studyCFind(searchCriteria);
+        assertTrue(listOfStudies.stream().map(DqrStudyRepresentation::getPatient).map(DqrPatientRepresentation::getName)
+                .allMatch(PATIENT_NAME::equals));
+    }
+
+    @Test(dataProvider = PACS_DATA_PROVIDER)
+    public void testDQRPermissions(final PacsTestData testData) {
+        List<User> testuser1 = createGenericUsers(1);
+        User newuser = testuser1.get(0);
+        PacsSearchCriteria searchCriteria = new PacsSearchCriteria();
+        searchCriteria.pacsId(testData.getPacsId());
+        searchCriteria.patientName(PATIENT_NAME);
+        expect403(() -> interfaceFor(newuser).studyCFind(searchCriteria));
+        mainAdminInterface().assignUserToRoles(newuser, DQR_USER_ROLE);
+        List<DqrStudyRepresentation> listOfStudies = interfaceFor(newuser).studyCFind(searchCriteria);
         assertTrue(listOfStudies.stream().map(DqrStudyRepresentation::getPatient).map(DqrPatientRepresentation::getName)
                 .allMatch(PATIENT_NAME::equals));
     }
