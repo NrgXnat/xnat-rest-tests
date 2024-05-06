@@ -11,7 +11,9 @@ import org.nrg.xnat.enums.DicomEditVersion;
 import org.nrg.xnat.pogo.AnonScript;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.versions.Xnat_1_8_1;
+import org.nrg.xnat.versions.Xnat_1_9;
 
+import java.util.Arrays;
 import java.util.function.Consumer;
 
 import static org.nrg.xnat.enums.DicomEditVersion.DE_4;
@@ -136,6 +138,17 @@ public class TestAnonymizationBuiltinFunctions extends BaseAnonymizationTest {
                         privateSeqItem0.putValueEqualCheck("(2005,1081)", "FH");
                         privateSeqItem0.putNonexistenceChecks("(2005,10a3)");
                     });
+                }).run();
+    }
+
+    @AddedIn(Xnat_1_9.class)
+    public void testConstantLogicFunctions() {
+        new BasicAnonymizationTest("constantLogicFunctions.das")
+                .withData(TestData.SIMPLE_PET)
+                .withValidation((root) -> {
+                    for (String element : Arrays.asList("(0018,9758)", "(0018,9759)", "(0018,9760)", "(0018,9761)")) {
+                        root.putValueEqualCheck(element, "YEP");
+                    }
                 }).run();
     }
 
