@@ -280,9 +280,9 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
 
     @Test(dataProvider = PACS_DATA_PROVIDER)
     public void testDQRPermissions(final PacsTestData testData) {
-        DqrSettings dqrSettings2 = new DqrSettings();
-        mainAdminInterface().setDqrSettings(dqrSettings2.allowAllProjectsToUseDqr(false));
-        mainAdminInterface().setDqrSettings(dqrSettings2.allowAllUsersToUseDqr(false));
+        final Version dqrVersion = getPluginVersion(PluginRegistry.DQR_ID);
+        final DqrSettings dqrSettings = (dqrVersion.lessThan(DQR_2_0) ? new DqrSettings1x() : new DqrSettings());
+        mainAdminInterface().setDqrSettings(dqrSettings.allowAllProjectsToUseDqr(false).allowAllUsersToUseDqr(false));
         User newUser = createGenericUsers(1).get(0);
         PacsSearchCriteria searchCriteria = new PacsSearchCriteria();
         searchCriteria.pacsId(testData.getPacsId());
