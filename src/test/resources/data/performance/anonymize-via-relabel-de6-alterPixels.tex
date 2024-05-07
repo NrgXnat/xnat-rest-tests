@@ -8,23 +8,23 @@
 
 \begin{tikzpicture}
     \begin{axis}[
-        width = \textwidth,
-        xlabel = XNAT version,
-        ylabel = Overall time in seconds,
-        symbolic x coords = {1.8.0,1.8.4,1.8.5,1.8.5.2,1.8.6.1,1.8.7},
-        nodes near coords,
-        xtick = {1.8.0,1.8.4,1.8.5,1.8.5.2,1.8.6.1,1.8.7},
-        ymin = 0,
+        align = center,
+        xlabel = Overall time in seconds,
+        ylabel = XNAT version,
         xtick pos = left,
         ytick pos = left,
-        xticklabel style = {major tick length = 0pt},
-        title = {Relabel and DicomEdit6 pixel anonymization of study containing 2000 MR images}]
-        \addplot[ybar,fill=blue] coordinates {(1.8.0, 1840.0)};
-        \addplot[ybar,fill=blue] coordinates {(1.8.4, 145.4)};
-        \addplot[ybar,fill=blue] coordinates {(1.8.5, 147.0)};
-        \addplot[ybar,fill=blue] coordinates {(1.8.5.2, 145.7)};
-        \addplot[ybar,fill=blue] coordinates {(1.8.6.1, 146.2)};
-        \addplot[ybar,fill=blue] coordinates {(1.8.7, 145.4)};
+        ytick = data,
+        xmin = 0,
+        enlarge x limits = {value = 0.2, upper}, % make node labels not overlap with axes
+        title = {Relabel and DicomEdit6 pixel anonymization of study containing 2000 MR images},
+        title style = {text width = 0.8\textwidth},
+        nodes near coords,
+        nodes near coords align = horizontal,
+        symbolic y coords = {1.8.0.1,1.8.3,1.8.4.1,1.8.6.1,1.8.7.1,1.8.9.2,1.8.10.1},
+        y = 0.8cm,
+        point meta=x
+    ]
+        \addplot[xbar, fill = blue!20!white] coordinates { (1864.0,1.8.0.1) (149.2,1.8.3) (152.0,1.8.4.1) (150.7,1.8.6.1) (148.3,1.8.7.1) (147.7,1.8.9.2) (153.3,1.8.10.1) };
     \end{axis}
 \end{tikzpicture}
 

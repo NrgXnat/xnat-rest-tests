@@ -1,0 +1,45 @@
+{
+  "entries" : [ {
+    "@type" : ".SimpleOverallTimeRecord",
+    "baseline" : false,
+    "timestamp" : 1714000405888,
+    "xnatVersion" : "1.8.0.1",
+    "overallTimeInMillis" : 85914
+  }, {
+    "@type" : ".SimpleOverallTimeRecord",
+    "baseline" : false,
+    "timestamp" : 1714079760617,
+    "xnatVersion" : "1.8.3",
+    "overallTimeInMillis" : 86201
+  }, {
+    "@type" : ".SimpleOverallTimeRecord",
+    "baseline" : false,
+    "timestamp" : 1714156243538,
+    "xnatVersion" : "1.8.4.1",
+    "overallTimeInMillis" : 89431
+  }, {
+    "@type" : ".SimpleOverallTimeRecord",
+    "baseline" : false,
+    "timestamp" : 1714410487045,
+    "xnatVersion" : "1.8.6.1",
+    "overallTimeInMillis" : 88893
+  }, {
+    "@type" : ".SimpleOverallTimeRecord",
+    "baseline" : false,
+    "timestamp" : 1714429377763,
+    "xnatVersion" : "1.8.7.1",
+    "overallTimeInMillis" : 89734
+  }, {
+    "@type" : ".SimpleOverallTimeRecord",
+    "baseline" : false,
+    "timestamp" : 1714496143710,
+    "xnatVersion" : "1.8.9.2",
+    "overallTimeInMillis" : 90756
+  }, {
+    "@type" : ".SimpleOverallTimeRecord",
+    "baseline" : false,
+    "timestamp" : 1714580675797,
+    "xnatVersion" : "1.8.10.1",
+    "overallTimeInMillis" : 89249
+  } ]
+}

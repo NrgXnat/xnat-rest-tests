@@ -2,44 +2,50 @@
   "entries" : [ {
     "@type" : ".SimpleOverallTimeRecord",
     "baseline" : false,
-    "timestamp" : 1681311706798,
+    "timestamp" : 1713452987135,
     "xnatVersion" : "1.7.6",
-    "overallTimeInMillis" : 13007
+    "overallTimeInMillis" : 14334
   }, {
     "@type" : ".SimpleOverallTimeRecord",
     "baseline" : false,
-    "timestamp" : 1681328734568,
-    "xnatVersion" : "1.8.0",
-    "overallTimeInMillis" : 44113
+    "timestamp" : 1713998018242,
+    "xnatVersion" : "1.8.0.1",
+    "overallTimeInMillis" : 51442
   }, {
     "@type" : ".SimpleOverallTimeRecord",
     "baseline" : false,
-    "timestamp" : 1681397378827,
-    "xnatVersion" : "1.8.4",
-    "overallTimeInMillis" : 43948
+    "timestamp" : 1714079099798,
+    "xnatVersion" : "1.8.3",
+    "overallTimeInMillis" : 49618
   }, {
     "@type" : ".SimpleOverallTimeRecord",
     "baseline" : false,
-    "timestamp" : 1681419601635,
-    "xnatVersion" : "1.8.5",
-    "overallTimeInMillis" : 45576
+    "timestamp" : 1714155566174,
+    "xnatVersion" : "1.8.4.1",
+    "overallTimeInMillis" : 50398
   }, {
     "@type" : ".SimpleOverallTimeRecord",
     "baseline" : false,
-    "timestamp" : 1681485579380,
-    "xnatVersion" : "1.8.5.2",
-    "overallTimeInMillis" : 44672
-  }, {
-    "@type" : ".SimpleOverallTimeRecord",
-    "baseline" : false,
-    "timestamp" : 1681493600369,
+    "timestamp" : 1714409816375,
     "xnatVersion" : "1.8.6.1",
-    "overallTimeInMillis" : 44434
+    "overallTimeInMillis" : 48818
   }, {
     "@type" : ".SimpleOverallTimeRecord",
     "baseline" : false,
-    "timestamp" : 1681504259346,
-    "xnatVersion" : "1.8.7",
-    "overallTimeInMillis" : 45981
+    "timestamp" : 1714428709726,
+    "xnatVersion" : "1.8.7.1",
+    "overallTimeInMillis" : 49548
+  }, {
+    "@type" : ".SimpleOverallTimeRecord",
+    "baseline" : false,
+    "timestamp" : 1714495482615,
+    "xnatVersion" : "1.8.9.2",
+    "overallTimeInMillis" : 49162
+  }, {
+    "@type" : ".SimpleOverallTimeRecord",
+    "baseline" : false,
+    "timestamp" : 1714579993626,
+    "xnatVersion" : "1.8.10.1",
+    "overallTimeInMillis" : 50570
   } ]
 }

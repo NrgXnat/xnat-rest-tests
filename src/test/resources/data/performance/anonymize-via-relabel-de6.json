@@ -2,38 +2,44 @@
   "entries" : [ {
     "@type" : ".SimpleOverallTimeRecord",
     "baseline" : false,
-    "timestamp" : 1681328999392,
-    "xnatVersion" : "1.8.0",
-    "overallTimeInMillis" : 136582
+    "timestamp" : 1713998298018,
+    "xnatVersion" : "1.8.0.1",
+    "overallTimeInMillis" : 145159
   }, {
     "@type" : ".SimpleOverallTimeRecord",
     "baseline" : false,
-    "timestamp" : 1681397647364,
-    "xnatVersion" : "1.8.4",
-    "overallTimeInMillis" : 138510
+    "timestamp" : 1714079375240,
+    "xnatVersion" : "1.8.3",
+    "overallTimeInMillis" : 142639
   }, {
     "@type" : ".SimpleOverallTimeRecord",
     "baseline" : false,
-    "timestamp" : 1681419873856,
-    "xnatVersion" : "1.8.5",
-    "overallTimeInMillis" : 138928
+    "timestamp" : 1714155846487,
+    "xnatVersion" : "1.8.4.1",
+    "overallTimeInMillis" : 145127
   }, {
     "@type" : ".SimpleOverallTimeRecord",
     "baseline" : false,
-    "timestamp" : 1681485848153,
-    "xnatVersion" : "1.8.5.2",
-    "overallTimeInMillis" : 138415
-  }, {
-    "@type" : ".SimpleOverallTimeRecord",
-    "baseline" : false,
-    "timestamp" : 1681493869118,
+    "timestamp" : 1714410092600,
     "xnatVersion" : "1.8.6.1",
-    "overallTimeInMillis" : 138714
+    "overallTimeInMillis" : 145007
   }, {
     "@type" : ".SimpleOverallTimeRecord",
     "baseline" : false,
-    "timestamp" : 1681504528168,
-    "xnatVersion" : "1.8.7",
-    "overallTimeInMillis" : 137826
+    "timestamp" : 1714428982488,
+    "xnatVersion" : "1.8.7.1",
+    "overallTimeInMillis" : 141590
+  }, {
+    "@type" : ".SimpleOverallTimeRecord",
+    "baseline" : false,
+    "timestamp" : 1714495753106,
+    "xnatVersion" : "1.8.9.2",
+    "overallTimeInMillis" : 139346
+  }, {
+    "@type" : ".SimpleOverallTimeRecord",
+    "baseline" : false,
+    "timestamp" : 1714580278115,
+    "xnatVersion" : "1.8.10.1",
+    "overallTimeInMillis" : 145017
   } ]
 }

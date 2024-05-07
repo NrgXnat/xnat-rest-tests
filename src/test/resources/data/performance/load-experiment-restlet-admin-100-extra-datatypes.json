@@ -1,0 +1,147 @@
+{
+  "entries" : [ {
+    "@type" : ".CumulativeTimeSeriesData",
+    "baseline" : false,
+    "timestamp" : 1713471203315,
+    "xnatVersion" : "1.7.6",
+    "overallTimeInMillis" : 15408,
+    "timeSeriesData" : {
+      "1" : 1818,
+      "2" : 3301,
+      "3" : 4815,
+      "4" : 6478,
+      "5" : 7865,
+      "6" : 9341,
+      "7" : 10853,
+      "8" : 12396,
+      "9" : 13854,
+      "10" : 15408
+    }
+  }, {
+    "@type" : ".CumulativeTimeSeriesData",
+    "baseline" : false,
+    "timestamp" : 1714018144892,
+    "xnatVersion" : "1.8.0.1",
+    "overallTimeInMillis" : 16416,
+    "timeSeriesData" : {
+      "1" : 1585,
+      "2" : 3425,
+      "3" : 5015,
+      "4" : 6924,
+      "5" : 8418,
+      "6" : 9934,
+      "7" : 11565,
+      "8" : 13178,
+      "9" : 14676,
+      "10" : 16416
+    }
+  }, {
+    "@type" : ".CumulativeTimeSeriesData",
+    "baseline" : false,
+    "timestamp" : 1714100097688,
+    "xnatVersion" : "1.8.3",
+    "overallTimeInMillis" : 17096,
+    "timeSeriesData" : {
+      "1" : 1651,
+      "2" : 3266,
+      "3" : 4884,
+      "4" : 6408,
+      "5" : 8023,
+      "6" : 9752,
+      "7" : 11627,
+      "8" : 13357,
+      "9" : 15436,
+      "10" : 17096
+    }
+  }, {
+    "@type" : ".CumulativeTimeSeriesData",
+    "baseline" : false,
+    "timestamp" : 1714176252173,
+    "xnatVersion" : "1.8.4.1",
+    "overallTimeInMillis" : 15740,
+    "timeSeriesData" : {
+      "1" : 1654,
+      "2" : 3140,
+      "3" : 4672,
+      "4" : 6377,
+      "5" : 7843,
+      "6" : 9517,
+      "7" : 11032,
+      "8" : 12858,
+      "9" : 14261,
+      "10" : 15740
+    }
+  }, {
+    "@type" : ".CumulativeTimeSeriesData",
+    "baseline" : false,
+    "timestamp" : 1714425102694,
+    "xnatVersion" : "1.8.6.1",
+    "overallTimeInMillis" : 16469,
+    "timeSeriesData" : {
+      "1" : 1682,
+      "2" : 3339,
+      "3" : 4963,
+      "4" : 6491,
+      "5" : 8114,
+      "6" : 9786,
+      "7" : 11796,
+      "8" : 13358,
+      "9" : 14932,
+      "10" : 16469
+    }
+  }, {
+    "@type" : ".CumulativeTimeSeriesData",
+    "baseline" : false,
+    "timestamp" : 1714443972057,
+    "xnatVersion" : "1.8.7.1",
+    "overallTimeInMillis" : 16942,
+    "timeSeriesData" : {
+      "1" : 1689,
+      "2" : 4749,
+      "3" : 6261,
+      "4" : 7919,
+      "5" : 9395,
+      "6" : 10846,
+      "7" : 12346,
+      "8" : 13940,
+      "9" : 15390,
+      "10" : 16942
+    }
+  }, {
+    "@type" : ".CumulativeTimeSeriesData",
+    "baseline" : false,
+    "timestamp" : 1714509606716,
+    "xnatVersion" : "1.8.9.2",
+    "overallTimeInMillis" : 16266,
+    "timeSeriesData" : {
+      "1" : 1770,
+      "2" : 3253,
+      "3" : 4853,
+      "4" : 6194,
+      "5" : 8988,
+      "6" : 10414,
+      "7" : 11878,
+      "8" : 13308,
+      "9" : 14751,
+      "10" : 16266
+    }
+  }, {
+    "@type" : ".CumulativeTimeSeriesData",
+    "baseline" : false,
+    "timestamp" : 1714594065554,
+    "xnatVersion" : "1.8.10.1",
+    "overallTimeInMillis" : 15514,
+    "timeSeriesData" : {
+      "1" : 1413,
+      "2" : 3195,
+      "3" : 6203,
+      "4" : 7473,
+      "5" : 8816,
+      "6" : 10115,
+      "7" : 11442,
+      "8" : 12798,
+      "9" : 14090,
+      "10" : 15514
+    }
+  } ]
+}
