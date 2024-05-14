@@ -11,7 +11,6 @@ import org.dcm4che3.data.Attributes;
 import org.nrg.testing.DicomUtils;
 import org.nrg.testing.annotations.PluginRequirement;
 import org.nrg.testing.annotations.TestRequires;
-import org.nrg.testing.util.Version;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.xnat.pogo.PluginRegistry;
@@ -27,7 +26,6 @@ import org.nrg.xnat.pogo.dqr.DqrSearchResponse;
 import org.nrg.xnat.pogo.dqr.DqrSeriesSearchResponse;
 import org.nrg.xnat.pogo.dqr.DqrSeriesRepresentation;
 import org.nrg.xnat.pogo.dqr.DqrSettings;
-import org.nrg.xnat.pogo.dqr.DqrSettings1x;
 import org.nrg.xnat.pogo.dqr.DqrStudyRepresentation;
 import org.nrg.xnat.pogo.dqr.DqrPatientRepresentation;
 import org.nrg.xnat.pogo.dqr.ExecutedPacsRequest;
@@ -38,6 +36,7 @@ import org.nrg.xnat.pogo.dqr.QueuedPacsRequest;
 import org.nrg.xnat.pogo.experiments.Experiment;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.users.User;
+import org.nrg.xnat.versions.Version;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -122,8 +121,7 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
 
     @BeforeClass
     public void setupDQRNeeds() {
-        final Version dqrVersion = getPluginVersion(PluginRegistry.DQR_ID);
-        final DqrSettings dqrSettings = (dqrVersion.lessThan(DQR_2_0) ? new DqrSettings1x() : new DqrSettings())
+        final DqrSettings dqrSettings = new DqrSettings()
                 .pacsAvailabilityCheckFrequency(AVAILABILITY_CHECK_FREQUENCY)
                 .dqrMaxPacsRequestAttempts(MAX_PACS_REQUEST_ATTEMPTS)
                 .dqrCallingAe(SCP_RECEIVER_AE_TITLE != null ? SCP_RECEIVER_AE_TITLE : DEFAULT_CALLING_AE_TITLE);
@@ -280,9 +278,7 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
 
     @Test(dataProvider = PACS_DATA_PROVIDER)
     public void testDQRPermissions(final PacsTestData testData) {
-        final Version dqrVersion = getPluginVersion(PluginRegistry.DQR_ID);
-        final DqrSettings dqrSettings = (dqrVersion.lessThan(DQR_2_0) ? new DqrSettings1x() : new DqrSettings());
-        mainAdminInterface().setDqrSettings(dqrSettings.allowAllProjectsToUseDqr(false).allowAllUsersToUseDqr(false));
+        mainAdminInterface().setDqrSettings(new DqrSettings().allowAllProjectsToUseDqr(false).allowAllUsersToUseDqr(false));
         User newUser = createGenericUsers(1).get(0);
         PacsSearchCriteria searchCriteria = new PacsSearchCriteria();
         searchCriteria.pacsId(testData.getPacsId());

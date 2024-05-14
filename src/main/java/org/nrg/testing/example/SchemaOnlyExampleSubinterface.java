@@ -1,11 +1,11 @@
 package org.nrg.testing.example;
 
-import org.nrg.xnat.subinterfaces.XnatFunctionalitySubinterface;
+import org.nrg.xnat.subinterfaces.CoreXnatFunctionalitySubinterface;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class SchemaOnlyExampleSubinterface extends XnatFunctionalitySubinterface {
+public class SchemaOnlyExampleSubinterface extends CoreXnatFunctionalitySubinterface {
 
     @Override
     public List<String> getHandledEndpoints() {

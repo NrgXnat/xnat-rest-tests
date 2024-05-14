@@ -1,7 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.testing.util.Version;
 import org.nrg.testing.xnat.BaseXnatTest;
 import org.nrg.testing.xnat.containers.ContainerTestUtils;
 import org.nrg.testing.TimeUtils;
@@ -12,6 +11,7 @@ import org.nrg.testing.xnat.processing.files.resources.GenericResource;
 import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
 import org.nrg.xnat.pogo.PluginRegistry;
 import org.nrg.xnat.pogo.containers.Backend;
+import org.nrg.xnat.versions.Version;
 import org.nrg.xnat.versions.Xnat_1_7_7;
 import org.nrg.xnat.enums.Gender;
 import org.nrg.xnat.pogo.DataType;
