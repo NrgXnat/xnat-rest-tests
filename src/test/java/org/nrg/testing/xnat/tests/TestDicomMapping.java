@@ -115,6 +115,7 @@ public class TestDicomMapping extends BaseXnatRestTest {
         otherProject = registerTempProject();
         mainAdminInterface().createProject(otherProject);
         mainAdminInterface().disableSessionDicomRoutingConfig();
+        mainAdminInterface().disableProjectDicomRoutingConfig();
     }
 
     @AfterMethod(alwaysRun = true, groups = {IMPORTER, METADATA_EXTRACTION})
