@@ -26,10 +26,7 @@ public class TestUsersApi extends BaseXnatRestTest {
         verifyUserPresent(nonadminAuth.readSiteUsers(), genericUser.getUsername());
 
         mainAdminInterface().setSiteUserListRestriction(true);
-        try {
-            nonadminAuth.readSiteUsers();
-            fail("Attempt to read site user list as nonadmin should have failed with strict security on.");
-        } catch (PermissionsException ignored) {}
+        expect403(nonadminAuth::readSiteUsers);
         verifyUserPresent(mainAdminInterface().readSiteUsers(), genericUser.getUsername());
     }
     @Test

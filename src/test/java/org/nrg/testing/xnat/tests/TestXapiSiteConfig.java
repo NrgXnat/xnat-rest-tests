@@ -11,7 +11,6 @@ import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.xnat.XnatConnectionConfig;
 import org.nrg.xnat.interfaces.XnatInterface;
 import org.nrg.xnat.pogo.Uptime;
-import org.nrg.xnat.rest.PermissionsException;
 import org.nrg.xnat.versions.Xnat_1_8_4;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -148,10 +147,7 @@ public class TestXapiSiteConfig extends BaseXnatRestTest {
         if (readable) {
             assertEquals(expectedSiteConfig.get(preferenceName), xnatInterface.readSiteConfigPreference(preferenceName));
         } else {
-            try {
-                xnatInterface.readSiteConfigPreference(preferenceName);
-                fail();
-            } catch (PermissionsException ignored) {}
+            expectPermissionsIssue(() -> xnatInterface.readSiteConfigPreference(preferenceName));
         }
     }
 
@@ -184,10 +180,7 @@ public class TestXapiSiteConfig extends BaseXnatRestTest {
     }
 
     private void trySiteConfigPostExpectFailure(XnatInterface xnatInterface, Map<String, Object> postedConfig) {
-        try {
-            xnatInterface.postToSiteConfig(postedConfig);
-            fail("Should have been blocked");
-        } catch (PermissionsException ignored) {}
+        expectPermissionsIssue(() -> xnatInterface.postToSiteConfig(postedConfig));
     }
 
     private void testSiteConfigPropertyPost(boolean openXnat) {
@@ -195,10 +188,7 @@ public class TestXapiSiteConfig extends BaseXnatRestTest {
         for (XnatInterface xnatInterface : Arrays.asList(mainInterface(), guestInterface())) {
             for (Map.Entry<String, Object> expectedConfEntry : expectedSiteConfig.entrySet()) {
                 xnatInterface.disableAdminCheck();
-                try {
-                    xnatInterface.postSiteConfigProperty(expectedConfEntry.getKey(), "badval");
-                    fail("Should have been blocked");
-                } catch (PermissionsException ignored) {}
+                expectPermissionsIssue(() -> xnatInterface.postSiteConfigProperty(expectedConfEntry.getKey(), "badval"));
             }
         }
         if (openXnat) {

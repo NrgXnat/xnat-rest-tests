@@ -6,7 +6,6 @@ import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
 import org.nrg.xnat.XnatConnectionConfig;
 import org.nrg.xnat.interfaces.XnatInterface;
-import org.nrg.xnat.rest.PermissionsException;
 import org.nrg.xnat.versions.Xnat_1_7_4;
 import org.nrg.xnat.enums.Accessibility;
 import org.nrg.xnat.pogo.Project;
@@ -103,11 +102,9 @@ public class TestAliasTokenService extends BaseXnatRestTest {
         checkAliasTokenForAdmin(selfProxyToken);
 
         given().get(mainInterface().issueAliasTokenUrl(mainUser)).then().assertThat().statusCode(openXnat ? 403 : 401);
-        try {
-            final XnatInterface otherInterface = interfaceFor(otherUser);
-            otherInterface.generateAliasToken(mainUser);
-            fail("Proxy alias token generation as a non-admin should have failed");
-        } catch (PermissionsException ignored) {}
+        final XnatInterface otherInterface = interfaceFor(otherUser);
+        expect403(() -> otherInterface.generateAliasToken(mainUser));
+
 
         final XnatAliasToken proxyToken = mainAdminInterface().generateAliasToken(mainUser);
         checkAliasTokenForMainUser(proxyToken);
