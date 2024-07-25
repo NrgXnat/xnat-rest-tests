@@ -3,6 +3,7 @@ package org.nrg.testing.xnat.tests.dicomedit;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.nrg.testing.annotations.AddedIn;
+import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.RootDicomObject;
 import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
@@ -33,6 +34,12 @@ public class TestAnonymizationVrConsiderations extends BaseAnonymizationTest {
         root.putValueEqualCheck(Tag.URNCodeValue, "https://xnat.org", VR.UR);
         root.putValueEqualCheck(Tag.GPSMapDatum, "https://xnat.org", VR.UT);
     };
+    private static final Consumer<RootDicomObject> NEW_VR_MOD_VALIDATION = (root) -> {
+        root.putValueEqualCheck(Tag.FileOffsetInContainer, "52147483647", VR.UV);
+        root.putValueEqualCheck(Tag.SelectorSVValue, "52147483647", VR.SV);
+        root.putValueEqualCheck(Tag.URNCodeValue, "https://xnat.org/download", VR.UR);
+        root.putValueEqualCheck(Tag.GPSMapDatum, "https://xnat.org/download", VR.UT);
+    };
 
     /**
      * Tests a no-operation DicomEdit 4 script to make sure that elements with modern VRs are preserved correctly,
@@ -54,6 +61,37 @@ public class TestAnonymizationVrConsiderations extends BaseAnonymizationTest {
         new BasicAnonymizationTest("noop.das")
                 .withData(DATA_WITH_NEW_VRS)
                 .withValidation(NEW_VR_DATA_VALIDATION)
+                .run();
+    }
+
+    /**
+     * Tests assigning elements that are defined in PS 3.6 to be expected to have some very recent VRs. DicomEdit is
+     * still on an old version of dcm4che at the time this test is being written, so it cannot properly assign the
+     * VR. When dcm4che is updated, this test should be revisited because it may start working. It is also possible
+     * that the test will have bugs as we have not had a version of XNAT that can support it in order to properly
+     * "test" the test.
+     */
+    @ExpectedFailure(jiraIssue = "DE-119")
+    public void testAnonRecentVrModificationDE4() {
+        new BasicAnonymizationTest("recentVrMod.das")
+                .withData(DATA_WITH_NEW_VRS)
+                .withDicomEditVersion(DicomEditVersion.DE_4)
+                .withValidation(NEW_VR_MOD_VALIDATION)
+                .run();
+    }
+
+    /**
+     * Tests assigning elements that are defined in PS 3.6 to be expected to have some very recent VRs. DicomEdit is
+     * still on an old version of dcm4che at the time this test is being written, so it cannot properly assign the
+     * VR. When dcm4che is updated, this test should be revisited because it may start working. It is also possible
+     * that the test will have bugs as we have not had a version of XNAT that can support it in order to properly
+     * "test" the test.
+     */
+    @ExpectedFailure(jiraIssue = "DE-119")
+    public void testAnonRecentVrModificationDE6() {
+        new BasicAnonymizationTest("recentVrMod.das")
+                .withData(DATA_WITH_NEW_VRS)
+                .withValidation(NEW_VR_MOD_VALIDATION)
                 .run();
     }
 
