@@ -63,5 +63,13 @@
     "overallTimeInMillis" : 321212,
     "successCount" : 1000,
     "failureCount" : 0
+  }, {
+    "@type" : ".ErrorProneAggregatableRecord",
+    "baseline" : false,
+    "timestamp" : 1737655061411,
+    "xnatVersion" : "1.8.10.1",
+    "overallTimeInMillis" : 270109,
+    "successCount" : 1000,
+    "failureCount" : 0
   } ]
 }
