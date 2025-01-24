@@ -5,5 +5,11 @@
     "timestamp" : 1737670634652,
     "xnatVersion" : "1.8.0.1",
     "overallTimeInMillis" : 1549411
+  }, {
+    "@type" : ".SimpleOverallTimeRecord",
+    "baseline" : false,
+    "timestamp" : 1737688624106,
+    "xnatVersion" : "1.8.3",
+    "overallTimeInMillis" : 28626
   } ]
 }
