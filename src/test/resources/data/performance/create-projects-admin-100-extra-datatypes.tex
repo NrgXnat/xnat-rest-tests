@@ -1,0 +1,56 @@
+\documentclass[margin=5mm]{standalone}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{pgfplots}
+\usepackage{tikz}
+\usepackage[tikz]{ocgx2}
+
+\pgfplotsset{compat=1.18}
+\begin{document}
+
+\begin{tikzpicture}
+    \begin{axis}[
+        align = center,
+        legend pos = north west,
+        legend cell align = left,
+        xlabel = Number of projects created,
+        ylabel = Cumulative time in seconds,
+        xtick pos = left,
+        ytick pos = left,
+        scaled ticks = false,
+        xmin = 0,
+        ymin = 0,
+        title = {Cumulative time for admin creating projects with 100 datatypes added},
+        title style = {text width = 0.8\textwidth},
+        legend entries={\switchocg{1.8.9.2}{1.8.9.2}}]
+        \begin{scope}[ocg = {ref = 1.8.9.2-Lin, status = invisible}]
+            \plot[domain=0:788,->,forget plot] (\x,{-277.8409762162160632215091027319431304931640625 + 3.38386077951635844129896213416941463947296142578125*(\x)^1});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.9.2-Quad, status = invisible}]
+            \plot[domain=0:788,->,forget plot] (\x,{26.616005938540855169094356824643909931182861328125 + 1.011468710777990498428380305995233356952667236328125*(\x)^1 + 0.003121568511497853533331880981904760119505226612091064453125*(\x)^2});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.9.2-Cub, status = invisible}]
+            \plot[domain=0:788,->,forget plot] (\x,{5.087564843473327158562824479304254055023193359375 + 1.340543669171581964150163912563584744930267333984375*(\x)^1 + 0.002046221803452521505184424910339657799340784549713134765625*(\x)^2 + 0.0000009432865860046776088686866675037112628388058510608971118927001953125*(\x)^3});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.9.2, status = visible}]
+            \addplot[
+                only marks,
+                color = black,
+                mark = *,
+                mark size = 1.5 pt
+            ]coordinates {(10,18.52)(20,32.46)(30,47.415)(40,62.675)(50,78.498)(60,93.539)(70,108.921)(80,125.508)(90,142.467)(100,159.088)(110,176.536)(120,195.526)(130,214.198)(140,233.712)(150,254.651)(160,275.341)(170,297.358)(180,320.509)(190,342.621)(200,366.218)(210,390.471)(220,412.646)(230,436.763)(240,459.513)(250,483.059)(260,509.122)(270,534.666)(280,559.853)(290,585.115)(300,612.005)(310,639.121)(320,669.045)(330,704.774)(340,736.511)(350,765.725)(360,797.504)(370,828.434)(380,861.045)(390,893.019)(400,930.038)(410,965.815)(420,1001.166)(430,1035.682)(440,1072.013)(450,1110.468)(460,1146.731)(470,1185.059)(480,1223.066)(490,1263.982)(500,1304.801)(510,1344.823)(520,1387.406)(530,1432.735)(540,1476.245)(550,1518.223)(560,1562.633)(570,1605.492)(580,1653.918)(590,1700.466)(600,1749.789)(610,1798.65)(620,1849.535)(630,1900.837)(640,1949.659)(650,2000.642)(660,2052.878)(670,2105.665)(680,2160.26)(690,2215.247)(700,2268.281)(710,2322.671)(720,2380.39)(730,2439.929)(740,2503.168)(750,2559.444)};
+        \end{scope}
+    \end{axis}
+    \begin{scope}
+        \addtolength{\tabcolsep}{-0.3em}
+        \node [below right, shape=rectangle, align=left](regressiontable) at (7,6) {
+            Add regression options: \\
+            \begin{tabular}{|llll|}
+                \hline
+                1.8.9.2 & \switchocg{1.8.9.2-Lin}{Lin} & \switchocg{1.8.9.2-Quad}{Quad} & \switchocg{1.8.9.2-Cub}{Cub} \\
+                \hline
+            \end{tabular}
+        };
+    \end{scope}
+\end{tikzpicture}
+
+\end{document}
