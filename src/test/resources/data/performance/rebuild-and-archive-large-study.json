@@ -1,0 +1,9 @@
+{
+  "entries" : [ {
+    "@type" : ".SimpleOverallTimeRecord",
+    "baseline" : false,
+    "timestamp" : 1737669052444,
+    "xnatVersion" : "1.8.0.1",
+    "overallTimeInMillis" : 15427
+  } ]
+}
