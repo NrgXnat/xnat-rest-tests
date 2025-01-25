@@ -21,7 +21,24 @@
         ymin = 0,
         title = {Cumulative time to make existing projects public},
         title style = {text width = 0.8\textwidth},
-        legend entries={\switchocg{1.8.9.2}{1.8.9.2},\switchocg{1.8.3}{1.8.3},\switchocg{1.8.0.1}{1.8.0.1}}]
+        legend entries={\switchocg{1.8.10.1}{1.8.10.1},\switchocg{1.8.9.2}{1.8.9.2},\switchocg{1.8.3}{1.8.3},\switchocg{1.8.0.1}{1.8.0.1}}]
+        \begin{scope}[ocg = {ref = 1.8.10.1-Lin, status = invisible}]
+            \plot[domain=0:42,->,forget plot] (\x,{-7.3533269230769491286991978995501995086669921875 + 15.9470854596622881871326171676628291606903076171875*(\x)^1});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.10.1-Quad, status = invisible}]
+            \plot[domain=0:42,->,forget plot] (\x,{-1.2513719635628468562771331562544219195842742919921875 + 15.0753776083031265642375728930346667766571044921875*(\x)^1 + 0.0212611671063210293242118353873593150638043880462646484375*(\x)^2});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.10.1-Cub, status = invisible}]
+            \plot[domain=0:42,->,forget plot] (\x,{0.65880481453097894384285382329835556447505950927734375 + 14.548547932665922388650869834236800670623779296875*(\x)^1 + 0.052991678370338364534308794873140868730843067169189453125*(\x)^2 + -0.000515943272585647782525752891302772695780731737613677978515625*(\x)^3});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.8.10.1, status = visible}]
+            \addplot[
+                only marks,
+                color = lime!70!black,
+                mark = *,
+                mark size = 1.5 pt
+            ]coordinates {(1,14.879)(2,29.711)(3,44.898)(4,59.986)(5,74.957)(6,90.134)(7,105.317)(8,120.401)(9,135.594)(10,150.813)(11,166.345)(12,181.744)(13,197.213)(14,212.84)(15,228.805)(16,244.584)(17,260.233)(18,276.348)(19,292.269)(20,308.337)(21,324.587)(22,341.177)(23,357.599)(24,374.092)(25,390.358)(26,406.833)(27,422.649)(28,438.556)(29,454.595)(30,470.751)(31,486.849)(32,502.919)(33,519.443)(34,535.718)(35,551.944)(36,568.417)(37,585.072)(38,601.734)(39,618.53)(40,635.246)};
+        \end{scope}
         \begin{scope}[ocg = {ref = 1.8.9.2-Lin, status = invisible}]
             \plot[domain=0:42,->,forget plot] (\x,{-7.2584615384614625810399957117624580860137939453125 + 16.2644932457786097756979870609939098358154296875*(\x)^1});
         \end{scope}
@@ -80,6 +97,7 @@
             Add regression options: \\
             \begin{tabular}{|llll|}
                 \hline
+                1.8.10.1 & \switchocg{1.8.10.1-Lin}{Lin} & \switchocg{1.8.10.1-Quad}{Quad} & \switchocg{1.8.10.1-Cub}{Cub} \\
                 1.8.9.2 & \switchocg{1.8.9.2-Lin}{Lin} & \switchocg{1.8.9.2-Quad}{Quad} & \switchocg{1.8.9.2-Cub}{Cub} \\
                 1.8.3 & \switchocg{1.8.3-Lin}{Lin} & \switchocg{1.8.3-Quad}{Quad} & \switchocg{1.8.3-Cub}{Cub} \\
                 1.8.0.1 & \switchocg{1.8.0.1-Lin}{Lin} & \switchocg{1.8.0.1-Quad}{Quad} & \switchocg{1.8.0.1-Cub}{Cub} \\
