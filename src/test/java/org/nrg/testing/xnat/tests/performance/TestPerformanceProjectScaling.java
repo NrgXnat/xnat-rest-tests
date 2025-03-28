@@ -12,6 +12,7 @@ import org.nrg.xnat.interfaces.XnatInterface;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
+import org.nrg.xnat.pogo.XnatDeployment;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 
 import java.util.ArrayList;
@@ -45,20 +46,21 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
     private static final RepeatedMonitorableAction EXPT_PROJ_LISTING_TEST_NONADMIN_EXTRA = experimentListingRetrieveTest(true, true);
     private static final RepeatedMonitorableAction EXPT_PROJ_LISTING_TEST_NONADMIN_BASE = experimentListingRetrieveTest(true, false);
 
-    public void testCreateProjectsAsAdmin() {
+    public void testCreateProjectsAsAdmin(XnatDeployment deployment) {
         testCreateProjects(
                 "create-projects-admin",
-                (test) -> test.title("Cumulative time for admin creating projects").compareTo(CREATE_PROJECTS_EXTRA_DATA_TYPE_ID, EXTRA_DATATYPES_DESCRIPTION, "100-types")
+                (test) -> test.title("Cumulative time for admin creating projects").compareTo(CREATE_PROJECTS_EXTRA_DATA_TYPE_ID, EXTRA_DATATYPES_DESCRIPTION, "100-types"),
+                deployment
         );
     }
 
     @PerformanceTestPlugin(DATA_TYPE_PLUGIN)
-    public void testCreateProjectsExtraDatatypes() {
-        testCreateProjects(CREATE_PROJECTS_EXTRA_DATA_TYPE_ID, (test) -> test.title("Cumulative time for admin creating projects " + EXTRA_DATATYPES_DESCRIPTION));
+    public void testCreateProjectsExtraDatatypes(XnatDeployment deployment) {
+        testCreateProjects(CREATE_PROJECTS_EXTRA_DATA_TYPE_ID, (test) -> test.title("Cumulative time for admin creating projects " + EXTRA_DATATYPES_DESCRIPTION), deployment);
     }
 
-    public void testCreateProjectsAsAdminAdditionalTypeRegistration() {
-        performanceScenario()
+    public void testCreateProjectsAsAdminAdditionalTypeRegistration(XnatDeployment deployment) {
+        performanceScenario(deployment)
                 .setup(
                         performanceStateHelper -> Stream.of(
                                         DataType.lookupAllKnownScanTypes(),
@@ -77,9 +79,9 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
                 ).run();
     }
 
-    public void testCreateManyProjectsAsIndividualUsers() {
+    public void testCreateManyProjectsAsIndividualUsers(XnatDeployment deployment) {
         mainAdminInterface().disableSmtp();
-        performanceScenario()
+        performanceScenario(deployment)
                 .tests(
                         new RepeatedMonitorableAction("create-many-projects-one-per-user")
                                 .title("Cumulative time for unique users each creating a single project")
@@ -91,7 +93,7 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
                 ).run();
     }
 
-    public void testPublicProjectScaling() {
+    public void testPublicProjectScaling(XnatDeployment deployment) {
         final List<Project> projectsToMakePublic = IntStream.range(0, NUM_PROJECTS_TO_MAKE_PUBLIC)
                 .mapToObj(ignored -> new Project())
                 .collect(Collectors.toList());
@@ -99,7 +101,7 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
             mainInterface().createProject(project);
         }
         final Consumer<XnatInterface> publishAction = xnatInterface -> xnatInterface.updateAccessibility(projectsToMakePublic.remove(0), Accessibility.PUBLIC);
-        performanceScenario()
+        performanceScenario(deployment)
                 .tests(
                         new RepeatedMonitorableAction("create-many-public-projects")
                                 .title("Cumulative public project creation time")
@@ -119,9 +121,9 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
                 ).run();
     }
 
-    public void testCreateSessionsNonadmin() {
+    public void testCreateSessionsNonadmin(XnatDeployment deployment) {
         mainInterface().createProject(EXPT_CREATE_PROJECT);
-        performanceScenario().tests(
+        performanceScenario(deployment).tests(
                 EXPT_CREATE_TEST_BASE_SCENARIO,
                 EXPT_PROJ_LISTING_TEST_NONADMIN_BASE,
                 EXPT_PROJ_LISTING_TEST_ADMIN_BASE
@@ -129,16 +131,16 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
     }
 
     @PerformanceTestPlugin(DATA_TYPE_PLUGIN)
-    public void testCreateSessionsNonadminExtraDatatypes() {
+    public void testCreateSessionsNonadminExtraDatatypes(XnatDeployment deployment) {
         mainInterface().createProject(EXPT_CREATE_PROJECT);
-        performanceScenario().tests(
+        performanceScenario(deployment).tests(
                 EXPT_CREATE_TEST_EXTRA_TYPES,
                 EXPT_PROJ_LISTING_TEST_NONADMIN_EXTRA,
                 EXPT_PROJ_LISTING_TEST_ADMIN_EXTRA
         ).run();
     }
 
-    private void testCreateProjects(String id, Consumer<RepeatedMonitorableAction> testCustomization) {
+    private void testCreateProjects(String id, Consumer<RepeatedMonitorableAction> testCustomization, XnatDeployment deployment) {
         final RepeatedMonitorableAction test = new RepeatedMonitorableAction(id)
                 .actionDescription("Number of projects created")
                 .asUser(mainAdminUser)
@@ -146,7 +148,7 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
                 .performanceTestAction(CREATE_PROJECT_ACTION)
                 .validateUsing(PolynomialRegressionValidator.STRICT_QUADRATIC);
         testCustomization.accept(test);
-        performanceScenario().tests(test).run();
+        performanceScenario(deployment).tests(test).run();
     }
 
     private static RepeatedMonitorableAction experimentCreateTest(boolean extraTypes) {

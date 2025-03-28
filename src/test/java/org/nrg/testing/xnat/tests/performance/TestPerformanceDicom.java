@@ -5,6 +5,7 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.util.UIDUtils;
+import org.nrg.testing.annotations.PerformanceTest;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.dicom.transform.*;
@@ -22,6 +23,7 @@ import org.nrg.xnat.interfaces.XnatInterface;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
+import org.nrg.xnat.pogo.XnatDeployment;
 import org.nrg.xnat.pogo.dicom.FilterMode;
 import org.nrg.xnat.pogo.dicom.SeriesImportFilter;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
@@ -30,14 +32,12 @@ import org.nrg.xnat.pogo.search.SearchResponse;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
 import org.nrg.xnat.pogo.search.XnatSearchParams;
 import org.nrg.xnat.prearchive.*;
-import org.testng.annotations.Test;
 
 import java.nio.file.Paths;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static org.testng.AssertJUnit.assertTrue;
-import static org.testng.AssertJUnit.fail;
 
 public class TestPerformanceDicom extends XnatPerformanceTests {
 
@@ -62,9 +62,9 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
             );
     private static final Logger log = Logger.getLogger(TestPerformanceDicom.class);
 
-    @Test
+    @PerformanceTest
     @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
-    public void testBulkCStore() {
+    public void testBulkCStore(XnatDeployment deployment) {
         final int totalNumInstances = 1000;
         final String nameCstore = "bulk-cstore";
 
@@ -104,7 +104,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
             final SearchResponse cachedSearch = xnatInterface.cacheSearch(defaultSubjectSearch);
             assertTrue(xnatInterface.retrieveCachedSearchResultsAsXList(cachedSearch, new XnatSearchParams()).contains("sub_project_identifier"));
         };
-        performanceScenario()
+        performanceScenario(deployment)
                 .setup(setupForCStoreToProject(project))
                 .tests(
                         new ErrorProneAggregatableAction(nameCstore)
@@ -123,9 +123,9 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                 ).run();
     }
 
-    @Test
+    @PerformanceTest
     @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
-    public void testLargeSession() {
+    public void testLargeSession(XnatDeployment deployment) {
         final String cstoreWithAnonId = "cstore-large-study-site-anon";
         final Project project = new Project(PREARCHIVE_PROJECT_ID).prearchiveCode(PrearchiveCode.MANUAL);
 
@@ -135,7 +135,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
             mainAdminInterface().disableProjectAnonScript(project);
         };
 
-        performanceScenario()
+        performanceScenario(deployment)
                 .setup(setupForCStoreToProject(project))
                 .tests(
                         new SimpleTimedAction("cstore-large-study")
@@ -182,9 +182,9 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                 ).run();
     }
 
-    @Test
+    @PerformanceTest
     @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
-    public void testLargeSeriesCountPerformance() {
+    public void testLargeSeriesCountPerformance(XnatDeployment deployment) {
         final String name = "many-series";
         final int numSeries = 1000;
         final Project project = new Project(MANY_SERIES_PROJECT_ID).prearchiveCode(PrearchiveCode.MANUAL);
@@ -211,7 +211,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                                 )
                 );
 
-        performanceScenario()
+        performanceScenario(deployment)
                 .setup(setupForCStoreToProject(project))
                 .tests(
                         new SimpleTimedAction("cstore-many-series")
