@@ -39,6 +39,7 @@ import org.testng.annotations.Test;
 
 import static org.testng.AssertJUnit.assertTrue;
 
+@Test(groups = "performance", dataProvider = XnatPerformanceTests.DEPLOYMENTS_PROVIDER)
 public class TestPerformanceDicom extends XnatPerformanceTests {
 
     private static final int HARD_WAIT_LIMIT = 7200;
@@ -62,7 +63,6 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
             );
     private static final Logger log = Logger.getLogger(TestPerformanceDicom.class);
 
-    @Test
     @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
     public void testBulkCStore(XnatDeployment deployment) {
         final int totalNumInstances = 1000;
@@ -123,7 +123,6 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                 ).run();
     }
 
-    @Test
     @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
     public void testLargeSession(XnatDeployment deployment) {
         final String cstoreWithAnonId = "cstore-large-study-site-anon";
@@ -182,7 +181,6 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                 ).run();
     }
 
-    @Test
     @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
     public void testLargeSeriesCountPerformance(XnatDeployment deployment) {
         final String name = "many-series";
