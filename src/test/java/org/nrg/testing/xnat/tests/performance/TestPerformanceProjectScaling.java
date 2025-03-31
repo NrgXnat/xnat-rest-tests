@@ -34,7 +34,7 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
     private static final int NUM_ACCOUNTS_CREATING_PROJECTS = 750;
     private static final int NUM_PUBLIC_PROJECTS = 500;
     private static final int NUM_PROJECTS_TO_MAKE_PUBLIC = 40;
-    private static final int NUM_SESSIONS_CREATE = 500; // TODO: revert to 10k
+    private static final int NUM_SESSIONS_CREATE = 10000;
     private static final String EXTRA_DATATYPES_DESCRIPTION = "with 100 datatypes added";
     private static final String CREATE_PROJECTS_EXTRA_DATA_TYPE_ID = "create-projects-admin-100-extra-datatypes";
     private static final String DATA_TYPE_PLUGIN = "datatype-proliferation-1.0.0.jar";

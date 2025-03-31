@@ -47,6 +47,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
     private static final String PREARCHIVE_PROJECT_ID = "PREARC_TEST";
     private static final String MANY_SERIES_PROJECT_ID = "MANY_SERIES";
     private static final String SIMPLISTIC_ANON_SCRIPT = "simplisticDelete.das";
+    private static final String PROBLEMATIC_ANON_SCRIPT = "problematic.das";
     private static final String BASIC_PIXEL_ANON_SCRIPT = "alterPixelsSimplistic.das";
     private static final int INSTANCE_COUNT_LARGE_STUDY = 2000;
     private static final LocallyCacheableDicomTransformation LARGE_STUDY_HARDCODED_ROUTING = new LocallyCacheableDicomTransformation("large-study")
@@ -126,6 +127,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
     @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
     public void testLargeSession(XnatDeployment deployment) {
         final String cstoreWithAnonId = "cstore-large-study-site-anon";
+        final String cstoreWithProblematicAnon = "cstore-large-problematic-site-anon";
         final Project project = new Project(PREARCHIVE_PROJECT_ID).prearchiveCode(PrearchiveCode.MANUAL);
 
         final Runnable clearProject = () -> {
@@ -142,7 +144,8 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                                 .withSetup(LARGE_STUDY_HARDCODED_ROUTING)
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(cstoreDicomFromTransformation(LARGE_STUDY_HARDCODED_ROUTING))
-                                .compareTo(cstoreWithAnonId, "with site anon"),
+                                .compareTo(cstoreWithAnonId, "with site anon")
+                                .compareTo(cstoreWithProblematicAnon, "with problematic anon"),
                         new SimpleTimedAction("rebuild-and-archive-large-study")
                                 .title(String.format("Rebuild and archive of study containing %d MR images", INSTANCE_COUNT_LARGE_STUDY))
                                 .asUser(mainAdminUser)
@@ -170,12 +173,20 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                                 .asUser(mainAdminUser)
                                 .withSetup(clearProject)
                                 .performanceTestAction(setSiteImportFilterAndCstore("worst_case.txt", LARGE_STUDY_HARDCODED_ROUTING)),
-                        new SimpleTimedAction("cstore-large-study-site-anon")
+                        new SimpleTimedAction(cstoreWithAnonId)
                                 .title(String.format("CSTORE and DicomEdit6 anonymization of study containing %d MR images", INSTANCE_COUNT_LARGE_STUDY))
                                 .asUser(mainAdminUser)
                                 .withSetup(() -> {
                                     clearProject.run();
                                     mainAdminInterface().setSiteAnonScript(XnatObjectUtils.anonScriptFromFile(DicomEditVersion.DE_6, SIMPLISTIC_ANON_SCRIPT));
+                                    mainAdminInterface().enableSiteAnonScript();
+                                }).performanceTestAction(cstoreDicomFromTransformation(LARGE_STUDY_HARDCODED_ROUTING)),
+                        new SimpleTimedAction(cstoreWithProblematicAnon)
+                                .title(String.format("CSTORE and problematic anonymization of study containing %d MR images", INSTANCE_COUNT_LARGE_STUDY))
+                                .asUser(mainAdminUser)
+                                .withSetup(() -> {
+                                    clearProject.run();
+                                    mainAdminInterface().setSiteAnonScript(XnatObjectUtils.anonScriptFromFile(DicomEditVersion.DE_6, PROBLEMATIC_ANON_SCRIPT));
                                     mainAdminInterface().enableSiteAnonScript();
                                 }).performanceTestAction(cstoreDicomFromTransformation(LARGE_STUDY_HARDCODED_ROUTING))
                 ).run();
