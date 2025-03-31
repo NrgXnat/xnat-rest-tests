@@ -1,6 +1,7 @@
 package org.nrg.testing.xnat.tests.performance;
 
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.testing.annotations.PerformanceTest;
 import org.nrg.testing.annotations.PerformanceTestPlugin;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.performance.XnatPerformanceTests;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+@PerformanceTest
 public class TestPerformanceProjectScaling extends XnatPerformanceTests {
 
     private static final Consumer<XnatInterface> CREATE_PROJECT_ACTION = xnatInterface -> xnatInterface.createProject(new Project());
