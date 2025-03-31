@@ -36,7 +36,7 @@ for cfg in projectRules subjectRules sessionRules; do
     curl -s -X PUT -u $basicAuth "$URL/data/config/dicom/$cfg?status=disabled"
 done
 
-mvn -e -Dxnat.config=$cfgFile clean test ${TEST_CLASS:+ -Dtest=$TEST_CLASS} $MVN_OPTIONS
+mvn -Dxnat.config=$cfgFile clean test ${TEST_CLASS:+ -Dtest=$TEST_CLASS} $MVN_OPTIONS
 result=$?
 
 # reset requireLogin

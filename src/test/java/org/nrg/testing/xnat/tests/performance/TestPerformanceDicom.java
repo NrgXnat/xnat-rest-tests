@@ -64,7 +64,6 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
     private static final Logger log = Logger.getLogger(TestPerformanceDicom.class);
 
     @PerformanceTest
-    @Test(groups = "performance", dataProvider = "deployments")
     @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
     public void testBulkCStore(XnatDeployment deployment) {
         final int totalNumInstances = 1000;
