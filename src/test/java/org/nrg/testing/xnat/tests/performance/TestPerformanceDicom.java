@@ -36,6 +36,7 @@ import org.nrg.xnat.prearchive.*;
 import java.nio.file.Paths;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import org.testng.annotations.Test;
 
 import static org.testng.AssertJUnit.assertTrue;
 
@@ -63,6 +64,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
     private static final Logger log = Logger.getLogger(TestPerformanceDicom.class);
 
     @PerformanceTest
+    @Test(groups = "performance", dataProvider = "deployments")
     @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
     public void testBulkCStore(XnatDeployment deployment) {
         final int totalNumInstances = 1000;
