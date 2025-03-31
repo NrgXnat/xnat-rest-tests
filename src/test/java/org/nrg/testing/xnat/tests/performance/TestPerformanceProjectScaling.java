@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.testng.annotations.Test;
 
-@Test
+@Test(groups = "performance", dataProvider = XnatPerformanceTests.DEPLOYMENTS_PROVIDER)
 public class TestPerformanceProjectScaling extends XnatPerformanceTests {
 
     private static final Consumer<XnatInterface> CREATE_PROJECT_ACTION = xnatInterface -> xnatInterface.createProject(new Project());
