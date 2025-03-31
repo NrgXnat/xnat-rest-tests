@@ -5,7 +5,6 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.util.UIDUtils;
-import org.nrg.testing.annotations.PerformanceTest;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.dicom.transform.*;
@@ -63,7 +62,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
             );
     private static final Logger log = Logger.getLogger(TestPerformanceDicom.class);
 
-    @PerformanceTest
+    @Test
     @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
     public void testBulkCStore(XnatDeployment deployment) {
         final int totalNumInstances = 1000;
@@ -124,7 +123,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                 ).run();
     }
 
-    @PerformanceTest
+    @Test
     @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
     public void testLargeSession(XnatDeployment deployment) {
         final String cstoreWithAnonId = "cstore-large-study-site-anon";
@@ -183,7 +182,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                 ).run();
     }
 
-    @PerformanceTest
+    @Test
     @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
     public void testLargeSeriesCountPerformance(XnatDeployment deployment) {
         final String name = "many-series";
