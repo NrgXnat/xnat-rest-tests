@@ -7,9 +7,9 @@ import org.dcm4che3.data.VR;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
 import org.nrg.testing.enums.TestData;
-import org.nrg.xnat.versions.Xnat_1_9;
+import org.nrg.xnat.versions.Xnat_1_9_0;
 
-@AddedIn(Xnat_1_9.class)
+@AddedIn(Xnat_1_9_0.class)
 public class TestAnonymizationIsPresentFunction extends BaseAnonymizationTest {
 
     public void testIsPresentStandard() {

@@ -11,10 +11,10 @@ import org.nrg.xnat.enums.DicomEditVersion;
 import org.nrg.xnat.pogo.AnonScript;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.versions.Xnat_1_8_1;
-import org.nrg.xnat.versions.Xnat_1_9;
 
 import java.util.Arrays;
 import java.util.function.Consumer;
+import org.nrg.xnat.versions.Xnat_1_9_0;
 
 import static org.nrg.xnat.enums.DicomEditVersion.DE_4;
 import static org.nrg.xnat.enums.DicomEditVersion.DE_6;
@@ -141,7 +141,7 @@ public class TestAnonymizationBuiltinFunctions extends BaseAnonymizationTest {
                 }).run();
     }
 
-    @AddedIn(Xnat_1_9.class)
+    @AddedIn(Xnat_1_9_0.class)
     public void testConstantLogicFunctions() {
         new BasicAnonymizationTest("constantLogicFunctions.das")
                 .withData(TestData.SIMPLE_PET)
