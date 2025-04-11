@@ -8,6 +8,7 @@ import org.nrg.xnat.pogo.containers.Backend;
 import org.nrg.xnat.pogo.containers.Command;
 import org.nrg.xnat.pogo.containers.DockerServer;
 import org.nrg.xnat.pogo.containers.Image;
+import org.nrg.xnat.pogo.users.User;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 
 import java.util.Arrays;
@@ -22,37 +23,36 @@ public class ContainerTestUtils {
     public static final String DEBUG_OUTPUT_FILE_INPUT_NAME = "output-file";
     public static final String DEBUG_OUTPUT_RESOURCE_NAME = "DEBUG_OUTPUT";
 
-    public static void setServerBackend(BaseXnatRestTest testClassInstance, Backend backend) {
-        final DockerServer dockerServer = testClassInstance.mainAdminInterface().readDockerServer();
+    public static void setServerBackend(BaseXnatRestTest testClassInstance, Backend backend, XnatInterface xnatInterface) {
+        final DockerServer dockerServer = xnatInterface.readDockerServer();
         dockerServer.setBackend(backend);
         if (backend == Backend.SWARM && !Settings.swarmConstraints().isEmpty()) {
             dockerServer.setSwarmConstraints(Settings.swarmConstraints());
         } else {
             dockerServer.setSwarmConstraints(Collections.emptyList());
         }
-        testClassInstance.mainAdminInterface().updateDockerServer(dockerServer);
+        xnatInterface.updateDockerServer(dockerServer);
     }
 
-    public static void pullDebugImage(BaseXnatRestTest testClassInstance) {
-        testClassInstance.mainAdminInterface().pullImage(DEBUG_IMG);
+    public static void pullDebugImage(BaseXnatRestTest testClassInstance, XnatInterface xnatInterface) {
+        xnatInterface.pullImage(DEBUG_IMG);
     }
 
-    public static void deleteAllImagesWithCommands(BaseXnatRestTest test) {
-        final XnatInterface adminInterface = test.mainAdminInterface();
-        adminInterface.readImages(IMAGES_WITH_COMMANDS_JSON_PATH)
+    public static void deleteAllImagesWithCommands(BaseXnatRestTest test, XnatInterface xnatInterface) {
+        xnatInterface.readImages(IMAGES_WITH_COMMANDS_JSON_PATH)
                 .stream()
                 .filter(Objects::nonNull)
-                .forEach(adminInterface::deleteImage);
+                .forEach(xnatInterface::deleteImage);
     }
 
-    public static void installFreshImageIfNecessary(BaseXnatRestTest test, Image testImage, Backend backend) {
-        final XnatInterface mainAdminInterface = test.mainAdminInterface();
-        for (Command command : mainAdminInterface.readCommands(testImage)) {
-            mainAdminInterface.deleteCommand(command);
+    public static void installFreshImageIfNecessary(BaseXnatRestTest test, Image testImage, Backend backend, XnatInterface xnatInterface) {
+        for (Command command : xnatInterface.readCommands(testImage)) {
+            xnatInterface.deleteCommand(command);
         }
         if (backend == Backend.DOCKER) {
-            mainAdminInterface.pullImage(testImage, false); // add commands explicitly for both docker and k8s in next step
+            xnatInterface.pullImage(testImage, false); // add commands explicitly for both docker and k8s in next step
         }
     }
+
 
 }

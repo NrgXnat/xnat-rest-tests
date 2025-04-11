@@ -2,6 +2,7 @@ package org.nrg.testing.xnat.tests;
 
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
+import org.nrg.testing.annotations.DeprecatedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
@@ -19,6 +20,7 @@ import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.SubjectAssessor;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.versions.Xnat_1_8_2;
+import org.nrg.xnat.versions.Xnat_1_9_2;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -35,7 +37,7 @@ import static org.testng.AssertJUnit.assertNull;
 @TestRequires(plugins = {"containers", "batchLaunchPlugin"})
 @AddedIn(Xnat_1_8_2.class)
 @Test(groups = {CONTAINERS, ORCHESTRATION})
-public class TestContainerOrchestration extends BaseXnatRestTest {
+public class TestContainerOrchestration extends BaseContainerTest {
     private static final Image DEBUG_IMG = new Image("xnat", "debug-command", "latest");
     private static final String DEBUG_WRAPPER_NAME = "debug-session";
     private static final Image ALT_IMG = new Image("xnat", "generate-test-qc-assessor", "latest");
@@ -49,7 +51,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
 
     @BeforeClass
     private void setup() {
-        ContainerTestUtils.setServerBackend(this, Settings.CS_PREFERRED_BACKEND);
+        ContainerTestUtils.setServerBackend(this, Settings.CS_PREFERRED_BACKEND, containerManagerInterface);
     }
 
     @BeforeMethod
@@ -68,15 +70,15 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
 
         // Add images and commands
         deleteAllImages();
-        ContainerTestUtils.installFreshImageIfNecessary(this, DEBUG_IMG, Settings.CS_PREFERRED_BACKEND);
-        ContainerTestUtils.installFreshImageIfNecessary(this, ALT_IMG, Settings.CS_PREFERRED_BACKEND);
-        mainAdminInterface().addCommand(getDataFile("debug_command.json"));
-        mainAdminInterface().addCommand(getDataFile("sample_qc_assessor.json"));
+        ContainerTestUtils.installFreshImageIfNecessary(this, DEBUG_IMG, Settings.CS_PREFERRED_BACKEND, containerManagerInterface);
+        ContainerTestUtils.installFreshImageIfNecessary(this, ALT_IMG, Settings.CS_PREFERRED_BACKEND, containerManagerInterface);
+        containerManagerInterface.addCommand(getDataFile("debug_command.json"));
+        containerManagerInterface.addCommand(getDataFile("sample_qc_assessor.json"));
 
         // Enable on site
-        List<CommandSummaryForContext> wrapperSummaries = mainInterface().readAvailableCommands(DataType.MR_SESSION);
+        List<CommandSummaryForContext> wrapperSummaries = containerManagerInterface.readAvailableCommands(DataType.MR_SESSION);
         for (CommandSummaryForContext summary : wrapperSummaries) {
-            mainAdminInterface().setWrapperStatusOnSite(summary.getWrapperId(), true);
+            containerManagerInterface.setWrapperStatusOnSite(summary.getWrapperId(), true);
         }
 
         // Enable on project
@@ -90,13 +92,13 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
 
     @AfterMethod
     private void deleteAllImages() {
-        final List<Image> imagesWithCommands = mainAdminInterface().readImages(IMAGES_WITH_COMMANDS_JSON_PATH);
+        final List<Image> imagesWithCommands = containerManagerInterface.readImages(IMAGES_WITH_COMMANDS_JSON_PATH);
 
         for (Image image : imagesWithCommands) {
             for (Command command : image.getCommands()) {
-                mainAdminInterface().deleteCommand(command);
+                containerManagerInterface.deleteCommand(command);
             }
-            mainAdminInterface().deleteImage(image, true);
+            containerManagerInterface.deleteImage(image, true);
         }
     }
 
@@ -130,7 +132,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
         final Orchestration orchestration = setupOrchestration();
         setProjectOrchestration(orchestration);
         Collections.reverse(orchestration.getWrapperIds());
-        mainAdminInterface().createOrUpdateOrchestration(orchestration);
+        containerManagerInterface.createOrUpdateOrchestration(orchestration);
 
         final int workflowId = mainInterface().launchContainer(project, findSummary(ALT_WRAPPER_NAME), session.getUri());
         mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
@@ -142,7 +144,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
     public void testOrchestrationDisable() {
         final Orchestration orchestration = setupOrchestration();
         setProjectOrchestration(orchestration);
-        mainAdminInterface().enableOrDisableOrchestration(orchestration, false);
+        containerManagerInterface.enableOrDisableOrchestration(orchestration, false);
 
         assertNull(mainInterface().getProjectOrchestrationConfig(project).getSelectedOrchestrationId());
 
@@ -170,7 +172,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
     @Test(groups = WORKFLOWS)
     public void testOrchestrationDisableThruCommandSite() {
         setProjectOrchestration(setupOrchestration());
-        mainAdminInterface().setWrapperStatusOnSite(findSummary(DEBUG_WRAPPER_NAME), project, false);
+        containerManagerInterface.setWrapperStatusOnSite(findSummary(DEBUG_WRAPPER_NAME), project, false);
 
         assertNull(mainInterface().getProjectOrchestrationConfig(project).getSelectedOrchestrationId());
 
@@ -185,7 +187,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
     public void testOrchestrationDelete() {
         final Orchestration orchestration = setupOrchestration();
         setProjectOrchestration(orchestration);
-        mainAdminInterface().deleteOrchestration(orchestration);
+        containerManagerInterface.deleteOrchestration(orchestration);
 
         final int workflowId = mainInterface().launchContainer(project, findSummary(DEBUG_WRAPPER_NAME), session.getUri());
         mainInterface().waitForWorkflowComplete(workflowId, 60 * 5);
@@ -290,7 +292,7 @@ public class TestContainerOrchestration extends BaseXnatRestTest {
     }
 
     private Orchestration setupOrchestrationWithName(String orchestrationName, String... wrapperNames) {
-        return mainAdminInterface().createOrUpdateOrchestration(
+        return containerManagerInterface.createOrUpdateOrchestration(
                 new Orchestration(orchestrationName,
                         Arrays.stream(wrapperNames).map(name -> findSummary(name).getWrapperId()).collect(Collectors.toList())
                 )

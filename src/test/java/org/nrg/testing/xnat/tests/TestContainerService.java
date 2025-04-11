@@ -9,8 +9,10 @@ import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.processing.files.resources.GenericResource;
 import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
+import org.nrg.xnat.interfaces.XnatInterface;
 import org.nrg.xnat.pogo.PluginRegistry;
 import org.nrg.xnat.pogo.containers.Backend;
+import org.nrg.xnat.pogo.users.User;
 import org.nrg.xnat.versions.Version;
 import org.nrg.xnat.versions.Xnat_1_7_7;
 import org.nrg.xnat.enums.Gender;
@@ -28,6 +30,7 @@ import org.nrg.xnat.pogo.extensions.SimpleResourceFileExtension;
 import org.nrg.xnat.pogo.extensions.session_assessor.SessionAssessorXMLExtension;
 import org.nrg.xnat.pogo.resources.*;
 import org.nrg.xnat.versions.Xnat_1_8_0;
+import org.nrg.xnat.versions.Xnat_1_9_2;
 import org.testng.annotations.*;
 
 import java.io.*;
@@ -39,10 +42,9 @@ import static org.nrg.testing.TestGroups.WORKFLOWS;
 import static org.testng.AssertJUnit.*;
 
 @Slf4j
-@TestRequires(plugins = PluginRegistry.CS_PLUGIN_ID)
 @AddedIn(Xnat_1_7_7.class) // Pending CS-600
 @Test(groups = {CONTAINERS, WORKFLOWS}, dataProvider = BaseXnatTest.CS_BACKENDS_DATA_PROVIDER)
-public class TestContainerService extends BaseXnatRestTest {
+public class TestContainerService extends BaseContainerTest {
     private static final String OUTPUT_CONTENT = "hello world";
     private static final String OUTPUT_FILENAME = "out.txt";
     private static final Map<String, String> BASE_DEBUG_LAUNCH_PARAMS = makeContainerLaunchReqBody();
@@ -56,12 +58,12 @@ public class TestContainerService extends BaseXnatRestTest {
 
     @BeforeClass
     private void setupCommands() {
-        mainAdminInterface().deleteAllCommands();
+        containerManagerInterface .deleteAllCommands();
         if (getPluginVersion(PluginRegistry.CS_PLUGIN_ID).lessThan(new Version("3.2"))) {
-            ContainerTestUtils.setServerBackend(this, Settings.CS_PREFERRED_BACKEND);
-            mainAdminInterface().pullImage(ContainerTestUtils.DEBUG_IMG, false);
+            ContainerTestUtils.setServerBackend(this, Settings.CS_PREFERRED_BACKEND, containerManagerInterface);
+            containerManagerInterface .pullImage(ContainerTestUtils.DEBUG_IMG, false);
         }
-        mainAdminInterface().addCommand(getDataFile(
+        containerManagerInterface .addCommand(getDataFile(
                 XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_8_0.class) ? "debug_command_1.5.json" : "debug_command.json"
         ));
     }
@@ -104,7 +106,7 @@ public class TestContainerService extends BaseXnatRestTest {
 
         final Backend backend = (Backend) backendHolder[0];
         log.info("Setting backend {}", backend);
-        ContainerTestUtils.setServerBackend(this, backend);
+        ContainerTestUtils.setServerBackend(this, backend, containerManagerInterface);
     }
 
     @AfterMethod

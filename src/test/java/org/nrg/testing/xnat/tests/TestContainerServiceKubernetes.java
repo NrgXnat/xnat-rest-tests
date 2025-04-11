@@ -5,6 +5,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 import org.nrg.testing.TestGroups;
 import org.nrg.testing.annotations.AddedIn;
+import org.nrg.testing.annotations.DeprecatedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.containers.ContainerTestUtils;
@@ -22,6 +23,7 @@ import org.nrg.xnat.pogo.resources.Resource;
 import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.nrg.xnat.pogo.resources.SubjectAssessorResource;
 import org.nrg.xnat.versions.Xnat_1_8_5;
+import org.nrg.xnat.versions.Xnat_1_9_2;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -43,7 +45,7 @@ import static org.testng.AssertJUnit.assertNotNull;
 @TestRequires(plugins = CONTAINERS, supportedContainerBackends = Backend.KUBERNETES)
 @AddedIn(Xnat_1_8_5.class)
 @Test(groups = CONTAINERS)
-public class TestContainerServiceKubernetes extends BaseXnatRestTest {
+public class TestContainerServiceKubernetes extends BaseContainerTest {
     private static final Logger LOGGER = Logger.getLogger(TestContainerServiceKubernetes.class);
 
     private static final String DEBUG_INPUT_MOUNT_PATH = "/input";
@@ -61,16 +63,16 @@ public class TestContainerServiceKubernetes extends BaseXnatRestTest {
     public void classSetup() {
         LOGGER.info("Class setup");
 
-        preExistingServerSettings = mainAdminInterface().readDockerServer();
+        preExistingServerSettings = containerManagerInterface.readDockerServer();
         setServerToKubernetesMode();
 
         // Delete all images + commands
-        ContainerTestUtils.deleteAllImagesWithCommands(this);
+        ContainerTestUtils.deleteAllImagesWithCommands(this, containerManagerInterface);
 
-        ContainerTestUtils.installFreshImageIfNecessary(this, ContainerTestUtils.DEBUG_IMG, Backend.KUBERNETES);
-        mainAdminInterface().addCommand(getDataFile("debug_command.json"));
+        ContainerTestUtils.installFreshImageIfNecessary(this, ContainerTestUtils.DEBUG_IMG, Backend.KUBERNETES, containerManagerInterface);
+        containerManagerInterface.addCommand(getDataFile("debug_command.json"));
 
-        debug = mainInterface().readCommands(ContainerTestUtils.DEBUG_IMG).stream()
+        debug = containerManagerInterface.readCommands(ContainerTestUtils.DEBUG_IMG).stream()
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Could not find debug command"));
 
@@ -110,14 +112,14 @@ public class TestContainerServiceKubernetes extends BaseXnatRestTest {
         LOGGER.info("Class cleanup");
 
         // Delete all images + commands
-        ContainerTestUtils.deleteAllImagesWithCommands(this);
+        ContainerTestUtils.deleteAllImagesWithCommands(this, containerManagerInterface);
 
         // Revert server settings
-        mainAdminInterface().updateDockerServer(preExistingServerSettings);
+        containerManagerInterface.updateDockerServer(preExistingServerSettings);
     }
 
     private void setServerToKubernetesMode() {
-        ContainerTestUtils.setServerBackend(this, Backend.KUBERNETES);
+        ContainerTestUtils.setServerBackend(this, Backend.KUBERNETES, containerManagerInterface);
     }
 
     private void enableCommandWrappersOnProject(final Command command, final Project project) {
@@ -128,7 +130,7 @@ public class TestContainerServiceKubernetes extends BaseXnatRestTest {
 
     @Test
     public void testSetServerToKubernetesMode() {
-        final DockerServer dockerServer = mainInterface().readDockerServer();
+        final DockerServer dockerServer = containerManagerInterface.readDockerServer();
         assertEquals(Backend.KUBERNETES, dockerServer.getBackend());
         assertFalse(dockerServer.getSwarmMode());
     }

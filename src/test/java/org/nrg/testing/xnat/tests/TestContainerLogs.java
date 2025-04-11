@@ -5,6 +5,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.Matchers;
+import org.nrg.testing.annotations.DeprecatedIn;
 import org.nrg.testing.annotations.PluginRequirement;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
@@ -16,6 +17,7 @@ import org.nrg.xnat.pogo.containers.Backend;
 import org.nrg.xnat.pogo.containers.ContainerLogPollResponse;
 import org.nrg.xnat.pogo.containers.ContainerLogPollResponsePre322;
 import org.nrg.xnat.subinterfaces.ContainerServiceSubinterface;
+import org.nrg.xnat.versions.Xnat_1_9_2;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -43,7 +45,7 @@ import static org.nrg.testing.TestGroups.CONTAINERS;
         // Added tests around CS 3.3.2, had issues running on older versions
         @PluginRequirement(pluginId = "containers", minimumSupportedVersion = "3.0")
 })
-public class TestContainerLogs extends BaseXnatRestTest {
+public class TestContainerLogs extends BaseContainerTest {
 
     public static final String LOG_SUFFIX = ".log";
 
@@ -56,7 +58,7 @@ public class TestContainerLogs extends BaseXnatRestTest {
 
     private void deleteCommands() {
         // Clean up all commands
-        mainAdminInterface().deleteAllCommands();
+        containerManagerInterface.deleteAllCommands();
     }
 
     private String createCommandWhichRunsScriptAndReturnLaunchUri(final String commandAndWrapperName,
@@ -73,7 +75,7 @@ public class TestContainerLogs extends BaseXnatRestTest {
                 "}]" +
                 "}";
         // Create command
-        final int commandId = mainAdminInterface().addCommand(command);
+        final int commandId = containerManagerInterface.addCommand(command);
 
         // Construct launch URI
         return formatXapiUrl("commands", String.valueOf(commandId), "wrappers", commandAndWrapperName, "root", rootElement, "launch");
@@ -93,13 +95,13 @@ public class TestContainerLogs extends BaseXnatRestTest {
                             Settings.DEFAULT_TIMEOUT;
             try {
                 log.info("Setting backend {}", backend);
-                ContainerTestUtils.setServerBackend(this, backend);
+                ContainerTestUtils.setServerBackend(this, backend, containerManagerInterface);
             } catch (Throwable e) {
                 log.error("Couldn't set backend");
                 throw new SkipException("Couldn't set backend " + backend.name());
             }
 
-            if (!mainAdminInterface().readDockerServer().getPing()) {
+            if (!containerManagerInterface.readDockerServer().getPing()) {
                 log.error("Setting backend failed. Could not ping.");
                 throw new SkipException("Setting backend failed. Could not ping.");
             }

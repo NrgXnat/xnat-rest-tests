@@ -34,6 +34,10 @@
             <id>tim</id>
             <name>Tim Olsen</name>
         </developer>
+        <developer>
+            <id>mohana</id>
+            <name>Mohana Ramaratnam</name>
+        </developer>
     </developers>
 
     <scm>

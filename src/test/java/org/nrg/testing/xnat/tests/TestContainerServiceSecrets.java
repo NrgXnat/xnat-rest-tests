@@ -6,12 +6,14 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.RandomStringGenerator;
 import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsMapContaining;
+import org.nrg.testing.annotations.DeprecatedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.containers.ContainerTestUtils;
 import org.nrg.xnat.pogo.Workflow;
 import org.nrg.xnat.pogo.containers.Container;
+import org.nrg.xnat.versions.Xnat_1_9_2;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -33,7 +35,7 @@ import static org.testng.Assert.assertEquals;
 
 @TestRequires(plugins = "containers:3.3")
 @Test(groups = {CONTAINERS})
-public class TestContainerServiceSecrets extends BaseXnatRestTest {
+public class TestContainerServiceSecrets extends BaseContainerTest {
 
     private static final RandomStringGenerator UPPERCASE_GENERATOR = new RandomStringGenerator.Builder().withinRange(new char[] {'A', 'Z'}).build();
     public static final String NEWLINE = "\\R";
@@ -48,15 +50,15 @@ public class TestContainerServiceSecrets extends BaseXnatRestTest {
     @BeforeClass
     private void setupClass() {
         // Clean up all commands from previous tests
-        mainAdminInterface().deleteAllCommands();
+        containerManagerInterface.deleteAllCommands();
 
-        ContainerTestUtils.setServerBackend(this, Settings.CS_PREFERRED_BACKEND);
+        ContainerTestUtils.setServerBackend(this, Settings.CS_PREFERRED_BACKEND, containerManagerInterface);
     }
 
     @AfterClass
     private void cleanUpClass() {
         // Clean up all commands
-        mainAdminInterface().deleteAllCommands();
+        containerManagerInterface.deleteAllCommands();
 
         // Clean up script trigger and script
         if (StringUtils.isNotBlank(triggerId)) {
@@ -181,7 +183,7 @@ public class TestContainerServiceSecrets extends BaseXnatRestTest {
                     "\"destination\": {\"type\": \"environment-variable\", \"identifier\": \"" + secretEnvName + "\"}" +
                 "}]}";
         // Create command
-        final int commandId = mainAdminInterface().addCommand(command);
+        final int commandId = containerManagerInterface.addCommand(command);
 
         // Launch container
         final String rootElement = "site";
@@ -205,7 +207,7 @@ public class TestContainerServiceSecrets extends BaseXnatRestTest {
         final String containerId = workflow.getComments();
 
         // Get container logs
-        final String containerLog = mainAdminInterface().readContainerLog(containerId, STDOUT);
+        final String containerLog = containerManagerInterface.readContainerLog(containerId, STDOUT);
         final String systemPropertyValue = containerLog.trim();
 
         // Assert

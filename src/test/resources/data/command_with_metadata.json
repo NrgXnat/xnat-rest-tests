@@ -1,0 +1,38 @@
+{
+  "name": "hello-world-metadata",
+  "description": "A command that produces hello-world log files",
+  "type": "docker",
+  "image": "xnat/hello-world:1.0",
+  "reserve-memory": "6",
+  "limit-memory": "6",
+  "command-line": "/hello",
+  "command-metadata": {
+    "citation": "",
+    "authors": [
+      "John Doe",
+      "Jane Doe"
+    ],
+    "maintainer": "jane@doe.com",
+    "details": "The Extensible Neuroimaging Archive Toolkit (XNAT): An informatics platform for managing, exploring, and sharing neuroimaging data.Marcus, D.S., Olsen T., Ramaratnam M., and Buckner, R.L. (2007) Neuroinformatics 5(1): 11-34.",
+    "source": "https://bitbucket.org/xnatdev/container-service"
+  },
+  "inputs": [],
+  "xnat": [
+    {
+      "name": "project",
+      "label": "Hellow World: Project",
+      "description": "Run hello-world command with a project input.",
+      "contexts": ["xnat:projectData"],
+      "external-inputs": [
+        {
+          "name": "project",
+          "description": "this input accepts a project",
+          "type": "Project",
+          "required": true
+        }
+      ],
+      "derived-inputs": []
+    }
+  ]
+
+}

@@ -2,6 +2,7 @@ package org.nrg.testing.xnat.tests;
 
 import com.google.common.collect.ImmutableMap;
 import org.nrg.testing.annotations.AddedIn;
+import org.nrg.testing.annotations.DeprecatedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
@@ -24,6 +25,7 @@ import org.nrg.xnat.pogo.resources.SessionAssessorResource;
 import org.nrg.xnat.pogo.users.CustomUserGroup;
 import org.nrg.xnat.rest.ForbiddenException;
 import org.nrg.xnat.versions.Xnat_1_8_5;
+import org.nrg.xnat.versions.Xnat_1_9_2;
 import org.testng.annotations.*;
 
 import java.util.*;
@@ -36,7 +38,7 @@ import static org.testng.AssertJUnit.*;
 @TestRequires(plugins = "containers:3.2")
 @AddedIn(Xnat_1_8_5.class)
 @Test(groups = {CONTAINERS, PERMISSIONS})
-public class TestContainerServicePermissions extends BaseXnatRestTest {
+public class TestContainerServicePermissions extends BaseContainerTest {
 
     private static final String RESOURCE_NAME = "NEEDSOMETHING";
     private static final DataType PROJECT_ASSET = new DataType().xsiType("sets:definition");
@@ -78,34 +80,34 @@ public class TestContainerServicePermissions extends BaseXnatRestTest {
     public void setupCompute() {
         final Backend preferredComputeBackend = Settings.CS_PREFERRED_BACKEND;
 
-        final DockerServer dockerServer = mainAdminInterface().readDockerServer();
+        final DockerServer dockerServer = containerManagerInterface.readDockerServer();
         dockerServer.setBackend(preferredComputeBackend);
-        mainAdminInterface().updateDockerServer(dockerServer);
+        containerManagerInterface.updateDockerServer(dockerServer);
 
-        final List<Image> installedImages = mainAdminInterface().readImages();
+        final List<Image> installedImages = containerManagerInterface.readImages();
 
         for (Image image : installedImages) {
             for (Image testImage : TEST_IMAGES) {
                 if (testImage.getUser().equals(image.getUser()) && testImage.getName().equals(image.getName())) {
-                    mainAdminInterface().deleteImage(image);
+                    containerManagerInterface.deleteImage(image);
                 }
             }
         }
 
         for (Image testImage : TEST_IMAGES) {
-            ContainerTestUtils.installFreshImageIfNecessary(this, testImage, preferredComputeBackend);
+            ContainerTestUtils.installFreshImageIfNecessary(this, testImage, preferredComputeBackend, containerManagerInterface);
         }
         
         for (String commandFile : Arrays.asList("debug_command_no_output.json", "debug_command.json", "sample_qc_assessor.json", "generate_scan.json")) {
-            mainAdminInterface().addCommand(getDataFile(commandFile));
+            containerManagerInterface.addCommand(getDataFile(commandFile));
         }
 
         final Map<String, Wrapper> allTestWrappers = TEST_IMAGES.stream()
-                .map(image -> mainAdminInterface().readCommands(image))
+                .map(image -> containerManagerInterface.readCommands(image))
                 .flatMap(List::stream)
                 .map(Command::getWrappers)
                 .flatMap(List::stream)
-                .peek(wrapper -> mainAdminInterface().setWrapperStatusOnSite(wrapper, true))
+                .peek(wrapper -> containerManagerInterface.setWrapperStatusOnSite(wrapper, true))
                 .collect(Collectors.toMap(Wrapper::getName, Function.identity()));
 
         standardProjectDebug = allTestWrappers.get("debug-project");
@@ -139,7 +141,7 @@ public class TestContainerServicePermissions extends BaseXnatRestTest {
             restDriver.deleteProjectSilently(mainAdminUser, project);
         }
         for (Image image : TEST_IMAGES) {
-            mainAdminInterface().deleteImage(image);
+            containerManagerInterface.deleteImage(image);
         }
     }
 
@@ -1339,7 +1341,7 @@ public class TestContainerServicePermissions extends BaseXnatRestTest {
         mainAdminInterface().createProject(project);
         projects.add(project);
         for (Image image : TEST_IMAGES) {
-            for (Command command : mainAdminInterface().readCommands(image)) {
+            for (Command command : containerManagerInterface.readCommands(image)) {
                 for (Wrapper wrapper : command.getWrappers()) {
                     mainAdminInterface().setWrapperStatusOnProject(wrapper, project, true);
                 }
