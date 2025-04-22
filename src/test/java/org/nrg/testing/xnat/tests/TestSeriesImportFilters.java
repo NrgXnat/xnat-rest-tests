@@ -17,7 +17,7 @@ import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.dicom.FilterMode;
 import org.nrg.xnat.pogo.dicom.SeriesImportFilter;
 import org.nrg.xnat.versions.Xnat_1_8_10;
-import org.nrg.xnat.versions.Xnat_1_9_0;
+import org.nrg.xnat.versions.Xnat_1_8_10_1;
 import org.testng.annotations.Test;
 
 import java.nio.file.Paths;
@@ -28,7 +28,7 @@ import java.util.List;
 import static org.nrg.testing.TestGroups.IMPORTER;
 
 @AddedIn(Xnat_1_8_10.class)
-@DeprecatedIn(Xnat_1_9_0.class)
+@DeprecatedIn(Xnat_1_8_10_1.class)
 public class TestSeriesImportFilters extends BaseFileNamerTest {
 
     private static final String SERIES_6_SPEC = "sample1_series6.json";
