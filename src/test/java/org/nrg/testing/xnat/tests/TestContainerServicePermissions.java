@@ -2,15 +2,13 @@ package org.nrg.testing.xnat.tests;
 
 import com.google.common.collect.ImmutableMap;
 import org.nrg.testing.annotations.AddedIn;
-import org.nrg.testing.annotations.DeprecatedIn;
 import org.nrg.testing.annotations.TestRequires;
-import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.containers.ContainerTestUtils;
-import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
 import org.nrg.xnat.enums.Accessibility;
 import org.nrg.xnat.enums.DataAccessLevel;
 import org.nrg.xnat.pogo.DataType;
+import org.nrg.xnat.pogo.PluginRegistry;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Share;
 import org.nrg.xnat.pogo.Subject;
@@ -25,16 +23,26 @@ import org.nrg.xnat.pogo.resources.ScanResource;
 import org.nrg.xnat.pogo.resources.SessionAssessorResource;
 import org.nrg.xnat.pogo.users.CustomUserGroup;
 import org.nrg.xnat.rest.ForbiddenException;
+import org.nrg.xnat.versions.Version;
 import org.nrg.xnat.versions.Xnat_1_8_5;
-import org.nrg.xnat.versions.Xnat_1_9_2;
-import org.testng.annotations.*;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.nrg.testing.TestGroups.*;
-import static org.testng.AssertJUnit.*;
+import static org.nrg.testing.TestGroups.CONTAINERS;
+import static org.nrg.testing.TestGroups.PERMISSIONS;
+import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.fail;
 
 @TestRequires(plugins = "containers:3.2")
 @AddedIn(Xnat_1_8_5.class)
@@ -780,39 +788,24 @@ public class TestContainerServicePermissions extends BaseContainerTest {
     }
 
     public void testLaunchSessionCustomReadOnlyMinimum() {
-        if (XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_9_2.class)) {
-            new LaunchTest(ExpectedLaunchResult.RESOLUTION_FAILED, sessionDebugNoOutput)
-                    .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
-                    .run();
-        } else {
-            new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, sessionDebugNoOutput)
-                    .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
-                    .run();
-        }
+        new LaunchTest(getPluginVersion(PluginRegistry.CS_PLUGIN_ID).lessThan(new Version("3.7")) ? ExpectedLaunchResult.RESOLUTION_FAILED
+                   : ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, sessionDebugNoOutput)
+                .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
+                .run();
     }
 
     public void testLaunchSessionCustomCreateScanMinimum() {
-        if (XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_9_2.class)) {
-            new LaunchTest(ExpectedLaunchResult.RESOLUTION_FAILED, sessionDebugCreateScan)
-                    .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
-                    .run();
-        } else {
-            new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, sessionDebugCreateScan)
-                    .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
-                    .run();
-        }
+         new LaunchTest(getPluginVersion(PluginRegistry.CS_PLUGIN_ID).lessThan(new Version("3.7")) ? ExpectedLaunchResult.RESOLUTION_FAILED
+                    : ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, sessionDebugCreateScan)
+                 .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
+                 .run();
     }
 
     public void testLaunchSessionCustomCreateSpecifiedAssessorMinimum() {
-        if (XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_9_2.class)) {
-            new LaunchTest(ExpectedLaunchResult.RESOLUTION_FAILED, qcImageCreateSpecifiedAssessor)
-                    .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
-                    .run();
-        } else {
-            new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, qcImageCreateSpecifiedAssessor)
-                    .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
-                    .run();
-        }
+         new LaunchTest(getPluginVersion(PluginRegistry.CS_PLUGIN_ID).lessThan(new Version("3.7")) ? ExpectedLaunchResult.RESOLUTION_FAILED
+                    : ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, qcImageCreateSpecifiedAssessor)
+                 .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
+                 .run();
     }
 
     public void testLaunchSessionCustomMultipleCommandsReadMR() {
@@ -996,15 +989,10 @@ public class TestContainerServicePermissions extends BaseContainerTest {
     }
 
     public void testLaunchScanCustomReadOnlyMinimum() {
-        if (XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_9_2.class)) {
-            new LaunchTest(ExpectedLaunchResult.RESOLUTION_FAILED, scanDebugNoOutput)
-                    .arbitraryScanInputFrom(customUserGroupMinPermsProject)
-                    .run();
-        } else {
-            new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, scanDebugNoOutput)
-                    .arbitraryScanInputFrom(customUserGroupMinPermsProject)
-                    .run();
-        }
+        new LaunchTest(getPluginVersion(PluginRegistry.CS_PLUGIN_ID).lessThan(new Version("3.7")) ? ExpectedLaunchResult.RESOLUTION_FAILED
+                   : ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, scanDebugNoOutput)
+                .arbitraryScanInputFrom(customUserGroupMinPermsProject)
+                .run();
     }
 
     public void testLaunchScanCustomMultipleCommandsReadMR() {
@@ -1118,15 +1106,10 @@ public class TestContainerServicePermissions extends BaseContainerTest {
     }
 
     public void testLaunchSessionAssessorCustomReadOnlyMinimum() {
-        if (XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_9_2.class)) {
-            new LaunchTest(ExpectedLaunchResult.RESOLUTION_FAILED, sessionAssessorDebugNoOutput)
-                    .arbitrarySessionAssessorInputFrom(customUserGroupMinPermsProject)
-                    .run();
-        } else {
-            new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, sessionAssessorDebugNoOutput)
-                    .arbitrarySessionAssessorInputFrom(customUserGroupMinPermsProject)
-                    .run();
-        }
+        new LaunchTest(getPluginVersion(PluginRegistry.CS_PLUGIN_ID).lessThan(new Version("3.7")) ? ExpectedLaunchResult.RESOLUTION_FAILED
+                    : ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, sessionAssessorDebugNoOutput)
+                .arbitrarySessionAssessorInputFrom(customUserGroupMinPermsProject)
+                .run();
     }
 
     public void testLaunchSessionAssessorCustomMultipleCommandsReadQCs() {
