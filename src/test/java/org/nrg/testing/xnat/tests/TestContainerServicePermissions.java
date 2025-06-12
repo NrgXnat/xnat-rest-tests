@@ -7,6 +7,7 @@ import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.containers.ContainerTestUtils;
+import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
 import org.nrg.xnat.enums.Accessibility;
 import org.nrg.xnat.enums.DataAccessLevel;
 import org.nrg.xnat.pogo.DataType;
@@ -779,21 +780,39 @@ public class TestContainerServicePermissions extends BaseContainerTest {
     }
 
     public void testLaunchSessionCustomReadOnlyMinimum() {
-        new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, sessionDebugNoOutput)
-                .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
-                .run();
+        if (XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_9_2.class)) {
+            new LaunchTest(ExpectedLaunchResult.RESOLUTION_FAILED, sessionDebugNoOutput)
+                    .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
+                    .run();
+        } else {
+            new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, sessionDebugNoOutput)
+                    .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
+                    .run();
+        }
     }
 
     public void testLaunchSessionCustomCreateScanMinimum() {
-        new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, sessionDebugCreateScan)
-                .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
-                .run();
+        if (XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_9_2.class)) {
+            new LaunchTest(ExpectedLaunchResult.RESOLUTION_FAILED, sessionDebugCreateScan)
+                    .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
+                    .run();
+        } else {
+            new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, sessionDebugCreateScan)
+                    .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
+                    .run();
+        }
     }
 
     public void testLaunchSessionCustomCreateSpecifiedAssessorMinimum() {
-        new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, qcImageCreateSpecifiedAssessor)
-                .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
-                .run();
+        if (XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_9_2.class)) {
+            new LaunchTest(ExpectedLaunchResult.RESOLUTION_FAILED, qcImageCreateSpecifiedAssessor)
+                    .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
+                    .run();
+        } else {
+            new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, qcImageCreateSpecifiedAssessor)
+                    .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
+                    .run();
+        }
     }
 
     public void testLaunchSessionCustomMultipleCommandsReadMR() {
@@ -977,9 +996,15 @@ public class TestContainerServicePermissions extends BaseContainerTest {
     }
 
     public void testLaunchScanCustomReadOnlyMinimum() {
-        new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, scanDebugNoOutput)
-                .arbitraryScanInputFrom(customUserGroupMinPermsProject)
-                .run();
+        if (XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_9_2.class)) {
+            new LaunchTest(ExpectedLaunchResult.RESOLUTION_FAILED, scanDebugNoOutput)
+                    .arbitraryScanInputFrom(customUserGroupMinPermsProject)
+                    .run();
+        } else {
+            new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, scanDebugNoOutput)
+                    .arbitraryScanInputFrom(customUserGroupMinPermsProject)
+                    .run();
+        }
     }
 
     public void testLaunchScanCustomMultipleCommandsReadMR() {
@@ -1093,9 +1118,15 @@ public class TestContainerServicePermissions extends BaseContainerTest {
     }
 
     public void testLaunchSessionAssessorCustomReadOnlyMinimum() {
-        new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, sessionAssessorDebugNoOutput)
-                .arbitrarySessionAssessorInputFrom(customUserGroupMinPermsProject)
-                .run();
+        if (XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_9_2.class)) {
+            new LaunchTest(ExpectedLaunchResult.RESOLUTION_FAILED, sessionAssessorDebugNoOutput)
+                    .arbitrarySessionAssessorInputFrom(customUserGroupMinPermsProject)
+                    .run();
+        } else {
+            new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, sessionAssessorDebugNoOutput)
+                    .arbitrarySessionAssessorInputFrom(customUserGroupMinPermsProject)
+                    .run();
+        }
     }
 
     public void testLaunchSessionAssessorCustomMultipleCommandsReadQCs() {
