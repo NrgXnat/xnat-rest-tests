@@ -779,19 +779,19 @@ public class TestContainerServicePermissions extends BaseContainerTest {
     }
 
     public void testLaunchSessionCustomReadOnlyMinimum() {
-        new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, sessionDebugNoOutput)
+        new LaunchTest(ExpectedLaunchResult.RESOLUTION_FAILED, sessionDebugNoOutput)
                 .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
                 .run();
     }
 
     public void testLaunchSessionCustomCreateScanMinimum() {
-        new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, sessionDebugCreateScan)
+        new LaunchTest(ExpectedLaunchResult.RESOLUTION_FAILED, sessionDebugCreateScan)
                 .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
                 .run();
     }
 
     public void testLaunchSessionCustomCreateSpecifiedAssessorMinimum() {
-        new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, qcImageCreateSpecifiedAssessor)
+        new LaunchTest(ExpectedLaunchResult.RESOLUTION_FAILED, qcImageCreateSpecifiedAssessor)
                 .arbitrarySessionInputFrom(customUserGroupMinPermsProject)
                 .run();
     }
@@ -977,7 +977,7 @@ public class TestContainerServicePermissions extends BaseContainerTest {
     }
 
     public void testLaunchScanCustomReadOnlyMinimum() {
-        new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, scanDebugNoOutput)
+        new LaunchTest(ExpectedLaunchResult.RESOLUTION_FAILED, scanDebugNoOutput)
                 .arbitraryScanInputFrom(customUserGroupMinPermsProject)
                 .run();
     }
@@ -1093,7 +1093,7 @@ public class TestContainerServicePermissions extends BaseContainerTest {
     }
 
     public void testLaunchSessionAssessorCustomReadOnlyMinimum() {
-        new LaunchTest(ExpectedLaunchResult.UNAUTHORIZED_WORKFLOW_STATUS, sessionAssessorDebugNoOutput)
+        new LaunchTest(ExpectedLaunchResult.RESOLUTION_FAILED, sessionAssessorDebugNoOutput)
                 .arbitrarySessionAssessorInputFrom(customUserGroupMinPermsProject)
                 .run();
     }
@@ -1320,7 +1320,6 @@ public class TestContainerServicePermissions extends BaseContainerTest {
     private enum ExpectedLaunchResult {
         SUCCESS(null, "Complete"),
         RESOLUTION_FAILED(null, "Failed (Command resolution)"),
-        UNAUTHORIZED_WORKFLOW_STATUS(null, "Failed (org.nrg.containers.exceptions.UnauthorizedException)"),
         UPLOAD_FAILED(null, "Failed (Upload)"),
         FORBIDDEN(ForbiddenException.class, null);
 
