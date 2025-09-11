@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import io.restassured.path.xml.XmlPath;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.UIDList;
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.Basic;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.XnatObjectUtils;
@@ -23,6 +24,7 @@ import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.prearchive.PrearchiveQuery;
 import org.nrg.xnat.prearchive.PrearchiveQueryScope;
 import org.nrg.xnat.prearchive.PrearchiveResultFilter;
+import org.nrg.xnat.versions.Xnat_1_9_3;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -225,6 +227,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
     }
 
     @Test
+    @AddedIn(Xnat_1_9_3.class)
     public void testArchiveEmptySessionAfterProjectAnonRejection() {
         final Project testProject = registerTempProject()
                 .prearchiveCode(PrearchiveCode.MANUAL);
