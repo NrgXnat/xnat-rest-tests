@@ -46,7 +46,7 @@
     </scm>
 
     <properties>
-        <nrg_test.version>2.6-SNAPSHOT</nrg_test.version>
+        <nrg_test.version>2.7-SNAPSHOT</nrg_test.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>

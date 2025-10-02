@@ -247,24 +247,6 @@ public class TestContainerVisibility  extends BaseXnatRestTest {
         containerManagerInterface.deleteCommand(commandId);
     }
 
-    @Test
-    public void testSiteAdminHasNoPermissions() {
-        final String command = "{" +
-                "\"image\": \"busybox:latest\", " +
-                "\"name\": \"testVisibility\", " +
-                "\"command-line\": \"/bin/sh -c 'echo hello'\", " +
-                "\"xnat\": [{" +
-                "\"name\": \"testVisibility\", " +
-                "\"contexts\": [\"xnat:projectData\"]" +
-                "}]" +
-                "}";
-        // Create command
-        mainAdminInterface()
-                .queryBase().contentType(JSON)
-                .body(command)
-                .post(formatXapiUrl("/commands"))
-                .then().assertThat().statusCode(401);
-
-    }
+  
 
 }

@@ -20,6 +20,7 @@ import static org.testng.AssertJUnit.*;
 
 @AddedIn(Xnat_1_7_7.class) // Pending CS-600
 @Test(groups = CONTAINERS)
+@TestRequires(plugins = PluginRegistry.CS_PLUGIN_ID)
 public class TestContainerServiceAdmin  extends BaseContainerTest  {
 
     @Test

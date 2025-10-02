@@ -1,14 +1,21 @@
 package org.nrg.testing.xnat.tests;
 
+import com.google.common.collect.ImmutableMap;
+import io.restassured.path.xml.XmlPath;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.UIDList;
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.Basic;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.XnatObjectUtils;
+import org.nrg.xnat.enums.DicomEditVersion;
 import org.nrg.xnat.enums.MergeBehavior;
 import org.nrg.xnat.enums.PrearchiveCode;
 import org.nrg.xnat.enums.PrearchiveStatus;
+import org.nrg.xnat.importer.XnatArchivalRequest;
 import org.nrg.xnat.importer.importers.DefaultImporterRequest;
 import org.nrg.xnat.importer.importers.GradualDicomRequest;
+import org.nrg.xnat.pogo.AnonScript;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
@@ -17,11 +24,13 @@ import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.prearchive.PrearchiveQuery;
 import org.nrg.xnat.prearchive.PrearchiveQueryScope;
 import org.nrg.xnat.prearchive.PrearchiveResultFilter;
+import org.nrg.xnat.versions.Xnat_1_9_3;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.File;
+import java.util.Map;
 
 import static org.nrg.testing.TestGroups.*;
 import static org.testng.AssertJUnit.assertEquals;
@@ -40,6 +49,7 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
     private final ImagingSession mr1_2 = new MRSession(project1, subject1, "MR12");
     private final ImagingSession mr2_1 = new MRSession(project1, subject2, "MR21");
     private final ImagingSession mr3_1 = new MRSession(project1, subject3, "MR31");
+    private final AnonScript rejectAllAnonScript = XnatObjectUtils.anonScriptFromFile(DicomEditVersion.DE_6, "reject/rejectAll.das");
 
     @BeforeClass
     private void addPrearchiveMgmtProjects() {
@@ -216,4 +226,67 @@ public class TestPrearchiveMgmt extends BaseXnatRestTest {
                 getUrl();
     }
 
+    @Test
+    @AddedIn(Xnat_1_9_3.class)
+    public void testArchiveEmptySessionAfterProjectAnonRejection() {
+        final Project testProject = registerTempProject()
+                .prearchiveCode(PrearchiveCode.MANUAL);
+        mainInterface().createProject(testProject);
+        mainInterface().setProjectAnonScript(testProject, rejectAllAnonScript);
+
+        mainInterface().callImporter(
+                new DefaultImporterRequest().
+                        triggerPipelines(false).
+                        destPrearchive(testProject).
+                        param("subject", subjectName).
+                        param("session", sessionName).
+                        file(sessionZip)
+        );
+
+        // session has instances because project anon hasn't been applied yet
+        final String uri = mainAdminInterface().queryPrearchiveForSingularResult(
+                new PrearchiveQuery()
+                        .scope(PrearchiveQueryScope.forProject(testProject))
+                        .filter(
+                                new PrearchiveResultFilter()
+                                        .subject(subjectName)
+                                        .name(sessionName)
+                                        .status(PrearchiveStatus.READY)
+                        )
+        ).getUrl();
+
+        mainInterface().requestArchival(
+                new XnatArchivalRequest().
+                        triggerPipelines(false).
+                        src(uri).
+                        overwrite(MergeBehavior.APPEND),
+                500 // archiving fails because all instances removed during anonymization
+        );
+
+        // single session is still in prearchive but now in ERROR state
+        final String failedUri = mainAdminInterface().queryPrearchiveForSingularResult(
+                new PrearchiveQuery()
+                        .scope(PrearchiveQueryScope.forProject(testProject))
+                        .filter(
+                                new PrearchiveResultFilter()
+                                        .subject(subjectName)
+                                        .name(sessionName)
+                                        .status(PrearchiveStatus.ERROR)
+                        )
+        ).getUrl();
+        assertEquals(uri, failedUri);
+
+        // details screen has empty session alert
+        // ### FIXME: use Java 9 Map.of()
+        final Map<String,String> prearcDetailsParams = ImmutableMap.of(
+                "format", "html",
+                "screen", "PrearchiveDetails.vm"
+        );
+        final String body = mainInterface().queryBase().
+                queryParams(prearcDetailsParams).
+                get(formatRestUrl(uri)).asString();
+        final XmlPath xmlPath = new XmlPath(XmlPath.CompatibilityMode.HTML, body);
+        final String alert = xmlPath.getString("**.find { it.@class=='alert' }");
+        assertEquals("Empty sessions cannot be archived.", alert);
+    }
 }
