@@ -11,7 +11,7 @@ public class PrivateMapReferencedUIDsScript extends SimplestDicomScriptValidatio
     @Override
     protected RootDicomObject generateValidationObject() {
         final RootDicomObject root = new RootDicomObject();
-        root.putValueStartsWithCheck(PRIVATE_UID_TAG, "9.99.999.99.9");
+        root.putValueStartsWithCheck(PRIVATE_UID_TAG, "1.2.826.0.1.3680043.10.9");
 
         return root;
     }

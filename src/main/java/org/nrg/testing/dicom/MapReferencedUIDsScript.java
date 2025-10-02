@@ -12,7 +12,7 @@ public class MapReferencedUIDsScript extends SimplestDicomScriptValidation {
 
     @Override
     protected RootDicomObject generateValidationObject() {
-        final String uidRoot = "9.99.999.99.9";
+        final String uidRoot = "1.2.826.0.1.3680043.10.9";
         final String dimensionOrganizationUID = "(0020,9164)";
         final RootDicomObject root = new RootDicomObject();
 
