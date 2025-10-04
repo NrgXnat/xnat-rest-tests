@@ -23,6 +23,6 @@
   "parameters/diffusion/directionality": "ISOTROPIC",
   "parameters/orientation": "Tra",
   "fieldStrength": "1.5",
-  "parameters/diffusion/bValues": "1000.0009765624999",
+  "parameters/diffusion/bValues": "1000.00097656249",
   "parameters/acqType": "2D"
 }

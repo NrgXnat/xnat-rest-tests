@@ -44,6 +44,7 @@ import static org.testng.AssertJUnit.*;
 @Slf4j
 @AddedIn(Xnat_1_7_7.class) // Pending CS-600
 @Test(groups = {CONTAINERS, WORKFLOWS}, dataProvider = BaseXnatTest.CS_BACKENDS_DATA_PROVIDER)
+@TestRequires(plugins = PluginRegistry.CS_PLUGIN_ID)
 public class TestContainerService extends BaseContainerTest {
     private static final String OUTPUT_CONTENT = "hello world";
     private static final String OUTPUT_FILENAME = "out.txt";

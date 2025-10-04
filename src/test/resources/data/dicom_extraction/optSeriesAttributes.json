@@ -1,10 +1,10 @@
 {
-  "parameters/illumination_power": "1200.0",
+  "parameters/illumination_power": "1200",
   "modality": "OPT",
   "frames": 7,
   "parameters/fov/y": 496,
   "scanner/model": "Spectralis",
-  "parameters/illumination_wavelength": "880.0",
+  "parameters/illumination_wavelength": "880",
   "series_description": "Volume IR",
   "scanner/manufacturer": "Heidelberg Engineering",
   "parameters/fov/x": 1536,
