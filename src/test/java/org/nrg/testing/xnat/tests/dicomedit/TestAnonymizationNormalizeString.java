@@ -72,7 +72,7 @@ public class TestAnonymizationNormalizeString extends BaseAnonymizationTest {
                     COMMON_VALIDATION.accept(root);
                     root.putValueEqualCheck(
                             "(0055,1015)",
-                            formatExtendedStringPostNormalize(ALT_SOURCE_VALUE) + "\\" + formatExtendedStringPostNormalize(" ")
+                            formatExtendedStringPostNormalize("D_scr_pt__n pl_s $pec|_l _hara_t_rs") + "\\" + formatExtendedStringPostNormalize(" ")
                     );
                 }).run();
     }
@@ -145,7 +145,7 @@ public class TestAnonymizationNormalizeString extends BaseAnonymizationTest {
         new NormalizeStringTest("normalizeStringUn.das")
                 .withValidation((root) -> root.putValueEqualCheck(
                         "(0055,1016)",
-                        formatExtendedStringPostNormalize(ALT_SOURCE_VALUE) + "\\" + formatExtendedStringPostNormalize("\\00"),
+                        formatExtendedStringPostNormalize("D_scr_pt__n pl_s $pec|_l _hara_t_rs\0"),
                         VR.UN
                 )).run();
     }
