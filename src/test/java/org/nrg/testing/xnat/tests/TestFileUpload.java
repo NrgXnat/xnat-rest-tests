@@ -158,7 +158,7 @@ public class TestFileUpload extends BaseXnatRestTest {
         final File downloadedZip2 = restDriver.saveBinaryResponseToFile(mainCredentials().queryParam("format", "zip").get(CommonStringUtils.formatUrl(subdirFilesUrl, "sub") + "/"));
         assertEquals(2, new ZipFile(downloadedZip2).size());
 
-        mainCredentials().delete(CommonStringUtils.formatUrl(subdirFilesUrl, "sub/folder") + "/").then().assertThat().statusCode(200);
+        mainCredentials().delete(CommonStringUtils.formatUrl(subdirFilesUrl, "sub/folder")).then().assertThat().statusCode(200);
         assertEquals(1, getJsonTableSize(mainCredentials().queryParam("format", "json").get(CommonStringUtils.formatUrl(subdirFilesUrl, "sub") + "/")));
     }
 
