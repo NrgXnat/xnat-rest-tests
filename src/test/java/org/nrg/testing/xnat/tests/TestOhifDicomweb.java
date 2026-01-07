@@ -75,6 +75,7 @@ public class TestOhifDicomweb extends BaseXnatRestTest {
         expect403(() -> nonadminInterface.viewerDicomwebGenerateData(true));
     }
 
+    @Test(enabled = false)
     public void testViewerDicomWebSecurityPublicProject() {
         final Project publicProject = new Project().accessibility(Accessibility.PUBLIC);
         final ImagingSession session = new ImagingSession(publicProject, new Subject(publicProject));

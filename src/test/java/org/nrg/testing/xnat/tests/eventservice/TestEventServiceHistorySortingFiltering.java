@@ -4,7 +4,14 @@ import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.util.RandomHelper;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
-import org.nrg.xnat.pogo.events.*;
+import org.nrg.xnat.pogo.events.Action;
+import org.nrg.xnat.pogo.events.DeliveredEvent;
+import org.nrg.xnat.pogo.events.DeliveredEventQueryFilterKey;
+import org.nrg.xnat.pogo.events.DeliveredEventQuerySortColumn;
+import org.nrg.xnat.pogo.events.Event;
+import org.nrg.xnat.pogo.events.EventStatus;
+import org.nrg.xnat.pogo.events.Subscription;
+import org.nrg.xnat.pogo.events.SubscriptionBuilder;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.paginated_api.HibernateFilter;
 import org.nrg.xnat.pogo.paginated_api.PaginatedRequest;
@@ -12,11 +19,12 @@ import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.testng.AssertJUnit.*;
+import static org.testng.AssertJUnit.assertEquals;
 
 @AddedIn(Xnat_1_8_0.class)
 public class TestEventServiceHistorySortingFiltering extends BaseEventServiceTest {
@@ -28,6 +36,11 @@ public class TestEventServiceHistorySortingFiltering extends BaseEventServiceTes
     final Subscription subjectSubscription = prepareLoggingSubscription(Event.SUBJECT_EVENT_TYPE);
     final Subscription sessionSubscription = prepareLoggingSubscription(Event.SESSION_EVENT_TYPE);
     List<DeliveredEvent> subjectEvents;
+    List<DeliveredEvent> allSubjectEvents;
+    final String SUBJECT_CREATED = "Subject : CREATED";
+    final String PIXI_PLUGIN_ID = "PIXIPlugin";
+
+
     DeliveredEvent subject4Event, subject3Event, subject2Event, subject1Event;
 
     @BeforeClass
@@ -51,10 +64,40 @@ public class TestEventServiceHistorySortingFiltering extends BaseEventServiceTes
         final List<Subject> subjects = Arrays.asList(subject1, subject2, subject3, subject4);
         for (int index = 0; index < subjects.size(); index++) {
             (index < 3 ? mainInterface() : mainAdminInterface()).createSubject(subjects.get(index));
-            mainAdminInterface().queryDeliveredEvents(buildDeliveredEventQueryForSubscription(subjectSubscription), index + 1);
             mainAdminInterface().queryDeliveredEvents(buildDeliveredEventQueryForSubscription(sessionSubscription), index + 1);
         }
-        subjectEvents = mainAdminInterface().queryDeliveredEvents(buildDeliveredEventQueryForSubscription(subjectSubscription));
+        extractSubjectEvents();
+        matchEvents();
+    }
+
+    //PIXI-238: If PIXI plugin is deployed, it auto generates a Hotel Subject and that creates a count more than expected
+    private void extractSubjectEvents() {
+        allSubjectEvents = mainAdminInterface().queryDeliveredEvents(buildDeliveredEventQueryForSubscription(subjectSubscription));
+        if (hasMoreSubjectEventsThanExpected()) {
+            subjectEvents = new ArrayList<>();
+            for (int index = 0; index < allSubjectEvents.size(); index++) {
+                DeliveredEvent foundEvent = allSubjectEvents.get(index);
+                if (foundEvent.getEventType().equalsIgnoreCase(SUBJECT_CREATED) && !foundEvent.getTrigger().getLabel().equalsIgnoreCase("HOTEL")) {
+                    subjectEvents.add(foundEvent);
+                }
+            }
+        } else {
+            subjectEvents = allSubjectEvents;
+        }
+    }
+
+    private List<DeliveredEvent> extractSubjectEvents(final List<DeliveredEvent> subjectEvents) {
+        List<DeliveredEvent> filteredSubjectEvents = new ArrayList<>();
+        for (int index = 0; index < subjectEvents.size(); index++) {
+            DeliveredEvent foundEvent = subjectEvents.get(index);
+            if (foundEvent.getEventType().equalsIgnoreCase(SUBJECT_CREATED) && !foundEvent.getTrigger().getLabel().equalsIgnoreCase("HOTEL")) {
+                filteredSubjectEvents.add(foundEvent);
+            }
+        }
+        return filteredSubjectEvents;
+    }
+    
+    private void matchEvents() {
         subject4Event = subjectEvents.get(0);
         subject3Event = subjectEvents.get(1);
         subject2Event = subjectEvents.get(2);
@@ -62,6 +105,7 @@ public class TestEventServiceHistorySortingFiltering extends BaseEventServiceTes
     }
 
     @Test
+    //PIXI-238: If PIXI plugin is deployed, it auto generates a Hotel Subject and that creates a count more than expected
     public void testSiteDeliveredEventSorting() {
         final boolean usernameCompare = mainAdminUser.getUsername().compareToIgnoreCase(mainUser.getUsername()) > 0;
         assertEquals(subject4.getLabel(), subject4Event.getTrigger().getLabel());
@@ -73,40 +117,52 @@ public class TestEventServiceHistorySortingFiltering extends BaseEventServiceTes
                 buildDeliveredEventQueryForSubscription(subjectSubscription).
                         sort(DeliveredEventQuerySortColumn.TIMESTAMP, PaginatedRequest.SortDir.ASC)
         );
-        assertEquals(Arrays.asList(subject1Event, subject2Event, subject3Event, subject4Event), sortedEvents);
+
+        final List<DeliveredEvent> filteredEvents = extractSubjectEvents(sortedEvents);
+        assertEquals(Arrays.asList(subject1Event, subject2Event, subject3Event, subject4Event), filteredEvents);
 
         final List<DeliveredEvent> userSortedEvents = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(subjectSubscription).
                         sort(DeliveredEventQuerySortColumn.USER, PaginatedRequest.SortDir.DESC)
         );
-        assertEquals(subject4Event, userSortedEvents.get(usernameCompare ? 0 : 3));
+
+        final List<DeliveredEvent> userSortedFilteredEvents = extractSubjectEvents(userSortedEvents);
+        assertEquals(subject4Event, userSortedFilteredEvents.get(usernameCompare ? 0 : 3));
     }
 
     @Test
+    //PIXI-238: If PIXI plugin is deployed, it auto generates a Hotel Subject and that creates a count more than expected
     public void testSiteDeliveredEventFiltering() {
-        assertEquals(Arrays.asList(subject2Event, subject1Event), mainAdminInterface().queryDeliveredEvents(
+        List<DeliveredEvent>  events = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(subjectSubscription)
                         .filter(DeliveredEventQueryFilterKey.PROJECT, new HibernateFilter(project1.getId()))
-                        .filter(DeliveredEventQueryFilterKey.EVENTTYPE, new HibernateFilter("Subject :"))
-        ));
+                        .filter(DeliveredEventQueryFilterKey.EVENTTYPE, new HibernateFilter("Subject :")));
 
-        assertEquals(subjectEvents, mainAdminInterface().queryDeliveredEvents(
+        final List<DeliveredEvent> filteredEvents = extractSubjectEvents(events);
+        assertEquals(Arrays.asList(subject2Event, subject1Event), filteredEvents);
+
+        List<DeliveredEvent>  eventsByStatus = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(subjectSubscription)
-                        .filter(DeliveredEventQueryFilterKey.STATUS, new HibernateFilter("Logging action completed"))
-        ));
+                        .filter(DeliveredEventQueryFilterKey.STATUS, new HibernateFilter("Logging action completed")));
 
-        assertEquals(Collections.singletonList(subject4Event), mainAdminInterface().queryDeliveredEvents(
+        final List<DeliveredEvent> filteredByStatus = extractSubjectEvents(eventsByStatus);
+        assertEquals(subjectEvents, filteredByStatus);
+
+        final List<DeliveredEvent> eventsByUser  = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(subjectSubscription).
-                        filter(DeliveredEventQueryFilterKey.USER, new HibernateFilter(mainAdminUser.getUsername()))
-        ));
+                        filter(DeliveredEventQueryFilterKey.USER, new HibernateFilter(mainAdminUser.getUsername())));
+        final List<DeliveredEvent> filteredByUser = extractSubjectEvents(eventsByUser);
+        assertEquals(Collections.singletonList(subject4Event), filteredByUser);
     }
 
     @Test
     public void testSiteDeliveredEventPagination() {
-        final PaginatedRequest query = buildDeliveredEventQueryForSubscription(subjectSubscription).size(2);
-        assertEquals(Arrays.asList(subject4Event, subject3Event), mainAdminInterface().queryDeliveredEvents(query));
-        query.setPage(2);
-        assertEquals(Arrays.asList(subject2Event, subject1Event), mainAdminInterface().queryDeliveredEvents(query));
+        if (!hasMoreSubjectEventsThanExpected()) {
+            PaginatedRequest query = buildDeliveredEventQueryForSubscription(subjectSubscription).size(2);
+            assertEquals(Arrays.asList(subject4Event, subject3Event), mainAdminInterface().queryDeliveredEvents(query));
+            query.setPage(2);
+            assertEquals(Arrays.asList(subject2Event, subject1Event), mainAdminInterface().queryDeliveredEvents(query));
+        }
     }
 
     private Subscription prepareLoggingSubscription(String eventType) {
@@ -118,4 +174,10 @@ public class TestEventServiceHistorySortingFiltering extends BaseEventServiceTes
                 build();
     }
 
+    private boolean hasMoreSubjectEventsThanExpected() {
+       return  installedPlugins().stream()
+                .anyMatch(obj -> obj.getId().equals(PIXI_PLUGIN_ID));
+    }
+
 }
+
