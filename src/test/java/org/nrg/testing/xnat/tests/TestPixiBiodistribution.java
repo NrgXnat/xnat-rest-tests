@@ -164,7 +164,7 @@ public class TestPixiBiodistribution extends BaseXnatRestTest {
         File biodFile = getDataFile(fileName);
         final String currentTimeForCache = Long.toString(System.currentTimeMillis());
         final String cacheUrl = String.format(
-                "/user/cache/resources/%s/files/%s", currentTimeForCache, biodFile.getName());
+                "/opt/data/cache/resources/%s/files/%s", currentTimeForCache, biodFile.getName());
         interfaceFor(user).queryBase().multiPart(biodFile).put(formatRestUrl(cacheUrl)).then().assertThat()
                 .statusCode(200);
 
