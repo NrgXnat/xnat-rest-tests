@@ -2,7 +2,9 @@ package org.nrg.testing.xnat.tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.path.json.JsonPath;
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.Basic;
+import org.nrg.testing.annotations.DeprecatedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.util.RandomHelper;
@@ -18,6 +20,8 @@ import org.nrg.xnat.pogo.experiments.sessions.CTSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
 import org.nrg.xnat.rest.SerializationUtils;
+import org.nrg.xnat.versions.Xnat_1_10_0;
+import org.nrg.xnat.versions.Xnat_1_8_10;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -83,8 +87,15 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
     Note: "Tra" orientation is correct from the value in (5200,9229)[0].(0020,9116)[0].(0020,0037), as described by DICOM PS3.3 C.23.3.1.1 and C.7.6.2.1.1
      */
     @Test
+    @DeprecatedIn(Xnat_1_8_10.class)
     public void testEnhancedMRDiffusionExtraction() throws IOException {
         checkSeriesMatchesAttributes(new MRScan(diffusionMR, "1"), "diffusionScanAttributes.json");
+    }
+
+    @Test
+    @AddedIn(Xnat_1_10_0.class)
+    public void testEnhancedMRDiffusionExtractionDcm4che5() throws IOException {
+        checkSeriesMatchesAttributes(new MRScan(diffusionMR, "1"), "diffusionScanAttributesDcm4che5.json");
     }
 
     @Test
@@ -93,8 +104,15 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
     }
 
     @Test
+    @DeprecatedIn(Xnat_1_10_0.class)
     public void testOPTDicomExtraction() throws IOException {
         checkSeriesMatchesAttributes(new Scan(optSession, "2429001"), "optSeriesAttributes.json");
+    }
+
+    @Test
+    @AddedIn(Xnat_1_10_0.class)
+    public void testOPTDicomExtractionDcm4che5() throws IOException {
+        checkSeriesMatchesAttributes(new Scan(optSession, "2429001"), "optSeriesAttributesDcm4che5.json");
     }
 
     private void checkStudyMatchesAttributes(ImagingSession session, String attributesFile) throws IOException {
