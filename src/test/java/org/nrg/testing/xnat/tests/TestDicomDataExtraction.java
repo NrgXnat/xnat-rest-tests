@@ -21,7 +21,6 @@ import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
 import org.nrg.xnat.rest.SerializationUtils;
 import org.nrg.xnat.versions.Xnat_1_10_0;
-import org.nrg.xnat.versions.Xnat_1_8_10;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
