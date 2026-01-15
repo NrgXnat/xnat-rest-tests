@@ -87,7 +87,7 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
     Note: "Tra" orientation is correct from the value in (5200,9229)[0].(0020,9116)[0].(0020,0037), as described by DICOM PS3.3 C.23.3.1.1 and C.7.6.2.1.1
      */
     @Test
-    @DeprecatedIn(Xnat_1_8_10.class)
+    @DeprecatedIn(Xnat_1_10_0.class)
     public void testEnhancedMRDiffusionExtraction() throws IOException {
         checkSeriesMatchesAttributes(new MRScan(diffusionMR, "1"), "diffusionScanAttributes.json");
     }
