@@ -6,6 +6,7 @@ import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.users.User;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -14,11 +15,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static io.restassured.http.ContentType.JSON;
 
 @TestRequires(plugins="PIXIPlugin")
 public class TestPixiBiodistribution extends BaseXnatRestTest {
@@ -27,6 +32,12 @@ public class TestPixiBiodistribution extends BaseXnatRestTest {
     private String originalDateFormat;
     private String originalDateTimeFormat;
     private String originalDatetimeFormatSeconds;
+
+    private static final String sampleTypesPreference = "biodistributionAcceptedSampleTypes";
+
+    private static final List<String> listOfSiteWideSampleTypes = Arrays.asList("blood", "liver", "spleen", "kidney",
+                                                                                "bone", "muscle");
+
 
     private static final String UI_DATE_FORMAT_PREF = "uiDateFormat";
     private static final String UI_DATE_TIME_FORMAT_PREF = "uiDateTimeFormat";
@@ -38,6 +49,12 @@ public class TestPixiBiodistribution extends BaseXnatRestTest {
             "biod_test_repeat_data.csv";
     private static final String LIMITED_BIODISTRIBUTION_DATA_CSV_FILE_LOCATION = "pixi/biodistribution/" +
             "biod_test_empty_columns.csv";
+
+    @BeforeClass
+    public void setupAcceptedSampleTypes() {
+        mainAdminInterface().queryBase().body(listOfSiteWideSampleTypes).contentType(JSON).post(formatXapiUrl(
+                "/pixi/preferences/biodistributionAcceptedSampleTypes")).then().assertThat().statusCode(200);
+    }
 
     @BeforeMethod
     public void setup() {
