@@ -4,11 +4,13 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.nrg.testing.annotations.AddedIn;
+import org.nrg.testing.annotations.DeprecatedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.AnonConstants;
 import org.nrg.testing.dicom.RootDicomObject;
 import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
 import org.nrg.testing.enums.TestData;
+import org.nrg.xnat.versions.Xnat_1_10_0;
 import org.nrg.xnat.versions.Xnat_1_8_10;
 
 import java.io.IOException;
@@ -61,7 +63,25 @@ public class TestAnonymizationNormalizeString extends BaseAnonymizationTest {
      * the behavior doesn't change without us noticing.
      * See DE-124 and DE-126
      */
+    @DeprecatedIn(Xnat_1_10_0.class)
     public void testBasicNormalizeStringUsageImplicitVr() {
+        new NormalizeStringTest("normalizeStringImplicit.das")
+                .withData(
+                        new LocallyCacheableDicomTransformation("implicit_vr_non_ascii")
+                                .createZip()
+                                .data(TestData.DICOM_WEB_PETMR2_PT)
+                                .simpleTransform(specialCharAdder)
+                ).withValidation((root) -> {
+                    COMMON_VALIDATION.accept(root);
+                    root.putValueEqualCheck(
+                            "(0055,1015)",
+                            formatExtendedStringPostNormalize(ALT_SOURCE_VALUE) + "\\" + formatExtendedStringPostNormalize(" ")
+                    );
+                }).run();
+    }
+
+    @AddedIn(Xnat_1_10_0.class)
+    public void testBasicNormalizeStringUsageImplicitVrDcm4che5() {
         new NormalizeStringTest("normalizeStringImplicit.das")
                 .withData(
                         new LocallyCacheableDicomTransformation("implicit_vr_non_ascii")
@@ -141,7 +161,18 @@ public class TestAnonymizationNormalizeString extends BaseAnonymizationTest {
      * the behavior doesn't change without us noticing.
      * See DE-124 and DE-126
      */
+    @DeprecatedIn(Xnat_1_10_0.class)
     public void testNormalizeStringUnElement() {
+        new NormalizeStringTest("normalizeStringUn.das")
+                .withValidation((root) -> root.putValueEqualCheck(
+                        "(0055,1016)",
+                        formatExtendedStringPostNormalize(ALT_SOURCE_VALUE) + "\\" + formatExtendedStringPostNormalize("\\00"),
+                        VR.UN
+                )).run();
+    }
+
+    @AddedIn(Xnat_1_10_0.class)
+    public void testNormalizeStringUnElementDcm4che5() {
         new NormalizeStringTest("normalizeStringUn.das")
                 .withValidation((root) -> root.putValueEqualCheck(
                         "(0055,1016)",
@@ -149,7 +180,6 @@ public class TestAnonymizationNormalizeString extends BaseAnonymizationTest {
                         VR.UN
                 )).run();
     }
-
     /**
      * Tests usage of the new normalizeString function added for DE-108 to remove non-ASCII characters, but with an
      * nonsensical DICOM tag. The goal is to see that even if DicomEdit doesn't know what a tag is, we can still handle
