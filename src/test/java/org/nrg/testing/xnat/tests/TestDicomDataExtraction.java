@@ -9,6 +9,7 @@ import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -86,15 +87,11 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
     Note: "Tra" orientation is correct from the value in (5200,9229)[0].(0020,9116)[0].(0020,0037), as described by DICOM PS3.3 C.23.3.1.1 and C.7.6.2.1.1
      */
     @Test
-    @DeprecatedIn(Xnat_1_10_0.class)
     public void testEnhancedMRDiffusionExtraction() throws IOException {
-        checkSeriesMatchesAttributes(new MRScan(diffusionMR, "1"), "diffusionScanAttributes.json");
-    }
-
-    @Test
-    @AddedIn(Xnat_1_10_0.class)
-    public void testEnhancedMRDiffusionExtractionDcm4che5() throws IOException {
-        checkSeriesMatchesAttributes(new MRScan(diffusionMR, "1"), "diffusionScanAttributesDcm4che5.json");
+        checkSeriesMatchesAttributes(new MRScan(diffusionMR, "1"),
+                XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_10_0.class)
+                        ? "diffusionScanAttributes.json"
+                        : "diffusionScanAttributesDcm4che5.json");
     }
 
     @Test
@@ -103,15 +100,11 @@ public class TestDicomDataExtraction extends BaseXnatRestTest {
     }
 
     @Test
-    @DeprecatedIn(Xnat_1_10_0.class)
     public void testOPTDicomExtraction() throws IOException {
-        checkSeriesMatchesAttributes(new Scan(optSession, "2429001"), "optSeriesAttributes.json");
-    }
-
-    @Test
-    @AddedIn(Xnat_1_10_0.class)
-    public void testOPTDicomExtractionDcm4che5() throws IOException {
-        checkSeriesMatchesAttributes(new Scan(optSession, "2429001"), "optSeriesAttributesDcm4che5.json");
+        checkSeriesMatchesAttributes(new Scan(optSession, "2429001"),
+                XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_10_0.class)
+                        ? "optSeriesAttributes.json"
+                        : "optSeriesAttributesDcm4che5.json");
     }
 
     private void checkStudyMatchesAttributes(ImagingSession session, String attributesFile) throws IOException {
