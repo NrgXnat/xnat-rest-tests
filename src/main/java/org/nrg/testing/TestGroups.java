@@ -35,5 +35,8 @@ public class TestGroups {
     public static final String WORKFLOWS = "workflows";
     public static final String XML = "xml";
     public static final String CUSTOM_FORMS = "custom_forms";
+    public static final String DATA_TYPES = "data-types";
+    public static final String DB_SCHEMAS = "db-schemas";
+    public static final String XFT_ELEMENTS = "xft-elements";
 
 }
