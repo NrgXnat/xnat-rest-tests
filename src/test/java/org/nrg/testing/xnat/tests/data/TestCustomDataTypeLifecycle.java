@@ -135,6 +135,8 @@ public class TestCustomDataTypeLifecycle extends BaseXnatRestTest {
         testMRSession = new MRSession(primaryProject, testSubject, "TestMR1")
                 .date(LocalDate.parse("2024-01-15"));
         mainAdminInterface().createSubjectAssessor(testMRSession);
+
+        TimeUtils.sleep(2000); // Allow cache to update
     }
 
     @AfterClass(alwaysRun = true)
@@ -180,6 +182,8 @@ public class TestCustomDataTypeLifecycle extends BaseXnatRestTest {
 
         // Find the schema ID for later tests
         subjectAssessorSchemaId = findSchemaIdByTypeName(subjectAssessorTypeName);
+
+        TimeUtils.sleep(3000); // Allow schema to be fully loaded
     }
 
     @Test(priority = 2)
@@ -202,6 +206,8 @@ public class TestCustomDataTypeLifecycle extends BaseXnatRestTest {
         imageAssessorXsiType = complexType.contains(":") ? complexType : "custom:" + complexType;
 
         imageAssessorSchemaId = findSchemaIdByTypeName(imageAssessorTypeName);
+
+        TimeUtils.sleep(3000);
     }
 
     @Test(priority = 3)
@@ -225,6 +231,7 @@ public class TestCustomDataTypeLifecycle extends BaseXnatRestTest {
 
         projectAssetSchemaId = findSchemaIdByTypeName(projectAssetTypeName);
 
+        TimeUtils.sleep(3000);
     }
 
     // ==================== Experiment Creation Tests ====================
