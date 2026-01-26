@@ -5,6 +5,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.Matchers;
+import org.nrg.testing.TimeUtils;
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.DeprecatedIn;
 import org.nrg.testing.annotations.PluginRequirement;
 import org.nrg.testing.annotations.TestRequires;
@@ -12,11 +14,19 @@ import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.conf.XNATProperties;
 import org.nrg.testing.xnat.containers.ContainerTestUtils;
+import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
+import org.nrg.xnat.pogo.DataType;
+import org.nrg.xnat.pogo.PluginRegistry;
+import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Workflow;
 import org.nrg.xnat.pogo.containers.Backend;
+import org.nrg.xnat.pogo.containers.CommandSummaryForContext;
 import org.nrg.xnat.pogo.containers.ContainerLogPollResponse;
 import org.nrg.xnat.pogo.containers.ContainerLogPollResponsePre322;
+import org.nrg.xnat.pogo.users.User;
 import org.nrg.xnat.subinterfaces.ContainerServiceSubinterface;
+import org.nrg.xnat.versions.Xnat_1_7_7;
+import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.versions.Xnat_1_9_2;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
@@ -116,6 +126,64 @@ public class TestContainerLogs extends BaseContainerTest {
     public void testAfterContainerFinishesFetchLogs(final Backend backend) throws IOException {
         testAfterContainerFinishesFetchLogs(backend != Backend.KUBERNETES);
     }
+
+    @TestRequires(users = 1,
+            specificPluginRequirements = {
+                    @PluginRequirement(pluginId = "containers",
+                            minimumSupportedVersion = "3.8.0")})
+    public void testAfterContainerFinishesFetchLogsByMember(final Backend backend) throws IOException {
+        boolean expectSplitStdoutStderr = backend != Backend.KUBERNETES;
+        containerManagerInterface .addCommand(getDataFile("debug_command.json"));
+        User memberUser = getGenericUser();
+        final Project project = new Project();
+        project.addMember(memberUser);
+        mainInterface().createProject(project);
+        TimeUtils.sleep(1000); // cache update
+
+        //Launch the command
+        final CommandSummaryForContext wrapper = mainInterface().readAvailableCommands(DataType.PROJECT, project).get(0);
+        mainInterface().setWrapperStatusOnProject(wrapper, project, true);
+
+        final int workflowId = mainInterface().launchContainer(project, wrapper, "/archive/projects/" + project.getId(), ContainerTest.BASE_DEBUG_LAUNCH_PARAMS);
+
+        // Wait for container to finish successfully
+        mainAdminInterface().waitForWorkflowComplete(workflowId, 60 * timeout_minutes);
+
+        // Container id from workflow comments
+        final Workflow workflow = mainAdminInterface().readWorkflow(workflowId);
+        final String containerId = workflow.getComments();
+        // Ensure container is finalized and it has a log file of the type we're looking for
+        await().atMost(timeout_minutes, TimeUnit.MINUTES).pollDelay(STATUS_POLL_TIME_MILLISECONDS, TimeUnit.MILLISECONDS)
+                .until(() -> mainInterface().getContainer(containerId)
+                        .getLogPaths()
+                        .size() == (expectSplitStdoutStderr ? 2 : 1)
+                );
+
+
+        //Verify that the member can not access the logs
+        interfaceFor(memberUser).queryBase().get(formatXapiUrl("/containers/"+containerId + "/logSince/stdout?format=json"))
+                .then()
+                .assertThat()
+                .statusCode(403);
+
+        //For the Project, Allow Members to Access Logs
+        mainQueryBase()
+                .contentType(JSON)
+                .body("{\"key\": \"container-service-log-access\", \"enabled\":true}")  // BS non-useful param
+                .post("/REST/services/features?group="+project.getId()+"_member")
+                .then()
+                .assertThat()
+                .statusCode(200);
+
+        //Access the logs again
+        interfaceFor(memberUser).queryBase() .get(formatXapiUrl("/containers/"+containerId + "/logSince/stdout?format=json"))
+                .then()
+                .assertThat()
+                .statusCode(200);
+        deleteCommands();
+    }
+
+
     private void testAfterContainerFinishesFetchLogs(final boolean expectSplitStdoutStderr) throws IOException {
         final String name = RandomStringUtils.randomAlphabetic(5);
         final String rootElement = "site";

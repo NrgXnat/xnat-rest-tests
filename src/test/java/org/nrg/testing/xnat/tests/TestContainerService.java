@@ -46,10 +46,6 @@ import static org.testng.AssertJUnit.*;
 @Test(groups = {CONTAINERS, WORKFLOWS}, dataProvider = BaseXnatTest.CS_BACKENDS_DATA_PROVIDER)
 @TestRequires(plugins = PluginRegistry.CS_PLUGIN_ID)
 public class TestContainerService extends BaseContainerTest {
-    private static final String OUTPUT_CONTENT = "hello world";
-    private static final String OUTPUT_FILENAME = "out.txt";
-    private static final Map<String, String> BASE_DEBUG_LAUNCH_PARAMS = makeContainerLaunchReqBody();
-    private static final Map<Backend, Integer> MAX_TIMEOUTS_IN_SECONDS = makeMaxTimeouts();
 
     private Project project;
     private Subject subject;
@@ -118,13 +114,13 @@ public class TestContainerService extends BaseContainerTest {
     public void testContainerProject(final Backend backend) {
         new ContainerTest()
                 .uri("/archive/projects/" + project.getId())
-                .run(DataType.PROJECT, backend);
+                .run(mainInterface(), project, DataType.PROJECT, backend);
     }
 
     public void testContainerSubject(final Backend backend) {
         new ContainerTest()
                 .uri("/archive/subjects/" + subject.getAccessionNumber())
-                .run(DataType.SUBJECT, backend);
+                .run(mainInterface(), project, DataType.SUBJECT, backend);
     }
 
 
@@ -132,13 +128,13 @@ public class TestContainerService extends BaseContainerTest {
     public void testContainerSubjectAltUri(final Backend backend) {
         new ContainerTest()
                 .uri(String.format("/archive/projects/%s/subjects/%s", project.getId(), subject.getLabel()))
-                .run(DataType.SUBJECT, backend);
+                .run(mainInterface(), project, DataType.SUBJECT, backend);
     }
 
     public void testContainerSession(final Backend backend) {
         new ContainerTest()
                 .uri("/archive/experiments/" + session.getAccessionNumber())
-                .run(DataType.MR_SESSION, backend);
+                .run(mainInterface(), project, DataType.MR_SESSION, backend);
     }
 
     @TestRequires(plugins = "batchLaunchPlugin")
@@ -152,19 +148,19 @@ public class TestContainerService extends BaseContainerTest {
 
         new ContainerTest()
                 .urisAndIds(uriToId)
-                .run(DataType.MR_SESSION, backend);
+                .run(mainInterface(), project, DataType.MR_SESSION, backend);
     }
 
     public void testContainerSessionAltUri(final Backend backend) {
         new ContainerTest()
                 .uri(String.format("/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subject.getLabel(), session.getLabel()))
-                .run(DataType.MR_SESSION, backend);
+                .run(mainInterface(), project, DataType.MR_SESSION, backend);
     }
 
     public void testContainerAssessor(final Backend backend) {
         new ContainerTest()
                 .uri(String.format("/archive/experiments/%s/assessors/%s", session.getAccessionNumber(), assessor.getAccessionNumber()))
-                .run(DataType.QC, backend);
+                .run(mainInterface(), project, DataType.QC, backend);
     }
 
     @AddedIn(Xnat_1_8_0.class)
@@ -172,97 +168,36 @@ public class TestContainerService extends BaseContainerTest {
         new ContainerTest()
                 .uri(String.format("/archive/projects/%s/subjects/%s/experiments/%s/assessors/%s",
                         project.getId(), subject.getLabel(), session.getLabel(), assessor.getLabel()))
-                .run(DataType.QC, backend);
+                .run(mainInterface(), project, DataType.QC, backend);
     }
 
     @AddedIn(Xnat_1_8_0.class)
     public void testContainerAssessorAltUri2(final Backend backend) {
         new ContainerTest()
                 .uri(String.format("/archive/experiments/%s/assessors/%s", session.getAccessionNumber(), assessor.getLabel()))
-                .run(DataType.QC, backend);
+                .run(mainInterface(), project, DataType.QC, backend);
     }
 
     @AddedIn(Xnat_1_8_0.class)
     public void testContainerAssessorAltUri3(final Backend backend) {
         new ContainerTest()
                 .uri("/archive/experiments/" + assessor.getAccessionNumber())
-                .run(DataType.QC, backend);
+                .run(mainInterface(), project, DataType.QC, backend);
     }
 
     public void testContainerScan(final Backend backend) {
         new ContainerTest()
                 .uri(String.format("/archive/experiments/%s/scans/%s", session.getAccessionNumber(), scan.getId()))
-                .run(DataType.MR_SCAN, backend);
+                .run(mainInterface(), project, DataType.MR_SCAN, backend);
     }
 
     public void testContainerScanAltUri(final Backend backend) {
         new ContainerTest()
                 .uri(String.format("/archive/projects/%s/subjects/%s/experiments/%s/scans/%s",
                         project.getId(), subject.getLabel(), session.getLabel(), scan.getId()))
-                .run(DataType.MR_SCAN, backend);
+                .run(mainInterface(), project, DataType.MR_SCAN, backend);
     }
 
-    private class ContainerTest {
-        String uri;
-        Map<String, String> urisAndIds;
 
-        ContainerTest uri(String uri) {
-            this.uri = uri;
-            return this;
-        }
-
-        ContainerTest urisAndIds(Map<String, String> urisAndIds) {
-            this.urisAndIds = urisAndIds;
-            return this;
-        }
-
-        private void run(DataType dataType, Backend backend) {
-            final CommandSummaryForContext wrapper = mainInterface().readAvailableCommands(dataType, project).get(0);
-            mainInterface().setWrapperStatusOnProject(wrapper, project, true);
-            if (urisAndIds != null) {
-                mainInterface().bulkLaunchContainers(project, wrapper, urisAndIds.keySet(), BASE_DEBUG_LAUNCH_PARAMS);
-                // Determine workflow ID, wait for complete, verify outputs
-                for (Map.Entry<String, String> uriAndId : urisAndIds.entrySet()) {
-                    final int workflowId = mainInterface().determineWorkflowId(dataType, uriAndId.getValue(), wrapper);
-                    waitForWorkflowComplete(workflowId, backend);
-                    verifyOutputs(uriAndId.getKey());
-                }
-            } else {
-                final int workflowId = mainInterface().launchContainer(project, wrapper, uri, BASE_DEBUG_LAUNCH_PARAMS);
-                waitForWorkflowComplete(workflowId, backend);
-                verifyOutputs(uri);
-            }
-        }
-
-        private void waitForWorkflowComplete(int workflowId, Backend backend) {
-            mainInterface().waitForWorkflowComplete(workflowId, 60 * MAX_TIMEOUTS_IN_SECONDS.get(backend));
-        }
-
-        private void verifyOutputs(String uri) {
-            final Resource resource = new GenericResource("/data" + uri).folder(ContainerTestUtils.DEBUG_OUTPUT_RESOURCE_NAME);
-            assertEquals(1, mainInterface().readResourceFiles(resource).size());
-            final ResourceFile resourceFile = resource.getResourceFiles().get(0);
-            assertEquals(OUTPUT_FILENAME, resourceFile.getName());
-            assertEquals(
-                    OUTPUT_CONTENT,
-                    mainInterface().readResourceFile(resource, resourceFile).trim()
-            );
-        }
-    }
-
-    private static Map<String, String> makeContainerLaunchReqBody() {
-        final Map<String, String> queryParams = new HashMap<>();
-        queryParams.put(ContainerTestUtils.DEBUG_COMMAND_LINE_INPUT_NAME, "echo " + OUTPUT_CONTENT);
-        queryParams.put(ContainerTestUtils.DEBUG_OUTPUT_FILE_INPUT_NAME, OUTPUT_FILENAME);
-        return queryParams;
-    }
-
-    private static Map<Backend, Integer> makeMaxTimeouts() {
-        final Map<Backend, Integer> timeouts = new HashMap<>();
-        timeouts.put(Backend.DOCKER, 5);
-        timeouts.put(Backend.SWARM, Settings.CS_SWARM_TIMEOUT);
-        timeouts.put(Backend.KUBERNETES, 10); // TODO: eh?
-        return timeouts;
-    }
 
 }
