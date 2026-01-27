@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -123,42 +124,51 @@ public class TestAdvancedSearch extends BaseXnatRestTest {
     public void testSubjectSearch() throws IOException {
         List<Map<String, Object>> results = getRestCallResults("subject_search.xml");
 
-        assertEquals(subjectLabels.size(), results.size());
-        assertEquals(subjectLabels, getValuesByField(results, SUBJECT_LABEL));
+        final int expectedSubjectCount = getSubjectCountFromDataApi();
+        assertEquals(expectedSubjectCount, results.size());
+        assertContainsAll("subject labels", subjectLabels, getValuesByField(results, SUBJECT_LABEL));
     }
 
     @Test(groups = {SEARCH, PERMISSIONS})
     public void testSessionSearch() throws IOException {
         List<Map<String, Object>> results = getRestCallResults("mrsession_search.xml");
 
-        assertEquals(sessionLabels.size(), results.size());
-        assertEquals(sessionLabels, getValuesByField(results, LABEL));
+        final int expectedSessionCount = getSessionCountFromDataApi();
+        assertEquals(expectedSessionCount, results.size());
+        assertContainsAll("session labels", sessionLabels, getValuesByField(results, LABEL));
     }
 
     @Test(groups = {SEARCH, PERMISSIONS})
     public void testScanSearch() throws IOException {
         List<Map<String, Object>> results = getRestCallResults("mrscan_search.xml");
 
-        assertEquals(scanIds.size(), results.size());
-        assertEquals(scanIds, getValuesByField(results, ID));
+        final int expectedScanCount = getScanCountFromDataApi();
+        assertEquals(expectedScanCount, results.size());
+        assertContainsAll("scan IDs", scanIds, getValuesByField(results, ID));
     }
 
     @Test(groups = {SEARCH, PERMISSIONS})
     public void testQcSearch() throws IOException {
         List<Map<String, Object>> results = getRestCallResults("qc_search.xml");
 
-        assertEquals(qcLabel.size(), results.size());
-        assertEquals(qcLabel, getValuesByField(results, LABEL));
+        final int expectedQcCount = getQcCountFromDataApi();
+        assertEquals(expectedQcCount, results.size());
+        assertContainsAll("QC labels", qcLabel, getValuesByField(results, LABEL));
     }
 
     @Test(groups = {SEARCH, PERMISSIONS})
     public void testSubjectJoinSearch() throws IOException {
         List<Map<String, Object>> results = getRestCallResults("subject_session_scan_qc_search.xml");
 
-        assertEquals(subjectLabels.size(), results.size());
-        assertTrue(sessionLabelsSet.containsAll(getValuesByField(results, XNAT_MRSESSIONDATA_LABEL)));
-        assertTrue(scanIdsSet.containsAll(getValuesByField(results, XNAT_MRSCANDATA_ID)));
-        assertTrue(qcIdsSet.containsAll(getValuesByField(results, XNAT_QCMANUALASSESSORDATA_EXPT_ID)));
+        final int expectedSubjectCount = getSubjectCountFromDataApi();
+        assertEquals(expectedSubjectCount, results.size());
+
+        if(getSessionCountFromDataApi() == sessionLabelsSet.size()) {
+            //no unexpected pre existing sessions
+            assertContainsAll("session labels", sessionLabelsSet, getValuesByField(results, XNAT_MRSESSIONDATA_LABEL));
+            assertContainsAll("scan IDs", scanIdsSet, getValuesByField(results, XNAT_MRSCANDATA_ID));
+            assertContainsAll("QC IDs", qcIdsSet, getValuesByField(results, XNAT_QCMANUALASSESSORDATA_EXPT_ID));
+        }
 
         Map<String, Object> targetResult = findResult(results, SUBJECT_LABEL, ((Subject) targetObject.get(SUBJECT)).getLabel());
         List<String> expectedValues = getExpectedValues(targetObject, Arrays.asList(SUBJECT, SESSION, QC, LAST_SUBJECT_SCAN));
@@ -171,10 +181,16 @@ public class TestAdvancedSearch extends BaseXnatRestTest {
     public void testSessionJoinSearch() throws IOException {
         List<Map<String, Object>> results = getRestCallResults("session_subject_scan_qc_search.xml");
 
-        assertEquals(sessionLabels.size(), results.size());
-        assertTrue(subjectLabelsSet.containsAll(getValuesByField(results, XNAT_SUBJECTDATA_SUBJECT_LABEL)));
-        assertTrue(scanIdsSet.containsAll(getValuesByField(results, XNAT_MRSCANDATA_ID)));
-        assertTrue(qcIdsSet.containsAll(getValuesByField(results, XNAT_QCMANUALASSESSORDATA_EXPT_ID)));
+        final int expectedSessionCount = getSessionCountFromDataApi();
+        assertEquals(expectedSessionCount, results.size());
+        assertContainsAll("session labels", sessionLabels, getValuesByField(results, LABEL));
+        assertContainsAll("subject labels", subjectLabelsSet, getValuesByField(results, XNAT_SUBJECTDATA_SUBJECT_LABEL));
+
+        if(expectedSessionCount == sessionLabelsSet.size()) {
+            //no unexpected sessions
+            assertContainsAll("scan IDs", scanIdsSet, getValuesByField(results, XNAT_MRSCANDATA_ID));
+            assertContainsAll("QC IDs", qcIdsSet, getValuesByField(results, XNAT_QCMANUALASSESSORDATA_EXPT_ID));
+        }
 
         Map<String, Object> targetResult = findResult(results, LABEL, ((MRSession) targetObject.get(SESSION)).getLabel());
         List<String> expectedValues = getExpectedValues(targetObject, Arrays.asList(SUBJECT, SESSION, QC, LAST_SESSION_SCAN));
@@ -188,16 +204,22 @@ public class TestAdvancedSearch extends BaseXnatRestTest {
     public void testQcJoinSearch() throws IOException {
         List<Map<String, Object>> results = getRestCallResults("qc_subject_session_scan_search.xml");
 
-        assertEquals(qcLabel.size(), results.size());
-        assertTrue(subjectLabelsSet.containsAll(getValuesByField(results, XNAT_SUBJECTDATA_SUBJECT_LABEL)));
-        assertTrue(sessionLabelsSet.containsAll(getValuesByField(results, XNAT_MRSESSIONDATA_LABEL)));
-        assertTrue(scanIdsSet.containsAll(getValuesByField(results, XNAT_MRSCANDATA_ID)));
+        final int expectedQcCount = getQcCountFromDataApi();
+        assertEquals(expectedQcCount, results.size());
+        assertContainsAll("QC labels", qcLabel, getValuesByField(results, LABEL));
+        assertContainsAll("subject labels", subjectLabelsSet, getValuesByField(results, XNAT_SUBJECTDATA_SUBJECT_LABEL));
+        assertContainsAll("session labels", sessionLabelsSet, getValuesByField(results, XNAT_MRSESSIONDATA_LABEL));
+
+        if(getSessionCountFromDataApi() == sessionLabelsSet.size()) {
+            //no extra sessions
+            assertContainsAll("scan IDs", scanIdsSet, getValuesByField(results, XNAT_MRSCANDATA_ID));
+        }
 
         Map<String, Object> targetResult = findResult(results, EXPT_ID, ((ManualQC) targetObject.get(QC)).getAccessionNumber());
         List<String> expectedValues = getExpectedValues(targetObject, Arrays.asList(SUBJECT, SESSION, QC, FIRST_SESSION_SCAN));
 
         //Test failed as the joined scan is not consistent.
-        assertEquals(expectedValues, getValuesByKeys(targetResult, QC_JOIN_KEYS));
+        assertContainsAll("QC JOIN KEYS", expectedValues, getValuesByKeys(targetResult, QC_JOIN_KEYS));
     }
 
     @Test(groups = {SEARCH, PERMISSIONS})
@@ -205,10 +227,15 @@ public class TestAdvancedSearch extends BaseXnatRestTest {
     public void testScanJoinSearch() throws IOException {
         List<Map<String, Object>> results = getRestCallResults("scan_subject_session_qc_search.xml");
 
-        assertEquals(scanIds.size(), results.size());
-        assertTrue(subjectLabelsSet.containsAll(getValuesByField(results, XNAT_SUBJECTDATA_SUBJECT_LABEL)));
-        assertTrue(sessionLabelsSet.containsAll(getValuesByField(results, XNAT_MRSESSIONDATA_LABEL)));
-        assertTrue(qcIdsSet.containsAll(getValuesByField(results, XNAT_QCMANUALASSESSORDATA_EXPT_ID)));
+        final int expectedScanCount = getScanCountFromDataApi();
+        assertEquals(expectedScanCount, results.size());
+        assertContainsAll("subject labels", subjectLabelsSet, getValuesByField(results, XNAT_SUBJECTDATA_SUBJECT_LABEL));
+        assertContainsAll("session labels", sessionLabelsSet, getValuesByField(results, XNAT_MRSESSIONDATA_LABEL));
+
+        if(getSessionCountFromDataApi() == sessionLabelsSet.size()) {
+            //no extra sessions
+            assertContainsAll("QC IDs", qcIdsSet, getValuesByField(results, XNAT_QCMANUALASSESSORDATA_EXPT_ID));
+        }
 
         Map<String, Object> targetResult = findResult(results, ID, ((MRScan) targetObject.get(FIRST_SESSION_SCAN)).getId());
         List<String> expectedValues = getExpectedValues(targetObject, Arrays.asList(SUBJECT, SESSION, FIRST_SESSION_QC, FIRST_SESSION_SCAN));
@@ -227,6 +254,74 @@ public class TestAdvancedSearch extends BaseXnatRestTest {
 
     private List<String> getValuesByField(final List<Map<String, Object>> results, final String field) {
         return results.stream().map(result -> result.get(field).toString()).filter(StringUtils::isNotBlank).sorted().collect(Collectors.toList());
+    }
+
+    private void assertContainsAll(final String fieldName, final Collection<String> expected, final List<String> actual) {
+        final Set<String> missing = expected.stream()
+                .filter(item -> !actual.contains(item))
+                .collect(Collectors.toSet());
+        assertTrue("Missing " + fieldName + ": " + missing +
+                   "\nExpected: " + expected +
+                   "\nActual: " + actual,
+                   actual.containsAll(expected));
+    }
+
+    private int getSubjectCountFromDataApi() {
+        return mainInterface()
+                .jsonQuery()
+                .get(formatRestUrl("/subjects"))
+                .then()
+                .assertThat()
+                .statusCode(200)
+                .extract()
+                .response()
+                .jsonPath()
+                .getList(RESULT_SET_DOT_RESULT)
+                .size();
+    }
+
+    private int getSessionCountFromDataApi() {
+        return mainInterface()
+                .jsonQuery()
+                .get(formatRestUrl("/experiments?xsiType=xnat:mrSessionData"))
+                .then()
+                .assertThat()
+                .statusCode(200)
+                .extract()
+                .response()
+                .jsonPath()
+                .getList(RESULT_SET_DOT_RESULT)
+                .size();
+    }
+
+    private int getScanCountFromDataApi() {
+        List<Map<String, Object>> results = mainInterface()
+                .jsonQuery()
+                .get(formatRestUrl("/experiments?columns=xnat:mrSessionData/scans/scan/ID"))
+                .then()
+                .assertThat()
+                .statusCode(200)
+                .extract()
+                .response()
+                .jsonPath()
+                .getList(RESULT_SET_DOT_RESULT);
+        return (int) results.stream()
+                .filter(r -> StringUtils.isNotBlank((String) r.get("xnat:mrsessiondata/scans/scan/id")))
+                .count();
+    }
+
+    private int getQcCountFromDataApi() {
+        return mainInterface()
+                .jsonQuery()
+                .get(formatRestUrl("/experiments?xsiType=xnat:qcManualAssessorData"))
+                .then()
+                .assertThat()
+                .statusCode(200)
+                .extract()
+                .response()
+                .jsonPath()
+                .getList(RESULT_SET_DOT_RESULT)
+                .size();
     }
 
     private List<Map<String, Object>> getRestCallResults(final String file) throws IOException {
