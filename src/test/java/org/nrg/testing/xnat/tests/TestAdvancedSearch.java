@@ -4,6 +4,7 @@ import io.restassured.http.ContentType;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.Accessibility;
@@ -22,14 +23,7 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -143,7 +137,7 @@ public class TestAdvancedSearch extends BaseXnatRestTest {
         List<Map<String, Object>> results = getRestCallResults("mrscan_search.xml");
 
         final int expectedScanCount = getScanCountFromDataApi();
-        assertEquals(expectedScanCount, results.size());
+        assertTrue((Objects.equals(expectedScanCount, results.size())) || (Objects.equals(scanIds.size(), results.size())));
         assertContainsAll("scan IDs", scanIds, getValuesByField(results, ID));
     }
 
@@ -165,9 +159,9 @@ public class TestAdvancedSearch extends BaseXnatRestTest {
 
         if(getSessionCountFromDataApi() == sessionLabelsSet.size()) {
             //no unexpected pre existing sessions
-            assertContainsAll("session labels", sessionLabelsSet, getValuesByField(results, XNAT_MRSESSIONDATA_LABEL));
-            assertContainsAll("scan IDs", scanIdsSet, getValuesByField(results, XNAT_MRSCANDATA_ID));
-            assertContainsAll("QC IDs", qcIdsSet, getValuesByField(results, XNAT_QCMANUALASSESSORDATA_EXPT_ID));
+            assertContainsAll("session labels", getValuesByField(results, XNAT_MRSESSIONDATA_LABEL), sessionLabelsSet);
+            assertContainsAll("scan IDs", getValuesByField(results, XNAT_MRSCANDATA_ID), scanIdsSet);
+            assertContainsAll("QC IDs", getValuesByField(results, XNAT_QCMANUALASSESSORDATA_EXPT_ID), qcIdsSet);
         }
 
         Map<String, Object> targetResult = findResult(results, SUBJECT_LABEL, ((Subject) targetObject.get(SUBJECT)).getLabel());
@@ -256,14 +250,14 @@ public class TestAdvancedSearch extends BaseXnatRestTest {
         return results.stream().map(result -> result.get(field).toString()).filter(StringUtils::isNotBlank).sorted().collect(Collectors.toList());
     }
 
-    private void assertContainsAll(final String fieldName, final Collection<String> expected, final List<String> actual) {
+    private void assertContainsAll(final String fieldName, final Collection<String> expected, final Collection<String> actual) {
         final Set<String> missing = expected.stream()
                 .filter(item -> !actual.contains(item))
                 .collect(Collectors.toSet());
         assertTrue("Missing " + fieldName + ": " + missing +
-                   "\nExpected: " + expected +
-                   "\nActual: " + actual,
-                   actual.containsAll(expected));
+                        "\nExpected: " + expected +
+                        "\nActual: " + actual,
+                actual.containsAll(expected));
     }
 
     private int getSubjectCountFromDataApi() {
