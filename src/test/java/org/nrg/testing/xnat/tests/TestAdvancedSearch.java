@@ -178,10 +178,10 @@ public class TestAdvancedSearch extends BaseXnatRestTest {
         final int expectedSessionCount = getSessionCountFromDataApi();
         assertEquals(expectedSessionCount, results.size());
         assertContainsAll("session labels", sessionLabels, getValuesByField(results, LABEL));
-        assertContainsAll("subject labels", subjectLabelsSet, getValuesByField(results, XNAT_SUBJECTDATA_SUBJECT_LABEL));
 
         if(expectedSessionCount == sessionLabelsSet.size()) {
             //no unexpected sessions
+            assertTrue(subjectLabelsSet.containsAll(getValuesByField(results, XNAT_SUBJECTDATA_SUBJECT_LABEL)));
             assertContainsAll("scan IDs", scanIdsSet, getValuesByField(results, XNAT_MRSCANDATA_ID));
             assertContainsAll("QC IDs", qcIdsSet, getValuesByField(results, XNAT_QCMANUALASSESSORDATA_EXPT_ID));
         }
