@@ -168,11 +168,6 @@ public class TestCustomDataTypeLifecycle extends BaseXnatRestTest {
         // Delete projects (which cleans up subjects, sessions, etc.)
         restDriver.deleteProjectSilently(mainAdminUser, primaryProject);
         restDriver.deleteProjectSilently(mainAdminUser, secondaryProject);
-
-        // Delete schemas (only if no experiments remain)
-        deleteSchemaIfEmpty(subjectAssessorSchemaId);
-        deleteSchemaIfEmpty(imageAssessorSchemaId);
-        deleteSchemaIfEmpty(projectAssetSchemaId);
     }
 
     // ==================== Data Type Creation Tests ====================
@@ -956,17 +951,6 @@ public class TestCustomDataTypeLifecycle extends BaseXnatRestTest {
                                 "experiments", assetId));
             } catch (Exception e) {
                 // Ignore
-            }
-        }
-    }
-
-    private void deleteSchemaIfEmpty(Long schemaId) {
-        if (schemaId != null) {
-            try {
-                mainAdminQueryBase()
-                        .delete(dbschemasUrl(String.valueOf(schemaId)));
-            } catch (Exception e) {
-                // Ignore - schema may have experiments
             }
         }
     }

@@ -284,10 +284,6 @@ public class TestCustomDataTypePermissions extends BaseXnatRestTest {
         // Delete project
         restDriver.deleteProjectSilently(mainAdminUser, testProject);
 
-        // Delete schemas
-        deleteSchemaIfPossible(subjectAssessorSchemaId);
-        deleteSchemaIfPossible(imageAssessorSchemaId);
-        deleteSchemaIfPossible(projectAssetSchemaId);
     }
 
     // ==================== Subject Assessor Permission Tests ====================
@@ -876,17 +872,6 @@ public class TestCustomDataTypePermissions extends BaseXnatRestTest {
                         .requestWithCsrfToken()
                         .delete(formatRestUrl("projects", testProject.getId(),
                                 "experiments", assetLabel));
-            } catch (Exception e) {
-                // Ignore
-            }
-        }
-    }
-
-    private void deleteSchemaIfPossible(Long schemaId) {
-        if (schemaId != null) {
-            try {
-                mainAdminQueryBase()
-                        .delete(dbschemasUrl(String.valueOf(schemaId)));
             } catch (Exception e) {
                 // Ignore
             }
