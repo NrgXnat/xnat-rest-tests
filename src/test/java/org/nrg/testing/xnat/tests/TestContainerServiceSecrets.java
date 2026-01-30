@@ -162,6 +162,7 @@ public class TestContainerServiceSecrets extends BaseContainerTest {
         return content;
     }
 
+    @Test(enabled = false, description = "Skipped: requires automation.enabled=true, otherwise times out for 10 minutes")
     public void testCreateContainerWithEnvSecret() {
         // get system property value
         final String systemPropertyName = "java.version";
