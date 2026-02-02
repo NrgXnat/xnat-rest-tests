@@ -7,7 +7,6 @@ import org.apache.commons.text.RandomStringGenerator;
 import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsMapContaining;
 import org.nrg.testing.annotations.DeprecatedIn;
-import org.nrg.testing.annotations.IgnoreIf;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
@@ -163,7 +162,7 @@ public class TestContainerServiceSecrets extends BaseContainerTest {
         return content;
     }
 
-    @IgnoreIf("/xapi/automation/enabled", "false")
+    @Test(enabled = false, description = "Skipped: requires automation.enabled=true, otherwise times out for 10 minutes")
     public void testCreateContainerWithEnvSecret() {
         // get system property value
         final String systemPropertyName = "java.version";
