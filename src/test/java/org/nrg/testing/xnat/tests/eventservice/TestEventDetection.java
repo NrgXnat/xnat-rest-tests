@@ -216,10 +216,17 @@ public class TestEventDetection extends BaseEventServiceTest {
                 buildDeliveredEventQueryForSubscription(projectCreate), created.size()
         );
 
-        assertEquals(
-                created.stream().map(Project::getId).collect(Collectors.toSet()),
-                projectEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet())
-        );
+        final Set<String> expected = created.stream().map(Project::getId).collect(Collectors.toSet());
+        final Set<String> actual = projectEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet());
+        System.out.println("=== testProjectCreateEvent ===");
+        System.out.println("Expected (" + expected.size() + "): " + expected);
+        System.out.println("Actual   (" + actual.size() + "): " + actual);
+        final Set<String> missing = Sets.difference(expected, actual);
+        final Set<String> extra = Sets.difference(actual, expected);
+        if (!missing.isEmpty()) System.out.println("MISSING: " + missing);
+        if (!extra.isEmpty()) System.out.println("EXTRA: " + extra);
+
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -229,10 +236,17 @@ public class TestEventDetection extends BaseEventServiceTest {
                 buildDeliveredEventQueryForSubscription(subjectCreated), created.size()
         );
 
-        assertEquals(
-                created.stream().map(Subject::getLabel).collect(Collectors.toSet()),
-                subjectEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet())
-        );
+        final Set<String> expected = created.stream().map(Subject::getLabel).collect(Collectors.toSet());
+        final Set<String> actual = subjectEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet());
+        System.out.println("=== testSubjectCreateEvent ===");
+        System.out.println("Expected (" + expected.size() + "): " + expected);
+        System.out.println("Actual   (" + actual.size() + "): " + actual);
+        final Set<String> missing = Sets.difference(expected, actual);
+        final Set<String> extra = Sets.difference(actual, expected);
+        if (!missing.isEmpty()) System.out.println("MISSING: " + missing);
+        if (!extra.isEmpty()) System.out.println("EXTRA: " + extra);
+
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -242,10 +256,17 @@ public class TestEventDetection extends BaseEventServiceTest {
                 buildDeliveredEventQueryForSubscription(sessionCreated), created.size()
         );
 
-        assertEquals(
-                created.stream().map(ImagingSession::getLabel).collect(Collectors.toSet()),
-                sessionEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet())
-        );
+        final Set<String> expected = created.stream().map(ImagingSession::getLabel).collect(Collectors.toSet());
+        final Set<String> actual = sessionEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet());
+        System.out.println("=== testSessionCreateEvent ===");
+        System.out.println("Expected (" + expected.size() + "): " + expected);
+        System.out.println("Actual   (" + actual.size() + "): " + actual);
+        final Set<String> missing = Sets.difference(expected, actual);
+        final Set<String> extra = Sets.difference(actual, expected);
+        if (!missing.isEmpty()) System.out.println("MISSING: " + missing);
+        if (!extra.isEmpty()) System.out.println("EXTRA: " + extra);
+
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -256,10 +277,17 @@ public class TestEventDetection extends BaseEventServiceTest {
                 buildDeliveredEventQueryForSubscription(subjectAssessorCreated), created.size()
         );
 
-        assertEquals(
-                created.stream().map(SubjectAssessor::getLabel).collect(Collectors.toSet()),
-                sessionEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet())
-        );
+        final Set<String> expected = created.stream().map(SubjectAssessor::getLabel).collect(Collectors.toSet());
+        final Set<String> actual = sessionEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet());
+        System.out.println("=== testSubjectAssessorCreateEvent ===");
+        System.out.println("Expected (" + expected.size() + "): " + expected);
+        System.out.println("Actual   (" + actual.size() + "): " + actual);
+        final Set<String> missing = Sets.difference(expected, actual);
+        final Set<String> extra = Sets.difference(actual, expected);
+        if (!missing.isEmpty()) System.out.println("MISSING: " + missing);
+        if (!extra.isEmpty()) System.out.println("EXTRA: " + extra);
+
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -270,10 +298,17 @@ public class TestEventDetection extends BaseEventServiceTest {
                 buildDeliveredEventQueryForSubscription(scanCreated), created.size()
         );
 
-        assertEquals(
-                created.stream().map(scan -> scan.getId() + " - " + scan.getType()).collect(Collectors.toSet()),
-                scanEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet())
-        );
+        final Set<String> expected = created.stream().map(scan -> scan.getId() + " - " + scan.getType()).collect(Collectors.toSet());
+        final Set<String> actual = scanEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet());
+        System.out.println("=== testScanCreateEvent ===");
+        System.out.println("Expected (" + expected.size() + "): " + expected);
+        System.out.println("Actual   (" + actual.size() + "): " + actual);
+        final Set<String> missing = Sets.difference(expected, actual);
+        final Set<String> extra = Sets.difference(actual, expected);
+        if (!missing.isEmpty()) System.out.println("MISSING: " + missing);
+        if (!extra.isEmpty()) System.out.println("EXTRA: " + extra);
+
+        assertEquals(expected, actual);
     }
 
     private Subscription buildLoggingEvent(String eventType, EventStatus eventStatus) {
