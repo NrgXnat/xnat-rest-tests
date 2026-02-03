@@ -234,14 +234,14 @@ public class TestEventDetection extends BaseEventServiceTest {
         );
         System.out.println("=== testProjectCreateEvent ===");
         System.out.println("Expected (" + expected.size() + "): " + expected);
-        System.out.println("Initial  (" + initialEvents.size() + "): " + initialEvents.stream().map(e -> e.getTrigger().getLabel()).collect(Collectors.toSet()));
+        System.out.println("Initial  (" + initialEvents.size() + "): " + initialEvents.stream().map(e -> e.getTrigger() != null ? e.getTrigger().getLabel() : "null").collect(Collectors.toSet()));
 
         // Now query with expected count (will wait up to 60s)
         final List<DeliveredEvent> projectEvents = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(projectCreate), created.size()
         );
 
-        final Set<String> actual = projectEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet());
+        final Set<String> actual = projectEvents.stream().map(event -> event.getTrigger() != null ? event.getTrigger().getLabel() : "null").collect(Collectors.toSet());
         System.out.println("Final    (" + actual.size() + "): " + actual);
         final Set<String> missing = Sets.difference(expected, actual);
         final Set<String> extra = Sets.difference(actual, expected);
@@ -262,14 +262,14 @@ public class TestEventDetection extends BaseEventServiceTest {
         );
         System.out.println("=== testSubjectCreateEvent ===");
         System.out.println("Expected (" + expected.size() + "): " + expected);
-        System.out.println("Initial  (" + initialEvents.size() + "): " + initialEvents.stream().map(e -> e.getTrigger().getLabel()).collect(Collectors.toSet()));
+        System.out.println("Initial  (" + initialEvents.size() + "): " + initialEvents.stream().map(e -> e.getTrigger() != null ? e.getTrigger().getLabel() : "null").collect(Collectors.toSet()));
 
         // Now query with expected count (will wait up to 60s)
         final List<DeliveredEvent> subjectEvents = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(subjectCreated), created.size()
         );
 
-        final Set<String> actual = subjectEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet());
+        final Set<String> actual = subjectEvents.stream().map(event -> event.getTrigger() != null ? event.getTrigger().getLabel() : "null").collect(Collectors.toSet());
         System.out.println("Final    (" + actual.size() + "): " + actual);
         final Set<String> missing = Sets.difference(expected, actual);
         final Set<String> extra = Sets.difference(actual, expected);
@@ -290,14 +290,14 @@ public class TestEventDetection extends BaseEventServiceTest {
         );
         System.out.println("=== testSessionCreateEvent ===");
         System.out.println("Expected (" + expected.size() + "): " + expected);
-        System.out.println("Initial  (" + initialEvents.size() + "): " + initialEvents.stream().map(e -> e.getTrigger().getLabel()).collect(Collectors.toSet()));
+        System.out.println("Initial  (" + initialEvents.size() + "): " + initialEvents.stream().map(e -> e.getTrigger() != null ? e.getTrigger() != null ? e.getTrigger().getLabel() : "null" : "null").collect(Collectors.toSet()));
 
         // Now query with expected count (will wait up to 60s)
         final List<DeliveredEvent> sessionEvents = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(sessionCreated), created.size()
         );
 
-        final Set<String> actual = sessionEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet());
+        final Set<String> actual = sessionEvents.stream().map(event -> event.getTrigger() != null ? event.getTrigger() != null ? event.getTrigger().getLabel() : "null" : "null").collect(Collectors.toSet());
         System.out.println("Final    (" + actual.size() + "): " + actual);
         final Set<String> missing = Sets.difference(expected, actual);
         final Set<String> extra = Sets.difference(actual, expected);
@@ -319,14 +319,14 @@ public class TestEventDetection extends BaseEventServiceTest {
         );
         System.out.println("=== testSubjectAssessorCreateEvent ===");
         System.out.println("Expected (" + expected.size() + "): " + expected);
-        System.out.println("Initial  (" + initialEvents.size() + "): " + initialEvents.stream().map(e -> e.getTrigger().getLabel()).collect(Collectors.toSet()));
+        System.out.println("Initial  (" + initialEvents.size() + "): " + initialEvents.stream().map(e -> e.getTrigger() != null ? e.getTrigger().getLabel() : "null").collect(Collectors.toSet()));
 
         // Now query with expected count (will wait up to 60s)
         final List<DeliveredEvent> sessionEvents = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(subjectAssessorCreated), created.size()
         );
 
-        final Set<String> actual = sessionEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet());
+        final Set<String> actual = sessionEvents.stream().map(event -> event.getTrigger() != null ? event.getTrigger().getLabel() : "null").collect(Collectors.toSet());
         System.out.println("Final    (" + actual.size() + "): " + actual);
         final Set<String> missing = Sets.difference(expected, actual);
         final Set<String> extra = Sets.difference(actual, expected);
@@ -348,14 +348,14 @@ public class TestEventDetection extends BaseEventServiceTest {
         );
         System.out.println("=== testScanCreateEvent ===");
         System.out.println("Expected (" + expected.size() + "): " + expected);
-        System.out.println("Initial  (" + initialEvents.size() + "): " + initialEvents.stream().map(e -> e.getTrigger().getLabel()).collect(Collectors.toSet()));
+        System.out.println("Initial  (" + initialEvents.size() + "): " + initialEvents.stream().map(e -> e.getTrigger() != null ? e.getTrigger().getLabel() : "null").collect(Collectors.toSet()));
 
         // Now query with expected count (will wait up to 60s)
         final List<DeliveredEvent> scanEvents = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(scanCreated), created.size()
         );
 
-        final Set<String> actual = scanEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet());
+        final Set<String> actual = scanEvents.stream().map(event -> event.getTrigger() != null ? event.getTrigger().getLabel() : "null").collect(Collectors.toSet());
         System.out.println("Final    (" + actual.size() + "): " + actual);
         final Set<String> missing = Sets.difference(expected, actual);
         final Set<String> extra = Sets.difference(actual, expected);
