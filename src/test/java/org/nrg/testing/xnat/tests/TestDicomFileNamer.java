@@ -1,6 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
@@ -26,6 +27,7 @@ import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.pogo.resources.Resource;
+import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.nrg.xnat.versions.Xnat_1_8_6_1;
 import org.nrg.xnat.versions.Xnat_1_8_7;
 import org.testng.annotations.Test;
@@ -501,6 +503,11 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
     }
 
     private class ValidateResourceSizeInArchive implements TestComponent {
+        // The expectedSize is calculated assuming script ID length of 2 (e.g., "54").
+        // Different environments may have different script IDs (e.g., "1135" with length 4),
+        // causing file size differences. We dynamically adjust based on actual script ID length.
+        private static final int BASELINE_SCRIPT_ID_LENGTH = 2;
+
         long expectedSize;
         String scanId;
         String resourceLabel;
@@ -515,7 +522,29 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
         public void perform(BaseXnatRestTest xnatRestTest, Project project) {
             final Scan scan = mainInterface().readProject(project.getId()).getSubjects().get(0).getSessions().get(0).findScan(scanId);
             final Resource scanResource = scan.getScanResources().stream().filter(resource -> resource.getFolder().equals(resourceLabel)).findFirst().orElseThrow(RuntimeException::new);
-            assertEquals(expectedSize, scanResource.getFileSize());
+
+            // Get instance count from scan resource
+            int instanceCount = scanResource.getFileCount();
+
+            // Read a DICOM file to get the actual script ID length
+            ResourceFile firstFile = scanResource.getResourceFiles().get(0);
+            Attributes dicom = DicomUtils.readDicom(mainInterface().streamResourceFile(scanResource, firstFile));
+            int scriptIdLength = getScriptIdLength(dicom);
+
+            // Adjust expected size based on script ID length difference
+            // Formula: adjustedSize = expectedSize + instanceCount * (actualLength - baselineLength)
+            long adjustedExpectedSize = expectedSize + (long) instanceCount * (scriptIdLength - BASELINE_SCRIPT_ID_LENGTH);
+
+            assertEquals(adjustedExpectedSize, scanResource.getFileSize());
+        }
+
+        private int getScriptIdLength(Attributes dicom) {
+            Sequence seq = dicom.getSequence(Tag.DeidentificationMethodCodeSequence);
+            if (seq != null && !seq.isEmpty()) {
+                String codeValue = seq.get(0).getString(Tag.CodeValue);
+                return codeValue != null ? codeValue.length() : 0;
+            }
+            return 0;
         }
     }
 
