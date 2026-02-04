@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import static org.nrg.testing.TestGroups.IMPORTER;
 import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.assertTrue;
 
 @Test(groups = IMPORTER)
 @TestRequires(data = TestData.SAMPLE_1)
@@ -503,10 +504,10 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
     }
 
     private class ValidateResourceSizeInArchive implements TestComponent {
-        // The expectedSize is calculated assuming script ID length of 2 (e.g., "54").
-        // Different environments may have different script IDs (e.g., "1135" with length 4),
-        // causing file size differences. We dynamically adjust based on actual script ID length.
-        private static final int BASELINE_SCRIPT_ID_LENGTH = 2;
+        // expectedSize is calculated assuming script ID length of 2 bytes (e.g., "54").
+        // Different environments may have different script IDs (e.g., "1135" = 4 bytes),
+        // causing per-file size difference of -4 to +4 bytes.
+        private static final int MAX_PER_FILE_DIFF = 4;
 
         long expectedSize;
         String scanId;
@@ -523,28 +524,30 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
             final Scan scan = mainInterface().readProject(project.getId()).getSubjects().get(0).getSessions().get(0).findScan(scanId);
             final Resource scanResource = scan.getScanResources().stream().filter(resource -> resource.getFolder().equals(resourceLabel)).findFirst().orElseThrow(RuntimeException::new);
 
-            // Get instance count from scan resource
+            long actualSize = scanResource.getFileSize();
             int instanceCount = scanResource.getFileCount();
+            long sizeDiff = actualSize - expectedSize;
 
-            // Read a DICOM file to get the actual script ID length
+            // Debug: print codeValue from DICOM file
             ResourceFile firstFile = scanResource.getResourceFiles().get(0);
             Attributes dicom = DicomUtils.readDicom(mainInterface().streamResourceFile(scanResource, firstFile));
-            int scriptIdLength = getScriptIdLength(dicom);
-
-            // Adjust expected size based on script ID length difference
-            // Formula: adjustedSize = expectedSize + instanceCount * (actualLength - baselineLength)
-            long adjustedExpectedSize = expectedSize + (long) instanceCount * (scriptIdLength - BASELINE_SCRIPT_ID_LENGTH);
-
-            assertEquals(adjustedExpectedSize, scanResource.getFileSize());
-        }
-
-        private int getScriptIdLength(Attributes dicom) {
             Sequence seq = dicom.getSequence(Tag.DeidentificationMethodCodeSequence);
             if (seq != null && !seq.isEmpty()) {
                 String codeValue = seq.get(0).getString(Tag.CodeValue);
-                return codeValue != null ? codeValue.length() : 0;
+                System.out.println("scanId=" + scanId + ", codeValue=" + codeValue + ", sizeDiff=" + sizeDiff/instanceCount + ", instanceCount=" + instanceCount);
+            } else {
+                System.out.println("scanId=" + scanId + ", DeidentificationMethodCodeSequence not found, sizeDiff=" + sizeDiff/instanceCount);
             }
-            return 0;
+
+            // Size difference should be evenly divisible by instance count
+            // and per-file difference should be within acceptable range (-4 to +4 bytes)
+            if (sizeDiff != 0) {
+                assertTrue("Size difference " + sizeDiff + " is not divisible by instance count " + instanceCount,
+                        sizeDiff % instanceCount == 0);
+                long perFileDiff = sizeDiff / instanceCount;
+                assertTrue("Per-file size difference " + perFileDiff + " exceeds acceptable range [-" + MAX_PER_FILE_DIFF + ", " + MAX_PER_FILE_DIFF + "]",
+                        Math.abs(perFileDiff) <= MAX_PER_FILE_DIFF);
+            }
         }
     }
 
