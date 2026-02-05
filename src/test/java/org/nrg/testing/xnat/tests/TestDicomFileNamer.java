@@ -528,13 +528,11 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
 
             // Size difference should be evenly divisible by instance count
             // and per-file difference should be within acceptable range (-4 to +4 bytes)
-            if (sizeDiff != 0) {
-                assertTrue("Size difference " + sizeDiff + " is not divisible by instance count " + instanceCount,
-                        sizeDiff % instanceCount == 0);
-                long perFileDiff = sizeDiff / instanceCount;
-                assertTrue("Per-file size difference " + perFileDiff + " exceeds acceptable range [-" + MAX_PER_FILE_DIFF + ", " + MAX_PER_FILE_DIFF + "]",
-                        Math.abs(perFileDiff) <= MAX_PER_FILE_DIFF);
-            }
+            assertTrue("Size difference " + sizeDiff + " is not divisible by instance count " + instanceCount,
+                    sizeDiff % instanceCount == 0);
+            long perFileDiff = sizeDiff / instanceCount;
+            assertTrue("Per-file size difference " + perFileDiff + " exceeds acceptable range [-" + MAX_PER_FILE_DIFF + ", " + MAX_PER_FILE_DIFF + "]",
+                    Math.abs(perFileDiff) <= MAX_PER_FILE_DIFF);
         }
     }
 
