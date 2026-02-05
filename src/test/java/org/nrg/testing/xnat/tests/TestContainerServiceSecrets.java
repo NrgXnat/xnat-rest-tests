@@ -14,6 +14,7 @@ import org.nrg.testing.xnat.containers.ContainerTestUtils;
 import org.nrg.xnat.pogo.Workflow;
 import org.nrg.xnat.pogo.containers.Container;
 import org.nrg.xnat.versions.Xnat_1_9_2;
+import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -162,8 +163,15 @@ public class TestContainerServiceSecrets extends BaseContainerTest {
         return content;
     }
 
-    @Test(enabled = false, description = "Skipped: requires automation.enabled=true, otherwise times out for 10 minutes")
     public void testCreateContainerWithEnvSecret() {
+        final boolean automationEnabled = mainAdminInterface().queryBase()
+                .get(formatXapiUrl("automation", "enabled"))
+                .then().statusCode(200)
+                .extract().as(Boolean.class);
+        if (!automationEnabled) {
+            throw new SkipException("Requires automation.enabled=true, otherwise times out for 10 minutes");
+        }
+
         // get system property value
         final String systemPropertyName = "java.version";
         final String expectedSystemPropertyValue = readXnatSystemProperty(systemPropertyName);
