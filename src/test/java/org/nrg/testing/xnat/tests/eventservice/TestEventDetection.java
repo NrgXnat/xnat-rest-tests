@@ -94,24 +94,11 @@ public class TestEventDetection extends BaseEventServiceTest {
 
     @BeforeClass
     private void setupSubscriptionsAndData() throws IOException {
-        // Print Event Service configuration before setup
-        System.out.println("=== Event Service Configuration (Before Setup) ===");
-        System.out.println("Event Service Enabled: " + mainAdminInterface().readEventServiceEnabled());
-
         mainAdminInterface().setupDataType(subjectAssessorDataType);
         mainAdminInterface().setSessionXmlRebuilderTimes(1, 5000);
         for (Subscription subscription : subscriptionsToCleanup) {
             mainAdminInterface().createSubscription(subscription);
         }
-
-        // Print subscription status after creation
-        System.out.println("=== Subscriptions Created ===");
-        for (Subscription subscription : subscriptionsToCleanup) {
-            final Subscription created = mainAdminInterface().readSubscription(subscription.getId());
-            System.out.println("  " + created.getName() + " (id=" + created.getId() + "): active=" + created.isActive() +
-                    ", eventType=" + created.getEventFilter().getEventType() + ", status=" + created.getEventFilter().getStatus());
-        }
-        System.out.println("Event Service Enabled (After Setup): " + mainAdminInterface().readEventServiceEnabled());
 
         mainInterface().createProject(restProject);
         projectsToCleanup.add(restProject);
@@ -226,143 +213,68 @@ public class TestEventDetection extends BaseEventServiceTest {
     @AddedIn(Xnat_1_8_4.class) // XNAT-6807
     public void testProjectCreateEvent() {
         final Set<Project> created = Sets.newHashSet(restProject, turbineProject, restXmlProject, xmlUploadProject, restXmlPostProject);
-        final Set<String> expected = created.stream().map(Project::getId).collect(Collectors.toSet());
-
-        // First query without waiting to see current state
-        final List<DeliveredEvent> initialEvents = mainAdminInterface().queryDeliveredEvents(
-                buildDeliveredEventQueryForSubscription(projectCreate), null, false
-        );
-        System.out.println("=== testProjectCreateEvent ===");
-        System.out.println("Expected (" + expected.size() + "): " + expected);
-        System.out.println("Initial  (" + initialEvents.size() + "): " + initialEvents.stream().map(e -> e.getTrigger() != null ? e.getTrigger().getLabel() : "null").collect(Collectors.toSet()));
-
-        // Now query with expected count (will wait up to 60s)
         final List<DeliveredEvent> projectEvents = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(projectCreate), created.size()
         );
 
-        final Set<String> actual = projectEvents.stream().map(event -> event.getTrigger() != null ? event.getTrigger().getLabel() : "null").collect(Collectors.toSet());
-        System.out.println("Final    (" + actual.size() + "): " + actual);
-        final Set<String> missing = Sets.difference(expected, actual);
-        final Set<String> extra = Sets.difference(actual, expected);
-        if (!missing.isEmpty()) System.out.println("MISSING: " + missing);
-        if (!extra.isEmpty()) System.out.println("EXTRA: " + extra);
-
-        assertEquals(expected, actual);
+        assertEquals(
+                created.stream().map(Project::getId).collect(Collectors.toSet()),
+                projectEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet())
+        );
     }
 
     @Test
     public void testSubjectCreateEvent() {
         final Set<Subject> created = Sets.newHashSet(restSubject, turbineSubject, aaSubject, xmlUploadSubject, importerSubject, restXmlSubject, petMrSubject);
-        final Set<String> expected = created.stream().map(Subject::getLabel).collect(Collectors.toSet());
-
-        // First query without waiting to see current state
-        final List<DeliveredEvent> initialEvents = mainAdminInterface().queryDeliveredEvents(
-                buildDeliveredEventQueryForSubscription(subjectCreated), null, false
-        );
-        System.out.println("=== testSubjectCreateEvent ===");
-        System.out.println("Expected (" + expected.size() + "): " + expected);
-        System.out.println("Initial  (" + initialEvents.size() + "): " + initialEvents.stream().map(e -> e.getTrigger() != null ? e.getTrigger().getLabel() : "null").collect(Collectors.toSet()));
-
-        // Now query with expected count (will wait up to 60s)
         final List<DeliveredEvent> subjectEvents = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(subjectCreated), created.size()
         );
 
-        final Set<String> actual = subjectEvents.stream().map(event -> event.getTrigger() != null ? event.getTrigger().getLabel() : "null").collect(Collectors.toSet());
-        System.out.println("Final    (" + actual.size() + "): " + actual);
-        final Set<String> missing = Sets.difference(expected, actual);
-        final Set<String> extra = Sets.difference(actual, expected);
-        if (!missing.isEmpty()) System.out.println("MISSING: " + missing);
-        if (!extra.isEmpty()) System.out.println("EXTRA: " + extra);
-
-        assertEquals(expected, actual);
+        assertEquals(
+                created.stream().map(Subject::getLabel).collect(Collectors.toSet()),
+                subjectEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet())
+        );
     }
 
     @Test
     public void testSessionCreateEvent() {
         final Set<ImagingSession> created = Sets.newHashSet(restSession, aaSession, importerSession, splitMr, splitPet, turbineSession, restXmlSession, xmlUploadSession);
-        final Set<String> expected = created.stream().map(ImagingSession::getLabel).collect(Collectors.toSet());
-
-        // First query without waiting to see current state
-        final List<DeliveredEvent> initialEvents = mainAdminInterface().queryDeliveredEvents(
-                buildDeliveredEventQueryForSubscription(sessionCreated), null, false
-        );
-        System.out.println("=== testSessionCreateEvent ===");
-        System.out.println("Expected (" + expected.size() + "): " + expected);
-        System.out.println("Initial  (" + initialEvents.size() + "): " + initialEvents.stream().map(e -> e.getTrigger() != null ? e.getTrigger() != null ? e.getTrigger().getLabel() : "null" : "null").collect(Collectors.toSet()));
-
-        // Now query with expected count (will wait up to 60s)
         final List<DeliveredEvent> sessionEvents = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(sessionCreated), created.size()
         );
 
-        final Set<String> actual = sessionEvents.stream().map(event -> event.getTrigger() != null ? event.getTrigger() != null ? event.getTrigger().getLabel() : "null" : "null").collect(Collectors.toSet());
-        System.out.println("Final    (" + actual.size() + "): " + actual);
-        final Set<String> missing = Sets.difference(expected, actual);
-        final Set<String> extra = Sets.difference(actual, expected);
-        if (!missing.isEmpty()) System.out.println("MISSING: " + missing);
-        if (!extra.isEmpty()) System.out.println("EXTRA: " + extra);
-
-        assertEquals(expected, actual);
+        assertEquals(
+                created.stream().map(ImagingSession::getLabel).collect(Collectors.toSet()),
+                sessionEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet())
+        );
     }
 
     @Test
     @AddedIn(Xnat_1_8_3.class)
     public void testSubjectAssessorCreateEvent() {
         final Set<SubjectAssessor> created = Sets.newHashSet(restSession, aaSession, importerSession, splitMr, splitPet, turbineSession, restXmlSession, xmlUploadSession, restSubjectAssessor, turbineSubjectAssessor, xmlUploadSubjectAssessor, restXmlSubjectAssessor);
-        final Set<String> expected = created.stream().map(SubjectAssessor::getLabel).collect(Collectors.toSet());
-
-        // First query without waiting to see current state
-        final List<DeliveredEvent> initialEvents = mainAdminInterface().queryDeliveredEvents(
-                buildDeliveredEventQueryForSubscription(subjectAssessorCreated), null, false
-        );
-        System.out.println("=== testSubjectAssessorCreateEvent ===");
-        System.out.println("Expected (" + expected.size() + "): " + expected);
-        System.out.println("Initial  (" + initialEvents.size() + "): " + initialEvents.stream().map(e -> e.getTrigger() != null ? e.getTrigger().getLabel() : "null").collect(Collectors.toSet()));
-
-        // Now query with expected count (will wait up to 60s)
         final List<DeliveredEvent> sessionEvents = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(subjectAssessorCreated), created.size()
         );
 
-        final Set<String> actual = sessionEvents.stream().map(event -> event.getTrigger() != null ? event.getTrigger().getLabel() : "null").collect(Collectors.toSet());
-        System.out.println("Final    (" + actual.size() + "): " + actual);
-        final Set<String> missing = Sets.difference(expected, actual);
-        final Set<String> extra = Sets.difference(actual, expected);
-        if (!missing.isEmpty()) System.out.println("MISSING: " + missing);
-        if (!extra.isEmpty()) System.out.println("EXTRA: " + extra);
-
-        assertEquals(expected, actual);
+        assertEquals(
+                created.stream().map(SubjectAssessor::getLabel).collect(Collectors.toSet()),
+                sessionEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet())
+        );
     }
 
     @Test
     public void testScanCreateEvent() {
         final Set<Scan> created = Sets.newHashSet(aaScan1, aaScan2, aaScan3, importerScan1, importerScan2, importerScan3, splitMrScan1, splitMrScan2, splitPetScan,
                 xmlUploadScan1, xmlUploadScan2, xmlUploadScan3, restXmlScan1, restXmlScan2, restXmlScan3, turbineScan1, turbineScan2, turbineScan3);
-        final Set<String> expected = created.stream().map(scan -> scan.getId() + " - " + scan.getType()).collect(Collectors.toSet());
-
-        // First query without waiting to see current state
-        final List<DeliveredEvent> initialEvents = mainAdminInterface().queryDeliveredEvents(
-                buildDeliveredEventQueryForSubscription(scanCreated), null, false
-        );
-        System.out.println("=== testScanCreateEvent ===");
-        System.out.println("Expected (" + expected.size() + "): " + expected);
-        System.out.println("Initial  (" + initialEvents.size() + "): " + initialEvents.stream().map(e -> e.getTrigger() != null ? e.getTrigger().getLabel() : "null").collect(Collectors.toSet()));
-
-        // Now query with expected count (will wait up to 60s)
         final List<DeliveredEvent> scanEvents = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(scanCreated), created.size()
         );
 
-        final Set<String> actual = scanEvents.stream().map(event -> event.getTrigger() != null ? event.getTrigger().getLabel() : "null").collect(Collectors.toSet());
-        System.out.println("Final    (" + actual.size() + "): " + actual);
-        final Set<String> missing = Sets.difference(expected, actual);
-        final Set<String> extra = Sets.difference(actual, expected);
-        if (!missing.isEmpty()) System.out.println("MISSING: " + missing);
-        if (!extra.isEmpty()) System.out.println("EXTRA: " + extra);
-
-        assertEquals(expected, actual);
+        assertEquals(
+                created.stream().map(scan -> scan.getId() + " - " + scan.getType()).collect(Collectors.toSet()),
+                scanEvents.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet())
+        );
     }
 
     private Subscription buildLoggingEvent(String eventType, EventStatus eventStatus) {

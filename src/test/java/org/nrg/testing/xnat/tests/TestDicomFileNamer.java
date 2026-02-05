@@ -1,7 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
@@ -27,7 +26,6 @@ import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.pogo.resources.Resource;
-import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.nrg.xnat.versions.Xnat_1_8_6_1;
 import org.nrg.xnat.versions.Xnat_1_8_7;
 import org.testng.annotations.Test;
@@ -527,17 +525,6 @@ public class TestDicomFileNamer extends BaseFileNamerTest {
             long actualSize = scanResource.getFileSize();
             int instanceCount = scanResource.getFileCount();
             long sizeDiff = actualSize - expectedSize;
-
-            // Debug: print codeValue from DICOM file
-            ResourceFile firstFile = scanResource.getResourceFiles().get(0);
-            Attributes dicom = DicomUtils.readDicom(mainInterface().streamResourceFile(scanResource, firstFile));
-            Sequence seq = dicom.getSequence(Tag.DeidentificationMethodCodeSequence);
-            if (seq != null && !seq.isEmpty()) {
-                String codeValue = seq.get(0).getString(Tag.CodeValue);
-                System.out.println("scanId=" + scanId + ", codeValue=" + codeValue + ", sizeDiff=" + sizeDiff/instanceCount + ", instanceCount=" + instanceCount);
-            } else {
-                System.out.println("scanId=" + scanId + ", DeidentificationMethodCodeSequence not found, sizeDiff=" + sizeDiff/instanceCount);
-            }
 
             // Size difference should be evenly divisible by instance count
             // and per-file difference should be within acceptable range (-4 to +4 bytes)
