@@ -99,7 +99,6 @@ public class TestEventDetection extends BaseEventServiceTest {
         for (Subscription subscription : subscriptionsToCleanup) {
             mainAdminInterface().createSubscription(subscription);
         }
-
         mainInterface().createProject(restProject);
         projectsToCleanup.add(restProject);
 
