@@ -146,12 +146,12 @@ public class TestContainerServicePermissions extends BaseContainerTest {
 
     @AfterClass(alwaysRun = true)
     public void cleanupProjects() {
-        for (Project project : projects) {
-            restDriver.deleteProjectSilently(mainAdminUser, project);
-        }
-        for (Image image : TEST_IMAGES) {
-            containerManagerInterface.deleteImage(image);
-        }
+//        for (Project project : projects) {
+//            restDriver.deleteProjectSilently(mainAdminUser, project);
+//        }
+//        for (Image image : TEST_IMAGES) {
+//            containerManagerInterface.deleteImage(image);
+//        }
     }
 
     public void testCommandsAvailableProjectContextOwner() {
