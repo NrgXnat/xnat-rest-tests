@@ -21,7 +21,24 @@
         ymin = 0,
         title = {Repeated 1000 subject listing access},
         title style = {text width = 0.8\textwidth},
-        legend entries={\switchocg{1.8.10.1}{1.8.10.1},\switchocg{1.8.9.2}{1.8.9.2},\switchocg{1.8.7.1}{1.8.7.1},\switchocg{1.8.6.1}{1.8.6.1},\switchocg{1.8.3}{1.8.3},\switchocg{1.8.0.1}{1.8.0.1},\switchocg{1.7.6}{1.7.6}}]
+        legend entries={\switchocg{1.10.0}{1.10.0},\switchocg{1.8.10.1}{1.8.10.1},\switchocg{1.8.9.2}{1.8.9.2},\switchocg{1.8.7.1}{1.8.7.1},\switchocg{1.8.6.1}{1.8.6.1},\switchocg{1.8.3}{1.8.3},\switchocg{1.8.0.1}{1.8.0.1},\switchocg{1.7.6}{1.7.6}}]
+        \begin{scope}[ocg = {ref = 1.10.0-Lin, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.483399999999999441246956166651216335594654083251953125 + 0.40540000000000009361400543639319948852062225341796875*(\x)^1});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.10.0-Quad, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.359399999999999497646285817609168589115142822265625 + 0.51168571428571441028765320879756473004817962646484375*(\x)^1 + -0.0177142857142857101937494235244230367243289947509765625*(\x)^2});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.10.0-Cub, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.279599999999999848654397283098660409450531005859375 + 0.62378571428571449875022381093003787100315093994140625*(\x)^1 + -0.060464285714285782857846385240918607451021671295166015625*(\x)^2 + 0.004750000000000010290379659494419684051536023616790771484375*(\x)^3});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.10.0, status = visible}]
+            \addplot[
+                only marks,
+                color = lime!70!black,
+                mark = triangle*,
+                mark size = 1.5 pt
+            ]coordinates {(1,0.846)(2,1.33)(3,1.725)(4,2.118)(5,2.479)};
+        \end{scope}
         \begin{scope}[ocg = {ref = 1.8.10.1-Lin, status = invisible}]
             \plot[domain=0:5,->,forget plot] (\x,{0.357500000000000317523785042794770561158657073974609375 + 0.371099999999999929922722685660119168460369110107421875*(\x)^1});
         \end{scope}
@@ -148,6 +165,7 @@
             Add regression options: \\
             \begin{tabular}{|llll|}
                 \hline
+                1.10.0 & \switchocg{1.10.0-Lin}{Lin} & \switchocg{1.10.0-Quad}{Quad} & \switchocg{1.10.0-Cub}{Cub} \\
                 1.8.10.1 & \switchocg{1.8.10.1-Lin}{Lin} & \switchocg{1.8.10.1-Quad}{Quad} & \switchocg{1.8.10.1-Cub}{Cub} \\
                 1.8.9.2 & \switchocg{1.8.9.2-Lin}{Lin} & \switchocg{1.8.9.2-Quad}{Quad} & \switchocg{1.8.9.2-Cub}{Cub} \\
                 1.8.7.1 & \switchocg{1.8.7.1-Lin}{Lin} & \switchocg{1.8.7.1-Quad}{Quad} & \switchocg{1.8.7.1-Cub}{Cub} \\
