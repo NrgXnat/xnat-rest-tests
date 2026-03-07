@@ -21,7 +21,7 @@
         ymin = 0,
         title = {Repeated 1000 subject listing access},
         title style = {text width = 0.8\textwidth},
-        legend entries={\switchocg{1.10.0}{1.10.0},\switchocg{1.8.10.1}{1.8.10.1},\switchocg{1.8.9.2}{1.8.9.2},\switchocg{1.8.7.1}{1.8.7.1},\switchocg{1.8.6.1}{1.8.6.1},\switchocg{1.8.3}{1.8.3},\switchocg{1.8.0.1}{1.8.0.1},\switchocg{1.7.6}{1.7.6}}]
+        legend entries={\switchocg{1.10.0}{1.10.0},\switchocg{1.8.10.1}{1.8.10.1},\switchocg{1.8.9.2}{1.8.9.2},\switchocg{1.8.6.1}{1.8.6.1},\switchocg{1.8.3}{1.8.3},\switchocg{1.8.0.1}{1.8.0.1},\switchocg{1.7.6}{1.7.6}}]
         \begin{scope}[ocg = {ref = 1.10.0-Lin, status = invisible}]
             \plot[domain=0:5,->,forget plot] (\x,{0.483399999999999441246956166651216335594654083251953125 + 0.40540000000000009361400543639319948852062225341796875*(\x)^1});
         \end{scope}
@@ -34,7 +34,7 @@
         \begin{scope}[ocg = {ref = 1.10.0, status = visible}]
             \addplot[
                 only marks,
-                color = lime!70!black,
+                color = blue!80!white,
                 mark = triangle*,
                 mark size = 1.5 pt
             ]coordinates {(1,0.846)(2,1.33)(3,1.725)(4,2.118)(5,2.479)};
@@ -51,7 +51,7 @@
         \begin{scope}[ocg = {ref = 1.8.10.1, status = visible}]
             \addplot[
                 only marks,
-                color = blue!80!white,
+                color = red,
                 mark = triangle*,
                 mark size = 1.5 pt
             ]coordinates {(1,0.699)(2,1.134)(3,1.467)(4,1.865)(5,2.189)};
@@ -68,27 +68,10 @@
         \begin{scope}[ocg = {ref = 1.8.9.2, status = visible}]
             \addplot[
                 only marks,
-                color = red,
-                mark = triangle*,
-                mark size = 1.5 pt
-            ]coordinates {(1,0.927)(2,1.464)(3,1.876)(4,2.313)(5,2.648)};
-        \end{scope}
-        \begin{scope}[ocg = {ref = 1.8.7.1-Lin, status = invisible}]
-            \plot[domain=0:5,->,forget plot] (\x,{0.323000000000000786481990644460893236100673675537109375 + 0.40179999999999982396303721543517895042896270751953125*(\x)^1});
-        \end{scope}
-        \begin{scope}[ocg = {ref = 1.8.7.1-Quad, status = invisible}]
-            \plot[domain=0:5,->,forget plot] (\x,{0.286000000000000864641691578071913681924343109130859375 + 0.433514285714285463324557667874614708125591278076171875*(\x)^1 + -0.005285714285714272937799496077104777214117348194122314453125*(\x)^2});
-        \end{scope}
-        \begin{scope}[ocg = {ref = 1.8.7.1-Cub, status = invisible}]
-            \plot[domain=0:5,->,forget plot] (\x,{0.1894000000000009009681889438070356845855712890625 + 0.569214285714285228579001341131515800952911376953125*(\x)^1 + -0.05703571428571418966413375528645701706409454345703125*(\x)^2 + 0.00574999999999999296396158143807042506523430347442626953125*(\x)^3});
-        \end{scope}
-        \begin{scope}[ocg = {ref = 1.8.7.1, status = visible}]
-            \addplot[
-                only marks,
                 color = black,
                 mark = triangle*,
                 mark size = 1.5 pt
-            ]coordinates {(1,0.707)(2,1.147)(3,1.537)(4,1.923)(5,2.328)};
+            ]coordinates {(1,0.927)(2,1.464)(3,1.876)(4,2.313)(5,2.648)};
         \end{scope}
         \begin{scope}[ocg = {ref = 1.8.6.1-Lin, status = invisible}]
             \plot[domain=0:5,->,forget plot] (\x,{0.37970000000000070361494408643920905888080596923828125 + 0.385499999999999898303570944335660897195339202880859375*(\x)^1});
@@ -168,7 +151,6 @@
                 1.10.0 & \switchocg{1.10.0-Lin}{Lin} & \switchocg{1.10.0-Quad}{Quad} & \switchocg{1.10.0-Cub}{Cub} \\
                 1.8.10.1 & \switchocg{1.8.10.1-Lin}{Lin} & \switchocg{1.8.10.1-Quad}{Quad} & \switchocg{1.8.10.1-Cub}{Cub} \\
                 1.8.9.2 & \switchocg{1.8.9.2-Lin}{Lin} & \switchocg{1.8.9.2-Quad}{Quad} & \switchocg{1.8.9.2-Cub}{Cub} \\
-                1.8.7.1 & \switchocg{1.8.7.1-Lin}{Lin} & \switchocg{1.8.7.1-Quad}{Quad} & \switchocg{1.8.7.1-Cub}{Cub} \\
                 1.8.6.1 & \switchocg{1.8.6.1-Lin}{Lin} & \switchocg{1.8.6.1-Quad}{Quad} & \switchocg{1.8.6.1-Cub}{Cub} \\
                 1.8.3 & \switchocg{1.8.3-Lin}{Lin} & \switchocg{1.8.3-Quad}{Quad} & \switchocg{1.8.3-Cub}{Cub} \\
                 1.8.0.1 & \switchocg{1.8.0.1-Lin}{Lin} & \switchocg{1.8.0.1-Quad}{Quad} & \switchocg{1.8.0.1-Cub}{Cub} \\
@@ -180,6 +162,7 @@
     \begin{scope}[every node/.style = {font=\footnotesize}, right]
         \node[text width = 13.5 cm] at (-1.2,-3) {In order to keep the number of shown datasets at a reasonable level, some datasets have been hidden entirely. From comparing the data, they were found to be very similar to one of the datasets that is shown as a representative example. These include:};
         \node at (-1,-4.0) {$\bullet$ 1.8.3 also closely represents 1.8.4.1};
+        \node at (-1,-4.5) {$\bullet$ 1.8.6.1 also closely represents 1.8.7.1, 1.9.3};
     \end{scope}
 \end{tikzpicture}
 
