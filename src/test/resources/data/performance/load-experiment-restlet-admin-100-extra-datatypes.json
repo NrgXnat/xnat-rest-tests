@@ -179,5 +179,23 @@
       "9" : 14882,
       "10" : 17368
     }
+  }, {
+    "@type" : ".CumulativeTimeSeriesData",
+    "baseline" : false,
+    "timestamp" : 1773084436837,
+    "xnatVersion" : "1.8.10",
+    "overallTimeInMillis" : 16989,
+    "timeSeriesData" : {
+      "1" : 1707,
+      "2" : 3098,
+      "3" : 4596,
+      "4" : 5996,
+      "5" : 7780,
+      "6" : 9165,
+      "7" : 10690,
+      "8" : 12082,
+      "9" : 15615,
+      "10" : 16989
+    }
   } ]
 }
