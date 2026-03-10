@@ -1,0 +1,21 @@
+{
+  "entries" : [ {
+    "@type" : ".CumulativeTimeSeriesData",
+    "baseline" : true,
+    "timestamp" : 1773099924169,
+    "xnatVersion" : "1.8.10",
+    "overallTimeInMillis" : 8604,
+    "timeSeriesData" : {
+      "1" : 1090,
+      "2" : 2232,
+      "3" : 3002,
+      "4" : 3716,
+      "5" : 4442,
+      "6" : 5459,
+      "7" : 6257,
+      "8" : 6960,
+      "9" : 7739,
+      "10" : 8604
+    }
+  } ]
+}
