@@ -1,0 +1,11 @@
+{
+  "entries" : [ {
+    "@type" : ".ErrorProneAggregatableRecord",
+    "baseline" : true,
+    "timestamp" : 1773278510719,
+    "xnatVersion" : "1.8.10",
+    "overallTimeInMillis" : 162387,
+    "successCount" : 1000,
+    "failureCount" : 0
+  } ]
+}
