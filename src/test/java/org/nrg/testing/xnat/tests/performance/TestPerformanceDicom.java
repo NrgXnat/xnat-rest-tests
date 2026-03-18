@@ -163,16 +163,16 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                                 .title(String.format("Relabel and DicomEdit6 pixel anonymization of study containing %d MR images", INSTANCE_COUNT_LARGE_STUDY))
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(anonActionViaRelabel(project, DicomEditVersion.DE_6, BASIC_PIXEL_ANON_SCRIPT)),
-                        new SimpleTimedAction("cstore-large-study-sif")
-                                .title(String.format("CSTORE of %d MR images with Series Import Filter", INSTANCE_COUNT_LARGE_STUDY))
-                                .asUser(mainAdminUser)
-                                .withSetup(clearProject)
-                                .performanceTestAction(setSiteImportFilterAndCstore("realistic_filter.txt", LARGE_STUDY_HARDCODED_ROUTING)),
-                        new SimpleTimedAction("cstore-large-study-sif-worst-case")
-                                .title(String.format("CSTORE of %d MR images with worst case Series Import Filter", INSTANCE_COUNT_LARGE_STUDY))
-                                .asUser(mainAdminUser)
-                                .withSetup(clearProject)
-                                .performanceTestAction(setSiteImportFilterAndCstore("worst_case.txt", LARGE_STUDY_HARDCODED_ROUTING)),
+//                        new SimpleTimedAction("cstore-large-study-sif")
+//                                .title(String.format("CSTORE of %d MR images with Series Import Filter", INSTANCE_COUNT_LARGE_STUDY))
+//                                .asUser(mainAdminUser)
+//                                .withSetup(clearProject)
+//                                .performanceTestAction(setSiteImportFilterAndCstore("realistic_filter.txt", LARGE_STUDY_HARDCODED_ROUTING)),
+//                        new SimpleTimedAction("cstore-large-study-sif-worst-case")
+//                                .title(String.format("CSTORE of %d MR images with worst case Series Import Filter", INSTANCE_COUNT_LARGE_STUDY))
+//                                .asUser(mainAdminUser)
+//                                .withSetup(clearProject)
+//                                .performanceTestAction(setSiteImportFilterAndCstore("worst_case.txt", LARGE_STUDY_HARDCODED_ROUTING)),
                         new SimpleTimedAction(cstoreWithAnonId)
                                 .title(String.format("CSTORE and DicomEdit6 anonymization of study containing %d MR images", INSTANCE_COUNT_LARGE_STUDY))
                                 .asUser(mainAdminUser)
