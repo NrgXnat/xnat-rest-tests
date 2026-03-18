@@ -25,5 +25,18 @@
       "4" : 1535,
       "5" : 1839
     }
+  }, {
+    "@type" : ".CumulativeTimeSeriesData",
+    "baseline" : false,
+    "timestamp" : 1773867133180,
+    "xnatVersion" : "1.10.0",
+    "overallTimeInMillis" : 2041,
+    "timeSeriesData" : {
+      "1" : 696,
+      "2" : 1077,
+      "3" : 1379,
+      "4" : 1724,
+      "5" : 2041
+    }
   } ]
 }
