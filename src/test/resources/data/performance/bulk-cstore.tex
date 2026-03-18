@@ -18,7 +18,7 @@
         enlarge x limits = {value = 0.2, upper}, % make node labels not overlap with axes
         title = {CSTORE and Autoarchive of 1000 single instance studies},
         title style = {text width = 0.8\textwidth},
-        yticklabels = {1.8.10},
+        yticklabels = {1.8.10,1.10.0},
         colorbar,
         colorbar style = {xshift = 1cm, title = Success rate},
         colormap={successcolormap}{rgb255(0)=(226, 220, 245) rgb255(1000)=(76, 62, 118)},
@@ -35,6 +35,7 @@
         \addplot table[x = x,y expr=\coordindex] {
             x    y    successrate
             162.4 1.8.10 100.0
+            147.1 1.10.0 99.9
         };
     \end{axis}
 \end{tikzpicture}

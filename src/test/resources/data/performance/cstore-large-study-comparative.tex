@@ -20,8 +20,8 @@
         title style = {text width = 0.8\textwidth},
         nodes near coords,
         nodes near coords align = horizontal,
-        symbolic y coords = {1.8.10},
-        enlarge y limits = 0.5,
+        symbolic y coords = {1.8.10,1.10.0},
+        enlarge y limits = 0.33,
         xbar,
         area legend,
         legend pos = outer north east,
@@ -31,9 +31,9 @@
         y = 1.4cm,
         point meta=x
     ]
-        \addplot[xbar, fill = blue!20!white] coordinates { (18.5,1.8.10) };
-        \addplot[xbar, fill = black] coordinates { (17.5,1.8.10) };
-        \addplot[xbar, fill = orange!20!white] coordinates { (217.6,1.8.10) };
+        \addplot[xbar, fill = blue!20!white] coordinates { (18.5,1.8.10) (18.7,1.10.0) };
+        \addplot[xbar, fill = black] coordinates { (17.5,1.8.10) (18.1,1.10.0) };
+        \addplot[xbar, fill = orange!20!white] coordinates { (217.6,1.8.10) (41.8,1.10.0) };
     \end{axis}
 \end{tikzpicture}
 

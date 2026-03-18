@@ -21,7 +21,24 @@
         ymin = 0,
         title = {Repeated 1000 subject listing access},
         title style = {text width = 0.8\textwidth},
-        legend entries={\switchocg{1.8.10}{1.8.10}}]
+        legend entries={\switchocg{1.10.0}{1.10.0},\switchocg{1.8.10}{1.8.10}}]
+        \begin{scope}[ocg = {ref = 1.10.0-Lin, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.309700000000000363886698551141307689249515533447265625 + 0.307499999999999940047956670241546817123889923095703125*(\x)^1});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.10.0-Quad, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.258200000000000595701266092873993329703807830810546875 + 0.35164285714285681283541862285346724092960357666015625*(\x)^1 + -0.00735714285714281039652018279184630955569446086883544921875*(\x)^2});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.10.0-Cub, status = invisible}]
+            \plot[domain=0:5,->,forget plot] (\x,{0.160200000000001285815898199871298857033252716064453125 + 0.489309523809522917137115882724174298346042633056640625*(\x)^1 + -0.059857142857142602021536248457778128795325756072998046875*(\x)^2 + 0.005833333333333312782642554594758621533401310443878173828125*(\x)^3});
+        \end{scope}
+        \begin{scope}[ocg = {ref = 1.10.0, status = visible}]
+            \addplot[
+                only marks,
+                color = red,
+                mark = *,
+                mark size = 1.5 pt
+            ]coordinates {(1,0.595)(2,0.948)(3,1.244)(4,1.535)(5,1.839)};
+        \end{scope}
         \begin{scope}[ocg = {ref = 1.8.10-Lin, status = invisible}]
             \plot[domain=0:5,->,forget plot] (\x,{0.36880000000000034976466167790931649506092071533203125 + 0.328799999999999925659466271099518053233623504638671875*(\x)^1});
         \end{scope}
@@ -46,6 +63,7 @@
             Add regression options: \\
             \begin{tabular}{|llll|}
                 \hline
+                1.10.0 & \switchocg{1.10.0-Lin}{Lin} & \switchocg{1.10.0-Quad}{Quad} & \switchocg{1.10.0-Cub}{Cub} \\
                 1.8.10 & \switchocg{1.8.10-Lin}{Lin} & \switchocg{1.8.10-Quad}{Quad} & \switchocg{1.8.10-Cub}{Cub} \\
                 \hline
             \end{tabular}
