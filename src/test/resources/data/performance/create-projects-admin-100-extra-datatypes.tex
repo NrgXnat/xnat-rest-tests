@@ -21,24 +21,7 @@
         ymin = 0,
         title = {Cumulative time for admin creating projects with 100 datatypes added},
         title style = {text width = 0.8\textwidth},
-        legend entries={\switchocg{1.10.0}{1.10.0},\switchocg{1.10.0}{1.10.0},\switchocg{1.8.10}{1.8.10}}]
-        \begin{scope}[ocg = {ref = 1.10.0-Lin, status = invisible}]
-            \plot[domain=0:788,->,forget plot] (\x,{-53.80989405405384928826606483198702335357666015625 + 1.3995791948790896608301181913702748715877532958984375*(\x)^1});
-        \end{scope}
-        \begin{scope}[ocg = {ref = 1.10.0-Quad, status = invisible}]
-            \plot[domain=0:788,->,forget plot] (\x,{-2.5989725435021551191994149121455848217010498046875 + 1.0005330532384271169377143451129086315631866455078125*(\x)^1 + 0.00052506071268508254339113516806492043542675673961639404296875*(\x)^2});
-        \end{scope}
-        \begin{scope}[ocg = {ref = 1.10.0-Cub, status = invisible}]
-            \plot[domain=0:788,->,forget plot] (\x,{2.329040120943212333060046148602850735187530517578125 + 0.92520546424328153900518145746900700032711029052734375*(\x)^1 + 0.000771215191428606806726964162379545086878351867198944091796875*(\x)^2 + -0.00000021592498135396877557461094328250528207036040839739143848419189453125*(\x)^3});
-        \end{scope}
-        \begin{scope}[ocg = {ref = 1.10.0, status = visible}]
-            \addplot[
-                only marks,
-                color = blue!80!white,
-                mark = *,
-                mark size = 1.5 pt
-            ]coordinates {(10,10.998)(20,21.032)(30,31.125)(40,40.978)(50,51.046)(60,61.158)(70,71.595)(80,81.897)(90,92.553)(100,103.145)(110,113.805)(120,124.665)(130,135.454)(140,146.333)(150,157.6)(160,168.748)(170,180.068)(180,192.095)(190,203.57)(200,215.733)(210,227.433)(220,239.575)(230,251.839)(240,264.24)(250,276.65)(260,289.557)(270,302.608)(280,315.642)(290,329.212)(300,342.675)(310,356.105)(320,369.863)(330,383.509)(340,397.592)(350,411.651)(360,425.85)(370,439.947)(380,454.251)(390,468.714)(400,483.495)(410,498.149)(420,513.317)(430,528.36)(440,543.393)(450,558.911)(460,573.389)(470,587.707)(480,602.281)(490,616.974)(500,631.79)(510,646.599)(520,661.557)(530,676.472)(540,691.579)(550,707.386)(560,723.019)(570,738.799)(580,754.65)(590,770.418)(600,786.731)(610,802.705)(620,819.183)(630,835.606)(640,851.936)(650,868.244)(660,885.092)(670,901.838)(680,918.777)(690,936.364)(700,953.902)(710,971.242)(720,988.874)(730,1006.476)(740,1024.354)(750,1042.185)};
-        \end{scope}
+        legend entries={\switchocg{1.10.0}{1.10.0},\switchocg{1.8.10}{1.8.10}}]
         \begin{scope}[ocg = {ref = 1.10.0-Lin, status = invisible}]
             \plot[domain=0:788,->,forget plot] (\x,{-66.5159279279281321350936195813119411468505859375 + 1.42873303840682819298990580136887729167938232421875*(\x)^1});
         \end{scope}
@@ -81,11 +64,14 @@
             \begin{tabular}{|llll|}
                 \hline
                 1.10.0 & \switchocg{1.10.0-Lin}{Lin} & \switchocg{1.10.0-Quad}{Quad} & \switchocg{1.10.0-Cub}{Cub} \\
-                1.10.0 & \switchocg{1.10.0-Lin}{Lin} & \switchocg{1.10.0-Quad}{Quad} & \switchocg{1.10.0-Cub}{Cub} \\
                 1.8.10 & \switchocg{1.8.10-Lin}{Lin} & \switchocg{1.8.10-Quad}{Quad} & \switchocg{1.8.10-Cub}{Cub} \\
                 \hline
             \end{tabular}
         };
+    \end{scope}
+    \begin{scope}[every node/.style = {font=\footnotesize}, right]
+        \node[text width = 13.5 cm] at (-1.2,-3) {In order to keep the number of shown datasets at a reasonable level, some datasets have been hidden entirely. From comparing the data, they were found to be very similar to one of the datasets that is shown as a representative example. These include:};
+        \node at (-1,-4.0) {$\bullet$ 1.10.0 also closely represents 1.10.0, 1.10.0};
     \end{scope}
 \end{tikzpicture}
 
