@@ -75,6 +75,9 @@ public class TestContainerLogs extends BaseContainerTest {
                                                                   final String rootElement,
                                                                   final String script) {
         // Define command
+        final String externalInputs = "xnat:projectData".equals(rootElement)
+                ? ", \"external-inputs\": [{\"name\": \"project\", \"type\": \"Project\", \"required\": true}]"
+                : "";
         final String command = "{" +
                 "\"image\": \"busybox:latest\", " +
                 "\"name\": \"" + commandAndWrapperName + "\", " +
@@ -82,6 +85,7 @@ public class TestContainerLogs extends BaseContainerTest {
                 "\"xnat\": [{" +
                 "\"name\": \"" + commandAndWrapperName + "\", " +
                 "\"contexts\": [\"" + rootElement + "\"]" +
+                externalInputs +
                 "}]" +
                 "}";
         // Create command
@@ -89,6 +93,37 @@ public class TestContainerLogs extends BaseContainerTest {
 
         // Construct launch URI
         return formatXapiUrl("commands", String.valueOf(commandId), "wrappers", commandAndWrapperName, "root", rootElement, "launch");
+    }
+
+    /**
+     * Creates a busybox command that runs the given script, launches it on the
+     * given project, waits for completion and log finalization, and returns the
+     * container ID.
+     */
+    private String launchScriptAndWaitForLogs(final String script,
+                                              final boolean expectSplitStdoutStderr,
+                                              final Project project) {
+        final String name = RandomStringUtils.randomAlphabetic(5);
+        createCommandWhichRunsScriptAndReturnLaunchUri(name, "xnat:projectData", script);
+
+        final CommandSummaryForContext wrapper = mainInterface().readAvailableCommands(DataType.PROJECT, project).get(0);
+        mainInterface().setWrapperStatusOnProject(wrapper, project, true);
+
+        final int workflowId = mainInterface().launchContainer(project, wrapper,
+                "/archive/projects/" + project.getId());
+
+        mainAdminInterface().waitForWorkflowComplete(workflowId, 60 * timeout_minutes);
+
+        final String containerId = mainAdminInterface().readWorkflow(workflowId).getComments();
+
+        await().atMost(timeout_minutes, TimeUnit.MINUTES)
+                .pollDelay(STATUS_POLL_TIME_MILLISECONDS, TimeUnit.MILLISECONDS)
+                .until(() -> mainInterface().getContainer(containerId)
+                        .getLogPaths()
+                        .size() == (expectSplitStdoutStderr ? 2 : 1)
+                );
+
+        return containerId;
     }
 
     @BeforeClass
@@ -133,32 +168,14 @@ public class TestContainerLogs extends BaseContainerTest {
                             minimumSupportedVersion = "3.8.0")})
     public void testAfterContainerFinishesFetchLogsByMember(final Backend backend) throws IOException {
         boolean expectSplitStdoutStderr = backend != Backend.KUBERNETES;
-        containerManagerInterface .addCommand(getDataFile("debug_command.json"));
         User memberUser = getGenericUser();
         final Project project = new Project();
         project.addMember(memberUser);
         mainInterface().createProject(project);
         TimeUtils.sleep(1000); // cache update
 
-        //Launch the command
-        final CommandSummaryForContext wrapper = mainInterface().readAvailableCommands(DataType.PROJECT, project).get(0);
-        mainInterface().setWrapperStatusOnProject(wrapper, project, true);
-
-        final int workflowId = mainInterface().launchContainer(project, wrapper, "/archive/projects/" + project.getId(), ContainerTest.BASE_DEBUG_LAUNCH_PARAMS);
-
-        // Wait for container to finish successfully
-        mainAdminInterface().waitForWorkflowComplete(workflowId, 60 * timeout_minutes);
-
-        // Container id from workflow comments
-        final Workflow workflow = mainAdminInterface().readWorkflow(workflowId);
-        final String containerId = workflow.getComments();
-        // Ensure container is finalized and it has a log file of the type we're looking for
-        await().atMost(timeout_minutes, TimeUnit.MINUTES).pollDelay(STATUS_POLL_TIME_MILLISECONDS, TimeUnit.MILLISECONDS)
-                .until(() -> mainInterface().getContainer(containerId)
-                        .getLogPaths()
-                        .size() == (expectSplitStdoutStderr ? 2 : 1)
-                );
-
+        final String script = "echo stdout_output; echo stderr_output >&2";
+        final String containerId = launchScriptAndWaitForLogs(script, expectSplitStdoutStderr, project);
 
         //Verify that the member can not access the logs
         interfaceFor(memberUser).queryBase().get(formatXapiUrl("/containers/"+containerId + "/logSince/stdout?format=json"))
@@ -169,8 +186,8 @@ public class TestContainerLogs extends BaseContainerTest {
         //For the Project, Allow Members to Access Logs
         mainQueryBase()
                 .contentType(JSON)
-                .body("{\"key\": \"container-service-log-access\", \"enabled\":true}")  // BS non-useful param
-                .post("/REST/services/features?group="+project.getId()+"_member")
+                .body("{\"key\": \"container-service-log-access\", \"enabled\":true}")
+                .post(formatXnatUrl("REST/services/features?group=" + project.getId() + "_member"))
                 .then()
                 .assertThat()
                 .statusCode(200);
@@ -180,14 +197,10 @@ public class TestContainerLogs extends BaseContainerTest {
                 .then()
                 .assertThat()
                 .statusCode(200);
-        deleteCommands();
     }
 
 
     private void testAfterContainerFinishesFetchLogs(final boolean expectSplitStdoutStderr) throws IOException {
-        final String name = RandomStringUtils.randomAlphabetic(5);
-        final String rootElement = "site";
-
         final String stdout = "Hello world " + RandomStringUtils.randomAlphabetic(10);
         final String stderr = "A different kind of log " + RandomStringUtils.randomAlphabetic(10);
 
@@ -195,37 +208,9 @@ public class TestContainerLogs extends BaseContainerTest {
         final String expectedStderrMessage = expectSplitStdoutStderr ? stderr + "\n\n" : "";
 
         final String script = "echo " + stdout + "; sleep 1; echo " + stderr + " >&2";
-
-        // Create command
-        final String launchUri = createCommandWhichRunsScriptAndReturnLaunchUri(name, rootElement, script);
-
-        // Launch container
-        final int workflowId = mainQueryBase()
-                .contentType(JSON)
-                .body("{\"" + rootElement + "\": \"" + rootElement + "\"}")  // BS non-useful param
-                .post(launchUri)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .body("status", Matchers.equalTo("success"))
-                .extract()
-                .jsonPath()
-                .getInt("workflow-id");
-
-        // Wait for container to finish successfully
-        mainAdminInterface().waitForWorkflowComplete(workflowId, 60 * timeout_minutes);
-
-        // Container id from workflow comments
-        final Workflow workflow = mainAdminInterface().readWorkflow(workflowId);
-        final String containerId = workflow.getComments();
-
-        // Ensure container is finalized and it has a log file of the type we're looking for
-        await().atMost(timeout_minutes, TimeUnit.MINUTES)
-                .pollDelay(STATUS_POLL_TIME_MILLISECONDS, TimeUnit.MILLISECONDS)
-                .until(() -> mainInterface().getContainer(containerId)
-                        .getLogPaths()
-                        .size() == (expectSplitStdoutStderr ? 2 : 1)
-                );
+        final Project project = new Project();
+        mainInterface().createProject(project);
+        final String containerId = launchScriptAndWaitForLogs(script, expectSplitStdoutStderr, project);
 
         // Use the "logSince" API to get stdout
         final ContainerLogPollResponse actualStdoutResponse = mainInterface().pollContainerLog(containerId, ContainerServiceSubinterface.ContainerLog.STDOUT);
