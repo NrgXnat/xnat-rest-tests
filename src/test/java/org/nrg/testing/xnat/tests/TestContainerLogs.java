@@ -51,7 +51,7 @@ import static org.nrg.testing.TestGroups.CONTAINERS;
 
 @Slf4j
 @Test(groups = CONTAINERS, dataProvider = "backend")
-@TestRequires(specificPluginRequirements = {
+@TestRequires(users = 1, specificPluginRequirements = {
         // Added tests around CS 3.3.2, had issues running on older versions
         @PluginRequirement(pluginId = "containers", minimumSupportedVersion = "3.0")
 })
@@ -65,6 +65,7 @@ public class TestContainerLogs extends BaseContainerTest {
     public static final int LOG_MESSAGE_DELAY_SECONDS = 10;
 
     private int timeout_minutes;
+    private User memberUser;
 
     private void deleteCommands() {
         // Clean up all commands
@@ -106,7 +107,10 @@ public class TestContainerLogs extends BaseContainerTest {
         final String name = RandomStringUtils.randomAlphabetic(5);
         createCommandWhichRunsScriptAndReturnLaunchUri(name, "xnat:projectData", script);
 
-        final CommandSummaryForContext wrapper = mainInterface().readAvailableCommands(DataType.PROJECT, project).get(0);
+        final CommandSummaryForContext wrapper = mainInterface().readAvailableCommands(DataType.PROJECT, project).stream()
+                .filter(w -> name.equals(w.getWrapperName()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Wrapper " + name + " not available"));
         mainInterface().setWrapperStatusOnProject(wrapper, project, true);
 
         final int workflowId = mainInterface().launchContainer(project, wrapper,
@@ -129,6 +133,7 @@ public class TestContainerLogs extends BaseContainerTest {
     @BeforeClass
     private void setup() {
         deleteCommands();
+        memberUser = getGenericUser();
     }
 
     @BeforeMethod
@@ -162,13 +167,11 @@ public class TestContainerLogs extends BaseContainerTest {
         testAfterContainerFinishesFetchLogs(backend != Backend.KUBERNETES);
     }
 
-    @TestRequires(users = 1,
-            specificPluginRequirements = {
+    @TestRequires(specificPluginRequirements = {
                     @PluginRequirement(pluginId = "containers",
                             minimumSupportedVersion = "3.8.0")})
     public void testAfterContainerFinishesFetchLogsByMember(final Backend backend) throws IOException {
         boolean expectSplitStdoutStderr = backend != Backend.KUBERNETES;
-        User memberUser = getGenericUser();
         final Project project = new Project();
         project.addMember(memberUser);
         mainInterface().createProject(project);

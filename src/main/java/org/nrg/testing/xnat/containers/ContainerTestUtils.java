@@ -11,11 +11,16 @@ import org.nrg.xnat.pogo.containers.Image;
 import org.nrg.xnat.pogo.users.User;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 
+@Slf4j
 public class ContainerTestUtils {
+    private static final int PULL_IMAGE_MAX_RETRIES = 3;
+    private static final long PULL_IMAGE_RETRY_DELAY_MS = 5000;
     public static final Image DEBUG_IMG = new Image("xnat", "debug-command",
             XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_8_0.class) ? "1.5" : "latest");
     public static final String IMAGES_WITH_COMMANDS_JSON_PATH = "findAll { it.commands.size() > 0 }";
@@ -35,7 +40,32 @@ public class ContainerTestUtils {
     }
 
     public static void pullDebugImage(BaseXnatRestTest testClassInstance, XnatInterface xnatInterface) {
-        xnatInterface.pullImage(DEBUG_IMG);
+        pullImageWithRetry(xnatInterface, DEBUG_IMG);
+    }
+
+    public static void pullImageWithRetry(XnatInterface xnatInterface, Image image) {
+        pullImageWithRetry(xnatInterface, image, true);
+    }
+
+    public static void pullImageWithRetry(XnatInterface xnatInterface, Image image, boolean saveCommands) {
+        for (int attempt = 1; attempt <= PULL_IMAGE_MAX_RETRIES; attempt++) {
+            try {
+                xnatInterface.pullImage(image, saveCommands);
+                return;
+            } catch (AssertionError e) {
+                if (attempt == PULL_IMAGE_MAX_RETRIES) {
+                    throw e;
+                }
+                log.warn("Image pull attempt {}/{} failed for {}, retrying in {}ms",
+                        attempt, PULL_IMAGE_MAX_RETRIES, image, PULL_IMAGE_RETRY_DELAY_MS);
+                try {
+                    Thread.sleep(PULL_IMAGE_RETRY_DELAY_MS);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw e;
+                }
+            }
+        }
     }
 
     public static void deleteAllImagesWithCommands(BaseXnatRestTest test, XnatInterface xnatInterface) {
@@ -50,7 +80,7 @@ public class ContainerTestUtils {
             xnatInterface.deleteCommand(command);
         }
         if (backend == Backend.DOCKER) {
-            xnatInterface.pullImage(testImage, false); // add commands explicitly for both docker and k8s in next step
+            pullImageWithRetry(xnatInterface, testImage, false); // add commands explicitly for both docker and k8s in next step
         }
     }
 
