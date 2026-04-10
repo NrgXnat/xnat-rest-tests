@@ -1,5 +1,7 @@
 package org.nrg.testing.xnat.tests.dicomwebproxy;
 
+import org.nrg.testing.annotations.PluginRequirement;
+import org.nrg.testing.annotations.TestRequires;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import org.dcm4che3.data.Tag;
@@ -25,6 +27,7 @@ import static org.hamcrest.Matchers.*;
 import static org.nrg.testing.TestGroups.PERMISSIONS;
 import static org.testng.Assert.*;
 
+@TestRequires(specificPluginRequirements = @PluginRequirement(pluginId = "dicomwebplugin"))
 @Test(groups = {PERMISSIONS})
 public class TestDicomWebPrefsApi extends BaseDicomWebProxyTest {
 

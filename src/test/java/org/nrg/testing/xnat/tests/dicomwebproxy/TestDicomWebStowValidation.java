@@ -1,5 +1,7 @@
 package org.nrg.testing.xnat.tests.dicomwebproxy;
 
+import org.nrg.testing.annotations.PluginRequirement;
+import org.nrg.testing.annotations.TestRequires;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
@@ -24,6 +26,7 @@ import static org.testng.Assert.*;
  * Mirrors coverage from the old TestDicomWebStow tests against the
  * new project-scoped DICOMweb plugin endpoints.
  */
+@TestRequires(specificPluginRequirements = @PluginRequirement(pluginId = "dicomwebplugin"))
 @Test(groups = {PERMISSIONS})
 public class TestDicomWebStowValidation extends BaseDicomWebProxyTest {
 

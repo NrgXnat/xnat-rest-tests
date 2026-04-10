@@ -1,5 +1,7 @@
 package org.nrg.testing.xnat.tests.dicomwebproxy;
 
+import org.nrg.testing.annotations.PluginRequirement;
+import org.nrg.testing.annotations.TestRequires;
 import io.restassured.response.Response;
 import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
 import org.nrg.testing.util.RandomHelper;
@@ -24,6 +26,7 @@ import static org.testng.Assert.*;
  * Covers: basic upload, session merging, overwriting instances, new series in existing study,
  * permissions, and site-wide upload.
  */
+@TestRequires(specificPluginRequirements = @PluginRequirement(pluginId = "dicomwebplugin"))
 @Test(groups = {PERMISSIONS})
 public class TestDicomWebStowRs extends BaseDicomWebProxyTest {
 

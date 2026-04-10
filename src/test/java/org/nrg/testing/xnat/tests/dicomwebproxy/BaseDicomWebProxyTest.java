@@ -31,7 +31,7 @@ import static org.nrg.testing.TestGroups.PERMISSIONS;
  * Base class for DICOMweb proxy plugin integration tests.
  * Provides constants, DICOM data transforms, URL helpers, and preference helpers.
  */
-@TestRequires(specificPluginRequirements = @PluginRequirement(pluginId = "dicomwebproxy"))
+@TestRequires(specificPluginRequirements = @PluginRequirement(pluginId = "dicomwebplugin"))
 public abstract class BaseDicomWebProxyTest extends BaseXnatRestTest {
 
     // Deterministic DICOM UIDs for project A data

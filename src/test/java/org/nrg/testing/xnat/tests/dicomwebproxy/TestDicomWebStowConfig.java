@@ -1,5 +1,7 @@
 package org.nrg.testing.xnat.tests.dicomwebproxy;
 
+import org.nrg.testing.annotations.PluginRequirement;
+import org.nrg.testing.annotations.TestRequires;
 import io.restassured.response.Response;
 import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
 import org.nrg.testing.util.RandomHelper;
@@ -26,6 +28,7 @@ import static org.testng.Assert.*;
  * Integration tests for STOW-RS configuration: strategy selection, build delay,
  * concurrent upload merge behavior, and preference validation.
  */
+@TestRequires(specificPluginRequirements = @PluginRequirement(pluginId = "dicomwebplugin"))
 @Test(groups = {PERMISSIONS})
 public class TestDicomWebStowConfig extends BaseDicomWebProxyTest {
 

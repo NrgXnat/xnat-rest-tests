@@ -1,5 +1,7 @@
 package org.nrg.testing.xnat.tests.dicomwebproxy;
 
+import org.nrg.testing.annotations.PluginRequirement;
+import org.nrg.testing.annotations.TestRequires;
 import io.restassured.response.Response;
 import org.nrg.testing.util.RandomHelper;
 import org.nrg.xnat.enums.Accessibility;
@@ -17,6 +19,7 @@ import static org.testng.Assert.*;
  * Mirrors coverage from the old TestDicomWebWado negative tests against the new
  * project-scoped and site-wide DICOMweb plugin endpoints.
  */
+@TestRequires(specificPluginRequirements = @PluginRequirement(pluginId = "dicomwebplugin"))
 @Test(groups = {PERMISSIONS})
 public class TestDicomWebWadoErrors extends BaseDicomWebProxyTest {
 
