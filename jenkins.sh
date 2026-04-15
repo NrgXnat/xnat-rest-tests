@@ -27,6 +27,19 @@ cs.swarm.timeout=10
 cs.swarm.constraints=false,engine.labels.instance.spot,==,False;false,engine.labels.instance.type,==,m5.large
 EOF
 
+# DQR plugin config (written only when DQR_AE_TITLE is provided by the Jenkins job)
+if [[ ! -z "${DQR_AE_TITLE}" ]]; then
+cat >> $config << EOF
+dqr.scpReceiver.aeTitle=${DQR_AE_TITLE}
+dqr.scpReceiver.port=${DQR_PORT:-8104}
+dqr.pacs.dimse.aeTitle=${ORTHANC_AET}
+dqr.pacs.dimse.host=${ORTHANC_IP}
+dqr.pacs.dimse.port=4242
+dqr.pacs.dicomweb.aeTitle=${ORTHANC_AET}
+dqr.pacs.dicomweb.rootUrl=http://${ORTHANC_IP}:8042/dicom-web
+EOF
+fi
+
 # set config per test expectations
 basicAuth=$ADMIN_USER:$ADMIN_PWD
 curl -s -X POST -u $basicAuth -H "Content-Type: application/json" $URL/xapi/siteConfig -d '{"uiAllowNonAdminProjectCreation":true,"requireChangeJustification":false,"security.prevent-data-deletion":false,"securityAllowNonPrivateProjects":true,"crPreventMerge":false,"projectAllowAutoArchive":true,"passwordComplexity":"^.*$","defaultProjectAutoArchiveSetting":4}'
