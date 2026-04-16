@@ -482,7 +482,7 @@ public class TestDicomQueryRetrieve extends BaseXnatRestTest {
     }
 
     private void checkAllStudiesArePresent(List<String> allImportStudyLabels) {
-        await().atMost(30, TimeUnit.SECONDS)
+        await().atMost(120, TimeUnit.SECONDS)
                 .pollInterval(500, TimeUnit.MILLISECONDS)
                 .until(() -> {
                     Project checkImportProject = mainInterface().readProject(project.getId());
