@@ -31,10 +31,18 @@ public class ContainerTestUtils {
     public static void setServerBackend(BaseXnatRestTest testClassInstance, Backend backend, XnatInterface xnatInterface) {
         final DockerServer dockerServer = xnatInterface.readDockerServer();
         dockerServer.setBackend(backend);
-        if (backend == Backend.SWARM && !Settings.swarmConstraints().isEmpty()) {
+        // swarm-constraints drive swarm placement on SWARM and node-affinity on
+        // KUBERNETES (XNAT maps them to nodeAffinity), so apply the configured
+        // constraints for both backends; kubernetes-tolerations are K8s-only.
+        if ((backend == Backend.SWARM || backend == Backend.KUBERNETES) && !Settings.swarmConstraints().isEmpty()) {
             dockerServer.setSwarmConstraints(Settings.swarmConstraints());
         } else {
             dockerServer.setSwarmConstraints(Collections.emptyList());
+        }
+        if (backend == Backend.KUBERNETES) {
+            dockerServer.setKubernetesTolerations(Settings.kubernetesTolerations());
+        } else {
+            dockerServer.setKubernetesTolerations(Collections.emptyList());
         }
         xnatInterface.updateDockerServer(dockerServer);
     }

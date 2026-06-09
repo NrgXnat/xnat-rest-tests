@@ -89,9 +89,7 @@ public class TestContainerServicePermissions extends BaseContainerTest {
     public void setupCompute() {
         final Backend preferredComputeBackend = Settings.CS_PREFERRED_BACKEND;
 
-        final DockerServer dockerServer = containerManagerInterface.readDockerServer();
-        dockerServer.setBackend(preferredComputeBackend);
-        containerManagerInterface.updateDockerServer(dockerServer);
+        ContainerTestUtils.setServerBackend(this, preferredComputeBackend, containerManagerInterface);
 
         final List<Image> installedImages = containerManagerInterface.readImages();
 
