@@ -16,8 +16,10 @@ import java.util.Set;
 
 import static org.nrg.testing.TestGroups.CUSTOM_FORMS;
 import static org.nrg.testing.TestGroups.PERMISSIONS;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @AddedIn(Xnat_1_8_8.class)
+@MutatesServerState
 public class TestPromote extends BaseCustomFormRestTest {
     /*
     Tests:

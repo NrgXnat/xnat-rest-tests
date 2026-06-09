@@ -42,10 +42,12 @@ import java.util.*;
 import static org.nrg.testing.TestGroups.CONTAINERS;
 import static org.nrg.testing.TestGroups.SHARING;
 import static org.testng.AssertJUnit.*;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @Slf4j
 @Test(groups = {CONTAINERS, SHARING}, dataProvider = BaseXnatTest.CS_BACKENDS_DATA_PROVIDER)
 @TestRequires(plugins = "containers:3.4.3")
+@MutatesServerState
 public class TestContainerServiceSharing extends BaseContainerTest {
 
     private static final String FIND_INPUT_COMMAND = "find /input -type f -o -type d | sort";

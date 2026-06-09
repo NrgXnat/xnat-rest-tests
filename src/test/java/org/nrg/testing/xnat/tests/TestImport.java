@@ -60,8 +60,10 @@ import java.util.stream.Collectors;
 import static org.nrg.testing.TestGroups.*;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.AssertJUnit.*;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @Test(groups = IMPORTER)
+@MutatesServerState
 public class TestImport extends BaseXnatRestTest {
 
     private final Project project = new Project().prearchiveCode(PrearchiveCode.MANUAL);

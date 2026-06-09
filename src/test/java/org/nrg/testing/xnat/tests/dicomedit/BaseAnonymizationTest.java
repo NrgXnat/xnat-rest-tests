@@ -31,8 +31,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static org.nrg.testing.TestGroups.ANONYMIZATION;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @Test(groups = ANONYMIZATION)
+@MutatesServerState
 public class BaseAnonymizationTest extends BaseXnatRestTest {
 
     protected Project anonProject = new Project();

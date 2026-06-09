@@ -18,8 +18,10 @@ import org.nrg.xnat.versions.Xnat_1_9_0;
 
 import static org.nrg.xnat.enums.DicomEditVersion.DE_4;
 import static org.nrg.xnat.enums.DicomEditVersion.DE_6;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @TestRequires(admin = true, data = TestData.ANON_2)
+@MutatesServerState
 public class TestAnonymizationBuiltinFunctions extends BaseAnonymizationTest {
 
     private static final Consumer<RootDicomObject> STRING_FUNCTION_VALIDATOR = (root) ->

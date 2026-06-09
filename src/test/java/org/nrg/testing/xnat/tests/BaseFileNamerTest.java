@@ -27,7 +27,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.testng.AssertJUnit.assertEquals;
+import org.nrg.testing.annotations.MutatesServerState;
 
+@MutatesServerState
 public class BaseFileNamerTest extends BaseXnatRestTest {
 
     protected static final Logger LOGGER = Logger.getLogger(BaseFileNamerTest.class);

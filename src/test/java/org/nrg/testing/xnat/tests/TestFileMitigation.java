@@ -65,10 +65,12 @@ import static org.nrg.testing.TestGroups.FILE_MITIGATION;
 import static org.nrg.testing.TestGroups.IMPORTER;
 import static org.nrg.xnat.pogo.resources.ResourceSurveyRequest.Status.*;
 import static org.testng.AssertJUnit.*;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @Test(groups = {FILE_MITIGATION, IMPORTER})
 @TestRequires(data = TestData.SAMPLE_1)
 @AddedIn(Xnat_1_8_7.class)
+@MutatesServerState
 public class TestFileMitigation extends BaseFileNamerTest {
 
     private static final String DICOM = "DICOM";

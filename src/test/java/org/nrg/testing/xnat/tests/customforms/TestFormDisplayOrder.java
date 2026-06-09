@@ -22,8 +22,10 @@ import java.util.concurrent.ThreadLocalRandom;
 import static org.nrg.testing.TestGroups.CUSTOM_FORMS;
 import static org.nrg.testing.TestGroups.PERMISSIONS;
 import static org.testng.AssertJUnit.*;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @AddedIn(Xnat_1_8_8.class)
+@MutatesServerState
 public class TestFormDisplayOrder extends BaseCustomFormRestTest {
 
     /*

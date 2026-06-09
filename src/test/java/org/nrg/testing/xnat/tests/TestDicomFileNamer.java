@@ -39,10 +39,12 @@ import java.util.stream.Collectors;
 import static org.nrg.testing.TestGroups.IMPORTER;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertTrue;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @Test(groups = IMPORTER)
 @TestRequires(data = TestData.SAMPLE_1)
 @AddedIn(Xnat_1_8_6_1.class)
+@MutatesServerState
 public class TestDicomFileNamer extends BaseFileNamerTest {
 
     private static final String FILE_NAMER_REPEAT_UID = "${StudyInstanceUID}-${SeriesNumber}-${InstanceNumber}-${HashSOPClassUIDWithSOPInstanceUID}-${StudyInstanceUID}";

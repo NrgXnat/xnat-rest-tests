@@ -46,9 +46,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.testng.AssertJUnit.assertEquals;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @TestRequires(data = {TestData.SAMPLE_1, TestData.DICOM_WEB_PETMR1}, dicomScp = true)
 @AddedIn(Xnat_1_8_0.class)
+@MutatesServerState
 public class TestEventDetection extends BaseEventServiceTest {
 
     private final String SAMPLE1_SERIES_DESC1 = "t1_mpr_1mm_p2_pos50";

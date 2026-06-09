@@ -29,9 +29,11 @@ import java.util.List;
 
 import static org.nrg.testing.TestGroups.ANONYMIZATION;
 import static org.nrg.testing.TestGroups.IMPORTER;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @AddedIn(Xnat_1_8_10.class)
 @Test(groups = {IMPORTER, ANONYMIZATION})
+@MutatesServerState
 public class TestAnonymizationReject extends BaseFileNamerTest {
 
     private static final String REJECT_MR_SCRIPT = "rejectMrImageStorage.das";

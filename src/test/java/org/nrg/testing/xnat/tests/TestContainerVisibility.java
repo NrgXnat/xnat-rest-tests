@@ -18,6 +18,7 @@ import org.testng.annotations.Test;
 import static io.restassured.http.ContentType.JSON;
 import static org.nrg.testing.TestGroups.CONTAINERS;
 import static org.nrg.testing.TestGroups.PERMISSIONS;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @Slf4j
 @TestRequires(users = 2, specificPluginRequirements = {
@@ -25,6 +26,7 @@ import static org.nrg.testing.TestGroups.PERMISSIONS;
 })
 @AddedIn(Xnat_1_9_2.class)
 @Test(groups = {CONTAINERS, PERMISSIONS})
+@MutatesServerState
 public class TestContainerVisibility  extends BaseXnatRestTest {
 
 

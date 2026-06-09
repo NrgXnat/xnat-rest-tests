@@ -34,8 +34,10 @@ import static org.nrg.testing.TestGroups.RESOURCES;
 import static org.nrg.testing.TestGroups.SMOKE;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.fail;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @Test(groups = RESOURCES)
+@MutatesServerState
 public class TestFileUpload extends BaseXnatRestTest {
 
     private final SimpleDateFormat americanDate = new SimpleDateFormat("MM/dd/yyyy");

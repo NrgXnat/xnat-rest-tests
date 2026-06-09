@@ -18,8 +18,10 @@ import java.util.List;
 
 import static org.nrg.testing.TestGroups.INVESTIGATORS;
 import static org.testng.AssertJUnit.*;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @Test(groups = INVESTIGATORS)
+@MutatesServerState
 public class TestXapiInvestigator extends BaseXnatRestTest {
 
     @Test

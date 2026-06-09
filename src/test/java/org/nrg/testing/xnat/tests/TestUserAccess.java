@@ -22,7 +22,9 @@ import java.util.Set;
 
 import static org.nrg.testing.TestGroups.*;
 import static org.testng.AssertJUnit.*;
+import org.nrg.testing.annotations.MutatesServerState;
 
+@MutatesServerState
 public class TestUserAccess extends BaseXnatRestTest {
 
     @Test(groups = {PERMISSIONS, AUTHENTICATION, SMOKE})

@@ -30,6 +30,7 @@ import static io.restassured.http.ContentType.JSON;
 import static org.nrg.testing.TestGroups.*;
 import static org.nrg.testing.TestGroups.IMPORTER;
 import static org.testng.AssertJUnit.*;
+import org.nrg.testing.annotations.MutatesServerState;
 
 
 /**
@@ -40,6 +41,7 @@ import static org.testng.AssertJUnit.*;
 @AddedIn(Xnat_1_8_5.class)
 @TestRequires(admin = true, data = TestData.SIMPLE_PET)
 @Test(groups = {DICOM_SCP, DICOM_ROUTING, IMPORTER})
+@MutatesServerState
 public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
     private Project project;
     private static final Logger LOG = Logger.getLogger(TestDicomSCPRoutingExpressions.class);

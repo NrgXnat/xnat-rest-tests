@@ -38,8 +38,10 @@ import java.util.function.Consumer;
 import org.testng.annotations.Test;
 
 import static org.testng.AssertJUnit.assertTrue;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @Test(groups = "performance", dataProvider = XnatPerformanceTests.DEPLOYMENTS_PROVIDER)
+@MutatesServerState
 public class TestPerformanceDicom extends XnatPerformanceTests {
 
     private static final int HARD_WAIT_LIMIT = 7200;

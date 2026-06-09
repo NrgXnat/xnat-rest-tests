@@ -34,10 +34,12 @@ import static org.nrg.testing.TestGroups.METADATA_EXTRACTION;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertFalse;
 import static org.testng.AssertJUnit.assertTrue;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @Test(groups = {IMPORTER, METADATA_EXTRACTION})
 @TestRequires(data = TestData.DICOM_WEB_CTRT1)
 @AddedIn(Xnat_1_8_0.class)
+@MutatesServerState
 public class TestDicomMapping extends BaseXnatRestTest {
 
     private Project otherProject;

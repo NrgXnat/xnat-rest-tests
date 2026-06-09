@@ -24,8 +24,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static io.restassured.http.ContentType.JSON;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @TestRequires(plugins="PIXIPlugin")
+@MutatesServerState
 public class TestPixiBiodistribution extends BaseXnatRestTest {
 
     private Project project;

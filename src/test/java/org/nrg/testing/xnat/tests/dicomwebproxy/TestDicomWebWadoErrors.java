@@ -13,6 +13,7 @@ import org.testng.annotations.Test;
 
 import static org.nrg.testing.TestGroups.PERMISSIONS;
 import static org.testng.Assert.*;
+import org.nrg.testing.annotations.MutatesServerState;
 
 /**
  * WADO-RS error handling tests: non-existent resources, invalid UIDs, wrong project.
@@ -21,6 +22,7 @@ import static org.testng.Assert.*;
  */
 @TestRequires(specificPluginRequirements = @PluginRequirement(pluginId = "dicomwebplugin"))
 @Test(groups = {PERMISSIONS})
+@MutatesServerState
 public class TestDicomWebWadoErrors extends BaseDicomWebProxyTest {
 
     private static final String FAKE_STUDY = "2.25.00000000000000000000000000000000001";

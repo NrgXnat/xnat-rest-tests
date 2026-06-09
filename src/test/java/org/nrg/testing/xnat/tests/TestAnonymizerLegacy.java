@@ -41,8 +41,10 @@ import java.time.LocalDate;
 import static org.nrg.testing.TestGroups.*;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertNull;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @Test(groups = ANONYMIZATION)
+@MutatesServerState
 public class TestAnonymizerLegacy extends BaseXnatRestTest {
     private final File anonScript1File = getDataFile("anon1.das");
     private final AnonScript anonScript1 = XnatObjectUtils.anonScriptFromFile(null, anonScript1File);

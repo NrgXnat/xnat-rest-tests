@@ -39,8 +39,10 @@ import java.util.zip.ZipOutputStream;
 
 import static org.nrg.testing.TestGroups.*;
 import static org.testng.AssertJUnit.fail;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @Test(groups = {DICOM_SCP, DICOM_ROUTING, IMPORTER})
+@MutatesServerState
 public class TestDicomRouting extends BaseXnatRestTest {
 
     private final Project project = registerTempProject().prearchiveCode(PrearchiveCode.AUTO_ARCHIVE_OVERWRITE);

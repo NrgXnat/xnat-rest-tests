@@ -62,9 +62,11 @@ import java.util.stream.Stream;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 import static org.testng.AssertJUnit.assertTrue;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @Slf4j
 @TestRequires(specificPluginRequirements = {@PluginRequirement(pluginId = "dicom-query-retrieve")})
+@MutatesServerState
 public class TestDicomQueryRetrieve extends BaseXnatRestTest {
 
     public static final String DQR_OBJECT_IDENTIFIER = "dqrObjectIdentifier";

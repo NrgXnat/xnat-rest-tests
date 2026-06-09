@@ -24,6 +24,7 @@ import java.util.Map;
 
 import static org.nrg.testing.TestGroups.PERMISSIONS;
 import static org.testng.Assert.*;
+import org.nrg.testing.annotations.MutatesServerState;
 
 /**
  * QIDO-RS compliance tests: query filters, pagination, DICOM JSON response structure.
@@ -32,6 +33,7 @@ import static org.testng.Assert.*;
  */
 @TestRequires(specificPluginRequirements = @PluginRequirement(pluginId = "dicomwebplugin"))
 @Test(groups = {PERMISSIONS})
+@MutatesServerState
 public class TestDicomWebQidoCompliance extends BaseDicomWebProxyTest {
 
     private static String tagKey(int tag) {

@@ -13,6 +13,7 @@ import org.testng.annotations.Test;
 
 import static org.nrg.testing.TestGroups.PERMISSIONS;
 import static org.testng.Assert.*;
+import org.nrg.testing.annotations.MutatesServerState;
 
 /**
  * Tests for rendered image and thumbnail endpoints: rendering parameters
@@ -22,6 +23,7 @@ import static org.testng.Assert.*;
  */
 @TestRequires(specificPluginRequirements = @PluginRequirement(pluginId = "dicomwebplugin"))
 @Test(groups = {PERMISSIONS})
+@MutatesServerState
 public class TestDicomWebRenderedParams extends BaseDicomWebProxyTest {
 
     // Image format magic bytes

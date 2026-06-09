@@ -23,12 +23,14 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import static org.testng.AssertJUnit.assertEquals;
+import org.nrg.testing.annotations.MutatesServerState;
 
 /**
  * This whole test class is to check various types of deletes to confirm that they don't remove unintended data, such as in
  * XNAT-6852
  */
 @TestRequires(data = {TestData.SAMPLE_1})
+@MutatesServerState
 public class TestDeletionAccuracy extends BaseXnatRestTest {
 
     private static final int FILES_PER_SCAN = 176;

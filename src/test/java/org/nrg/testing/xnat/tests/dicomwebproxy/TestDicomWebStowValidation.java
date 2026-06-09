@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import static org.nrg.testing.TestGroups.PERMISSIONS;
 import static org.testng.Assert.*;
+import org.nrg.testing.annotations.MutatesServerState;
 
 /**
  * STOW-RS validation tests: response structure, idempotent re-upload,
@@ -28,6 +29,7 @@ import static org.testng.Assert.*;
  */
 @TestRequires(specificPluginRequirements = @PluginRequirement(pluginId = "dicomwebplugin"))
 @Test(groups = {PERMISSIONS})
+@MutatesServerState
 public class TestDicomWebStowValidation extends BaseDicomWebProxyTest {
 
     // DICOM tag constants (hex notation) for STOW-RS response

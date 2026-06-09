@@ -26,8 +26,10 @@ import static org.nrg.testing.TestGroups.ANONYMIZATION;
 import static org.nrg.testing.TestGroups.SMOKE;
 import static org.nrg.xnat.enums.DicomEditVersion.DE_4;
 import static org.nrg.xnat.enums.DicomEditVersion.DE_6;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @TestRequires(admin = true, data = TestData.ANON_2)
+@MutatesServerState
 public class TestAnonymizationWorkflowSpecific extends BaseAnonymizationTest {
 
     private static final ScriptValidation COMMON_PROJECT_VALIDATION = new ProjectScript();

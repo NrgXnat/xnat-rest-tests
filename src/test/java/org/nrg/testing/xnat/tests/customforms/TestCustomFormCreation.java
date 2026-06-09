@@ -18,9 +18,11 @@ import static org.nrg.testing.TestGroups.CUSTOM_FORMS;
 import static org.nrg.testing.TestGroups.PERMISSIONS;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertFalse;
+import org.nrg.testing.annotations.MutatesServerState;
 
 
 @AddedIn(Xnat_1_8_8.class)
+@MutatesServerState
 public class TestCustomFormCreation extends BaseCustomFormRestTest {
 
     /* Tests:

@@ -32,7 +32,9 @@ import java.util.List;
 import static org.nrg.testing.TestGroups.*;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertNull;
+import org.nrg.testing.annotations.MutatesServerState;
 
+@MutatesServerState
 public class TestArchive extends BaseXnatRestTest {
     private static final String QUERY_PARAM_XSI_TYPE        = "xsiType";
     private static final String QUERY_PARAM_NOTE            = "note";

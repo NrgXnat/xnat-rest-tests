@@ -26,9 +26,11 @@ import java.util.Map;
 import static org.hamcrest.Matchers.*;
 import static org.nrg.testing.TestGroups.PERMISSIONS;
 import static org.testng.Assert.*;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @TestRequires(specificPluginRequirements = @PluginRequirement(pluginId = "dicomwebplugin"))
 @Test(groups = {PERMISSIONS})
+@MutatesServerState
 public class TestDicomWebPrefsApi extends BaseDicomWebProxyTest {
 
     private User nonAdminUser;

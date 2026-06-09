@@ -39,9 +39,11 @@ import static org.nrg.testing.TestGroups.*;
 import static org.nrg.testing.TestGroups.IMPORTER;
 import static org.testng.Assert.assertTrue;
 import static org.testng.AssertJUnit.assertEquals;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @AddedIn(Xnat_1_8_3.class)
 @Test(groups = {DICOM_SCP, DICOM_ROUTING, IMPORTER, DIRECT_ARCHIVE})
+@MutatesServerState
 public class TestDirectArchive extends BaseXnatRestTest {
     private final Project project = new Project();
     private final Project altProject = new Project();

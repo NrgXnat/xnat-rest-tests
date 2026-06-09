@@ -18,9 +18,11 @@ import org.testng.annotations.Test;
 import static io.restassured.RestAssured.given;
 import static org.nrg.testing.TestGroups.*;
 import static org.testng.AssertJUnit.*;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @TestRequires(users = 1)
 @Test(groups = {ALIAS_TOKENS, AUTHENTICATION, PERMISSIONS})
+@MutatesServerState
 public class TestAliasTokenService extends BaseXnatRestTest {
 
     private User otherUser;

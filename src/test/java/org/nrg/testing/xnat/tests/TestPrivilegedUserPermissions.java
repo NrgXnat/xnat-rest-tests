@@ -13,11 +13,13 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import static org.nrg.testing.TestGroups.PERMISSIONS;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @Slf4j
 @TestRequires(users = 1)
 @AddedIn(Xnat_1_9_2.class)
 @Test(groups = {PERMISSIONS})
+@MutatesServerState
 public class TestPrivilegedUserPermissions extends BaseXnatRestTest  {
 
     private XnatInterface privilegedUserInterface;

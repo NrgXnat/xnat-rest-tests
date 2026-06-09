@@ -10,8 +10,10 @@ import org.nrg.xnat.versions.Xnat_1_9_2;
 import org.testng.annotations.BeforeClass;
 
 import java.util.List;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @TestRequires(users = 1, plugins = PluginRegistry.CS_PLUGIN_ID)
+@MutatesServerState
 public class BaseContainerTest extends BaseXnatRestTest {
     protected XnatInterface containerManagerInterface;
 

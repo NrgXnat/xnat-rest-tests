@@ -23,8 +23,10 @@ import java.util.Map;
 import static org.nrg.testing.TestGroups.OPEN_XNAT;
 import static org.nrg.testing.TestGroups.PREFERENCES;
 import static org.testng.AssertJUnit.*;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @Test(groups = PREFERENCES)
+@MutatesServerState
 public class TestXapiSiteConfig extends BaseXnatRestTest {
 
     private static final String publicPreference = "siteId";

@@ -20,6 +20,7 @@ import org.testng.annotations.Test;
 
 import static org.nrg.testing.TestGroups.PERMISSIONS;
 import static org.testng.Assert.*;
+import org.nrg.testing.annotations.MutatesServerState;
 
 /**
  * Integration tests for STOW-RS (store) endpoints at both project-scoped and site-wide scope.
@@ -28,6 +29,7 @@ import static org.testng.Assert.*;
  */
 @TestRequires(specificPluginRequirements = @PluginRequirement(pluginId = "dicomwebplugin"))
 @Test(groups = {PERMISSIONS})
+@MutatesServerState
 public class TestDicomWebStowRs extends BaseDicomWebProxyTest {
 
     // Site-wide STOW UIDs (separate from the static DATA_A/B to avoid conflicts)

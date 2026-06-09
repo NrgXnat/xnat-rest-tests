@@ -11,8 +11,10 @@ import java.util.List;
 import java.util.Optional;
 import static org.nrg.testing.TestGroups.USERS;
 import static org.testng.AssertJUnit.*;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @Test(groups = USERS)
+@MutatesServerState
 public class TestUsersApi extends BaseXnatRestTest {
 
     @Test

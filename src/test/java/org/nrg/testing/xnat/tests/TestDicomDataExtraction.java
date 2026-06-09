@@ -32,6 +32,7 @@ import java.util.Map;
 import static org.nrg.testing.TestGroups.*;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertTrue;
+import org.nrg.testing.annotations.MutatesServerState;
 
 /**
  * NOTE: I'm adding these tests because we don't really have any integration tests to check for DICOM extraction into XNAT.
@@ -49,6 +50,7 @@ import static org.testng.AssertJUnit.assertTrue;
         TestData.EXTRACTION_OPT
 })
 @Test(groups = {METADATA_EXTRACTION, IMPORTER})
+@MutatesServerState
 public class TestDicomDataExtraction extends BaseXnatRestTest {
 
     private static final String STUDY_COMMENTS = "studyComments";

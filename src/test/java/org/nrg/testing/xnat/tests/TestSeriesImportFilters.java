@@ -26,9 +26,11 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.nrg.testing.TestGroups.IMPORTER;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @AddedIn(Xnat_1_8_10.class)
 @DeprecatedIn(Xnat_1_8_10_1.class)
+@MutatesServerState
 public class TestSeriesImportFilters extends BaseFileNamerTest {
 
     private static final String SERIES_6_SPEC = "sample1_series6.json";

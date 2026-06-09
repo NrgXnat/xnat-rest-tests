@@ -21,8 +21,10 @@ import static org.nrg.testing.TestGroups.PERMISSIONS;
 import static org.testng.Assert.assertFalse;
 import static org.testng.AssertJUnit.assertNotNull;
 import static org.testng.AssertJUnit.assertTrue;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @AddedIn(Xnat_1_8_8.class)
+@MutatesServerState
 public class TestFormOptInOptOut extends BaseCustomFormRestTest {
 
     /* Tests

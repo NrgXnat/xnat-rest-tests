@@ -36,10 +36,12 @@ import java.util.*;
 import static org.nrg.testing.TestGroups.*;
 import static org.nrg.xnat.enums.DicomEditVersion.DE_6;
 import static org.testng.AssertJUnit.assertEquals;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @AddedIn(Xnat_1_8_5.class)
 @TestRequires(admin = true, data = TestData.ANON_2)
 @Test(groups = {ANONYMIZATION, DICOM_SCP, DICOM_ROUTING, IMPORTER})
+@MutatesServerState
 public class TestDicomSCPDisableAnon extends BaseXnatRestTest {
     private static final Logger LOG            = Logger.getLogger(TestDicomSCPDisableAnon.class);
     private static final long   FIVE_MINUTES   = 300000;
