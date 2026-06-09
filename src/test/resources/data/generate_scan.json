@@ -5,7 +5,7 @@
     "schema-version": "1.0",
     "image": "xnat/generatescan:1.0",
     "type": "docker",
-    "command-line": "generate_scan.py #SESSION_ID# #SESSION_LABEL# #PROJECT# $XNAT_HOST $XNAT_USER $XNAT_PASS /mount scan.xml",
+    "command-line": "python3 /usr/local/bin/generate_scan.py #SESSION_ID# #SESSION_LABEL# #PROJECT# $XNAT_HOST $XNAT_USER $XNAT_PASS /mount scan.xml",
     "override-entrypoint": true,
     "mounts": [
         {
