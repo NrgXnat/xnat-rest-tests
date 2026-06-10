@@ -1323,7 +1323,7 @@ public class TestContainerServicePermissions extends BaseContainerTest {
                 if (expectedException != null) {
                     fail("Exception should have already been thrown.");
                 }
-                mainAdminInterface().waitForWorkflowTerminal(workflowId);
+                mainAdminInterface().waitForWorkflowTerminal(workflowId, 60 * Settings.CS_SWARM_TIMEOUT);
                 assertEquals(testEntry.getValue().expectedWorkflowStatus, mainAdminInterface().readWorkflowStatus(workflowId));
             }
         }
