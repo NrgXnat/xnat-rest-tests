@@ -25,10 +25,12 @@ import java.util.function.Consumer;
 
 import static org.nrg.testing.TestGroups.*;
 import static org.testng.AssertJUnit.assertEquals;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @TestRequires(data = TestData.SAMPLE_1)
 @Test(groups = {ARCHIVE, DICOM_ROUTING, DICOM_SCP, IMPORTER})
 @AddedIn(Xnat_1_8_6.class)
+@MutatesServerState
 public class TestImportCompartmentalization extends BaseXnatRestTest {
 
     private static final String EXPECTED_SUBJECT_LABEL = "Sample_Patient";

@@ -24,8 +24,10 @@ import java.util.*;
 import static org.nrg.testing.TestGroups.CONFIG_SERVICE;
 import static org.nrg.testing.TestGroups.PERMISSIONS;
 import static org.testng.AssertJUnit.*;
+import org.nrg.testing.annotations.MutatesServerState;
 
 @Test(groups = CONFIG_SERVICE)
+@MutatesServerState
 public class TestConfigService extends BaseXnatRestTest {
 
     private final List<Project> projects = new ArrayList<>();
