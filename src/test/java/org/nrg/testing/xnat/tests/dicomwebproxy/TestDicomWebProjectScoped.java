@@ -158,6 +158,24 @@ public class TestDicomWebProjectScoped extends BaseDicomWebProxyTest {
         assertEquals(response.getStatusCode(), 200, "Bulk data by tag should return 200");
     }
 
+    /**
+     * The bulk-data-by-tag response should set a Content-Location header
+     * whose value contains the requested tag, so a client receiving the
+     * bytes can correlate them back to the BulkDataURI in the metadata
+     * response.
+     */
+    public void testRetrieveBulkDataByTag_HasContentLocationHeader() {
+        String tag = "7FE00010";
+        Response response = getAs(memberUser,
+                projectBulkDataByTagUrl(projectA, STUDY_UID_A, SERIES_UID_A, SOP_UID_A, tag));
+        assertEquals(response.getStatusCode(), 200, "Bulk data by tag should return 200");
+
+        String contentLocation = response.getHeader("Content-Location");
+        assertNotNull(contentLocation, "Bulk data response should include a Content-Location header");
+        assertTrue(contentLocation.contains(tag),
+                "Content-Location should reference the requested tag, got: " + contentLocation);
+    }
+
     public void testRetrieveInstanceBulkData() {
         Response response = getAs(memberUser, projectInstanceBulkDataUrl(projectA, STUDY_UID_A, SERIES_UID_A, SOP_UID_A));
         assertEquals(response.getStatusCode(), 200, "Instance bulk data should return 200");
