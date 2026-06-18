@@ -65,11 +65,10 @@ public class TestDirectArchive extends BaseXnatRestTest {
     @BeforeMethod(alwaysRun = true) // clear out prearchive/archive for each test
     @AfterClass(alwaysRun = true) // ... and then clear them out when we're all done
     private void clearArchives() {
-        try {
-            restDriver.clearPrearchiveSessions(mainUser, project);
-        } catch (Throwable throwable) {
-            LOGGER.warn(throwable);
-        }
+        // Drain the async ingest pipeline (clear prearchive, then wait for both queues to empty) before
+        // deleting files, so the delete can't race the server's build/rebuild. On NFS that race leaves
+        // .nfs* placeholders ("Device or resource busy") that break the recursive delete.
+        restDriver.drainIngestPipeline(mainUser, project);
         try {
             mainInterface().deleteAllProjectData(project);
             TimeUtils.sleep(1000);
@@ -168,18 +167,28 @@ public class TestDirectArchive extends BaseXnatRestTest {
     @Test
     public void testDirectArchiveProjectFilter() {
         mainInterface().createProject(altProject);
+        // Deliberately slow the rebuilder so the sessions linger in the direct-archive table for the asserts.
         mainAdminInterface().setSessionXmlRebuilderTimes(5, 60000);
-        uploadViaCStore();
-        uploadViaCStore(Collections.singletonMap(Tag.StudyDescription, altProject.getId()), false);
+        try {
+            uploadViaCStore();
+            uploadViaCStore(Collections.singletonMap(Tag.StudyDescription, altProject.getId()), false);
 
-        final List<SessionData> sessions = mainInterface().getDirectArchiveEntriesForProject(project);
-        assertEquals(1, sessions.size());
+            final List<SessionData> sessions = mainInterface().getDirectArchiveEntriesForProject(project);
+            assertEquals(1, sessions.size());
 
-        final List<SessionData> altSessions = mainInterface().getDirectArchiveEntriesForProject(altProject);
-        assertEquals(1, altSessions.size());
+            final List<SessionData> altSessions = mainInterface().getDirectArchiveEntriesForProject(altProject);
+            assertEquals(1, altSessions.size());
 
-        final List<SessionData> all = mainInterface().getDirectArchiveEntries();
-        assertEquals(2, all.size()); // TODO: technically this can fail if other sessions are also in the direct-archive table
+            final List<SessionData> all = mainInterface().getDirectArchiveEntries();
+            assertEquals(2, all.size()); // TODO: technically this can fail if other sessions are also in the direct-archive table
+        } finally {
+            // Always restore the normal rebuilder cadence and drain both projects -- even if an assertion
+            // above failed -- so the slowed rebuilder and lingering sessions don't leak into later tests and
+            // race their teardown deletes (which on NFS cause .nfs* / "Device or resource busy" failures).
+            mainAdminInterface().setSessionXmlRebuilderTimes(1, 10000);
+            restDriver.drainIngestPipeline(mainUser, project);
+            restDriver.drainIngestPipeline(mainUser, altProject);
+        }
     }
 
     private void uploadViaCStore() {

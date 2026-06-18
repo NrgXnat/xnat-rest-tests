@@ -90,6 +90,11 @@ public class TestDicomSCPDisableAnon extends BaseXnatRestTest {
 
     @BeforeMethod(alwaysRun = true)
     private void clearArchive(){
+        // Drain the async ingest pipeline (clear prearchive, then wait for both queues to empty) before
+        // deleting files, so the delete can't race the server's build. This receiver uses both ingest modes
+        // across tests; drainIngestPipeline covers both. On NFS that race leaves .nfs* placeholders
+        // ("Device or resource busy") that break the recursive delete.
+        restDriver.drainIngestPipeline(mainUser, project);
         try {
             mainInterface().deleteAllProjectData(project);
             TimeUtils.sleep(1000);

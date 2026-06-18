@@ -91,11 +91,10 @@ public class TestDicomRouting extends BaseXnatRestTest {
     @BeforeMethod(alwaysRun = true) // clear out prearchive/archive for each test
     @AfterClass(alwaysRun = true) // ... and then clear them out when we're all done
     private void clearArchives() {
-        try {
-            restDriver.clearPrearchiveSessions(mainUser, project);
-        } catch (Throwable throwable) {
-            LOGGER.warn(throwable);
-        }
+        // Drain the async ingest pipeline (clear prearchive, then wait for both queues to empty) before
+        // deleting files, so the delete can't race the server's build/rebuild. On NFS that race leaves
+        // .nfs* placeholders ("Device or resource busy") that break the recursive delete.
+        restDriver.drainIngestPipeline(mainUser, project);
         try {
             mainInterface().deleteAllProjectData(project);
             TimeUtils.sleep(1000);

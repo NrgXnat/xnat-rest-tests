@@ -78,6 +78,10 @@ public class TestDicomModalityAssignment extends BaseXnatRestTest {
 
     @AfterMethod
     private void clearData() {
+        // Drain the async ingest pipeline (clear prearchive, then wait for both queues to empty) before
+        // deleting files, so the delete can't race the server's build/rebuild. On NFS that race leaves
+        // .nfs* placeholders ("Device or resource busy") that break the recursive delete.
+        restDriver.drainIngestPipeline(mainUser, testProject);
         mainAdminInterface().deleteAllProjectData(testProject);
     }
 
