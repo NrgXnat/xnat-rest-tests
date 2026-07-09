@@ -19,6 +19,9 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -47,7 +50,7 @@ import static org.testng.Assert.*;
  */
 @TestRequires(
         specificPluginRequirements = {
-                @PluginRequirement(pluginId = "dicomwebproxy")
+                @PluginRequirement(pluginId = "dicomwebplugin")
         },
         data = {
                 TestData.EXTRACTION_MR,   // Primary: Small MR for smoke tests
@@ -76,6 +79,12 @@ public class TestDicomWebQido extends BaseXnatRestTest {
     private String mrStudyUID;
     private String ctStudyUID;
 
+    // Probed StudyDate / StudyTime for the MR session (yyyyMMdd / HHmmss).
+    // Populated in setupQidoTests; used by the date/time range tests below
+    // to build query values around known values.
+    private String mrStudyDate;
+    private String mrStudyTime;
+
     @BeforeClass
     public void setupQidoTests() {
         // Set up session import extensions BEFORE creating project
@@ -88,6 +97,10 @@ public class TestDicomWebQido extends BaseXnatRestTest {
 
         // Extract UIDs from created sessions for validation
         extractSessionUIDs();
+
+        // Probe QIDO for the MR study's StudyDate/StudyTime so
+        // range tests below can build query values around them.
+        probeMrStudyDateAndTime();
     }
 
     @AfterClass(alwaysRun = true)
@@ -1321,6 +1334,164 @@ public class TestDicomWebQido extends BaseXnatRestTest {
         for (Map<String, Object> study : studies) {
             assertDicomJsonStructure(study);
         }
+    }
+
+    // ========================================
+    // QIDO-RS: Combined Date-Time Range Queries
+    // ========================================
+    //
+    // These tests exercise combined DA + TM range matching per
+    // PS3.18 §8.3.4.1.1 → PS3.4 §C.2.2.2.5.4. When both StudyDate
+    // and StudyTime are Range Matching values, the server must
+    // treat them as a single DT range rather than as two
+    // independent conjuncts. The PS3.4 §C.2.2.2.5.4 Note gives
+    // the canonical example:
+    //
+    //   "a Study Date of '20060705-20060707' and a Study Time of
+    //    '1000-1800' will match the time period of July 5, 10am
+    //    until July 7, 6pm, rather than the three time periods
+    //    of 10am until 6pm on each of July 5, July 6 and July 7."
+    //
+    // The distinguishing test below constructs a StudyTime range
+    // whose upper bound is strictly before the MR session's
+    // StudyTime. Under independent conjunction the MR session
+    // would be excluded; under combined DT semantics the MR
+    // session's (date, time) falls within the diagonal band and
+    // must be included.
+
+    private static final DateTimeFormatter DA_FORMAT =
+            DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final DateTimeFormatter TM_FORMAT =
+            DateTimeFormatter.ofPattern("HHmmss");
+
+    /**
+     * Probe QIDO for the MR study's StudyDate/StudyTime so range
+     * tests below can build queries around known values. Called
+     * from {@link #setupQidoTests()}.
+     */
+    private void probeMrStudyDateAndTime() {
+        String endpoint = String.format(
+                "/dicomweb/projects/%s/studies?StudyInstanceUID=%s",
+                testProject.getId(), mrStudyUID);
+        Response response = mainQueryBase()
+                .get(formatXapiUrl(endpoint))
+                .then().assertThat().statusCode(200)
+                .extract().response();
+        List<Map<String, Object>> studies = response.jsonPath().getList("$");
+        assertEquals(studies.size(), 1,
+                "MR study probe should return exactly 1 study");
+        Map<String, Object> study = studies.get(0);
+        mrStudyDate = getDicomTagValue(study, tagKey(Tag.StudyDate));
+        String time = getDicomTagValue(study, tagKey(Tag.StudyTime));
+        // Strip fractional seconds; range tests only compare HHmmss.
+        mrStudyTime = (time == null || time.length() <= 6)
+                ? time : time.substring(0, 6);
+        assertNotNull(mrStudyDate,
+                "MR study probe should yield a non-null StudyDate");
+        assertEquals(mrStudyDate.length(), 8,
+                "StudyDate should be 8-digit yyyyMMdd");
+    }
+
+    /** Return true iff any study in {@code studies} carries {@code uid}. */
+    private boolean containsStudyUID(List<Map<String, Object>> studies,
+                                     String uid) {
+        return studies.stream().anyMatch(s -> {
+            Map<String, Object> tag = (Map<String, Object>)
+                    s.get(tagKey(Tag.StudyInstanceUID));
+            if (tag == null) {
+                return false;
+            }
+            List<String> values = (List<String>) tag.get("Value");
+            return values != null && values.contains(uid);
+        });
+    }
+
+    /**
+     * Distinguishing test: multi-day StudyDate range paired with a
+     * StudyTime range whose upper bound is strictly before the MR
+     * session's actual time.
+     *
+     * <p>Under independent conjunction the MR session would be
+     * excluded (its time falls outside the TM range). Under
+     * combined DT semantics the MR session's (date, time) falls
+     * within the diagonal band [dayBefore + 00:00:00,
+     * dayAfter + timeBeforeMr] and must be included. This test
+     * fails if the server ever regresses to independent
+     * conjunction.
+     */
+    @Test(priority = 2)
+    public void testQidoSearchStudies_WithCombinedDateTimeRange_ExcludingTime_MatchesUnderCombined() {
+        // This test needs a non-null, non-midnight StudyTime in the
+        // MR test data so we can construct a "before mrStudyTime"
+        // upper bound and demonstrate the combined-vs-independent
+        // divergence. Failing here is a signal to improve the test
+        // data (EXTRACTION_MR), not a signal about server behavior.
+        assertNotNull(mrStudyTime,
+                "MR test data must have a non-null StudyTime to exercise "
+                + "combined date-time matching; probe returned null. "
+                + "Replace EXTRACTION_MR with a fixture that carries a "
+                + "populated (0008,0030).");
+        assertNotEquals(mrStudyTime, "000000",
+                "MR test data StudyTime is exactly midnight (000000); this "
+                + "test cannot construct a strictly-before upper bound "
+                + "without underflowing. Replace EXTRACTION_MR with a "
+                + "fixture whose StudyTime is not 00:00:00.");
+        LocalDate mrDate = LocalDate.parse(mrStudyDate, DA_FORMAT);
+        LocalTime mrTime = LocalTime.parse(mrStudyTime, TM_FORMAT);
+        String dayBefore = mrDate.minusDays(1).format(DA_FORMAT);
+        String dayAfter = mrDate.plusDays(1).format(DA_FORMAT);
+        String timeBeforeMr = mrTime.minusSeconds(1).format(TM_FORMAT);
+
+        String dateRange = dayBefore + "-" + dayAfter;
+        String timeRange = "000000-" + timeBeforeMr;
+        String endpoint = String.format(
+                "/dicomweb/projects/%s/studies?StudyDate=%s&StudyTime=%s",
+                testProject.getId(), dateRange, timeRange);
+        Response response = mainQueryBase()
+                .get(formatXapiUrl(endpoint))
+                .then().assertThat().statusCode(200)
+                .contentType("application/dicom+json")
+                .extract().response();
+        List<Map<String, Object>> studies = response.jsonPath().getList("$");
+
+        assertTrue(containsStudyUID(studies, mrStudyUID),
+                "MR study should be INCLUDED under combined DT semantics "
+                + "(date " + dateRange + ", time " + timeRange + "); "
+                + "independent-conjunction would incorrectly exclude it "
+                + "because the study's time falls outside the TM range.");
+    }
+
+    /**
+     * Regression: a single-day StudyDate range paired with a
+     * StudyTime range that includes the MR session's actual time
+     * must return the MR session. Combined and independent
+     * semantics agree on this case, so the test verifies that
+     * pre-existing behavior is preserved.
+     */
+    @Test(priority = 2)
+    public void testQidoSearchStudies_WithCombinedDateTimeRange_SingleDayWithMatchingTime_IncludesStudy() {
+        // This regression check needs a non-null StudyTime in the MR
+        // test data. Failing here means the test data lacks a
+        // populated (0008,0030), not that the server misbehaves.
+        assertNotNull(mrStudyTime,
+                "MR test data must have a non-null StudyTime for this "
+                + "regression check; probe returned null. Replace "
+                + "EXTRACTION_MR with a fixture that carries a populated "
+                + "(0008,0030).");
+        String dateRange = mrStudyDate + "-" + mrStudyDate;
+        String timeRange = "000000-235959";
+        String endpoint = String.format(
+                "/dicomweb/projects/%s/studies?StudyDate=%s&StudyTime=%s",
+                testProject.getId(), dateRange, timeRange);
+        Response response = mainQueryBase()
+                .get(formatXapiUrl(endpoint))
+                .then().assertThat().statusCode(200)
+                .extract().response();
+        List<Map<String, Object>> studies = response.jsonPath().getList("$");
+
+        assertTrue(containsStudyUID(studies, mrStudyUID),
+                "Single-day StudyDate range with a StudyTime range "
+                + "covering the whole day should include the MR study.");
     }
 
     // ========================================
