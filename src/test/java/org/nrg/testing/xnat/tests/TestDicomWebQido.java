@@ -22,8 +22,10 @@ import org.testng.annotations.Test;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.nrg.testing.TestGroups.*;
 import static org.testng.Assert.*;
@@ -117,7 +119,6 @@ public class TestDicomWebQido extends BaseXnatRestTest {
         JsonPath mrJson = restDriver.mainInterface().jsonQuery()
                 .get(mainInterface().subjectAssessorUrl(mrSession))
                 .then().assertThat().statusCode(200).and().extract().jsonPath();
-        System.out.println("retrieved identifiers: " + mrJson.prettyPrint());
         Map<String, Object> mrDataFields = mrJson.get("items[0].data_fields");
         mrStudyUID = (String) mrDataFields.get("UID");
 
@@ -1492,6 +1493,232 @@ public class TestDicomWebQido extends BaseXnatRestTest {
         assertTrue(containsStudyUID(studies, mrStudyUID),
                 "Single-day StudyDate range with a StudyTime range "
                 + "covering the whole day should include the MR study.");
+    }
+
+    // ========================================
+    // QIDO-RS: {attributeID} Forms (Keyword vs. Hex Tag)
+    // ========================================
+    //
+    // Per PS3.18 §6.7.1.1, the {attributeID} in a QIDO-RS query
+    // parameter may be either a DICOM keyword (e.g. StudyDate) or an
+    // 8-digit hexadecimal Data Element Tag (e.g. 00080020). Weasis
+    // and OHIF historically send hex-tag form; XNAT's DQR and web
+    // front-end send keywords. Both must work identically, otherwise
+    // clients silently see "no filter applied" instead of "filter
+    // applied" — the failure mode that motivated PLUGINS-32x.
+
+    /**
+     * Return the 8-character uppercase hex string used as the QIDO
+     * {@code {attributeID}} for a dcm4che {@code Tag} constant.
+     */
+    private static String tagId(int tag) {
+        return tagKey(tag);
+    }
+
+    /**
+     * Extract the set of StudyInstanceUIDs from a QIDO study
+     * response. Used to compare result sets across queries that
+     * differ only in {@code {attributeID}} form.
+     */
+    private Set<String> studyUidsIn(List<Map<String, Object>> studies) {
+        Set<String> uids = new HashSet<>();
+        for (Map<String, Object> study : studies) {
+            Map<String, Object> tag = (Map<String, Object>)
+                    study.get(tagKey(Tag.StudyInstanceUID));
+            if (tag == null) continue;
+            List<String> values = (List<String>) tag.get("Value");
+            if (values != null) uids.addAll(values);
+        }
+        return uids;
+    }
+
+    /**
+     * Perform a QIDO study query with the given raw query string and
+     * return the parsed JSON array. Fails the test if the response
+     * is not HTTP 200.
+     */
+    private List<Map<String, Object>> qidoStudies(String rawQueryString) {
+        String endpoint = String.format(
+                "/dicomweb/projects/%s/studies%s",
+                testProject.getId(),
+                rawQueryString.isEmpty() ? "" : "?" + rawQueryString);
+        Response response = mainQueryBase()
+                .get(formatXapiUrl(endpoint))
+                .then()
+                .assertThat()
+                .statusCode(200)
+                .contentType("application/dicom+json")
+                .extract()
+                .response();
+        return response.jsonPath().getList("$");
+    }
+
+    /**
+     * Hex-tag form of the StudyInstanceUID filter must return the
+     * same single study as the keyword form. Mirrors
+     * {@link #testQidoSearchStudies_WithStudyUIDFilter()}.
+     */
+    @Test(priority = 1)
+    public void testQidoSearchStudies_HexTagStudyInstanceUID() {
+        List<Map<String, Object>> studies = qidoStudies(
+                tagId(Tag.StudyInstanceUID) + "=" + ctStudyUID);
+        assertEquals(studies.size(), 1,
+                "Hex-tag StudyInstanceUID filter should return exactly 1 study");
+        Map<String, Object> uidTag = (Map<String, Object>)
+                studies.get(0).get(tagKey(Tag.StudyInstanceUID));
+        List<String> values = (List<String>) uidTag.get("Value");
+        assertEquals(values.get(0), ctStudyUID,
+                "Returned study should match queried StudyInstanceUID");
+    }
+
+    /**
+     * Hex-tag form of the Modality filter must exclude non-matching
+     * modalities exactly as the keyword form does.
+     */
+    @Test(priority = 1)
+    public void testQidoSearchStudies_HexTagModality() {
+        List<Map<String, Object>> studies = qidoStudies(
+                tagId(Tag.Modality) + "=CT");
+        assertTrue(containsStudyUID(studies, ctStudyUID),
+                "Hex-tag Modality=CT filter should include the CT study");
+        assertFalse(containsStudyUID(studies, mrStudyUID),
+                "Hex-tag Modality=CT filter should exclude the MR study");
+    }
+
+    /**
+     * ModalitiesInStudy (0008,0061) is treated as an alias for
+     * Modality (0008,0060) — verify both the alias keyword and its
+     * hex-tag form take effect.
+     */
+    @Test(priority = 1)
+    public void testQidoSearchStudies_HexTagModalitiesInStudyAliasesModality() {
+        List<Map<String, Object>> studies = qidoStudies(
+                tagId(Tag.ModalitiesInStudy) + "=CT");
+        assertTrue(containsStudyUID(studies, ctStudyUID),
+                "Hex-tag ModalitiesInStudy=CT should include the CT study "
+                + "(alias for Modality)");
+        assertFalse(containsStudyUID(studies, mrStudyUID),
+                "Hex-tag ModalitiesInStudy=CT should exclude the MR study");
+    }
+
+    /**
+     * The motivating case: hex-tag form of the StudyDate range must
+     * actually filter (not be silently ignored). A single-day range
+     * around the known MR study date must include the MR study and
+     * exclude studies on other dates.
+     */
+    @Test(priority = 1)
+    public void testQidoSearchStudies_HexTagStudyDateRange() {
+        String dateRange = mrStudyDate + "-" + mrStudyDate;
+        List<Map<String, Object>> studies = qidoStudies(
+                tagId(Tag.StudyDate) + "=" + dateRange);
+        assertTrue(containsStudyUID(studies, mrStudyUID),
+                "Hex-tag StudyDate range " + dateRange
+                + " should include the MR study");
+    }
+
+    /**
+     * Hex-tag {@code {attributeID}} must be accepted case-insensitively
+     * (PS3.18 doesn't require a specific case; clients emit both).
+     */
+    @Test(priority = 1)
+    public void testQidoSearchStudies_HexTagLowerCase() {
+        List<Map<String, Object>> studies = qidoStudies(
+                tagId(Tag.StudyInstanceUID).toLowerCase()
+                        + "=" + ctStudyUID);
+        assertEquals(studies.size(), 1,
+                "Lowercase hex-tag filter should return exactly 1 study");
+    }
+
+    /**
+     * Some clients send the DIMSE-style {@code (gggg,eeee)} form.
+     * The plugin tolerates it as a convenience even though PS3.18
+     * doesn't require this spelling.
+     */
+    @Test(priority = 1)
+    public void testQidoSearchStudies_ParenthesizedTagForm() {
+        // (0008,0060) instead of 00080060
+        String endpoint = String.format(
+                "/dicomweb/projects/%s/studies?(0008,0060)=CT",
+                testProject.getId());
+        Response response = mainQueryBase()
+                .get(formatXapiUrl(endpoint))
+                .then().assertThat().statusCode(200)
+                .contentType("application/dicom+json")
+                .extract().response();
+        List<Map<String, Object>> studies = response.jsonPath().getList("$");
+        assertTrue(containsStudyUID(studies, ctStudyUID),
+                "Parenthesized (0008,0060)=CT filter should include the CT study");
+        assertFalse(containsStudyUID(studies, mrStudyUID),
+                "Parenthesized (0008,0060)=CT filter should exclude the MR study");
+    }
+
+    /**
+     * The strongest statement of the fix: for the same underlying
+     * query, the keyword and hex-tag forms must return the exact
+     * same set of studies (by UID). If one form applies a filter
+     * and the other doesn't, this test catches it directly.
+     */
+    @Test(priority = 1)
+    public void testQidoSearchStudies_KeywordAndHexTagFormsReturnSameStudies() {
+        Set<String> byKeyword = studyUidsIn(qidoStudies("Modality=CT"));
+        Set<String> byHexTag  = studyUidsIn(qidoStudies(
+                tagId(Tag.Modality) + "=CT"));
+        assertEquals(byHexTag, byKeyword,
+                "Keyword and hex-tag Modality=CT must return the same "
+                + "set of studies. Keyword: " + byKeyword
+                + " Hex-tag: " + byHexTag);
+
+        // Repeat with the date-range case, which was the specific
+        // regression that motivated adding hex-tag support.
+        String dateRange = mrStudyDate + "-" + mrStudyDate;
+        Set<String> dateByKeyword = studyUidsIn(qidoStudies(
+                "StudyDate=" + dateRange));
+        Set<String> dateByHexTag  = studyUidsIn(qidoStudies(
+                tagId(Tag.StudyDate) + "=" + dateRange));
+        assertEquals(dateByHexTag, dateByKeyword,
+                "Keyword and hex-tag StudyDate range must return the same "
+                + "set of studies. Keyword: " + dateByKeyword
+                + " Hex-tag: " + dateByHexTag);
+    }
+
+    /**
+     * Series-level QIDO must also accept hex-tag form (SeriesInstanceUID
+     * and Modality are the two study-and-series-level parameters).
+     */
+    @Test(priority = 2)
+    public void testQidoSearchSeries_HexTagModalityMatchesKeyword() {
+        String base = String.format("/dicomweb/projects/%s/studies/%s/series",
+                testProject.getId(), ctStudyUID);
+
+        Response kwResponse = mainQueryBase()
+                .get(formatXapiUrl(base + "?Modality=CT"))
+                .then().assertThat().statusCode(200)
+                .contentType("application/dicom+json")
+                .extract().response();
+        List<Map<String, Object>> byKeyword = kwResponse.jsonPath().getList("$");
+
+        Response hexResponse = mainQueryBase()
+                .get(formatXapiUrl(base + "?" + tagId(Tag.Modality) + "=CT"))
+                .then().assertThat().statusCode(200)
+                .contentType("application/dicom+json")
+                .extract().response();
+        List<Map<String, Object>> byHexTag = hexResponse.jsonPath().getList("$");
+
+        Set<String> kwUids = new HashSet<>();
+        for (Map<String, Object> s : byKeyword) {
+            kwUids.add((String) ((List<?>) ((Map<?, ?>)
+                    s.get(tagKey(Tag.SeriesInstanceUID))).get("Value")).get(0));
+        }
+        Set<String> hxUids = new HashSet<>();
+        for (Map<String, Object> s : byHexTag) {
+            hxUids.add((String) ((List<?>) ((Map<?, ?>)
+                    s.get(tagKey(Tag.SeriesInstanceUID))).get("Value")).get(0));
+        }
+        assertEquals(hxUids, kwUids,
+                "Series-level Modality=CT: keyword and hex-tag forms must "
+                + "return the same series UIDs. Keyword: " + kwUids
+                + " Hex-tag: " + hxUids);
     }
 
     // ========================================
