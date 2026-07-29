@@ -18,6 +18,7 @@ import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.pogo.extensions.subject_assessor.DicomZipImportExtension;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SessionImportExtension;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SubjectAssessorExtension;
+import org.nrg.xnat.versions.Xnat_1_10_1;
 import org.nrg.xnat.versions.Xnat_1_8_10;
 import org.nrg.xnat.versions.Xnat_1_8_4;
 import org.nrg.xnat.versions.Xnat_1_8_5;
@@ -218,6 +219,7 @@ public class TestDicomModalityAssignment extends BaseXnatRestTest {
     }
 
     @AddedIn(Xnat_1_8_10.class)
+    @DeprecatedIn(Xnat_1_10_1.class)
     public void testModalityExtractionPetMrSplit() {
         final Map<DataType, List<SeriesSpec>> seriesSpecs = new HashMap<>();
         seriesSpecs.put(
