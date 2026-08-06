@@ -28,9 +28,11 @@ import org.nrg.xnat.pogo.extensions.project.ProjectXMLPostExtension;
 import org.nrg.xnat.pogo.extensions.project.ProjectXMLPutExtension;
 import org.nrg.xnat.pogo.extensions.subject.SubjectXMLPutExtension;
 import org.nrg.xnat.pogo.extensions.subject_assessor.SubjectAssessorXMLExtension;
+import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.versions.Xnat_1_8_3;
 import org.nrg.xnat.versions.Xnat_1_8_4;
+import org.nrg.xnat.versions.Xnat_1_10_1;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -50,6 +52,14 @@ import static org.testng.AssertJUnit.assertEquals;
 @TestRequires(data = {TestData.SAMPLE_1, TestData.DICOM_WEB_PETMR1}, dicomScp = true)
 @AddedIn(Xnat_1_8_0.class)
 public class TestEventDetection extends BaseEventServiceTest {
+
+    // XNAT-8342 (1.10.1) removed PET/MR separation: PetMrProcessingSetting.SPLIT no
+    // longer splits a PET/MR import into separate PET + MR sessions, so the split
+    // scenario (and its expected session/assessor/scan events) only applies to
+    // earlier versions. On 1.10.1+ the PET/MR leg of the setup is skipped entirely.
+    // TODO: once the unsplit petmr session's event shape (label, scan events) is
+    // chartered on 1.10.1+, re-add coverage for it instead of skipping.
+    private static final boolean PETMR_SPLIT_SUPPORTED = XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_10_1.class);
 
     private final String SAMPLE1_SERIES_DESC1 = "t1_mpr_1mm_p2_pos50";
     private final String SAMPLE1_SERIES_DESC2 = "t2_spc_1mm_p2";
@@ -110,22 +120,23 @@ public class TestEventDetection extends BaseEventServiceTest {
         turbineProjectFormData.put("accessibility", Accessibility.PRIVATE.toString());
         mainInterface().requestWithCsrfToken().formParams(turbineProjectFormData).post(formatXnatUrl("/app/action/AddProject")).then().assertThat().statusCode(200);
         projectsToCleanup.add(turbineProject);
-        mainInterface().setProjectPetMrSetting(turbineProject, PetMrProcessingSetting.SPLIT);
-
         aaSubject = new Subject(turbineProject, appendRandom("AA"));
         aaSession = new MRSession(turbineProject, aaSubject, appendRandom("AA"));
         final Map<Integer, String> aaHeaders = new HashMap<>();
         aaHeaders.put(Tag.PatientName, aaSubject.getLabel());
         aaHeaders.put(Tag.PatientID, aaSession.getLabel());
         new XnatCStore().data(TestData.SAMPLE_1).overwrittenHeaders(aaHeaders).sendDICOMToProject(turbineProject);
-        final String splitSubjectBase = appendRandom("SPLIT");
-        petMrSubject = new Subject(turbineProject, splitSubjectBase);
-        final Map<Integer, String> petMrHeaders = new HashMap<>();
-        petMrHeaders.put(Tag.PatientName, splitSubjectBase);
-        petMrHeaders.put(Tag.PatientID, splitSubjectBase + "_PETMR");
-        new XnatCStore().data(TestData.DICOM_WEB_PETMR1).overwrittenHeaders(petMrHeaders).sendDICOMToProject(turbineProject);
-        splitMr = new MRSession(turbineProject, petMrSubject, splitSubjectBase + "_MR");
-        splitPet = new PETSession(turbineProject, petMrSubject, splitSubjectBase + "_PET");
+        if (PETMR_SPLIT_SUPPORTED) {
+            mainInterface().setProjectPetMrSetting(turbineProject, PetMrProcessingSetting.SPLIT);
+            final String splitSubjectBase = appendRandom("SPLIT");
+            petMrSubject = new Subject(turbineProject, splitSubjectBase);
+            final Map<Integer, String> petMrHeaders = new HashMap<>();
+            petMrHeaders.put(Tag.PatientName, splitSubjectBase);
+            petMrHeaders.put(Tag.PatientID, splitSubjectBase + "_PETMR");
+            new XnatCStore().data(TestData.DICOM_WEB_PETMR1).overwrittenHeaders(petMrHeaders).sendDICOMToProject(turbineProject);
+            splitMr = new MRSession(turbineProject, petMrSubject, splitSubjectBase + "_MR");
+            splitPet = new PETSession(turbineProject, petMrSubject, splitSubjectBase + "_PET");
+        }
 
         new ProjectXMLPutExtension(restXmlProject, generateProjectXml(restXmlProject)).create(mainInterface());
         projectsToCleanup.add(restXmlProject);
@@ -197,9 +208,11 @@ public class TestEventDetection extends BaseEventServiceTest {
         importerScan1 = new MRScan(importerSession, "4").type(SAMPLE1_SERIES_DESC1);
         importerScan2 = new MRScan(importerSession, "5").type(SAMPLE1_SERIES_DESC1);
         importerScan3 = new MRScan(importerSession, "6").type(SAMPLE1_SERIES_DESC2);
-        splitMrScan1 = new MRScan(splitMr, "5436027").type("Aligned_T1toPET_BOX");
-        splitMrScan2 = new MRScan(splitMr, "5442056").type("Aligned_T2FStoPET_BOX");
-        splitPetScan = new PETScan(splitPet, "1").type("PET AC");
+        if (PETMR_SPLIT_SUPPORTED) {
+            splitMrScan1 = new MRScan(splitMr, "5436027").type("Aligned_T1toPET_BOX");
+            splitMrScan2 = new MRScan(splitMr, "5442056").type("Aligned_T2FStoPET_BOX");
+            splitPetScan = new PETScan(splitPet, "1").type("PET AC");
+        }
         xmlUploadScan1 = new MRScan(xmlUploadSession, "1").type(XML_SERIES_DESC1);
         xmlUploadScan2 = new MRScan(xmlUploadSession, "2");
         xmlUploadScan3 = new Scan(xmlUploadSession, "3-OT").type(XML_SERIES_DESC3);
@@ -224,7 +237,10 @@ public class TestEventDetection extends BaseEventServiceTest {
 
     @Test
     public void testSubjectCreateEvent() {
-        final Set<Subject> created = Sets.newHashSet(restSubject, turbineSubject, aaSubject, xmlUploadSubject, importerSubject, restXmlSubject, petMrSubject);
+        final Set<Subject> created = Sets.newHashSet(restSubject, turbineSubject, aaSubject, xmlUploadSubject, importerSubject, restXmlSubject);
+        if (PETMR_SPLIT_SUPPORTED) {
+            created.add(petMrSubject);
+        }
         final List<DeliveredEvent> subjectEvents = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(subjectCreated), created.size()
         );
@@ -237,7 +253,11 @@ public class TestEventDetection extends BaseEventServiceTest {
 
     @Test
     public void testSessionCreateEvent() {
-        final Set<ImagingSession> created = Sets.newHashSet(restSession, aaSession, importerSession, splitMr, splitPet, turbineSession, restXmlSession, xmlUploadSession);
+        final Set<ImagingSession> created = Sets.newHashSet(restSession, aaSession, importerSession, turbineSession, restXmlSession, xmlUploadSession);
+        if (PETMR_SPLIT_SUPPORTED) {
+            created.add(splitMr);
+            created.add(splitPet);
+        }
         final List<DeliveredEvent> sessionEvents = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(sessionCreated), created.size()
         );
@@ -251,7 +271,11 @@ public class TestEventDetection extends BaseEventServiceTest {
     @Test
     @AddedIn(Xnat_1_8_3.class)
     public void testSubjectAssessorCreateEvent() {
-        final Set<SubjectAssessor> created = Sets.newHashSet(restSession, aaSession, importerSession, splitMr, splitPet, turbineSession, restXmlSession, xmlUploadSession, restSubjectAssessor, turbineSubjectAssessor, xmlUploadSubjectAssessor, restXmlSubjectAssessor);
+        final Set<SubjectAssessor> created = Sets.newHashSet(restSession, aaSession, importerSession, turbineSession, restXmlSession, xmlUploadSession, restSubjectAssessor, turbineSubjectAssessor, xmlUploadSubjectAssessor, restXmlSubjectAssessor);
+        if (PETMR_SPLIT_SUPPORTED) {
+            created.add(splitMr);
+            created.add(splitPet);
+        }
         final List<DeliveredEvent> sessionEvents = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(subjectAssessorCreated), created.size()
         );
@@ -264,8 +288,13 @@ public class TestEventDetection extends BaseEventServiceTest {
 
     @Test
     public void testScanCreateEvent() {
-        final Set<Scan> created = Sets.newHashSet(aaScan1, aaScan2, aaScan3, importerScan1, importerScan2, importerScan3, splitMrScan1, splitMrScan2, splitPetScan,
+        final Set<Scan> created = Sets.newHashSet(aaScan1, aaScan2, aaScan3, importerScan1, importerScan2, importerScan3,
                 xmlUploadScan1, xmlUploadScan2, xmlUploadScan3, restXmlScan1, restXmlScan2, restXmlScan3, turbineScan1, turbineScan2, turbineScan3);
+        if (PETMR_SPLIT_SUPPORTED) {
+            created.add(splitMrScan1);
+            created.add(splitMrScan2);
+            created.add(splitPetScan);
+        }
         final List<DeliveredEvent> scanEvents = mainAdminInterface().queryDeliveredEvents(
                 buildDeliveredEventQueryForSubscription(scanCreated), created.size()
         );
