@@ -24,6 +24,7 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -261,37 +262,32 @@ public class TestAdvancedSearch extends BaseXnatRestTest {
     }
 
     private int getSubjectCountFromDataApi() {
-        return mainInterface()
-                .jsonQuery()
-                .get(formatRestUrl("/subjects"))
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .extract()
-                .response()
-                .jsonPath()
-                .getList(RESULT_SET_DOT_RESULT)
-                .size();
+        return distinctRowCount(dataApiRows("/subjects"), r -> r.get("ID"));
     }
 
     private int getSessionCountFromDataApi() {
-        return mainInterface()
-                .jsonQuery()
-                .get(formatRestUrl("/experiments?xsiType=xnat:mrSessionData"))
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .extract()
-                .response()
-                .jsonPath()
-                .getList(RESULT_SET_DOT_RESULT)
-                .size();
+        return distinctRowCount(dataApiRows("/experiments?xsiType=xnat:mrSessionData"), r -> r.get("ID"));
     }
 
     private int getScanCountFromDataApi() {
-        List<Map<String, Object>> results = mainInterface()
+        // A scan is uniquely identified by its session plus its scan ID; count distinct pairs so that a
+        // session shared into multiple projects (which the listing repeats once per membership) is not
+        // over-counted relative to the DISTINCT stored search.
+        return distinctRowCount(
+                dataApiRows("/experiments?columns=xnat:mrSessionData/scans/scan/ID").stream()
+                        .filter(r -> StringUtils.isNotBlank((String) r.get("xnat:mrsessiondata/scans/scan/id")))
+                        .collect(Collectors.toList()),
+                r -> r.get("xnat:mrsessiondata/id") + "/" + r.get("xnat:mrsessiondata/scans/scan/id"));
+    }
+
+    private int getQcCountFromDataApi() {
+        return distinctRowCount(dataApiRows("/experiments?xsiType=xnat:qcManualAssessorData"), r -> r.get("ID"));
+    }
+
+    private List<Map<String, Object>> dataApiRows(final String path) {
+        return mainInterface()
                 .jsonQuery()
-                .get(formatRestUrl("/experiments?columns=xnat:mrSessionData/scans/scan/ID"))
+                .get(formatRestUrl(path))
                 .then()
                 .assertThat()
                 .statusCode(200)
@@ -299,23 +295,16 @@ public class TestAdvancedSearch extends BaseXnatRestTest {
                 .response()
                 .jsonPath()
                 .getList(RESULT_SET_DOT_RESULT);
-        return (int) results.stream()
-                .filter(r -> StringUtils.isNotBlank((String) r.get("xnat:mrsessiondata/scans/scan/id")))
-                .count();
     }
 
-    private int getQcCountFromDataApi() {
-        return mainInterface()
-                .jsonQuery()
-                .get(formatRestUrl("/experiments?xsiType=xnat:qcManualAssessorData"))
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .extract()
-                .response()
-                .jsonPath()
-                .getList(RESULT_SET_DOT_RESULT)
-                .size();
+    /**
+     * The data API listings ({@code /subjects}, {@code /experiments}) return one row per accessible
+     * project membership, so an entity shared into another project appears multiple times. The stored
+     * searches these counts are compared against return DISTINCT entities, so count distinct identities
+     * here to keep the two comparable regardless of sharing.
+     */
+    private static int distinctRowCount(final List<Map<String, Object>> rows, final Function<Map<String, Object>, Object> identity) {
+        return (int) rows.stream().map(identity).distinct().count();
     }
 
     private List<Map<String, Object>> getRestCallResults(final String file) throws IOException {
