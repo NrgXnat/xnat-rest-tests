@@ -15,6 +15,7 @@ import org.nrg.xnat.pogo.dicom.DicomObjectIdentifier;
 import org.nrg.xnat.pogo.dicom.DicomScpReceiver;
 import org.nrg.xnat.pogo.experiments.SubjectAssessor;
 import org.nrg.xnat.pogo.experiments.sessions.PETSession;
+import org.nrg.xnat.versions.Xnat_1_10_1;
 import org.nrg.xnat.versions.Xnat_1_8_5;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -156,6 +157,44 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
         String responseString = mainAdminInterface().queryBase().contentType(JSON).body(unknownIdentifierReceiver).post(formatXapiUrl("dicomscp"))
                 .then().assertThat().statusCode(400).extract().asString();
         assertTrue(responseString.contains("unknown DICOM Object Identifier 'unknownIdentifier'"));
+    }
+
+    /**
+     * A DICOM tag is a single unsigned 32-bit number, group in the high half and element in the low
+     * half, so the tag (F215,1050) is the number 0xF2151050 -- larger than Integer.MAX_VALUE. Saving a
+     * receiver whose routing expression is keyed on such a tag used to be rejected, because the
+     * expression is parsed during validation and the tag was read with a signed parse.
+     *
+     * routingExpressionsEnabled(true) is required rather than incidental. DicomSCPInstanceService
+     * .validate() returns immediately when routing expressions are disabled, so with that flag off the
+     * expression is never parsed and this test would pass whether the tag parses or not.
+     */
+    @Test(groups = VALIDATION)
+    @AddedIn(Xnat_1_10_1.class)
+    public void testHighGroupRoutingExpression() {
+        project = null;
+        final DicomScpReceiver highGroupReceiver
+                = new DicomScpReceiver().aeTitle(RandomHelper.randomID())
+                .host(Settings.DICOM_HOST)
+                .port(Settings.DICOM_PORT)
+                .identifier(DicomObjectIdentifier.DEFAULT.getId())
+                .enabled(true)
+                .customProcessing(false)
+                .directArchive(true)
+                .anonymizationEnabled(true)
+                .whitelistEnabled(false)
+                .routingExpressionsEnabled(true)
+                .projectRoutingExpression("(F215,1050):Project:(\\w+):1");
+        try {
+            mainAdminInterface().queryBase().contentType(JSON).body(highGroupReceiver).post(formatXapiUrl("dicomscp"))
+                    .then().assertThat().statusCode(200);
+        } finally {
+            try {
+                mainAdminInterface().deleteDicomScpReceiver(highGroupReceiver);
+            } catch (Throwable throwable) {
+                LOG.warn(throwable);
+            }
+        }
     }
 
     /**
