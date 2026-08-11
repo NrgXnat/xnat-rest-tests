@@ -185,16 +185,10 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
                 .whitelistEnabled(false)
                 .routingExpressionsEnabled(true)
                 .projectRoutingExpression("(F215,1050):Project:(\\w+):1");
-        try {
-            mainAdminInterface().queryBase().contentType(JSON).body(highGroupReceiver).post(formatXapiUrl("dicomscp"))
-                    .then().assertThat().statusCode(200);
-        } finally {
-            try {
-                mainAdminInterface().deleteDicomScpReceiver(highGroupReceiver);
-            } catch (Throwable throwable) {
-                LOG.warn(throwable);
-            }
-        }
+        // createDicomScpReceiver asserts the POST returned 200, which is the assertion under test, and sets
+        // the id on the receiver so it can be deleted afterwards. If it throws, nothing was created to clean up.
+        mainAdminInterface().createDicomScpReceiver(highGroupReceiver);
+        mainAdminInterface().deleteDicomScpReceiver(highGroupReceiver);
     }
 
     /**
