@@ -168,10 +168,17 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
      * routingExpressionsEnabled(true) is required rather than incidental. DicomSCPInstanceService
      * .validate() returns immediately when routing expressions are disabled, so with that flag off the
      * expression is never parsed and this test would pass whether the tag parses or not.
+     *
+     * This covers saving the receiver, and only that. Routing on such a tag does not yet work end to
+     * end: the tag reaches CompositeDicomObjectIdentifier.getTags(), which builds a naturally ordered
+     * set, so a tag above 0x7FFFFFFF sorts first rather than last. GradualDicomImporter then takes
+     * .last() of that set to decide how much of the object to read, stops short of the tag, and the
+     * routing never fires. That is XNAT-7933; until it is fixed, do not read this test as evidence
+     * that high-group routing works.
      */
     @Test(groups = VALIDATION)
     @AddedIn(Xnat_1_10_1.class)
-    public void testHighGroupRoutingExpression() {
+    public void testHighGroupRoutingExpressionSaves() {
         project = null;
         final DicomScpReceiver highGroupReceiver
                 = new DicomScpReceiver().aeTitle(RandomHelper.randomID())
