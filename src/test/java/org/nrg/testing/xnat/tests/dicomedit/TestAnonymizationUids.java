@@ -88,7 +88,15 @@ public class TestAnonymizationUids extends BaseAnonymizationTest {
     /**
      * Capture the effect of anon on transfer syntax.
      * 1. Anon without pixel edits retains the original xfer syntax.
-     * 2. Anon with pixel edits always results in EVLE data.
+     * 2. Anon with pixel edits also retains it, where the syntax can be re-encoded.
+     * <p>
+     * Pixel edits used to rewrite every object as EVLE, because the redaction ran through pixelmed,
+     * which decompresses and never compresses again. Decompressing a losslessly compressed object
+     * inflates it several-fold for no gain in fidelity, and undoes any pre-compression applied on
+     * import, so redaction now decodes, edits, and re-encodes back to the original syntax. Lossy
+     * input is the exception and is still stored uncompressed, since re-encoding it would impose a
+     * second generation of loss over the whole image to redact one rectangle of it.
+     * <p>
      * This test makes due with pre-existing data sets but flings about many images when a single image would do, thus taking much longer than necessary to run.
      */
     @AddedIn(Xnat_1_8_4.class)
@@ -122,12 +130,14 @@ public class TestAnonymizationUids extends BaseAnonymizationTest {
 
         new BasicAnonymizationTest("alterPixelsXferSyntax.das")
                 .withData(ivleData)
-                .withValidation(new TransferSyntaxScript(UID.ExplicitVRLittleEndian))
+                .withValidation(new TransferSyntaxScript(UID.ImplicitVRLittleEndian))
                 .run();
 
+        // Lossless, so it is re-encoded rather than left decompressed: bit-exact, and several times
+        // smaller than the EVLE this used to produce.
         new BasicAnonymizationTest("alterPixelsXferSyntax.das")
                 .withData(jpglosslessData)
-                .withValidation(new TransferSyntaxScript(UID.ExplicitVRLittleEndian))
+                .withValidation(new TransferSyntaxScript(UID.JPEGLosslessSV1))
                 .run();
     }
 

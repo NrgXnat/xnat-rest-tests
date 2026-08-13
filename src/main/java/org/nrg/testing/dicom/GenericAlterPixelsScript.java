@@ -23,10 +23,23 @@ import static org.testng.AssertJUnit.assertEquals;
 public abstract class GenericAlterPixelsScript extends ScriptValidation {
 
     protected TestData testedDataset;
+    private final int fillValue;
     private static final Logger LOGGER = Logger.getLogger(GenericAlterPixelsScript.class);
 
     GenericAlterPixelsScript(TestData testedDataset) {
+        this(testedDataset, 0);
+    }
+
+    /**
+     * @param fillValue the stored value alterPixels was asked to write, from the script's
+     *                  {@code "solid", "v=<n>"} argument. It used to be ignored: the redaction ran
+     *                  through pixelmed's blackout, which always writes zero whatever the script
+     *                  says. A script asking for 100 now gets 100, so the expected value has to come
+     *                  from the script rather than being assumed.
+     */
+    GenericAlterPixelsScript(TestData testedDataset, int fillValue) {
         this.testedDataset = testedDataset;
+        this.fillValue = fillValue;
     }
 
     @Override
@@ -90,11 +103,9 @@ public abstract class GenericAlterPixelsScript extends ScriptValidation {
 
     protected abstract boolean pixelIsWithinBlackoutRegion(int x, int y, int z);
 
-    private final static PixelValue REDACTED_PIXEL_VALUE = new PixelValue(0);
-
     protected PixelValue getExpectedBlackoutPixelValue(int x, int y, int z) throws ImageProcessingException {
         if (pixelIsWithinBlackoutRegion(x, y, z)) {
-            return REDACTED_PIXEL_VALUE;
+            return new PixelValue(fillValue);
         } else {
             throw new ImageProcessingException(String.format("Requesting redacted pixel value in non-redacted region %d,%d,%d (x,y,z)", x, y, z));
         }
