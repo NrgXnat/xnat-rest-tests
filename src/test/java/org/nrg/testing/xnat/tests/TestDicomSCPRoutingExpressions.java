@@ -105,6 +105,19 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
             .subjectRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):2")
             .sessionRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):3");
 
+    private final DicomScpReceiver highGroupRouteReceiver
+            = new DicomScpReceiver().aeTitle(RandomHelper.randomID())
+            .host(Settings.DICOM_HOST)
+            .port(Settings.DICOM_PORT)
+            .identifier(DicomObjectIdentifier.DEFAULT.getId())
+            .enabled(true)
+            .customProcessing(false)
+            .directArchive(true)
+            .anonymizationEnabled(true)
+            .whitelistEnabled(false)
+            .routingExpressionsEnabled(false)
+            .projectRoutingExpression("(F215,1050):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):1");
+
     private final DicomScpReceiver dqrReceiver
             = new DicomScpReceiver().aeTitle(RandomHelper.randomID())
             .host(Settings.DICOM_HOST)
@@ -125,6 +138,7 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
         mainAdminInterface().createDicomScpReceiver(allRouteReceiver);
         mainAdminInterface().createDicomScpReceiver(someRoutesReceiver);
         mainAdminInterface().createDicomScpReceiver(simpleRouteReceiver);
+        mainAdminInterface().createDicomScpReceiver(highGroupRouteReceiver);
         mainAdminInterface().setSessionXmlRebuilderTimes(1, 10000);
     }
 
@@ -146,6 +160,7 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
         mainAdminInterface().deleteDicomScpReceiver(allRouteReceiver);
         mainAdminInterface().deleteDicomScpReceiver(someRoutesReceiver);
         mainAdminInterface().deleteDicomScpReceiver(simpleRouteReceiver);
+        mainAdminInterface().deleteDicomScpReceiver(highGroupRouteReceiver);
     }
 
     /**
@@ -196,6 +211,42 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
         // the id on the receiver so it can be deleted afterwards. If it throws, nothing was created to clean up.
         mainAdminInterface().createDicomScpReceiver(highGroupReceiver);
         mainAdminInterface().deleteDicomScpReceiver(highGroupReceiver);
+    }
+
+    /**
+     * XNAT-7933. Routing on a tag above 0x7FFFFFFF has to actually route, not merely save.
+     *
+     * lastTag in GradualDicomImporter decides how much of an incoming object is read before the
+     * identifier runs, and it was derived from getTags().last(). That set is naturally ordered, so such
+     * a tag sorted first rather than last, the read stopped short of it, and the extractor found
+     * nothing -- the receiver accepted the expression and then quietly never routed on it.
+     *
+     * Unverified against a live server: this sets (F215,0010) and (F215,1050) through
+     * overwrittenHeaders, and the VR that path picks for a private tag is not something I could
+     * determine from the sources. If this fails on the tag's value rather than on the routing, that is
+     * the first thing to check.
+     */
+    @Test
+    @AddedIn(Xnat_1_10_1.class)
+    public void testHighGroupRoutingExpressionRoutes() {
+        highGroupRouteReceiver.routingExpressionsEnabled(true);
+        mainAdminInterface().updateDicomScpReceiver(highGroupRouteReceiver);
+
+        project = new Project();
+        final String projectIdPost = project.getId() + "_hg";
+        project.setId(projectIdPost);
+        mainInterface().createProject(project);
+
+        final Map<Integer, String> hdr = Stream.of(new Object[][]{
+                {0xF2150010, "XNAT QA HIGH GROUP"},
+                {0xF2151050, String.format("Project:%s Subject:subj_hg Session:sess_hg", projectIdPost)},
+        }).collect(Collectors.toMap(data -> (Integer) data[0], data -> (String) data[1]));
+        uploadViaDicomScp(highGroupRouteReceiver, hdr);
+        waitForDicomRecieve(project);
+
+        final Project expectedProject = new Project(projectIdPost);
+        new PETSession(expectedProject, new Subject(expectedProject, "subj_hg"), "sess_hg");
+        compareProjects(expectedProject, mainAdminInterface().readProject(projectIdPost));
     }
 
     /**
