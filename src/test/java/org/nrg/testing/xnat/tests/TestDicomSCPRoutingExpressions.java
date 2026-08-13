@@ -1,6 +1,9 @@
 package org.nrg.testing.xnat.tests;
 
 import org.apache.log4j.Logger;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.VR;
+import org.nrg.xnat.dicom.CStore;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
@@ -221,10 +224,10 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
      * a tag sorted first rather than last, the read stopped short of it, and the extractor found
      * nothing -- the receiver accepted the expression and then quietly never routed on it.
      *
-     * Unverified against a live server: this sets (F215,0010) and (F215,1050) through
-     * overwrittenHeaders, and the VR that path picks for a private tag is not something I could
-     * determine from the sources. If this fails on the tag's value rather than on the routing, that is
-     * the first thing to check.
+     * The tag has to be set with an explicit VR. XnatCStore.overwrittenHeaders resolves the VR with
+     * ElementDictionary.vrOf(tag, null), which has no private creator to work from and picks a numeric
+     * VR for (F215,1050) -- setString then fails in parseIS on a routing string. CStore.headers takes a
+     * prepared Attributes instead, so the VR is stated rather than guessed.
      */
     @Test
     @AddedIn(Xnat_1_10_1.class)
@@ -237,11 +240,15 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
         project.setId(projectIdPost);
         mainInterface().createProject(project);
 
-        final Map<Integer, String> hdr = Stream.of(new Object[][]{
-                {0xF2150010, "XNAT QA HIGH GROUP"},
-                {0xF2151050, String.format("Project:%s Subject:subj_hg Session:sess_hg", projectIdPost)},
-        }).collect(Collectors.toMap(data -> (Integer) data[0], data -> (String) data[1]));
-        uploadViaDicomScp(highGroupRouteReceiver, hdr);
+        final Attributes overrides = new Attributes();
+        overrides.setString(0xF2150010, VR.LO, "XNAT QA HIGH GROUP");
+        overrides.setString(0xF2151050, VR.LO,
+                            String.format("Project:%s Subject:subj_hg Session:sess_hg", projectIdPost));
+        CStore.to(highGroupRouteReceiver.getAeTitle(), highGroupRouteReceiver.getHost(),
+                  highGroupRouteReceiver.getPort(), Settings.CALLING_AE_TITLE)
+              .directory(TestData.SIMPLE_PET.toDirectory())
+              .headers(overrides)
+              .send();
         waitForDicomRecieve(project);
 
         final Project expectedProject = new Project(projectIdPost);

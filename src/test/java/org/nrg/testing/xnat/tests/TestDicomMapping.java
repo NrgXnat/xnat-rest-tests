@@ -1,5 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
+import io.restassured.http.ContentType;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
@@ -313,7 +314,13 @@ public class TestDicomMapping extends BaseXnatRestTest {
                 .dicomTag("0x1F2151050")
                 .forDataType(DataType.MR_SESSION);
 
-        expectStatusCode(() -> mainAdminInterface().createOrUpdateDicomMapping(dicomMapping), 400);
+        // createOrUpdateDicomMapping asserts a 200 itself, so it cannot express a rejection. Put the
+        // entity directly and assert the 400 and the message.
+        final String response = mainAdminInterface().queryBase().contentType(ContentType.JSON).body(dicomMapping)
+                                                    .put(formatXapiUrl("dicom_mappings", "update"))
+                                                    .then().assertThat().statusCode(400)
+                                                    .extract().asString();
+        assertTrue(response.contains("is not a valid hexadecimal integer"));
         assertMappingNotFound(dicomMapping);
     }
 
