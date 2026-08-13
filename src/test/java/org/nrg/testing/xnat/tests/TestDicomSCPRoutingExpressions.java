@@ -119,7 +119,9 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
             .anonymizationEnabled(true)
             .whitelistEnabled(false)
             .routingExpressionsEnabled(false)
-            .projectRoutingExpression("(F215,1050):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):1");
+            .projectRoutingExpression("(F215,1050):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):1")
+            .subjectRoutingExpression("(F215,1050):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):2")
+            .sessionRoutingExpression("(F215,1050):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):3");
 
     private final DicomScpReceiver dqrReceiver
             = new DicomScpReceiver().aeTitle(RandomHelper.randomID())
