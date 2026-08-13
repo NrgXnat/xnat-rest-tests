@@ -15,6 +15,7 @@ import org.nrg.xnat.pogo.dicom.DicomObjectIdentifier;
 import org.nrg.xnat.pogo.dicom.DicomScpReceiver;
 import org.nrg.xnat.pogo.experiments.SubjectAssessor;
 import org.nrg.xnat.pogo.experiments.sessions.PETSession;
+import org.nrg.xnat.versions.Xnat_1_10_1;
 import org.nrg.xnat.versions.Xnat_1_8_5;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -156,6 +157,45 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
         String responseString = mainAdminInterface().queryBase().contentType(JSON).body(unknownIdentifierReceiver).post(formatXapiUrl("dicomscp"))
                 .then().assertThat().statusCode(400).extract().asString();
         assertTrue(responseString.contains("unknown DICOM Object Identifier 'unknownIdentifier'"));
+    }
+
+    /**
+     * A DICOM tag is a single unsigned 32-bit number, group in the high half and element in the low
+     * half, so the tag (F215,1050) is the number 0xF2151050 -- larger than Integer.MAX_VALUE. Saving a
+     * receiver whose routing expression is keyed on such a tag used to be rejected, because the
+     * expression is parsed during validation and the tag was read with a signed parse.
+     *
+     * routingExpressionsEnabled(true) is required rather than incidental. DicomSCPInstanceService
+     * .validate() returns immediately when routing expressions are disabled, so with that flag off the
+     * expression is never parsed and this test would pass whether the tag parses or not.
+     *
+     * This covers saving the receiver, and only that. Routing on such a tag does not yet work end to
+     * end: the tag reaches CompositeDicomObjectIdentifier.getTags(), which builds a naturally ordered
+     * set, so a tag above 0x7FFFFFFF sorts first rather than last. GradualDicomImporter then takes
+     * .last() of that set to decide how much of the object to read, stops short of the tag, and the
+     * routing never fires. That is XNAT-7933; until it is fixed, do not read this test as evidence
+     * that high-group routing works.
+     */
+    @Test(groups = VALIDATION)
+    @AddedIn(Xnat_1_10_1.class)
+    public void testHighGroupRoutingExpressionSaves() {
+        project = null;
+        final DicomScpReceiver highGroupReceiver
+                = new DicomScpReceiver().aeTitle(RandomHelper.randomID())
+                .host(Settings.DICOM_HOST)
+                .port(Settings.DICOM_PORT)
+                .identifier(DicomObjectIdentifier.DEFAULT.getId())
+                .enabled(true)
+                .customProcessing(false)
+                .directArchive(true)
+                .anonymizationEnabled(true)
+                .whitelistEnabled(false)
+                .routingExpressionsEnabled(true)
+                .projectRoutingExpression("(F215,1050):Project:(\\w+):1");
+        // createDicomScpReceiver asserts the POST returned 200, which is the assertion under test, and sets
+        // the id on the receiver so it can be deleted afterwards. If it throws, nothing was created to clean up.
+        mainAdminInterface().createDicomScpReceiver(highGroupReceiver);
+        mainAdminInterface().deleteDicomScpReceiver(highGroupReceiver);
     }
 
     /**

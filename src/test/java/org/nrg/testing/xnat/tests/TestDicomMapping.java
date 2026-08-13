@@ -16,6 +16,7 @@ import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.dicom.DicomMapping;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.Scan;
+import org.nrg.xnat.versions.Xnat_1_10_1;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
@@ -274,6 +275,46 @@ public class TestDicomMapping extends BaseXnatRestTest {
         final String fullField = field + RandomStringUtils.randomAlphabetic(10).toLowerCase();
         POSSIBLE_FIELDS.add(fullField);
         return fullField;
+    }
+
+    /**
+     * A DICOM tag is a single unsigned 32-bit number, group in the high half and element in the low
+     * half, so the tag (F215,1050) is the number 0xF2151050 -- larger than Integer.MAX_VALUE. Saving a
+     * mapping on such a tag used to fail with "dicomTag 0xf2151050 is not a valid hexadecimal integer",
+     * which it is; the stored text was simply being parsed as a signed int.
+     *
+     * This covers saving the mapping and reading it back. The separate path that resolves the tag while
+     * importing a session is not exercised here.
+     */
+    @AddedIn(Xnat_1_10_1.class)
+    public void testDicomMappingHighGroupTag() {
+        final DicomMapping dicomMapping = new DicomMapping()
+                .forProject(otherProject)
+                .fieldName(RandomStringUtils.randomAlphabetic(20).toLowerCase())
+                .fieldType(VariableType.STRING)
+                .dicomTag(0xF2151050)
+                .forDataType(DataType.MR_SESSION);
+
+        mainAdminInterface().createOrUpdateDicomMapping(dicomMapping);
+        tempMappings.add(dicomMapping);
+        assertMappingFound(dicomMapping);
+    }
+
+    /**
+     * A tag wider than the 32 bits of a DICOM tag is rejected rather than truncated. Without the bound,
+     * 0x1F2151050 would silently become 0xF2151050 and the mapping would bind to a different tag.
+     */
+    @AddedIn(Xnat_1_10_1.class)
+    public void testDicomMappingTagOutOfRange() {
+        final DicomMapping dicomMapping = new DicomMapping()
+                .forProject(otherProject)
+                .fieldName(RandomStringUtils.randomAlphabetic(20).toLowerCase())
+                .fieldType(VariableType.STRING)
+                .dicomTag("0x1F2151050")
+                .forDataType(DataType.MR_SESSION);
+
+        expectStatusCode(() -> mainAdminInterface().createOrUpdateDicomMapping(dicomMapping), 400);
+        assertMappingNotFound(dicomMapping);
     }
 
     private void assertMappingFound(DicomMapping dicomMapping) {

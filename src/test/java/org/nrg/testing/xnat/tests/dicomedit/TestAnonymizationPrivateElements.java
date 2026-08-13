@@ -12,6 +12,7 @@ import org.nrg.testing.dicom.RemoveAllPrivateTags;
 import org.nrg.testing.dicom.RootDicomObject;
 import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
 import org.nrg.testing.enums.TestData;
+import org.nrg.xnat.versions.Xnat_1_10_1;
 import org.nrg.xnat.versions.Xnat_1_7_7;
 import org.nrg.xnat.versions.Xnat_1_8_10;
 import org.nrg.xnat.versions.Xnat_1_8_7;
@@ -48,6 +49,24 @@ public class TestAnonymizationPrivateElements extends BaseAnonymizationTest {
     private static final int PRIVATE_ID_1_SEQUENCE = 0x00651040;
     private static final int PRIVATE_ID_2_ELEMENT = 0x00651120;
     private static final int INNER_PRIVATE_ID_ELEMENT = 0x00771035;
+    private static final String HIGH_GROUP_CREATOR_ID = "XNAT QA HIGH GROUP";
+    private static final int HIGH_GROUP_ID_TAG = 0xF2150010;
+    private static final int HIGH_GROUP_ELEMENT = 0xF2151050;
+    private static final String OTHER_HIGH_GROUP_CREATOR_ID = "XNAT QA OTHER GROUP";
+    private static final int OTHER_HIGH_GROUP_ID_TAG = 0x97530010;
+    private static final int OTHER_HIGH_GROUP_ELEMENT = 0x97531050;
+    private static final LocallyCacheableDicomTransformation HIGH_GROUP_PRIVATE_DATA = new LocallyCacheableDicomTransformation("anon2_high_group_private_tags")
+            .data(TestData.ANON_2)
+            .createZip()
+            .simpleTransform(
+                    (dicom) -> {
+                        dicom.setString(HIGH_GROUP_ID_TAG, VR.LO, HIGH_GROUP_CREATOR_ID);
+                        dicom.setString(HIGH_GROUP_ELEMENT, VR.LT, "retained");
+                        dicom.setString(OTHER_HIGH_GROUP_ID_TAG, VR.LO, OTHER_HIGH_GROUP_CREATOR_ID);
+                        dicom.setString(OTHER_HIGH_GROUP_ELEMENT, VR.LT, "removed");
+                    }
+            );
+
     private static final LocallyCacheableDicomTransformation RETAIN_PRIVATE_TAGS_CUSTOM_DATA = new LocallyCacheableDicomTransformation("anon2_retain_custom_private_tags")
             .data(TestData.ANON_2)
             .createZip()
@@ -222,6 +241,24 @@ public class TestAnonymizationPrivateElements extends BaseAnonymizationTest {
     @AddedIn(Xnat_1_8_10.class)
     public void testRetainPrivateTagsVariable() {
         new StandardRetainPrivateTagsTest("variable.das").run();
+    }
+
+    /**
+     * A private group >= 0x8000 puts the group and element together past Integer.MAX_VALUE: (F215,1050)
+     * is 0xF2151050. Anonymizing an object containing such a block used to fail outright. Retaining one
+     * has to keep its private creator declaration as well as its data, because without the declaration
+     * the retained elements cannot be attributed to a vendor block.
+     */
+    @AddedIn(Xnat_1_10_1.class)
+    public void testRetainPrivateTagsHighGroup() {
+        new BasicAnonymizationTest(RETAIN_PRIVATE_TAGS, "highGroup.das")
+                .withData(HIGH_GROUP_PRIVATE_DATA)
+                .withValidation((root) -> {
+                    root.putValueEqualCheck(HIGH_GROUP_ID_TAG, HIGH_GROUP_CREATOR_ID, VR.LO);
+                    root.putValueEqualCheck(HIGH_GROUP_ELEMENT, "retained", VR.LT);
+
+                    root.putNonexistenceChecks(OTHER_HIGH_GROUP_ID_TAG, OTHER_HIGH_GROUP_ELEMENT);
+                }).run();
     }
 
     private class StandardRetainPrivateTagsTest extends BasicAnonymizationTest {
