@@ -29,13 +29,18 @@ import static org.testng.AssertJUnit.assertTrue;
  *       at org.dcm4che3.imageio.codec.ImageReaderFactory.getImageReaderFromImageIOServiceRegistry
  *       at org.nrg.xnat.snapshot.generator.impl.DicomImageRenderer.readImage
  * </pre>
- * The fixture holds both series in one study so a single import covers them, and so the uncompressed
+ * The fixture holds every series in one study so a single import covers them, and so the uncompressed
  * one is a true control: it differs from the compressed series in transfer syntax and nothing else.
  * That distinction is the point. A compressed series failing on its own could mean the codecs are
  * missing or that snapshot generation is broken outright, and those want different fixes; a control
  * that renders regardless says which.
+ * <p>
+ * The last two series are about the catalog rather than the codec. Only the primary catalog records
+ * dimensions_z, and {@code SOPModel.isPrimaryImagingSOP} decides which catalog a series lands in, so
+ * a Secondary Capture series arrives with no frame count -- the case that used to be refused outright
+ * -- and a multi-frame series separates the slice count from the file count.
  *
- * @see <a href="file:../../../../../../resources/data/j2k_snapshots.README.md">fixture provenance</a>
+ * @see <a href="file:../../../../../../resources/data/snapshot_codecs.README.md">fixture provenance</a>
  */
 @AddedIn(Xnat_1_10_1.class)
 @Test(groups = IMPORTER)
@@ -44,13 +49,16 @@ public class TestSnapshotCodecs extends BaseXnatRestTest {
     // registerTempProject rather than new Project: the base class deletes registered projects in an
     // @AfterClass, and this archives a session, so leaving it behind leaves files behind too.
     private final Project        project = registerTempProject();
-    private final Subject        subject = new Subject(project, "J2K_TEST_001");
-    private final ImagingSession session = new MRSession(project, subject, "J2K_SNAPSHOTS");
-    private final File           testZip = getDataFile("j2k_snapshots.zip");
+    private final Subject        subject = new Subject(project, "SNAPSHOT_TEST_001");
+    private final ImagingSession session = new MRSession(project, subject, "SNAPSHOT_CODECS");
+    private final File           testZip = getDataFile("snapshot_codecs.zip");
 
-    /** Scan ids follow SeriesNumber. See j2k_snapshots.README.md for what each series encodes. */
+    /** Scan ids follow SeriesNumber. See snapshot_codecs.README.md for what each series encodes. */
     private static final String SCAN_UNCOMPRESSED_CONTROL = "1";
     private static final String SCAN_JPEG2000_LOSSLESS    = "2";
+    private static final String SCAN_RLE_LOSSLESS         = "3";
+    private static final String SCAN_MULTIFRAME           = "4";
+    private static final String SCAN_SECONDARY_CAPTURE    = "5";
 
     @BeforeClass(groups = IMPORTER)
     private void importSession() {
@@ -72,6 +80,31 @@ public class TestSnapshotCodecs extends BaseXnatRestTest {
 
     public void testJpeg2000LosslessRenders() {
         assertSnapshotRenders(SCAN_JPEG2000_LOSSLESS);
+    }
+
+    /**
+     * RLE is decoded by dcm4che 5 now that the dcm4che 2 codec is gone, and which of the two served
+     * it used to depend on classpath order.
+     */
+    public void testRleLosslessRenders() {
+        assertSnapshotRenders(SCAN_RLE_LOSSLESS);
+    }
+
+    /**
+     * One file, eight frames. Everything else here has one frame per file, so this is the only case
+     * where a generator that counted files rather than frames would still look right.
+     */
+    public void testMultiFrameRenders() {
+        assertSnapshotRenders(SCAN_MULTIFRAME);
+    }
+
+    /**
+     * Secondary Capture is not a primary imaging SOP class, so this series lands in the secondary
+     * catalog, which carries no dimensions_z. Snapshot generation used to refuse that outright; it
+     * now counts frames off the objects instead.
+     */
+    public void testSecondaryCatalogRenders() {
+        assertSnapshotRenders(SCAN_SECONDARY_CAPTURE);
     }
 
     /**
