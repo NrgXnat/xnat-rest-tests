@@ -55,8 +55,11 @@ public class TestSnapshotCodecs extends BaseXnatRestTest {
     @BeforeClass(groups = IMPORTER)
     private void importSession() {
         mainInterface().createProject(project);
-        mainInterface().callImporter(new DicomZipRequest().directArchive().project(project).file(testZip));
-        restDriver.waitForDirectArchiveEmpty(mainUser, project, 30);
+        // destArchive rather than directArchive: this test only needs the session archived, and
+        // dest=/archive does it in the one synchronous call. Direct archive would hold the session
+        // open for a quiet period first and then archive on a scheduler, so the test would have to
+        // sit and poll for it -- timing this test has no reason to depend on.
+        mainInterface().callImporter(new DicomZipRequest().destArchive().project(project).file(testZip));
     }
 
     /**
