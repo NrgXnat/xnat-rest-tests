@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xnat:Project [
+  <!ENTITY ext SYSTEM "file:///nrg/does/not/exist.txt">
+]>
+<xnat:Project xmlns:xnat="http://nrg.wustl.edu/xnat" ID="p1" secondary_ID="p1">
+  <xnat:name>&ext;</xnat:name>
+</xnat:Project>
