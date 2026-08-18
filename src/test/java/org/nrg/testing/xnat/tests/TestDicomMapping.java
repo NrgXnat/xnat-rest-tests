@@ -1,5 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
+import io.restassured.http.ContentType;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
@@ -313,7 +314,16 @@ public class TestDicomMapping extends BaseXnatRestTest {
                 .dicomTag("0x1F2151050")
                 .forDataType(DataType.MR_SESSION);
 
-        expectStatusCode(() -> mainAdminInterface().createOrUpdateDicomMapping(dicomMapping), 400);
+        // createOrUpdateDicomMapping asserts 200 itself, and expectStatusCode only unwinds on the
+        // HttpStatusException a registered failure listener raises -- there is none for 400 -- so the
+        // request is issued directly here.
+        mainAdminQueryBase()
+                .contentType(ContentType.JSON)
+                .body(dicomMapping)
+                .put(formatXapiUrl("dicom_mappings", "update"))
+                .then()
+                .assertThat()
+                .statusCode(400);
         assertMappingNotFound(dicomMapping);
     }
 
