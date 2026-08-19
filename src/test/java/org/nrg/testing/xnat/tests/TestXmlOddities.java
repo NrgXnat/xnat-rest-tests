@@ -12,6 +12,7 @@ import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.assessors.QC;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.versions.Xnat_1_8_9_1;
+import org.nrg.xnat.versions.Xnat_1_10_1;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -86,6 +87,7 @@ public class TestXmlOddities extends BaseXnatRestTest {
      * The upload endpoint validates before doing any archive work, and the validator must reject DOCTYPE
      * declarations up front rather than processing them.
      */
+    @AddedIn(Xnat_1_10_1.class)
     @TestedApiSpec(method = Method.PUT, url = "/xapi/archive/upload/xml")
     public void testXmlUploadRejectsDoctype() {
         mainQueryBase()
