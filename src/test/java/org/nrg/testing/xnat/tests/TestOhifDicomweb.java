@@ -31,7 +31,9 @@ import org.testng.annotations.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.nrg.testing.TestGroups.PERMISSIONS;
 
 @TestRequires(specificPluginRequirements = @PluginRequirement(pluginId = PluginRegistry.OHIF_VIEWER_ID, minimumSupportedVersion = "3.7"))
@@ -209,6 +211,12 @@ public class TestOhifDicomweb extends BaseXnatRestTest {
         }
 
         void run() {
+            // The dicomweb tables are populated asynchronously (the plugin's event listener reacts to
+            // session archival completing), and QIDO searches return 204 while the tables are empty.
+            await().atMost(60, TimeUnit.SECONDS)
+                    .pollInterval(500, TimeUnit.MILLISECONDS)
+                    .until(() -> mainAdminInterface().viewerDicomwebCheckMetadataExists(project, session));
+
             final List<Runnable> testActionsRequiringReadAccess = Arrays.asList(
                     () -> xnatInterface.viewerDicomwebSearchInstances(project, session),
                     () -> xnatInterface.viewerDicomwebSearchInstances(project, session, STUDY_INSTANCE_UID),
