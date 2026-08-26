@@ -11,6 +11,8 @@ import org.nrg.testing.xnat.processing.files.comparators.imaging.ComparisonPixel
 import org.nrg.testing.xnat.processing.files.comparators.imaging.DiffedImage;
 import org.nrg.testing.xnat.processing.files.comparators.imaging.ImageComparator;
 import org.nrg.testing.xnat.processing.files.comparators.imaging.PixelValue;
+import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
+import org.nrg.xnat.versions.Xnat_1_10_2;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -32,10 +34,9 @@ public abstract class GenericAlterPixelsScript extends ScriptValidation {
 
     /**
      * @param fillValue the stored value alterPixels was asked to write, from the script's
-     *                  {@code "solid", "v=<n>"} argument. It used to be ignored: the redaction ran
-     *                  through pixelmed's blackout, which always writes zero whatever the script
-     *                  says. A script asking for 100 now gets 100, so the expected value has to come
-     *                  from the script rather than being assumed.
+     *                  {@code "solid", "v=<n>"} argument. Honoured from 1.10.2; before that the
+     *                  redaction ran through pixelmed's blackout, which writes zero whatever the
+     *                  script says, so an older server is expected to produce zero regardless.
      */
     GenericAlterPixelsScript(TestData testedDataset, int fillValue) {
         this.testedDataset = testedDataset;
@@ -105,10 +106,16 @@ public abstract class GenericAlterPixelsScript extends ScriptValidation {
 
     protected PixelValue getExpectedBlackoutPixelValue(int x, int y, int z) throws ImageProcessingException {
         if (pixelIsWithinBlackoutRegion(x, y, z)) {
-            return new PixelValue(fillValue);
+            return new PixelValue(expectedFill());
         } else {
             throw new ImageProcessingException(String.format("Requesting redacted pixel value in non-redacted region %d,%d,%d (x,y,z)", x, y, z));
         }
+    }
+
+
+    /** What the server actually writes: the requested fill from 1.10.2, zero before it. */
+    private int expectedFill() {
+        return XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_10_2.class) ? 0 : fillValue;
     }
 
 }

@@ -15,6 +15,8 @@ import org.nrg.testing.dicom.TransferSyntaxScript;
 import org.nrg.testing.dicom.UIDModScript;
 import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
 import org.nrg.testing.enums.TestData;
+import org.nrg.testing.xnat.versions.XnatTestingVersionManager;
+import org.nrg.xnat.versions.Xnat_1_10_2;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.nrg.xnat.versions.Xnat_1_8_1;
 import org.nrg.xnat.versions.Xnat_1_8_10;
@@ -125,20 +127,31 @@ public class TestAnonymizationUids extends BaseAnonymizationTest {
                 .run();
 
         new BasicAnonymizationTest("alterPixelsXferSyntax.das")
-                .withValidation(new TransferSyntaxScript(UID.ExplicitVRLittleEndian))
+                .withValidation(new TransferSyntaxScript(afterPixelEdit(UID.ExplicitVRLittleEndian)))
                 .run();
 
         new BasicAnonymizationTest("alterPixelsXferSyntax.das")
                 .withData(ivleData)
-                .withValidation(new TransferSyntaxScript(UID.ImplicitVRLittleEndian))
+                .withValidation(new TransferSyntaxScript(afterPixelEdit(UID.ImplicitVRLittleEndian)))
                 .run();
 
-        // Lossless, so it is re-encoded rather than left decompressed: bit-exact, and several times
-        // smaller than the EVLE this used to produce.
+        // Lossless, so from 1.10.2 it is re-encoded rather than left decompressed: bit-exact, and
+        // several times smaller than the EVLE an older server produces.
         new BasicAnonymizationTest("alterPixelsXferSyntax.das")
                 .withData(jpglosslessData)
-                .withValidation(new TransferSyntaxScript(UID.JPEGLosslessSV1))
+                .withValidation(new TransferSyntaxScript(afterPixelEdit(UID.JPEGLosslessSV1)))
                 .run();
+    }
+
+    /**
+     * The transfer syntax a pixel edit leaves behind. Before 1.10.2 redaction ran through pixelmed,
+     * which decompresses and never compresses again, so every edited object came back as Explicit VR
+     * Little Endian whatever it started as. From 1.10.2 the source syntax survives.
+     */
+    private static String afterPixelEdit(final String sourceTransferSyntax) {
+        return XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_10_2.class)
+               ? UID.ExplicitVRLittleEndian
+               : sourceTransferSyntax;
     }
 
 

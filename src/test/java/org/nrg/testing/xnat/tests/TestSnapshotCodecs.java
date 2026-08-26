@@ -7,7 +7,7 @@ import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
-import org.nrg.xnat.versions.Xnat_1_10_1;
+import org.nrg.xnat.versions.Xnat_1_10_2;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -42,7 +42,7 @@ import static org.testng.AssertJUnit.assertTrue;
  *
  * @see <a href="file:../../../../../../resources/data/snapshot_codecs.README.md">fixture provenance</a>
  */
-@AddedIn(Xnat_1_10_1.class)
+@AddedIn(Xnat_1_10_2.class)
 @Test(groups = IMPORTER)
 public class TestSnapshotCodecs extends BaseXnatRestTest {
 
