@@ -1,6 +1,8 @@
 package org.nrg.testing.xnat.tests;
 
 import org.apache.log4j.Logger;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.VR;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
@@ -9,6 +11,7 @@ import org.nrg.testing.enums.TestData;
 import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
+import org.nrg.xnat.dicom.CStore;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.dicom.DicomObjectIdentifier;
@@ -17,6 +20,7 @@ import org.nrg.xnat.pogo.experiments.SubjectAssessor;
 import org.nrg.xnat.pogo.experiments.sessions.PETSession;
 import org.nrg.xnat.versions.Xnat_1_10_1;
 import org.nrg.xnat.versions.Xnat_1_8_5;
+import org.nrg.xnat.versions.Xnat_1_10_2;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -105,6 +109,21 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
             .subjectRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):2")
             .sessionRoutingExpression("(0014,0046):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):3");
 
+    private final DicomScpReceiver highGroupRouteReceiver
+            = new DicomScpReceiver().aeTitle(RandomHelper.randomID())
+            .host(Settings.DICOM_HOST)
+            .port(Settings.DICOM_PORT)
+            .identifier(DicomObjectIdentifier.DEFAULT.getId())
+            .enabled(true)
+            .customProcessing(false)
+            .directArchive(true)
+            .anonymizationEnabled(true)
+            .whitelistEnabled(false)
+            .routingExpressionsEnabled(false)
+            .projectRoutingExpression("(F215,1050):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):1")
+            .subjectRoutingExpression("(F215,1050):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):2")
+            .sessionRoutingExpression("(F215,1050):Project:(\\w+)\\s*Subject:(\\w+)\\s*Session:(\\w+):3");
+
     private final DicomScpReceiver dqrReceiver
             = new DicomScpReceiver().aeTitle(RandomHelper.randomID())
             .host(Settings.DICOM_HOST)
@@ -125,6 +144,7 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
         mainAdminInterface().createDicomScpReceiver(allRouteReceiver);
         mainAdminInterface().createDicomScpReceiver(someRoutesReceiver);
         mainAdminInterface().createDicomScpReceiver(simpleRouteReceiver);
+        mainAdminInterface().createDicomScpReceiver(highGroupRouteReceiver);
         mainAdminInterface().setSessionXmlRebuilderTimes(1, 10000);
     }
 
@@ -146,6 +166,7 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
         mainAdminInterface().deleteDicomScpReceiver(allRouteReceiver);
         mainAdminInterface().deleteDicomScpReceiver(someRoutesReceiver);
         mainAdminInterface().deleteDicomScpReceiver(simpleRouteReceiver);
+        mainAdminInterface().deleteDicomScpReceiver(highGroupRouteReceiver);
     }
 
     /**
@@ -196,6 +217,46 @@ public class TestDicomSCPRoutingExpressions extends BaseXnatRestTest {
         // the id on the receiver so it can be deleted afterwards. If it throws, nothing was created to clean up.
         mainAdminInterface().createDicomScpReceiver(highGroupReceiver);
         mainAdminInterface().deleteDicomScpReceiver(highGroupReceiver);
+    }
+
+    /**
+     * XNAT-7933. Routing on a tag above 0x7FFFFFFF has to actually route, not merely save.
+     *
+     * lastTag in GradualDicomImporter decides how much of an incoming object is read before the
+     * identifier runs, and it was derived from getTags().last(). That set is naturally ordered, so such
+     * a tag sorted first rather than last, the read stopped short of it, and the extractor found
+     * nothing -- the receiver accepted the expression and then quietly never routed on it.
+     *
+     * The tag has to be set with an explicit VR. XnatCStore.overwrittenHeaders resolves the VR with
+     * ElementDictionary.vrOf(tag, null), which has no private creator to work from and picks a numeric
+     * VR for (F215,1050) -- setString then fails in parseIS on a routing string. CStore.headers takes a
+     * prepared Attributes instead, so the VR is stated rather than guessed.
+     */
+    @Test
+    @AddedIn(Xnat_1_10_2.class)
+    public void testHighGroupRoutingExpressionRoutes() {
+        highGroupRouteReceiver.routingExpressionsEnabled(true);
+        mainAdminInterface().updateDicomScpReceiver(highGroupRouteReceiver);
+
+        project = new Project();
+        final String projectIdPost = project.getId() + "_hg";
+        project.setId(projectIdPost);
+        mainInterface().createProject(project);
+
+        final Attributes overrides = new Attributes();
+        overrides.setString(0xF2150010, VR.LO, "XNAT QA HIGH GROUP");
+        overrides.setString(0xF2151050, VR.LO,
+                            String.format("Project:%s Subject:subj_hg Session:sess_hg", projectIdPost));
+        CStore.to(highGroupRouteReceiver.getAeTitle(), highGroupRouteReceiver.getHost(),
+                  highGroupRouteReceiver.getPort(), Settings.CALLING_AE_TITLE)
+              .directory(TestData.SIMPLE_PET.toDirectory())
+              .headers(overrides)
+              .send();
+        waitForDicomRecieve(project);
+
+        final Project expectedProject = new Project(projectIdPost);
+        new PETSession(expectedProject, new Subject(expectedProject, "subj_hg"), "sess_hg");
+        compareProjects(expectedProject, mainAdminInterface().readProject(projectIdPost));
     }
 
     /**
