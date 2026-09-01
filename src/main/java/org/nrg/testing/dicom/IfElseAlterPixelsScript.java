@@ -5,7 +5,8 @@ import org.nrg.testing.enums.TestData;
 public class IfElseAlterPixelsScript extends GenericAlterPixelsScript {
 
     public IfElseAlterPixelsScript() {
-        super(TestData.ANON_2);
+        // ifElseAlterPixels.das asks for "solid", "v=100" in every one of its branches.
+        super(TestData.ANON_2, 100);
     }
 
     @Override
