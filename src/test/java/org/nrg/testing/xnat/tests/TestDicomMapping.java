@@ -18,6 +18,7 @@ import org.nrg.xnat.pogo.dicom.DicomMapping;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.versions.Xnat_1_10_1;
+import org.nrg.xnat.versions.Xnat_1_10_2;
 import org.nrg.xnat.versions.Xnat_1_8_0;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
@@ -52,6 +53,20 @@ public class TestDicomMapping extends BaseXnatRestTest {
             .data(TestData.SAMPLE_1)
             .createZip()
             .simpleTransform((dicom) -> dicom.setString(Tag.PerformedProcedureStepID, VR.SH, "false"));
+    private static final String HIGH_GROUP_VALUE = "after the pixel data";
+    /**
+     * The same MR study with a private block in a group >= 0x8000. It sorts after (7FE0,0010), which is
+     * what makes it interesting: the metadata store behind the session builder read every object with a
+     * stop tag of Tag.PixelData - 1, so a mapping on such a tag saved and validated and then silently
+     * produced nothing.
+     */
+    private static final LocallyCacheableDicomTransformation HIGH_GROUP_TEST_DATA = new LocallyCacheableDicomTransformation("dicom_mapping_test_high_group")
+            .data(TestData.SAMPLE_1)
+            .createZip()
+            .simpleTransform((dicom) -> {
+                dicom.setString(0xF2150010, VR.LO, "XNAT QA HIGH GROUP");
+                dicom.setString(0xF2151050, VR.LO, HIGH_GROUP_VALUE);
+            });
     private static final List<String> POSSIBLE_FIELDS = new ArrayList<>();
     private static final String CT_RT_LABEL = "0522c0001";
     private static final String CT_RT_STUDY_ID = "0522c0001_0003";
@@ -63,6 +78,7 @@ public class TestDicomMapping extends BaseXnatRestTest {
     private static final String PATIENT_ADDRESS_FIELD_NAME = field("patientaddress");
     private static final String INSTANCE_CREATION_DATE_FIELD_NAME = field("instancecreationdate");
     private static final String MR_LABEL = "Sample_ID";
+    private static final String HIGH_GROUP_FIELD_NAME = field("highgrouptag");
     private static final String PHOTOMETRIC_INTERPRETATION_FIELD_NAME = field("photometricinterpretation");
     private static final String ROWS_FIELD_NAME = field("rows");
     private static final String PATIENT_WEIGHT_FIELD_NAME = field("patientweight");
@@ -216,6 +232,27 @@ public class TestDicomMapping extends BaseXnatRestTest {
                 .usingCstore()
                 .uploadingData(CT_RT_TEST_DATA, CTRT_SKIPPED_VALIDATION)
                 .uploadingData(MR_TEST_DATA, MR_VALIDATION)
+                .run();
+    }
+
+    /**
+     * A mapping saving is not a mapping working. testDicomMappingHighGroupTag covers the save, which never
+     * needed the object to be read; this covers the value actually reaching the session.
+     *
+     * The store the session builder queries read every object with a stop tag of Tag.PixelData - 1, so an
+     * element sorting after the pixel data was never in it. A private group >= 0x8000 sorts exactly there, so
+     * the field came back empty with nothing logged.
+     */
+    @AddedIn(Xnat_1_10_2.class)
+    public void testDicomMappingHighGroupTagApplies() {
+        new DicomMappingTest()
+                .usingImportApi()
+                .addProjectSpecificDicomMappings(mappingHighGroupTag())
+                .uploadingData(HIGH_GROUP_TEST_DATA,
+                               new SessionValidation()
+                                       .sessionLabel(MR_LABEL)
+                                       .withValidation(new FieldValidation()
+                                                               .expect(HIGH_GROUP_FIELD_NAME, HIGH_GROUP_VALUE)))
                 .run();
     }
 
@@ -397,6 +434,15 @@ public class TestDicomMapping extends BaseXnatRestTest {
                 .fieldType(VariableType.STRING)
                 .dicomTag(Tag.StudyInstanceUID)
                 .forProject(otherProject);
+    }
+
+    /** A mapping on a private tag above 0x7FFFFFFF, which sorts after the pixel data. */
+    private DicomMapping mappingHighGroupTag() {
+        return new DicomMapping()
+                .forDataType(DataType.MR_SESSION)
+                .fieldName(HIGH_GROUP_FIELD_NAME)
+                .fieldType(VariableType.STRING)
+                .dicomTag(0xF2151050);
     }
 
     private DicomMapping mappingPhotometricInterpretation() {
