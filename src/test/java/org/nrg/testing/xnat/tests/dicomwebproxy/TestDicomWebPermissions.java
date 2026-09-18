@@ -111,11 +111,17 @@ public class TestDicomWebPermissions extends BaseDicomWebProxyTest {
     // ---- Site-wide: non-member blocked at study, series, and instance level ----
 
     public void testNonMemberCantSeePrivateSiteWide() {
-        Response response = getAs(outsiderUser, siteStudiesUrl());
-        assertEquals(response.getStatusCode(), 200, "Site-wide should return 200");
-        assertFalse(responseContainsStudyUID(response, STUDY_UID_A),
+        // Scoped by UID so that absence means "permission denied" and
+        // not "was on page 2" — an unscoped query makes this assertion
+        // capable of passing for entirely the wrong reason.
+        Response studyA = getSiteStudy(outsiderUser, STUDY_UID_A);
+        assertEquals(studyA.getStatusCode(), 200, "Site-wide should return 200");
+        assertFalse(responseContainsStudyUID(studyA, STUDY_UID_A),
                 "Outsider should not see private project A in site-wide");
-        assertFalse(responseContainsStudyUID(response, STUDY_UID_B),
+
+        Response studyB = getSiteStudy(outsiderUser, STUDY_UID_B);
+        assertEquals(studyB.getStatusCode(), 200, "Site-wide should return 200");
+        assertFalse(responseContainsStudyUID(studyB, STUDY_UID_B),
                 "Outsider should not see private project B in site-wide");
     }
 
@@ -147,21 +153,34 @@ public class TestDicomWebPermissions extends BaseDicomWebProxyTest {
 
     // ---- ALL_DATA_ADMIN and ALL_DATA_ACCESS at study level ----
 
+    // These two query per StudyInstanceUID rather than scanning a page
+    // of every study on the site. An all-data user's unscoped result
+    // set is the whole instance, so on a populated site the fixture
+    // studies fall off the first page and the assertions fail for a
+    // reason that has nothing to do with permissions. See
+    // BaseDicomWebProxyTest#getSiteStudy.
+
     public void testAllDataAdminSeesAllSiteWide() {
-        Response response = getAs(allDataAdminUser, siteStudiesUrl());
-        assertEquals(response.getStatusCode(), 200);
-        assertTrue(responseContainsStudyUID(response, STUDY_UID_A),
+        Response studyA = getSiteStudy(allDataAdminUser, STUDY_UID_A);
+        assertEquals(studyA.getStatusCode(), 200);
+        assertTrue(responseContainsStudyUID(studyA, STUDY_UID_A),
                 "ALL_DATA_ADMIN should see study A in site-wide");
-        assertTrue(responseContainsStudyUID(response, STUDY_UID_B),
+
+        Response studyB = getSiteStudy(allDataAdminUser, STUDY_UID_B);
+        assertEquals(studyB.getStatusCode(), 200);
+        assertTrue(responseContainsStudyUID(studyB, STUDY_UID_B),
                 "ALL_DATA_ADMIN should see study B in site-wide");
     }
 
     public void testAllDataAccessSeesAllSiteWide() {
-        Response response = getAs(allDataAccessUser, siteStudiesUrl());
-        assertEquals(response.getStatusCode(), 200);
-        assertTrue(responseContainsStudyUID(response, STUDY_UID_A),
+        Response studyA = getSiteStudy(allDataAccessUser, STUDY_UID_A);
+        assertEquals(studyA.getStatusCode(), 200);
+        assertTrue(responseContainsStudyUID(studyA, STUDY_UID_A),
                 "ALL_DATA_ACCESS should see study A in site-wide");
-        assertTrue(responseContainsStudyUID(response, STUDY_UID_B),
+
+        Response studyB = getSiteStudy(allDataAccessUser, STUDY_UID_B);
+        assertEquals(studyB.getStatusCode(), 200);
+        assertTrue(responseContainsStudyUID(studyB, STUDY_UID_B),
                 "ALL_DATA_ACCESS should see study B in site-wide");
     }
 
@@ -182,11 +201,14 @@ public class TestDicomWebPermissions extends BaseDicomWebProxyTest {
     // ---- Member: sees own project data, blocked from other project at all levels ----
 
     public void testMemberSeesOnlyOwnProjectSiteWide() {
-        Response response = getAs(memberUser, siteStudiesUrl());
-        assertEquals(response.getStatusCode(), 200);
-        assertTrue(responseContainsStudyUID(response, STUDY_UID_A),
+        Response studyA = getSiteStudy(memberUser, STUDY_UID_A);
+        assertEquals(studyA.getStatusCode(), 200);
+        assertTrue(responseContainsStudyUID(studyA, STUDY_UID_A),
                 "Member should see study A (is member of project A)");
-        assertFalse(responseContainsStudyUID(response, STUDY_UID_B),
+
+        Response studyB = getSiteStudy(memberUser, STUDY_UID_B);
+        assertEquals(studyB.getStatusCode(), 200);
+        assertFalse(responseContainsStudyUID(studyB, STUDY_UID_B),
                 "Member should NOT see study B (not member of project B)");
     }
 
