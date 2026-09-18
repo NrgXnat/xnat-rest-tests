@@ -30,7 +30,7 @@ import static org.testng.Assert.*;
  * Mirrors coverage from the old TestDicomWebQido tests but against the new project-scoped
  * and site-wide DICOMweb plugin endpoints.
  */
-@TestRequires(specificPluginRequirements = @PluginRequirement(pluginId = "dicomwebplugin"))
+@TestRequires(specificPluginRequirements = @PluginRequirement(pluginId = "dicomwebplugin:1.3.0"))
 @Test(groups = {PERMISSIONS})
 public class TestDicomWebQidoCompliance extends BaseDicomWebProxyTest {
 
@@ -411,25 +411,25 @@ public class TestDicomWebQidoCompliance extends BaseDicomWebProxyTest {
     }
 
     /**
-     * StudyDate wildcard filter should match using year prefix.
+     * A wildcard in StudyDate must be rejected with 400.
+     *
+     * <p>PS3.4 C.2.2.2.4 scopes Wild Card Matching to attributes of VR
+     * "AE, CS, LO, LT, PN, SH, ST, UC, UR, UT". DA is not among them,
+     * so a year-prefix wildcard is not a valid QIDO-RS query value.
+     * The plugin accepted these before PLUGINS-360; it now returns
+     * 400 per PS3.18 10.6.3.1.
      */
-    public void testStudyFilterByStudyDateWildcard() {
+    public void testStudyDateWildcardRejected() {
         Response allResponse = getAs(memberUser, projectStudiesUrl(project));
         List<Map<String, Object>> allStudies = allResponse.jsonPath().getList("$");
         assertTrue(allStudies.size() >= 1, "Need at least 1 study");
 
         Map<String, Object> dateTag = (Map<String, Object>) allStudies.get(0).get(tagKey(Tag.StudyDate));
         String studyDate = ((List<String>) dateTag.get("Value")).get(0);
-        // Use year as prefix wildcard
         String yearPrefix = studyDate.substring(0, 4);
 
-        String url = projectStudiesUrl(project) + "?StudyDate=" + yearPrefix + "*";
-        Response response = getAs(memberUser, url);
-        assertEquals(response.getStatusCode(), 200);
-
-        List<Map<String, Object>> studies = response.jsonPath().getList("$");
-        assertTrue(studies.size() >= 1,
-                "StudyDate wildcard filter (" + yearPrefix + "*) should match at least 1 study");
+        assertInvalidParameter(projectStudiesUrl(project) + "?StudyDate=" + yearPrefix + "*",
+                "StudyDate");
     }
 
     /**
@@ -503,25 +503,53 @@ public class TestDicomWebQidoCompliance extends BaseDicomWebProxyTest {
     }
 
     /**
-     * StudyTime wildcard filter should match using hour prefix.
+     * A wildcard in StudyTime must be rejected with 400.
+     *
+     * <p>TM is excluded from Wild Card Matching for the same reason as
+     * DA (PS3.4 C.2.2.2.4). The hour-prefix intent this test used to
+     * express is now served by a partial-precision TM value, which
+     * PS3.5 6.2 does allow &mdash; see
+     * {@link #testStudyTimeHourPrecisionMatches()}.
      */
-    public void testStudyFilterByStudyTimeWildcard() {
+    public void testStudyTimeWildcardRejected() {
         Response allResponse = getAs(memberUser, projectStudiesUrl(project));
         List<Map<String, Object>> allStudies = allResponse.jsonPath().getList("$");
         assertTrue(allStudies.size() >= 1, "Need at least 1 study");
 
         Map<String, Object> timeTag = (Map<String, Object>) allStudies.get(0).get(tagKey(Tag.StudyTime));
         String studyTime = ((List<String>) timeTag.get("Value")).get(0);
-        // Use first 2 digits (hour) as prefix
         String hourPrefix = studyTime.substring(0, 2);
 
-        String url = projectStudiesUrl(project) + "?StudyTime=" + hourPrefix + "*";
+        assertInvalidParameter(projectStudiesUrl(project) + "?StudyTime=" + hourPrefix + "*",
+                "StudyTime");
+    }
+
+    /**
+     * An hour-precision StudyTime matches every study in that hour.
+     *
+     * <p>PS3.5 6.2 allows the TM components MM, SS and FFFFFF to be
+     * omitted from the right, "which indicates that the Value is not
+     * precise to the precision of those unspecified components". This
+     * replaces the wildcard form the plugin used to accept: test data
+     * is stored at 143000 and 153000, so an hour-precision query
+     * matches one of the two.
+     */
+    public void testStudyTimeHourPrecisionMatches() {
+        Response allResponse = getAs(memberUser, projectStudiesUrl(project));
+        List<Map<String, Object>> allStudies = allResponse.jsonPath().getList("$");
+        assertTrue(allStudies.size() >= 1, "Need at least 1 study");
+
+        Map<String, Object> timeTag = (Map<String, Object>) allStudies.get(0).get(tagKey(Tag.StudyTime));
+        String studyTime = ((List<String>) timeTag.get("Value")).get(0);
+        String hourPrefix = studyTime.substring(0, 2);
+
+        String url = projectStudiesUrl(project) + "?StudyTime=" + hourPrefix;
         Response response = getAs(memberUser, url);
         assertEquals(response.getStatusCode(), 200);
 
         List<Map<String, Object>> studies = response.jsonPath().getList("$");
         assertTrue(studies.size() >= 1,
-                "StudyTime wildcard filter (" + hourPrefix + "*) should match at least 1 study");
+                "Hour-precision StudyTime (" + hourPrefix + ") should match at least 1 study");
     }
 
     /**
@@ -676,6 +704,34 @@ public class TestDicomWebQidoCompliance extends BaseDicomWebProxyTest {
     }
 
     // ==================== Helpers ====================
+
+    /**
+     * Assert that a QIDO-RS query is rejected as a client error rather
+     * than silently answered with an empty result set.
+     *
+     * <p>PS3.18 10.6.3.1 Table 10.6.3-1 requires 400 when "the Query
+     * Parameter syntax is incorrect"; a 200 with an empty list means
+     * "nothing matched", which hides the client's mistake. The plugin
+     * reports these through its {@code InvalidParameter} error body,
+     * naming the offending parameter.
+     *
+     * @param url       the query URL expected to be rejected
+     * @param paramName the parameter the error message should name
+     */
+    private void assertInvalidParameter(String url, String paramName) {
+        Response response = getAs(memberUser, url);
+        assertEquals(response.getStatusCode(), 400,
+                "Query should be rejected as a client error: " + url);
+
+        String error = response.jsonPath().getString("error");
+        assertEquals(error, "InvalidParameter",
+                "Error code should identify the bad parameter: " + url);
+
+        String message = response.jsonPath().getString("message");
+        assertNotNull(message, "Error response should carry a message: " + url);
+        assertTrue(message.contains(paramName),
+                "Error message should name " + paramName + ", got: " + message);
+    }
 
     /**
      * Create DICOM test data with explicit StudyTime set.

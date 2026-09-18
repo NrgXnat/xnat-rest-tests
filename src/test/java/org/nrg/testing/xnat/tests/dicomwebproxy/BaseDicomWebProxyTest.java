@@ -514,4 +514,34 @@ public abstract class BaseDicomWebProxyTest extends BaseXnatRestTest {
         String body = response.getBody().asString();
         return body.contains(studyUID);
     }
+
+    /**
+     * Site-wide study query scoped to a single StudyInstanceUID.
+     *
+     * <p>Prefer this over a bare {@link #siteStudiesUrl()} whenever the
+     * assertion is about whether one particular study is visible. A
+     * bare site-wide query returns every study on the instance capped
+     * at one page, so on a site with unrelated data the study under
+     * test may simply not be on that page. The ordering makes it
+     * worse: the query sorts by {@code e.date, e.time, e.id}, the
+     * fixtures all share one date, and ties break on {@code e.id} — so
+     * a freshly created fixture sorts last and is the first thing to
+     * fall off. The failure also drifts as the test site accumulates
+     * sessions, so it surfaces as an intermittent regression rather
+     * than a clean break.
+     *
+     * <p>Scoping by UID removes the dependency on site size entirely
+     * without weakening the assertion: the added clause is a
+     * {@code uid} filter, and the permission branch and project
+     * filtering actually under test are unchanged. For an assertion
+     * about how many studies a user can reach, read the unpaginated
+     * {@code X-Total-Count} header rather than counting the body.
+     *
+     * @param user     the user to query as
+     * @param studyUID the StudyInstanceUID to scope the query to
+     * @return the QIDO-RS response
+     */
+    protected Response getSiteStudy(User user, String studyUID) {
+        return getAs(user, siteStudiesUrl() + "?StudyInstanceUID=" + studyUID);
+    }
 }

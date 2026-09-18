@@ -61,10 +61,12 @@ public class TestDicomWebSiteWide extends BaseDicomWebProxyTest {
     }
 
     public void testSiteWideSearchStudies() {
-        Response response = getAs(memberUser, siteStudiesUrl());
-        assertEquals(response.getStatusCode(), 200, "Site-wide search should return 200");
-        assertTrue(responseContainsStudyUID(response, STUDY_UID_A), "Should contain study A");
-        assertTrue(responseContainsStudyUID(response, STUDY_UID_B), "Should contain study B");
+        Response studyA = getSiteStudy(memberUser, STUDY_UID_A);
+        assertEquals(studyA.getStatusCode(), 200, "Site-wide search should return 200");
+        assertTrue(responseContainsStudyUID(studyA, STUDY_UID_A), "Should contain study A");
+        Response studyB = getSiteStudy(memberUser, STUDY_UID_B);
+        assertEquals(studyB.getStatusCode(), 200, "Site-wide search should return 200");
+        assertTrue(responseContainsStudyUID(studyB, STUDY_UID_B), "Should contain study B");
     }
 
     public void testSiteWideSearchSeries() {
@@ -222,10 +224,12 @@ public class TestDicomWebSiteWide extends BaseDicomWebProxyTest {
             setFilterMode("blacklist");
             setProjectList(projectB.getId());
 
-            Response response = getAs(memberUser, siteStudiesUrl());
-            assertEquals(response.getStatusCode(), 200);
-            assertTrue(responseContainsStudyUID(response, STUDY_UID_A), "Study A should be included");
-            assertFalse(responseContainsStudyUID(response, STUDY_UID_B), "Study B should be excluded (blacklisted)");
+            Response studyA = getSiteStudy(memberUser, STUDY_UID_A);
+            assertEquals(studyA.getStatusCode(), 200);
+            assertTrue(responseContainsStudyUID(studyA, STUDY_UID_A), "Study A should be included");
+            Response studyB = getSiteStudy(memberUser, STUDY_UID_B);
+            assertEquals(studyB.getStatusCode(), 200);
+            assertFalse(responseContainsStudyUID(studyB, STUDY_UID_B), "Study B should be excluded (blacklisted)");
         } finally {
             setProjectList("");
         }
@@ -296,10 +300,12 @@ public class TestDicomWebSiteWide extends BaseDicomWebProxyTest {
             setFilterMode("whitelist");
             setProjectList(projectA.getId());
 
-            Response response = getAs(memberUser, siteStudiesUrl());
-            assertEquals(response.getStatusCode(), 200);
-            assertTrue(responseContainsStudyUID(response, STUDY_UID_A), "Study A should be included (whitelisted)");
-            assertFalse(responseContainsStudyUID(response, STUDY_UID_B), "Study B should be excluded (not whitelisted)");
+            Response studyA = getSiteStudy(memberUser, STUDY_UID_A);
+            assertEquals(studyA.getStatusCode(), 200);
+            assertTrue(responseContainsStudyUID(studyA, STUDY_UID_A), "Study A should be included (whitelisted)");
+            Response studyB = getSiteStudy(memberUser, STUDY_UID_B);
+            assertEquals(studyB.getStatusCode(), 200);
+            assertFalse(responseContainsStudyUID(studyB, STUDY_UID_B), "Study B should be excluded (not whitelisted)");
         } finally {
             setFilterMode("blacklist");
             setProjectList("");
@@ -372,10 +378,12 @@ public class TestDicomWebSiteWide extends BaseDicomWebProxyTest {
             setFilterMode("whitelist");
             setProjectList("");
 
-            Response response = getAs(memberUser, siteStudiesUrl());
-            assertEquals(response.getStatusCode(), 200);
-            assertFalse(responseContainsStudyUID(response, STUDY_UID_A), "Study A should be excluded (empty whitelist)");
-            assertFalse(responseContainsStudyUID(response, STUDY_UID_B), "Study B should be excluded (empty whitelist)");
+            Response studyA = getSiteStudy(memberUser, STUDY_UID_A);
+            assertEquals(studyA.getStatusCode(), 200);
+            assertFalse(responseContainsStudyUID(studyA, STUDY_UID_A), "Study A should be excluded (empty whitelist)");
+            Response studyB = getSiteStudy(memberUser, STUDY_UID_B);
+            assertEquals(studyB.getStatusCode(), 200);
+            assertFalse(responseContainsStudyUID(studyB, STUDY_UID_B), "Study B should be excluded (empty whitelist)");
         } finally {
             setFilterMode("blacklist");
             setProjectList("");
@@ -428,10 +436,12 @@ public class TestDicomWebSiteWide extends BaseDicomWebProxyTest {
         try {
             setProjectOptOut(projectB, true);
 
-            Response response = getAs(memberUser, siteStudiesUrl());
-            assertEquals(response.getStatusCode(), 200);
-            assertTrue(responseContainsStudyUID(response, STUDY_UID_A), "Study A should be included");
-            assertFalse(responseContainsStudyUID(response, STUDY_UID_B), "Study B should be excluded (opted out)");
+            Response studyA = getSiteStudy(memberUser, STUDY_UID_A);
+            assertEquals(studyA.getStatusCode(), 200);
+            assertTrue(responseContainsStudyUID(studyA, STUDY_UID_A), "Study A should be included");
+            Response studyB = getSiteStudy(memberUser, STUDY_UID_B);
+            assertEquals(studyB.getStatusCode(), 200);
+            assertFalse(responseContainsStudyUID(studyB, STUDY_UID_B), "Study B should be excluded (opted out)");
         } finally {
             setProjectOptOut(projectB, false);
         }
@@ -463,10 +473,12 @@ public class TestDicomWebSiteWide extends BaseDicomWebProxyTest {
             setProjectList(projectA.getId());
             setProjectOptOut(projectB, true);
 
-            Response response = getAs(memberUser, siteStudiesUrl());
-            assertEquals(response.getStatusCode(), 200);
-            assertFalse(responseContainsStudyUID(response, STUDY_UID_A), "Study A should be excluded (blacklisted)");
-            assertFalse(responseContainsStudyUID(response, STUDY_UID_B), "Study B should be excluded (opted out)");
+            Response studyA = getSiteStudy(memberUser, STUDY_UID_A);
+            assertEquals(studyA.getStatusCode(), 200);
+            assertFalse(responseContainsStudyUID(studyA, STUDY_UID_A), "Study A should be excluded (blacklisted)");
+            Response studyB = getSiteStudy(memberUser, STUDY_UID_B);
+            assertEquals(studyB.getStatusCode(), 200);
+            assertFalse(responseContainsStudyUID(studyB, STUDY_UID_B), "Study B should be excluded (opted out)");
         } finally {
             setProjectList("");
             setProjectOptOut(projectB, false);
