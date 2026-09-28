@@ -1,0 +1,29 @@
+# Settings for running the performance tests against an XNAT on Kubernetes with kubernetes/run-performance-tests.sh.
+# Copy this file outside the repository, fill in the <...> values, and pass it with --config. The tests run in a pod in
+# the XNAT's namespace, so XNAT is addressed by its Service names.
+
+# XNAT as a pod in its namespace sees it.
+xnat.baseurl=http://<xnat-http-service>:<port>
+xnat.dicom.host=<xnat-dicom-service>
+xnat.dicom.port=8104
+xnat.dicom.aetitle=XNAT
+xnat.version=<xnat version, e.g. 1.10.1>
+
+# The performance reset leaves XNAT with its default admin account.
+xnat.admin.user=admin
+xnat.admin.password=admin
+xnat.mainAdmin.user=admin
+xnat.mainAdmin.password=admin
+xnat.main.user=unitTest
+xnat.main.password=<a password for the test user the suite creates>
+xnat.users.email=<an address for test users>
+xnat.temp=/work/tmp
+
+# The performance tests, driving XNAT through kubectl with the Job's service account.
+xnat.performance.allow=true
+xnat.performance.platform=kubernetes
+xnat.k8s.namespace=<namespace>
+xnat.k8s.db.pod=<the pod running XNAT's Postgres database>
+xnat.k8s.db.container=<its database container, if the pod has more than one>
+# The reset wipes this XNAT's data and database. It runs only when this names the target exactly.
+xnat.k8s.reset.confirm=in-cluster/<namespace>

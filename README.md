@@ -77,6 +77,20 @@ Properties that these tests support to change some of the behavior, but are not 
 ## Performance Tests ##
 See the section in [nrg_test](http://www.bitbucket.org/xnatdev/nrg_test/) for additional detail on the performance tests.
 
+### On Kubernetes ###
+`kubernetes/run-performance-tests.sh` runs the performance tests as a Job in the namespace of an XNAT deployed on Kubernetes. Running in the cluster keeps REST calls and C-STORE sends pod to service, so the timings don't include a workstation's connection to the cluster. The tests reset and restart XNAT through kubectl with the Job's service account (`kubernetes/rbac.yaml`), as described under "Performance tests on Kubernetes" in nrg_test.
+
+Each run wipes the target XNAT's archive and recreates its database, so only point it at an XNAT that holds nothing but test data.
+
+1. Copy `src/test/resources/config/kubernetes.properties.example` outside the repository and fill it in.
+2. Run, for example:
+```
+$ kubernetes/run-performance-tests.sh --context my-cluster --namespace my-xnat --config ~/my-xnat.properties \
+      --tests TestPerformanceDicom#testLargeSeriesCountPerformance
+```
+
+The script applies the RBAC, starts the Job from a stock Maven image, uploads the tracked sources, the config, a Linux kubectl matching the cluster and, if present, the nrg_test snapshot from your local Maven repository, and then runs `mvn test` in the pod while following its log. When the tests finish it copies `target/surefire-reports`, the performance history and charts in `src/test/resources/data/performance`, and the test log into `target/kubernetes-runs/<job>`, then deletes the Job (`--keep` leaves it). The pod needs to reach the Maven repositories in `pom.xml` and the test data server. Run the script with `--help` for its other options.
+
 # Need more Info? #
 More information may be found in the README for the [nrg_test](http://www.bitbucket.org/xnatdev/nrg_test/) project, the main dependency for this one. Various additional configuration parameters are documented there, some of which will have no effect (because they're used in other downstream test projects).
 

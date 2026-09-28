@@ -1,0 +1,39 @@
+# What the performance tests need to reset and restart the XNAT in this namespace through kubectl, when they run as a
+# Job here (kubernetes/run-performance-tests.sh). Apply in the XNAT's namespace.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: xnat-performance-tests
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: xnat-performance-tests
+rules:
+  # Find the XNAT and database pods and wait for them to stop or become Ready.
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  # Empty the data directories, copy plugins and recreate the database.
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+  # Scale the XNAT workload down and up, and switch its image.
+  - apiGroups: ["apps"]
+    resources: ["statefulsets", "deployments"]
+    verbs: ["get", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets/scale", "deployments/scale"]
+    verbs: ["get", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: xnat-performance-tests
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: xnat-performance-tests
+subjects:
+  - kind: ServiceAccount
+    name: xnat-performance-tests
