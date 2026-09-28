@@ -17,6 +17,14 @@ spec:
     spec:
       serviceAccountName: xnat-performance-tests
       restartPolicy: Never
+      # Keep the tests off the XNAT pod's node, so they don't compete with it for CPU.
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  statefulset.kubernetes.io/pod-name: ${AVOID_POD}
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: tests
           image: ${IMAGE}

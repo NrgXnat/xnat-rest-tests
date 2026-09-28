@@ -4,110 +4,138 @@
 # restart XNAT through kubectl with the Job's service account.
 #
 #   kubernetes/run-performance-tests.sh --namespace NS --config FILE [--context CTX] [--tests CLASS[#METHOD],...]
-#       [--image IMAGE] [--kubectl-version vX.Y.Z] [--arch amd64|arm64] [--nrg-test-version VERSION]
-#       [--out DIR] [--deadline SECONDS] [--keep] [-- -Dproperty=value ...]
+#       [--fresh-history] [--image IMAGE] [--kubectl-version vX.Y.Z] [--arch amd64|arm64]
+#       [--nrg-test-version VERSION] [--avoid-pod POD] [--out DIR] [--deadline SECONDS] [--keep]
+#       [-- -Dproperty=value ...]
+#   kubernetes/run-performance-tests.sh --namespace NS [--context CTX] --attach JOB [--out DIR] [--keep]
 #
 # FILE is a properties file for the run (see src/test/resources/config/kubernetes.properties.example). The pod runs
 # `mvn test` from a stock Maven image, so it needs to reach the Maven repositories in pom.xml and the test data
 # server. An nrg_test snapshot in the local Maven repository is copied in; any other version is downloaded.
+# --fresh-history starts the run without the performance history in the repository, so results are judged against
+# this run's own earlier deployments rather than past runs elsewhere. The Job keeps running if this script loses its
+# connection; --attach picks it up again, follows it and collects the results.
 set -euo pipefail
 
-usage() { sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+usage() { sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 
-NAMESPACE= CONTEXT= CONFIG= TESTS= IMAGE=maven:3.9-eclipse-temurin-8 KUBECTL_VERSION= ARCH=amd64
-NRG_TEST_VERSION=2.7-kubernetes-SNAPSHOT OUT= DEADLINE=86400 KEEP=0 MVN_ARGS=()
+NAMESPACE= CONTEXT= CONFIG= TESTS= IMAGE=maven:3.9-eclipse-temurin-8 KUBECTL_VERSION= ARCH=amd64 ATTACH=
+NRG_TEST_VERSION=2.7-kubernetes-SNAPSHOT OUT= DEADLINE=129600 KEEP=0 FRESH_HISTORY=0 AVOID_POD=xnat-0 MVN_ARGS=()
 while [ $# -gt 0 ]; do
     case "$1" in
         --namespace) NAMESPACE=$2; shift 2 ;;
         --context) CONTEXT=$2; shift 2 ;;
         --config) CONFIG=$2; shift 2 ;;
         --tests) TESTS=$2; shift 2 ;;
+        --fresh-history) FRESH_HISTORY=1; shift ;;
         --image) IMAGE=$2; shift 2 ;;
         --kubectl-version) KUBECTL_VERSION=$2; shift 2 ;;
         --arch) ARCH=$2; shift 2 ;;
         --nrg-test-version) NRG_TEST_VERSION=$2; shift 2 ;;
+        --avoid-pod) AVOID_POD=$2; shift 2 ;;
         --out) OUT=$2; shift 2 ;;
         --deadline) DEADLINE=$2; shift 2 ;;
         --keep) KEEP=1; shift ;;
+        --attach) ATTACH=$2; shift 2 ;;
         -h|--help) usage ;;
         --) shift; MVN_ARGS=("$@"); break ;;
         *) echo "Unknown argument: $1" >&2; usage 1 ;;
     esac
 done
-[ -n "$NAMESPACE" ] && [ -n "$CONFIG" ] || usage 1
-[ -f "$CONFIG" ] || { echo "No such config file: $CONFIG" >&2; exit 1; }
+[ -n "$NAMESPACE" ] || usage 1
+if [ -z "$ATTACH" ]; then
+    [ -n "$CONFIG" ] || usage 1
+    [ -f "$CONFIG" ] || { echo "No such config file: $CONFIG" >&2; exit 1; }
+fi
 
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 export COPYFILE_DISABLE=1  # keep macOS tar from adding ._ metadata files to the upload
 K=(kubectl ${CONTEXT:+--context "$CONTEXT"} --namespace "$NAMESPACE")
-JOB=xnat-performance-tests-$(date +%Y%m%d-%H%M%S)
+JOB=${ATTACH:-xnat-performance-tests-$(date +%Y%m%d-%H%M%S)}
 OUT=${OUT:-$REPO/target/kubernetes-runs/$JOB}
 CACHE=${XDG_CACHE_HOME:-$HOME/.cache}/xnat-rest-tests
 SNAPSHOT=$HOME/.m2/repository/org/nrg/nrg_test/$NRG_TEST_VERSION
+COLLECTED=0
 
-# kubectl for the pod, matching the cluster's version unless one is given.
-if [ -z "$KUBECTL_VERSION" ]; then
-    KUBECTL_VERSION=$("${K[@]}" version -o json | python3 -c 'import json,sys; print(json.load(sys.stdin)["serverVersion"]["gitVersion"].split("-")[0])')
-fi
-KUBECTL_BINARY=$CACHE/kubectl-$KUBECTL_VERSION-linux-$ARCH
-if [ ! -x "$KUBECTL_BINARY" ]; then
-    mkdir -p "$CACHE"
-    curl -fsSL "https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/$ARCH/kubectl" -o "$KUBECTL_BINARY.part"
-    chmod +x "$KUBECTL_BINARY.part" && mv "$KUBECTL_BINARY.part" "$KUBECTL_BINARY"
-fi
-
-echo "Starting Job $JOB in $NAMESPACE"
-"${K[@]}" apply -f "$REPO/kubernetes/rbac.yaml" >/dev/null
-sed -e "s|\${JOB_NAME}|$JOB|g" -e "s|\${IMAGE}|$IMAGE|g" -e "s|\${DEADLINE_SECONDS}|$DEADLINE|g" \
-    "$REPO/kubernetes/performance-job.yaml" | "${K[@]}" apply -f - >/dev/null
-
-cleanup() {
-    if [ "$KEEP" -eq 0 ]; then
+finish() {
+    if [ "$COLLECTED" -eq 1 ] && [ "$KEEP" -eq 0 ]; then
         "${K[@]}" delete job "$JOB" --wait=false >/dev/null 2>&1 || true
-    else
-        echo "Kept Job $JOB"
+    elif [ "$COLLECTED" -eq 0 ]; then
+        echo "The Job $JOB is still in the cluster. To follow it and collect its results:" >&2
+        echo "  $0 --namespace $NAMESPACE ${CONTEXT:+--context $CONTEXT }--attach $JOB" >&2
     fi
 }
-trap cleanup EXIT
+trap finish EXIT
 
-POD=
-for _ in $(seq 1 120); do
-    POD=$("${K[@]}" get pods -l "job-name=$JOB" -o name 2>/dev/null | head -1)
-    [ -n "$POD" ] && break
-    sleep 2
-done
-[ -n "$POD" ] || { echo "The Job's pod never appeared" >&2; exit 1; }
-"${K[@]}" wait --for=condition=Ready "$POD" --timeout=600s >/dev/null
+find_pod() {
+    POD=
+    for _ in $(seq 1 120); do
+        POD=$("${K[@]}" get pods -l "job-name=$JOB" -o name 2>/dev/null | head -1)
+        [ -n "$POD" ] && return 0
+        sleep 2
+    done
+    echo "The Job's pod never appeared" >&2
+    exit 1
+}
 put() { "${K[@]}" exec -i "$POD" -c tests -- sh -c "$1"; }
 
-echo "Uploading the tests to $POD"
-git -C "$REPO" ls-files -z | tar -C "$REPO" --null -T - -cf - | put 'tar -xf - -C /work'
-put 'mkdir -p /work/src/test/resources/config && cat > /work/src/test/resources/config/kubernetes-run.properties' < "$CONFIG"
-put 'mkdir -p /work/bin && cat > /work/bin/kubectl && chmod +x /work/bin/kubectl' < "$KUBECTL_BINARY"
-if [ -d "$SNAPSHOT" ]; then
-    tar -C "$HOME/.m2/repository" -cf - "org/nrg/nrg_test/$NRG_TEST_VERSION" | put 'mkdir -p /root/.m2/repository && tar -xf - -C /root/.m2/repository'
-fi
-{
-    echo 'export PATH=/work/bin:$PATH'
-    echo 'cd /work'
-    printf 'mvn -B'
-    printf ' %q' "-Dnrg_test.version=$NRG_TEST_VERSION" "-Dxnat.config=kubernetes-run.properties"
-    [ -n "$TESTS" ] && printf ' %q' "-Dtest=$TESTS"
-    [ ${#MVN_ARGS[@]} -gt 0 ] && printf ' %q' "${MVN_ARGS[@]}"
-    printf ' test\n'
-} | put 'cat > /work/run.sh'
-put 'touch /work/.ready'
+start_job() {
+    # kubectl for the pod, matching the cluster's version unless one is given.
+    if [ -z "$KUBECTL_VERSION" ]; then
+        KUBECTL_VERSION=$("${K[@]}" version -o json | python3 -c 'import json,sys; print(json.load(sys.stdin)["serverVersion"]["gitVersion"].split("-")[0])')
+    fi
+    local kubectl_binary=$CACHE/kubectl-$KUBECTL_VERSION-linux-$ARCH
+    if [ ! -x "$kubectl_binary" ]; then
+        mkdir -p "$CACHE"
+        curl -fsSL "https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/$ARCH/kubectl" -o "$kubectl_binary.part"
+        chmod +x "$kubectl_binary.part" && mv "$kubectl_binary.part" "$kubectl_binary"
+    fi
 
-echo "Running; following the log (Ctrl-C stops the run and deletes the Job unless --keep)"
-"${K[@]}" logs -f "$POD" -c tests &
+    echo "Starting Job $JOB in $NAMESPACE"
+    "${K[@]}" apply -f "$REPO/kubernetes/rbac.yaml" >/dev/null
+    sed -e "s|\${JOB_NAME}|$JOB|g" -e "s|\${IMAGE}|$IMAGE|g" -e "s|\${DEADLINE_SECONDS}|$DEADLINE|g" \
+        -e "s|\${AVOID_POD}|$AVOID_POD|g" "$REPO/kubernetes/performance-job.yaml" | "${K[@]}" apply -f - >/dev/null
+    find_pod
+    "${K[@]}" wait --for=condition=Ready "$POD" --timeout=900s >/dev/null
+
+    echo "Uploading the tests to $POD"
+    git -C "$REPO" ls-files -z | tar -C "$REPO" --null -T - -cf - | put 'tar -xf - -C /work'
+    if [ "$FRESH_HISTORY" -eq 1 ]; then
+        put 'rm -f /work/src/test/resources/data/performance/*.json /work/src/test/resources/data/performance/*.tex'
+    fi
+    put 'mkdir -p /work/src/test/resources/config && cat > /work/src/test/resources/config/kubernetes-run.properties' < "$CONFIG"
+    put 'mkdir -p /work/bin && cat > /work/bin/kubectl && chmod +x /work/bin/kubectl' < "$kubectl_binary"
+    if [ -d "$SNAPSHOT" ]; then
+        tar -C "$HOME/.m2/repository" -cf - "org/nrg/nrg_test/$NRG_TEST_VERSION" | put 'mkdir -p /root/.m2/repository && tar -xf - -C /root/.m2/repository'
+    fi
+    {
+        echo 'export PATH=/work/bin:$PATH'
+        echo 'cd /work'
+        printf 'mvn -B'
+        printf ' %q' "-Dnrg_test.version=$NRG_TEST_VERSION" "-Dxnat.config=kubernetes-run.properties"
+        [ -n "$TESTS" ] && printf ' %q' "-Dtest=$TESTS"
+        [ ${#MVN_ARGS[@]} -gt 0 ] && printf ' %q' "${MVN_ARGS[@]}"
+        printf ' test\n'
+    } | put 'cat > /work/run.sh'
+    put 'touch /work/.ready'
+}
+
+if [ -n "$ATTACH" ]; then
+    find_pod
+else
+    start_job
+fi
+
+echo "Running; following the log (Ctrl-C detaches; the Job keeps running)"
+"${K[@]}" logs -f "$POD" -c tests --since=1m &
 LOGS=$!
-until "${K[@]}" exec "$POD" -c tests -- test -f /work/.exit 2>/dev/null; do sleep 15; done
+until "${K[@]}" exec "$POD" -c tests -- test -f /work/.exit 2>/dev/null; do sleep 30; done
 kill "$LOGS" 2>/dev/null || true
 
 mkdir -p "$OUT"
-put 'cd /work && tar -cf - $(ls -d target/surefire-reports src/test/resources/data/performance xnat_test.log* 2>/dev/null)' | tar -xf - -C "$OUT" ||
-    echo "Could not collect all of the results from $POD" >&2
+put 'cd /work && tar -cf - $(ls -d target/surefire-reports src/test/resources/data/performance xnat_test.log* 2>/dev/null)' | tar -xf - -C "$OUT"
 EXIT=$("${K[@]}" exec "$POD" -c tests -- cat /work/.exit)
 put 'touch /work/.collected'
+COLLECTED=1
 echo "The tests exited $EXIT; results are in $OUT"
 exit "$EXIT"

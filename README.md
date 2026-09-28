@@ -89,7 +89,9 @@ $ kubernetes/run-performance-tests.sh --context my-cluster --namespace my-xnat -
       --tests TestPerformanceDicom#testLargeSeriesCountPerformance
 ```
 
-The script applies the RBAC, starts the Job from a stock Maven image, uploads the tracked sources, the config, a Linux kubectl matching the cluster and, if present, the nrg_test snapshot from your local Maven repository, and then runs `mvn test` in the pod while following its log. When the tests finish it copies `target/surefire-reports`, the performance history and charts in `src/test/resources/data/performance`, and the test log into `target/kubernetes-runs/<job>`, then deletes the Job (`--keep` leaves it). The pod needs to reach the Maven repositories in `pom.xml` and the test data server. Run the script with `--help` for its other options.
+The script applies the RBAC, starts the Job from a stock Maven image, uploads the tracked sources, the config, a Linux kubectl matching the cluster and, if present, the nrg_test snapshot from your local Maven repository, and then runs `mvn test` in the pod while following its log. When the tests finish it copies `target/surefire-reports`, the performance history and charts in `src/test/resources/data/performance`, and the test log into `target/kubernetes-runs/<job>`, then deletes the Job (`--keep` leaves it). The pod needs to reach the Maven repositories in `pom.xml` and the test data server.
+
+The Job keeps running if the script loses its connection to the cluster; `--attach <job>` follows it again and collects its results. `--fresh-history` starts from an empty performance history, so each deployment is judged against the earlier deployments of the same run on the same XNAT, rather than against the history in the repository, which was recorded on other hardware. Run the script with `--help` for its other options.
 
 # Need more Info? #
 More information may be found in the README for the [nrg_test](http://www.bitbucket.org/xnatdev/nrg_test/) project, the main dependency for this one. Various additional configuration parameters are documented there, some of which will have no effect (because they're used in other downstream test projects).
