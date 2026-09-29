@@ -18,6 +18,7 @@ import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -124,7 +125,7 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
     }
 
     public void testCreateSessionsNonadmin(XnatDeployment deployment) {
-        mainInterface().createProject(EXPT_CREATE_PROJECT);
+        createSessionTestProject();
         performanceScenario(deployment).tests(
                 EXPT_CREATE_TEST_BASE_SCENARIO,
                 EXPT_PROJ_LISTING_TEST_NONADMIN_BASE,
@@ -134,12 +135,22 @@ public class TestPerformanceProjectScaling extends XnatPerformanceTests {
 
     @PerformanceTestPlugin(DATA_TYPE_PLUGIN)
     public void testCreateSessionsNonadminExtraDatatypes(XnatDeployment deployment) {
-        mainInterface().createProject(EXPT_CREATE_PROJECT);
+        createSessionTestProject();
         performanceScenario(deployment).tests(
                 EXPT_CREATE_TEST_EXTRA_TYPES,
                 EXPT_PROJ_LISTING_TEST_NONADMIN_EXTRA,
                 EXPT_PROJ_LISTING_TEST_ADMIN_EXTRA
         ).run();
+    }
+
+    /**
+     * Each session the create test makes attaches itself to the shared subject, and creating the project creates every
+     * session its subject holds, so without this each deployment after the first began with all the earlier
+     * deployments' sessions already in the project.
+     */
+    private void createSessionTestProject() {
+        EXPT_CREATE_SUBJECT.setExperiments(Collections.emptyList());
+        mainInterface().createProject(EXPT_CREATE_PROJECT);
     }
 
     private void testCreateProjects(String id, Consumer<RepeatedMonitorableAction> testCustomization, XnatDeployment deployment) {
