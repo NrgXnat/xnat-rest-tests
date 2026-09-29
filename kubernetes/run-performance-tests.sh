@@ -11,7 +11,8 @@
 #
 # FILE is a properties file for the run (see src/test/resources/config/kubernetes.properties.example). The pod runs
 # `mvn test` from a stock Maven image, so it needs to reach the Maven repositories in pom.xml and the test data
-# server. An nrg_test snapshot in the local Maven repository is copied in; any other version is downloaded.
+# server. nrg_test is pom.xml's version unless --nrg-test-version names another; a copy in the local Maven repository
+# is uploaded, so a locally built nrg_test is what runs, and any other version is downloaded.
 # --fresh-history starts the run without the performance history in the repository, so results are judged against
 # this run's own earlier deployments rather than past runs elsewhere. The Job keeps running if this script loses its
 # connection; --attach picks it up again, follows it and collects the results.
@@ -20,7 +21,7 @@ set -euo pipefail
 usage() { sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 
 NAMESPACE= CONTEXT= CONFIG= TESTS= IMAGE=maven:3.9-eclipse-temurin-8 KUBECTL_VERSION= ARCH=amd64 ATTACH=
-NRG_TEST_VERSION=2.7-kubernetes-SNAPSHOT OUT= DEADLINE=129600 KEEP=0 FRESH_HISTORY=0 AVOID_POD=xnat-0 MVN_ARGS=()
+NRG_TEST_VERSION= OUT= DEADLINE=129600 KEEP=0 FRESH_HISTORY=0 AVOID_POD=xnat-0 MVN_ARGS=()
 while [ $# -gt 0 ]; do
     case "$1" in
         --namespace) NAMESPACE=$2; shift 2 ;;
@@ -54,6 +55,7 @@ K=(kubectl ${CONTEXT:+--context "$CONTEXT"} --namespace "$NAMESPACE")
 JOB=${ATTACH:-xnat-performance-tests-$(date +%Y%m%d-%H%M%S)}
 OUT=${OUT:-$REPO/target/kubernetes-runs/$JOB}
 CACHE=${XDG_CACHE_HOME:-$HOME/.cache}/xnat-rest-tests
+NRG_TEST_VERSION=${NRG_TEST_VERSION:-$(sed -n 's:.*<nrg_test.version>\(.*\)</nrg_test.version>.*:\1:p' "$REPO/pom.xml" | head -1)}
 SNAPSHOT=$HOME/.m2/repository/org/nrg/nrg_test/$NRG_TEST_VERSION
 COLLECTED=0
 
