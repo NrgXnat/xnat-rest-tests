@@ -16,9 +16,11 @@ import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.CutOffUpload;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.versions.*;
 import org.nrg.xnat.enums.MergeBehavior;
+import org.nrg.xnat.enums.PrearchiveStatus;
 import org.nrg.xnat.enums.PrearchiveCode;
 import org.nrg.xnat.importer.ImportException;
 import org.nrg.xnat.importer.importers.DefaultImporterRequest;
@@ -748,6 +750,36 @@ public class TestImport extends BaseXnatRestTest {
     @AddedIn(Xnat_1_8_3.class)
     public void testUploadIgnoreUnparsableTrue() {
         runUnparsableTest(true, true);
+    }
+
+    /**
+     * An upload cut off partway must not leave a session that looks complete: its session goes to ERROR with the
+     * reason in its log, where the idle-timeout rebuild leaves it alone, and uploading the study again reopens it.
+     */
+    @Test(groups = PREARCHIVE)
+    @AddedIn(Xnat_1_10_3.class)
+    public void testCutOffUploadLeavesItsSessionInError() throws IOException {
+        final DicomZipRequest request = new DicomZipRequest().project(project).ignoreUnparsable();
+        try {
+            mainInterface().callImporter(request.file(CutOffUpload.firstHalfOf(testZip, Paths.get(Settings.TEMP_SUBDIR))));
+            failOnImproperSuccess();
+        } catch (ImportException importException) {
+            assertEquals(400, importException.getStatusCode());
+        }
+        final SessionData failed = mainInterface().expectSinglePrearchiveResultForProject(project);
+        assertEquals("the cut-off upload's session should be in ERROR", PrearchiveStatus.ERROR, failed.getStatus());
+        assertTrue("the session's log should say why",
+                   mainInterface().getPrearchiveLogMessages(project, failed).stream().anyMatch(message -> message.contains("failed partway")));
+
+        mainInterface().callImporter(request.file(testZip));
+        final SessionData reopened = mainInterface().expectSinglePrearchiveResultForProject(project);
+        assertEquals("the whole study must reopen the failed session", failed.getTimestamp(), reopened.getTimestamp());
+        mainInterface().rebuildSession(reopened, false);
+        mainInterface().archiveSession(reopened);
+
+        final ImagingSession session = new MRSession(project, new Subject(project, subjectFromTestZip), sessionFromTestZip);
+        mainInterface().jsonQuery().get(CommonStringUtils.formatUrl(mainInterface().subjectAssessorUrl(session), "scans", "ALL", "files"))
+                .then().assertThat().body("ResultSet.Result", Matchers.hasSize(6));
     }
 
     private void testPrearcDodgyUidMerge(Runnable importWorkflow, boolean acceptableForImporter) {

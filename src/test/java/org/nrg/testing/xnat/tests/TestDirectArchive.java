@@ -4,6 +4,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
 import org.dcm4che2.data.Tag;
+import org.hamcrest.Matchers;
+import org.nrg.testing.CommonStringUtils;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
@@ -11,8 +13,10 @@ import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.CutOffUpload;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.xnat.enums.PrearchiveStatus;
+import org.nrg.xnat.importer.ImportException;
 import org.nrg.xnat.importer.importers.DicomZipRequest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -22,6 +26,7 @@ import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.SubjectAssessor;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.prearchive.SessionData;
+import org.nrg.xnat.versions.Xnat_1_10_3;
 import org.nrg.xnat.versions.Xnat_1_8_3;
 import org.nrg.xnat.versions.Xnat_1_8_4;
 import org.testng.annotations.AfterClass;
@@ -30,6 +35,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +45,7 @@ import java.util.Map;
 import static org.nrg.testing.TestGroups.*;
 import static org.nrg.testing.TestGroups.IMPORTER;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 import static org.testng.AssertJUnit.assertEquals;
 
 @AddedIn(Xnat_1_8_3.class)
@@ -119,6 +127,31 @@ public class TestDirectArchive extends BaseXnatRestTest {
     public void testDirectArchiveCStore() {
         uploadViaCStore();
         waitForDirectArchive(scpSession);
+    }
+
+    /**
+     * A direct-archive upload cut off partway must not be archived as though it had finished: its session moves to
+     * the prearchive in ERROR, as one whose build or archive failed does, and a direct-archive upload of the whole
+     * study then archives it.
+     */
+    @Test
+    @AddedIn(Xnat_1_10_3.class)
+    public void testCutOffUploadMovesItsSessionToThePrearchive() throws IOException {
+        try {
+            mainInterface().callImporter(new DicomZipRequest().directArchive().project(project)
+                                                             .file(CutOffUpload.firstHalfOf(testZip, Paths.get(Settings.TEMP_SUBDIR))));
+            fail("Attempted import invocation should have failed");
+        } catch (ImportException importException) {
+            assertEquals(400, importException.getStatusCode());
+        }
+        assertTrue(mainInterface().getDirectArchiveEntriesForProject(project).isEmpty(), "the cut-off upload's session should have left direct archive");
+        assertEquals("the cut-off upload's session should be in the prearchive in ERROR", PrearchiveStatus.ERROR,
+                     mainInterface().expectSinglePrearchiveResultForProject(project).getStatus());
+
+        mainInterface().callImporter(new DicomZipRequest().directArchive().project(project).file(testZip));
+        waitForDirectArchive(apiSession);
+        mainInterface().jsonQuery().get(CommonStringUtils.formatUrl(mainInterface().subjectAssessorUrl(apiSession), "scans", "ALL", "files"))
+                .then().assertThat().body("ResultSet.Result", Matchers.hasSize(6));
     }
 
     @Test
