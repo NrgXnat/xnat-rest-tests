@@ -4,8 +4,10 @@ import org.apache.log4j.Logger;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
+import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.util.UIDUtils;
 import org.nrg.testing.annotations.TestRequires;
+import org.nrg.testing.dicom.SyntheticEnhancedMr;
 import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.dicom.transform.*;
 import org.nrg.testing.enums.TestData;
@@ -23,20 +25,28 @@ import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.XnatDeployment;
-import org.nrg.xnat.pogo.dicom.FilterMode;
-import org.nrg.xnat.pogo.dicom.SeriesImportFilter;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
+import org.nrg.xnat.pogo.experiments.Scan;
+import org.nrg.xnat.pogo.experiments.scans.MRScan;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
+import org.nrg.xnat.pogo.resources.Resource;
+import org.nrg.xnat.pogo.resources.ResourceFile;
+import org.nrg.xnat.pogo.resources.ScanResource;
 import org.nrg.xnat.pogo.search.SearchResponse;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
 import org.nrg.xnat.pogo.search.XnatSearchParams;
 import org.nrg.xnat.prearchive.*;
 
-import java.nio.file.Paths;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import org.testng.annotations.Test;
 
+import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.assertFalse;
 import static org.testng.AssertJUnit.assertTrue;
 
 @Test(groups = "performance", dataProvider = XnatPerformanceTests.DEPLOYMENTS_PROVIDER)
@@ -46,6 +56,10 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
     private static final String AUTOARCHIVE_PROJECT_ID = "AUTOARCHIVE_TEST";
     private static final String PREARCHIVE_PROJECT_ID = "PREARC_TEST";
     private static final String MANY_SERIES_PROJECT_ID = "MANY_SERIES";
+    private static final String PROJECT_ANON_PROJECT_ID = "PROJECT_ANON";
+    private static final String MULTIFRAME_PROJECT_ID = "MULTIFRAME";
+    private static final int MULTIFRAME_OBJECT_COUNT = 16;
+    private static final int MULTIFRAME_FRAME_COUNT = 100;
     private static final String SIMPLISTIC_ANON_SCRIPT = "simplisticDelete.das";
     private static final String PROBLEMATIC_ANON_SCRIPT = "problematic.das";
     private static final String BASIC_PIXEL_ANON_SCRIPT = "alterPixelsSimplistic.das";
@@ -163,16 +177,6 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                                 .title(String.format("Relabel and DicomEdit6 pixel anonymization of study containing %d MR images", INSTANCE_COUNT_LARGE_STUDY))
                                 .asUser(mainAdminUser)
                                 .performanceTestAction(anonActionViaRelabel(project, DicomEditVersion.DE_6, BASIC_PIXEL_ANON_SCRIPT)),
-                        new SimpleTimedAction("cstore-large-study-sif")
-                                .title(String.format("CSTORE of %d MR images with Series Import Filter", INSTANCE_COUNT_LARGE_STUDY))
-                                .asUser(mainAdminUser)
-                                .withSetup(clearProject)
-                                .performanceTestAction(setSiteImportFilterAndCstore("realistic_filter.txt", LARGE_STUDY_HARDCODED_ROUTING)),
-                        new SimpleTimedAction("cstore-large-study-sif-worst-case")
-                                .title(String.format("CSTORE of %d MR images with worst case Series Import Filter", INSTANCE_COUNT_LARGE_STUDY))
-                                .asUser(mainAdminUser)
-                                .withSetup(clearProject)
-                                .performanceTestAction(setSiteImportFilterAndCstore("worst_case.txt", LARGE_STUDY_HARDCODED_ROUTING)),
                         new SimpleTimedAction(cstoreWithAnonId)
                                 .title(String.format("CSTORE and DicomEdit6 anonymization of study containing %d MR images", INSTANCE_COUNT_LARGE_STUDY))
                                 .asUser(mainAdminUser)
@@ -198,27 +202,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
         final int numSeries = 1000;
         final Project project = new Project(MANY_SERIES_PROJECT_ID).prearchiveCode(PrearchiveCode.MANUAL);
 
-        final LocallyCacheableDicomTransformation dicomTransformation = new LocallyCacheableDicomTransformation(name)
-                .data(TestData.SAMPLE_1_SCAN_4)
-                .transformations(
-                        new DicomTransformation(name)
-                                .prefilter(DicomFilters.ONLY_ONE_FILE)
-                                .transformFunction(
-                                        TransformFunction.composition(
-                                                DicomTransforms.duplicateInstance(numSeries),
-                                                TransformFunction.strictlyTransformative(listOfDicom -> {
-                                                    final String newStudyInstanceUid = UIDUtils.createUID();
-                                                    for (int i = 0; i < numSeries; i++) {
-                                                        final Attributes dicom = listOfDicom.get(i);
-                                                        dicom.setString(Tag.StudyInstanceUID, VR.UI, newStudyInstanceUid);
-                                                        dicom.setString(Tag.SeriesInstanceUID, VR.UI, UIDUtils.createUID());
-                                                        dicom.setInt(Tag.SeriesNumber, VR.IS, i);
-                                                    }
-                                                }),
-                                                hardcodeRoutingForProject(project.getId())
-                                        )
-                                )
-                );
+        final LocallyCacheableDicomTransformation dicomTransformation = manySeriesStudy(name, numSeries, project);
 
         performanceScenario(deployment)
                 .setup(setupForCStoreToProject(project))
@@ -248,6 +232,90 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                 ).run();
     }
 
+    /**
+     * Anonymization at archive time: the project script runs as the session moves from the prearchive to the archive,
+     * and the session is rebuilt afterwards. Only the rebuild and archive are timed; the C-STORE is setup.
+     */
+    @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
+    public void testProjectAnonAtArchive(XnatDeployment deployment) {
+        final int numSeries = 500;
+        final Project project = new Project(PROJECT_ANON_PROJECT_ID).prearchiveCode(PrearchiveCode.MANUAL);
+        final LocallyCacheableDicomTransformation dicomTransformation = manySeriesStudy("project-anon-many-series", numSeries, project);
+        final AtomicBoolean archived = new AtomicBoolean();
+
+        performanceScenario(deployment)
+                .setup(setupForCStoreToProject(project))
+                .tests(
+                        new SimpleTimedAction("archive-many-series-project-anon")
+                                .title(String.format("Rebuild and archive of %d small series with DicomEdit6 project anonymization", numSeries))
+                                .withSetup(() -> {
+                                    dicomTransformation.build();
+                                    mainAdminInterface().setProjectAnonScript(project, XnatObjectUtils.anonScriptFromFile(DicomEditVersion.DE_6, SIMPLISTIC_ANON_SCRIPT));
+                                    cstoreDicomFromTransformation(dicomTransformation).accept(mainAdminInterface(), null);
+                                })
+                                .asUser(mainAdminUser)
+                                .performanceTestAction((xnatInterface, actionMonitor) -> {
+                                    archiveActionForSingleSession(project).accept(xnatInterface, actionMonitor);
+                                    archived.set(true);
+                                })
+                ).run();
+
+        if (archived.get()) {
+            // A script that stopped running would leave this case timing a plain archive, as the series import filter cases did.
+            assertFalse("the project script should have removed (0008,0031) before archiving", firstArchivedObject(project).contains(Tag.SeriesTime));
+        }
+    }
+
+    /**
+     * Large objects through receive-time pixel anonymization: the site script redacts each object as it arrives.
+     * The objects are generated once into the local data cache (see {@link SyntheticEnhancedMr}).
+     */
+    public void testMultiframeSitePixelAnon(XnatDeployment deployment) {
+        final String name = "multiframe-site-pixel";
+        final Project project = new Project(MULTIFRAME_PROJECT_ID).prearchiveCode(PrearchiveCode.MANUAL);
+        final LocallyCacheableDicomTransformation multiframeStudy = new LocallyCacheableDicomTransformation(name)
+                .transformations(
+                        new DicomTransformation(name)
+                                .transformFunction(
+                                        TransformFunction.composition(
+                                                SyntheticEnhancedMr.headers(MULTIFRAME_OBJECT_COUNT, MULTIFRAME_FRAME_COUNT, 512, 512),
+                                                hardcodeRoutingForProject(project.getId())
+                                        )
+                                )
+                                .dicomFileWriter(new SyntheticEnhancedMr.PixelDataWriter())
+                );
+        final AtomicBoolean sent = new AtomicBoolean();
+
+        performanceScenario(deployment)
+                .setup(setupForCStoreToProject(project))
+                .tests(
+                        new SimpleTimedAction("cstore-multiframe-site-pixel")
+                                .title(String.format("CSTORE and DicomEdit6 pixel anonymization of %d Enhanced MR objects of %d frames",
+                                        MULTIFRAME_OBJECT_COUNT, MULTIFRAME_FRAME_COUNT))
+                                .withSetup(() -> {
+                                    multiframeStudy.build();
+                                    mainAdminInterface().setSiteAnonScript(XnatObjectUtils.anonScriptFromFile(DicomEditVersion.DE_6, BASIC_PIXEL_ANON_SCRIPT));
+                                    mainAdminInterface().enableSiteAnonScript();
+                                })
+                                .asUser(mainAdminUser)
+                                .performanceTestAction((xnatInterface, actionMonitor) -> {
+                                    cstoreDicomFromTransformation(multiframeStudy).accept(xnatInterface, actionMonitor);
+                                    sent.set(true);
+                                })
+                ).run();
+
+        if (sent.get()) {
+            // XnatCStore doesn't report refused objects, and objects refused or left unredacted would make this case look faster.
+            final SessionData received = mainAdminInterface().expectSinglePrearchiveResultForProject(project);
+            mainAdminInterface().rebuildSession(received, false);
+            final List<Scan> scans = mainAdminInterface().readScansForPrearchiveSession(received);
+            assertEquals("every object should have been stored", MULTIFRAME_OBJECT_COUNT, scans.size());
+            final Resource dicom = mainAdminInterface().findResource(scans.get(0).getScanResources(), "DICOM");
+            assertTrue("the pixel script should have redacted the top left corner",
+                    topLeftOfSecondFrameIsZero(readObject(dicom, dicom.getResourceFiles().get(0))));
+        }
+    }
+
     private Consumer<PerformanceStateHelper> setupForCStoreToProject(Project project) {
         return performanceStateHelper -> {
             mainAdminInterface().disableSiteAnonScript();
@@ -262,18 +330,6 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
             final Subject subject = xnatInterface.readProject(project.getId()).getSubjects().get(0);
             final ImagingSession session = subject.getSessions().get(0);
             xnatInterface.relabelSubjectAssessor(project, subject, session, session.getLabel() + "_1");
-        };
-    }
-
-    private BiConsumer<XnatInterface, ActionMonitor> setSiteImportFilterAndCstore(String filterName, LocallyCacheableDicomTransformation dicomTransformation) {
-        return (xnatInterface, actionMonitor) -> {
-            mainAdminInterface().setSiteSeriesImportFilter(
-                    new SeriesImportFilter()
-                            .enabled(true)
-                            .filterBody(readDataFile(Paths.get("series_import_filters", filterName).toString()))
-                            .filterMode(FilterMode.BLACKLIST)
-            );
-            cstoreDicomFromTransformation(dicomTransformation).accept(xnatInterface, actionMonitor);
         };
     }
 
@@ -295,6 +351,71 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                             .expectedResult(PrearchiveResultExpectations.EMPTY)
             );
         };
+    }
+
+    /** One study of numSeries single-image series, routed to the project. */
+    private static LocallyCacheableDicomTransformation manySeriesStudy(String name, int numSeries, Project project) {
+        return new LocallyCacheableDicomTransformation(name)
+                .data(TestData.SAMPLE_1_SCAN_4)
+                .transformations(
+                        new DicomTransformation(name)
+                                .prefilter(DicomFilters.ONLY_ONE_FILE)
+                                .transformFunction(
+                                        TransformFunction.composition(
+                                                DicomTransforms.duplicateInstance(numSeries),
+                                                TransformFunction.strictlyTransformative(listOfDicom -> {
+                                                    final String newStudyInstanceUid = UIDUtils.createUID();
+                                                    for (int i = 0; i < numSeries; i++) {
+                                                        final Attributes dicom = listOfDicom.get(i);
+                                                        dicom.setString(Tag.StudyInstanceUID, VR.UI, newStudyInstanceUid);
+                                                        dicom.setString(Tag.SeriesInstanceUID, VR.UI, UIDUtils.createUID());
+                                                        dicom.setInt(Tag.SeriesNumber, VR.IS, i);
+                                                    }
+                                                }),
+                                                hardcodeRoutingForProject(project.getId())
+                                        )
+                                )
+                );
+    }
+
+    /** An object of the project's only archived session, read from one scan rather than downloading every file. */
+    private Attributes firstArchivedObject(Project project) {
+        final Subject subject = mainAdminInterface().readProject(project.getId(), XnatRecursionLevel.SUBJECTS_WITH_METADATA).getSubjects().get(0);
+        final ImagingSession session = new MRSession(project, subject, subject.getLabel());
+        final ScanResource dicom = new ScanResource(project, subject, session, new MRScan(session, "1"), "DICOM");
+        return readObject(dicom, mainAdminInterface().readResourceFiles(dicom).get(0));
+    }
+
+    private Attributes readObject(Resource resource, ResourceFile file) {
+        try (DicomInputStream dicomInputStream = new DicomInputStream(mainAdminInterface().streamResourceFile(resource, file))) {
+            return dicomInputStream.readDataset();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Unable to read " + file.getName() + " as DICOM", e);
+        }
+    }
+
+    /**
+     * Whether the top left 10 x 10 pixels of the object's second frame are zero. {@link SyntheticEnhancedMr} fills them
+     * with values of 13 or more, and the pixel script's rectangle covers them however its edge is counted.
+     */
+    private static boolean topLeftOfSecondFrameIsZero(Attributes object) {
+        final byte[] pixels;
+        try {
+            pixels = object.getBytes(Tag.PixelData);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Unable to read the pixel data", e);
+        }
+        final int columns = object.getInt(Tag.Columns, 0);
+        final int secondFrame = object.getInt(Tag.Rows, 0) * columns * 2;
+        for (int row = 0; row < 10; row++) {
+            for (int column = 0; column < 10; column++) {
+                final int offset = secondFrame + (row * columns + column) * 2;
+                if (pixels[offset] != 0 || pixels[offset + 1] != 0) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private static TransformFunction hardcodeRoutingForProject(String projectId) {
