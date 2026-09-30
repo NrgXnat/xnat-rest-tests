@@ -47,6 +47,10 @@
 
     <properties>
         <nrg_test.version>2.7-SNAPSHOT</nrg_test.version>
+        <!-- Overrides the grxnat that nrg_test brings in: TestMembershipTransitions needs setUserProjectRole,
+             removeUserFromProject and readCreateableDataTypes. Return to the nrg_test default once a grxnat
+             release with them is published. -->
+        <grxnat.version>1.22-membership-transitions-SNAPSHOT</grxnat.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
@@ -64,6 +68,16 @@
             </plugin>
         </plugins>
     </build>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>grxnat</artifactId>
+                <version>${grxnat.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
 
