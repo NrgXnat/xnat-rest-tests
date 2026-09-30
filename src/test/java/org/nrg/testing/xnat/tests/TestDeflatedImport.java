@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.nrg.testing.TestGroups.IMPORTER;
+import static org.nrg.testing.TestGroups.PREARCHIVE;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertNotNull;
 
@@ -106,17 +107,18 @@ public class TestDeflatedImport extends BaseXnatRestTest {
 
     @AfterClass(groups = IMPORTER, alwaysRun = true)
     private void tearDown() {
-        mainAdminInterface().disableSiteAnonScript();
+        mainAdminInterface().enableSiteAnonScript();
+        mainAdminInterface().setSiteAnonScript(restDriver.getDefaultXnatAnonScript());
         restDriver.deleteProjectSilently(mainAdminUser, project);
     }
 
-    @Test
+    @Test(groups = PREARCHIVE)
     @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
     public void testDeflatedZipUpload() {
         importDeflated(NO_SCRIPT_SESSION, false);
     }
 
-    @Test
+    @Test(groups = PREARCHIVE)
     @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
     public void testDeflatedZipUploadWithSiteScript() {
         importDeflated(SITE_SCRIPT_SESSION, true);
