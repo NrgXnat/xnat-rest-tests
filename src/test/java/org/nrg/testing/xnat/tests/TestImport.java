@@ -777,9 +777,9 @@ public class TestImport extends BaseXnatRestTest {
         mainInterface().rebuildSession(reopened, false);
         mainInterface().archiveSession(reopened);
 
-        final ImagingSession session = new MRSession(project, new Subject(project, subjectFromTestZip), sessionFromTestZip);
-        mainInterface().jsonQuery().get(CommonStringUtils.formatUrl(mainInterface().subjectAssessorUrl(session), "scans", "ALL", "files"))
-                .then().assertThat().body("ResultSet.Result", Matchers.hasSize(6));
+        final Subject subject = new Subject(project, subjectFromTestZip);
+        final ImagingSession session = new MRSession(project, subject, sessionFromTestZip);
+        CutOffUpload.assertWholeObjects(restDriver.downloadAllDicomFromSession(mainUser, project, subject, session), CutOffUpload.objectsIn(testZip));
     }
 
     private void testPrearcDodgyUidMerge(Runnable importWorkflow, boolean acceptableForImporter) {

@@ -4,8 +4,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
 import org.dcm4che2.data.Tag;
-import org.hamcrest.Matchers;
-import org.nrg.testing.CommonStringUtils;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
@@ -150,8 +148,7 @@ public class TestDirectArchive extends BaseXnatRestTest {
 
         mainInterface().callImporter(new DicomZipRequest().directArchive().project(project).file(testZip));
         waitForDirectArchive(apiSession);
-        mainInterface().jsonQuery().get(CommonStringUtils.formatUrl(mainInterface().subjectAssessorUrl(apiSession), "scans", "ALL", "files"))
-                .then().assertThat().body("ResultSet.Result", Matchers.hasSize(6));
+        CutOffUpload.assertWholeObjects(restDriver.downloadAllDicomFromSession(mainUser, project, apiSubject, apiSession), CutOffUpload.objectsIn(testZip));
     }
 
     @Test
