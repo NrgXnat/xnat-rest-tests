@@ -6,7 +6,6 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.util.UIDUtils;
-import org.nrg.testing.CommonStringUtils;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.SyntheticEnhancedMr;
 import org.nrg.testing.dicom.XnatCStore;
@@ -27,15 +26,20 @@ import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.XnatDeployment;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
+import org.nrg.xnat.pogo.experiments.Scan;
+import org.nrg.xnat.pogo.experiments.scans.MRScan;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
+import org.nrg.xnat.pogo.resources.Resource;
+import org.nrg.xnat.pogo.resources.ResourceFile;
+import org.nrg.xnat.pogo.resources.ScanResource;
 import org.nrg.xnat.pogo.search.SearchResponse;
 import org.nrg.xnat.pogo.search.XnatSearchDocument;
 import org.nrg.xnat.pogo.search.XnatSearchParams;
 import org.nrg.xnat.prearchive.*;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -54,6 +58,8 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
     private static final String MANY_SERIES_PROJECT_ID = "MANY_SERIES";
     private static final String PROJECT_ANON_PROJECT_ID = "PROJECT_ANON";
     private static final String MULTIFRAME_PROJECT_ID = "MULTIFRAME";
+    private static final int MULTIFRAME_OBJECT_COUNT = 16;
+    private static final int MULTIFRAME_FRAME_COUNT = 100;
     private static final String SIMPLISTIC_ANON_SCRIPT = "simplisticDelete.das";
     private static final String PROBLEMATIC_ANON_SCRIPT = "problematic.das";
     private static final String BASIC_PIXEL_ANON_SCRIPT = "alterPixelsSimplistic.das";
@@ -266,8 +272,19 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
      * The objects are generated once into the local data cache (see {@link SyntheticEnhancedMr}).
      */
     public void testMultiframeSitePixelAnon(XnatDeployment deployment) {
+        final String name = "multiframe-site-pixel";
         final Project project = new Project(MULTIFRAME_PROJECT_ID).prearchiveCode(PrearchiveCode.MANUAL);
-        final SyntheticEnhancedMr multiframeStudy = new SyntheticEnhancedMr("multiframe-site-pixel").routeTo(project.getId());
+        final LocallyCacheableDicomTransformation multiframeStudy = new LocallyCacheableDicomTransformation(name)
+                .transformations(
+                        new DicomTransformation(name)
+                                .transformFunction(
+                                        TransformFunction.composition(
+                                                SyntheticEnhancedMr.headers(MULTIFRAME_OBJECT_COUNT, MULTIFRAME_FRAME_COUNT, 512, 512),
+                                                hardcodeRoutingForProject(project.getId())
+                                        )
+                                )
+                                .dicomFileWriter(new SyntheticEnhancedMr.PixelDataWriter())
+                );
         final AtomicBoolean sent = new AtomicBoolean();
 
         performanceScenario(deployment)
@@ -275,7 +292,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                 .tests(
                         new SimpleTimedAction("cstore-multiframe-site-pixel")
                                 .title(String.format("CSTORE and DicomEdit6 pixel anonymization of %d Enhanced MR objects of %d frames",
-                                        multiframeStudy.getObjectCount(), multiframeStudy.getFrameCount()))
+                                        MULTIFRAME_OBJECT_COUNT, MULTIFRAME_FRAME_COUNT))
                                 .withSetup(() -> {
                                     multiframeStudy.build();
                                     mainAdminInterface().setSiteAnonScript(XnatObjectUtils.anonScriptFromFile(DicomEditVersion.DE_6, BASIC_PIXEL_ANON_SCRIPT));
@@ -283,7 +300,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                                 })
                                 .asUser(mainAdminUser)
                                 .performanceTestAction((xnatInterface, actionMonitor) -> {
-                                    new XnatCStore().data(multiframeStudy.directory().toFile()).sendDICOM();
+                                    cstoreDicomFromTransformation(multiframeStudy).accept(xnatInterface, actionMonitor);
                                     sent.set(true);
                                 })
                 ).run();
@@ -292,12 +309,11 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
             // XnatCStore doesn't report refused objects, and objects refused or left unredacted would make this case look faster.
             final SessionData received = mainAdminInterface().expectSinglePrearchiveResultForProject(project);
             mainAdminInterface().rebuildSession(received, false);
-            assertEquals("every object should have been stored", multiframeStudy.getObjectCount(),
-                    mainAdminInterface().readScansForPrearchiveSession(received).size());
-            final String firstFile = mainAdminInterface().jsonQuery()
-                    .get(mainAdminInterface().formatRestUrl(received.getUrl(), "scans", "1", "resources", "DICOM", "files"))
-                    .then().assertThat().statusCode(200).extract().jsonPath().getString("ResultSet.Result[0].URI");
-            assertTrue("the pixel script should have redacted the top left corner", topLeftOfSecondFrameIsZero(readObject(firstFile)));
+            final List<Scan> scans = mainAdminInterface().readScansForPrearchiveSession(received);
+            assertEquals("every object should have been stored", MULTIFRAME_OBJECT_COUNT, scans.size());
+            final Resource dicom = mainAdminInterface().findResource(scans.get(0).getScanResources(), "DICOM");
+            assertTrue("the pixel script should have redacted the top left corner",
+                    topLeftOfSecondFrameIsZero(readObject(dicom, dicom.getResourceFiles().get(0))));
         }
     }
 
@@ -363,22 +379,19 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                 );
     }
 
-    /** The first object in the project's only archived session, read from one file rather than downloading them all. */
+    /** An object of the project's only archived session, read from one scan rather than downloading every file. */
     private Attributes firstArchivedObject(Project project) {
         final Subject subject = mainAdminInterface().readProject(project.getId(), XnatRecursionLevel.SUBJECTS_WITH_METADATA).getSubjects().get(0);
-        final String filesUrl = CommonStringUtils.formatUrl(
-                mainAdminInterface().subjectAssessorUrl(project, subject, new MRSession().label(subject.getLabel())), "scans", "ALL", "files");
-        return readObject(mainAdminInterface().jsonQuery().get(filesUrl).then().assertThat().statusCode(200)
-                .extract().jsonPath().getString("ResultSet.Result[0].URI"));
+        final ImagingSession session = new MRSession(project, subject, subject.getLabel());
+        final ScanResource dicom = new ScanResource(project, subject, session, new MRScan(session, "1"), "DICOM");
+        return readObject(dicom, mainAdminInterface().readResourceFiles(dicom).get(0));
     }
 
-    private Attributes readObject(String fileUri) {
-        final byte[] contents = mainAdminInterface().queryBase().get(formatXnatUrl(fileUri)).then().assertThat().statusCode(200)
-                .extract().asByteArray();
-        try (DicomInputStream dicomInputStream = new DicomInputStream(new ByteArrayInputStream(contents))) {
+    private Attributes readObject(Resource resource, ResourceFile file) {
+        try (DicomInputStream dicomInputStream = new DicomInputStream(mainAdminInterface().streamResourceFile(resource, file))) {
             return dicomInputStream.readDataset();
         } catch (IOException e) {
-            throw new UncheckedIOException("Unable to read " + fileUri + " as DICOM", e);
+            throw new UncheckedIOException("Unable to read " + file.getName() + " as DICOM", e);
         }
     }
 
