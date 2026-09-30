@@ -4,7 +4,9 @@ import org.apache.log4j.Logger;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
+import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.util.UIDUtils;
+import org.nrg.testing.CommonStringUtils;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.dicom.transform.*;
@@ -30,10 +32,15 @@ import org.nrg.xnat.pogo.search.XnatSearchDocument;
 import org.nrg.xnat.pogo.search.XnatSearchParams;
 import org.nrg.xnat.prearchive.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import org.testng.annotations.Test;
 
+import static org.testng.AssertJUnit.assertFalse;
 import static org.testng.AssertJUnit.assertTrue;
 
 @Test(groups = "performance", dataProvider = XnatPerformanceTests.DEPLOYMENTS_PROVIDER)
@@ -43,6 +50,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
     private static final String AUTOARCHIVE_PROJECT_ID = "AUTOARCHIVE_TEST";
     private static final String PREARCHIVE_PROJECT_ID = "PREARC_TEST";
     private static final String MANY_SERIES_PROJECT_ID = "MANY_SERIES";
+    private static final String PROJECT_ANON_PROJECT_ID = "PROJECT_ANON";
     private static final String SIMPLISTIC_ANON_SCRIPT = "simplisticDelete.das";
     private static final String PROBLEMATIC_ANON_SCRIPT = "problematic.das";
     private static final String BASIC_PIXEL_ANON_SCRIPT = "alterPixelsSimplistic.das";
@@ -185,27 +193,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
         final int numSeries = 1000;
         final Project project = new Project(MANY_SERIES_PROJECT_ID).prearchiveCode(PrearchiveCode.MANUAL);
 
-        final LocallyCacheableDicomTransformation dicomTransformation = new LocallyCacheableDicomTransformation(name)
-                .data(TestData.SAMPLE_1_SCAN_4)
-                .transformations(
-                        new DicomTransformation(name)
-                                .prefilter(DicomFilters.ONLY_ONE_FILE)
-                                .transformFunction(
-                                        TransformFunction.composition(
-                                                DicomTransforms.duplicateInstance(numSeries),
-                                                TransformFunction.strictlyTransformative(listOfDicom -> {
-                                                    final String newStudyInstanceUid = UIDUtils.createUID();
-                                                    for (int i = 0; i < numSeries; i++) {
-                                                        final Attributes dicom = listOfDicom.get(i);
-                                                        dicom.setString(Tag.StudyInstanceUID, VR.UI, newStudyInstanceUid);
-                                                        dicom.setString(Tag.SeriesInstanceUID, VR.UI, UIDUtils.createUID());
-                                                        dicom.setInt(Tag.SeriesNumber, VR.IS, i);
-                                                    }
-                                                }),
-                                                hardcodeRoutingForProject(project.getId())
-                                        )
-                                )
-                );
+        final LocallyCacheableDicomTransformation dicomTransformation = manySeriesStudy(name, numSeries, project);
 
         performanceScenario(deployment)
                 .setup(setupForCStoreToProject(project))
@@ -233,6 +221,41 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                                     xnatInterface.queryBase().queryParam("format", "html").get(sessionPage).then().assertThat().statusCode(200);
                                 })
                 ).run();
+    }
+
+    /**
+     * Anonymization at archive time: the project script runs as the session moves from the prearchive to the archive,
+     * and the session is rebuilt afterwards. Only the rebuild and archive are timed; the C-STORE is setup.
+     */
+    @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
+    public void testProjectAnonAtArchive(XnatDeployment deployment) {
+        final int numSeries = 500;
+        final Project project = new Project(PROJECT_ANON_PROJECT_ID).prearchiveCode(PrearchiveCode.MANUAL);
+        final LocallyCacheableDicomTransformation dicomTransformation = manySeriesStudy("project-anon-many-series", numSeries, project);
+        final AtomicBoolean archived = new AtomicBoolean();
+
+        performanceScenario(deployment)
+                .setup(setupForCStoreToProject(project))
+                .tests(
+                        new SimpleTimedAction("archive-many-series-project-anon")
+                                .title(String.format("Rebuild and archive of %d small series with DicomEdit6 project anonymization", numSeries))
+                                .withSetup(() -> {
+                                    dicomTransformation.build();
+                                    mainAdminInterface().setProjectAnonScript(project, XnatObjectUtils.anonScriptFromFile(DicomEditVersion.DE_6, SIMPLISTIC_ANON_SCRIPT));
+                                    mainAdminInterface().enableProjectAnonScript(project);
+                                    cstoreDicomFromTransformation(dicomTransformation).accept(mainAdminInterface(), null);
+                                })
+                                .asUser(mainAdminUser)
+                                .performanceTestAction((xnatInterface, actionMonitor) -> {
+                                    archiveActionForSingleSession(project).accept(xnatInterface, actionMonitor);
+                                    archived.set(true);
+                                })
+                ).run();
+
+        if (archived.get()) {
+            // A script that stopped running would leave this case timing a plain archive, as the series import filter cases did.
+            assertFalse("the project script should have removed (0008,0031) before archiving", firstArchivedObject(project).contains(Tag.SeriesTime));
+        }
     }
 
     private Consumer<PerformanceStateHelper> setupForCStoreToProject(Project project) {
@@ -270,6 +293,50 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                             .expectedResult(PrearchiveResultExpectations.EMPTY)
             );
         };
+    }
+
+    /** One study of numSeries single-image series, routed to the project. */
+    private static LocallyCacheableDicomTransformation manySeriesStudy(String name, int numSeries, Project project) {
+        return new LocallyCacheableDicomTransformation(name)
+                .data(TestData.SAMPLE_1_SCAN_4)
+                .transformations(
+                        new DicomTransformation(name)
+                                .prefilter(DicomFilters.ONLY_ONE_FILE)
+                                .transformFunction(
+                                        TransformFunction.composition(
+                                                DicomTransforms.duplicateInstance(numSeries),
+                                                TransformFunction.strictlyTransformative(listOfDicom -> {
+                                                    final String newStudyInstanceUid = UIDUtils.createUID();
+                                                    for (int i = 0; i < numSeries; i++) {
+                                                        final Attributes dicom = listOfDicom.get(i);
+                                                        dicom.setString(Tag.StudyInstanceUID, VR.UI, newStudyInstanceUid);
+                                                        dicom.setString(Tag.SeriesInstanceUID, VR.UI, UIDUtils.createUID());
+                                                        dicom.setInt(Tag.SeriesNumber, VR.IS, i);
+                                                    }
+                                                }),
+                                                hardcodeRoutingForProject(project.getId())
+                                        )
+                                )
+                );
+    }
+
+    /** The first object in the project's only archived session, read from one file rather than downloading them all. */
+    private Attributes firstArchivedObject(Project project) {
+        final Subject subject = mainAdminInterface().readProject(project.getId(), XnatRecursionLevel.SUBJECTS_WITH_METADATA).getSubjects().get(0);
+        final String filesUrl = CommonStringUtils.formatUrl(
+                mainAdminInterface().subjectAssessorUrl(project, subject, new MRSession().label(subject.getLabel())), "scans", "ALL", "files");
+        return readObject(mainAdminInterface().jsonQuery().get(filesUrl).then().assertThat().statusCode(200)
+                .extract().jsonPath().getString("ResultSet.Result[0].URI"));
+    }
+
+    private Attributes readObject(String fileUri) {
+        final byte[] contents = mainAdminInterface().queryBase().get(formatXnatUrl(fileUri)).then().assertThat().statusCode(200)
+                .extract().asByteArray();
+        try (DicomInputStream dicomInputStream = new DicomInputStream(new ByteArrayInputStream(contents))) {
+            return dicomInputStream.readDataset();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Unable to read " + fileUri + " as DICOM", e);
+        }
     }
 
     private static TransformFunction hardcodeRoutingForProject(String projectId) {
