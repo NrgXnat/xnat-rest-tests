@@ -8,6 +8,7 @@ import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.util.UIDUtils;
 import org.nrg.testing.CommonStringUtils;
 import org.nrg.testing.annotations.TestRequires;
+import org.nrg.testing.dicom.SyntheticEnhancedMr;
 import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.dicom.transform.*;
 import org.nrg.testing.enums.TestData;
@@ -40,6 +41,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import org.testng.annotations.Test;
 
+import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertFalse;
 import static org.testng.AssertJUnit.assertTrue;
 
@@ -51,6 +53,7 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
     private static final String PREARCHIVE_PROJECT_ID = "PREARC_TEST";
     private static final String MANY_SERIES_PROJECT_ID = "MANY_SERIES";
     private static final String PROJECT_ANON_PROJECT_ID = "PROJECT_ANON";
+    private static final String MULTIFRAME_PROJECT_ID = "MULTIFRAME";
     private static final String SIMPLISTIC_ANON_SCRIPT = "simplisticDelete.das";
     private static final String PROBLEMATIC_ANON_SCRIPT = "problematic.das";
     private static final String BASIC_PIXEL_ANON_SCRIPT = "alterPixelsSimplistic.das";
@@ -258,6 +261,46 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
         }
     }
 
+    /**
+     * Large objects through receive-time pixel anonymization: the site script redacts each object as it arrives.
+     * The objects are generated once into the local data cache (see {@link SyntheticEnhancedMr}).
+     */
+    public void testMultiframeSitePixelAnon(XnatDeployment deployment) {
+        final Project project = new Project(MULTIFRAME_PROJECT_ID).prearchiveCode(PrearchiveCode.MANUAL);
+        final SyntheticEnhancedMr multiframeStudy = new SyntheticEnhancedMr("multiframe-site-pixel").routeTo(project.getId());
+        final AtomicBoolean sent = new AtomicBoolean();
+
+        performanceScenario(deployment)
+                .setup(setupForCStoreToProject(project))
+                .tests(
+                        new SimpleTimedAction("cstore-multiframe-site-pixel")
+                                .title(String.format("CSTORE and DicomEdit6 pixel anonymization of %d Enhanced MR objects of %d frames",
+                                        multiframeStudy.getObjectCount(), multiframeStudy.getFrameCount()))
+                                .withSetup(() -> {
+                                    multiframeStudy.build();
+                                    mainAdminInterface().setSiteAnonScript(XnatObjectUtils.anonScriptFromFile(DicomEditVersion.DE_6, BASIC_PIXEL_ANON_SCRIPT));
+                                    mainAdminInterface().enableSiteAnonScript();
+                                })
+                                .asUser(mainAdminUser)
+                                .performanceTestAction((xnatInterface, actionMonitor) -> {
+                                    new XnatCStore().data(multiframeStudy.directory().toFile()).sendDICOM();
+                                    sent.set(true);
+                                })
+                ).run();
+
+        if (sent.get()) {
+            // XnatCStore doesn't report refused objects, and objects refused or left unredacted would make this case look faster.
+            final SessionData received = mainAdminInterface().expectSinglePrearchiveResultForProject(project);
+            mainAdminInterface().rebuildSession(received, false);
+            assertEquals("every object should have been stored", multiframeStudy.getObjectCount(),
+                    mainAdminInterface().readScansForPrearchiveSession(received).size());
+            final String firstFile = mainAdminInterface().jsonQuery()
+                    .get(mainAdminInterface().formatRestUrl(received.getUrl(), "scans", "1", "resources", "DICOM", "files"))
+                    .then().assertThat().statusCode(200).extract().jsonPath().getString("ResultSet.Result[0].URI");
+            assertTrue("the pixel script should have redacted the top left corner", topLeftOfSecondFrameIsZero(readObject(firstFile)));
+        }
+    }
+
     private Consumer<PerformanceStateHelper> setupForCStoreToProject(Project project) {
         return performanceStateHelper -> {
             mainAdminInterface().disableSiteAnonScript();
@@ -337,6 +380,30 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
         } catch (IOException e) {
             throw new UncheckedIOException("Unable to read " + fileUri + " as DICOM", e);
         }
+    }
+
+    /**
+     * Whether the top left 10 x 10 pixels of the object's second frame are zero. {@link SyntheticEnhancedMr} fills them
+     * with values of 13 or more, and the pixel script's rectangle covers them however its edge is counted.
+     */
+    private static boolean topLeftOfSecondFrameIsZero(Attributes object) {
+        final byte[] pixels;
+        try {
+            pixels = object.getBytes(Tag.PixelData);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Unable to read the pixel data", e);
+        }
+        final int columns = object.getInt(Tag.Columns, 0);
+        final int secondFrame = object.getInt(Tag.Rows, 0) * columns * 2;
+        for (int row = 0; row < 10; row++) {
+            for (int column = 0; column < 10; column++) {
+                final int offset = secondFrame + (row * columns + column) * 2;
+                if (pixels[offset] != 0 || pixels[offset + 1] != 0) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private static TransformFunction hardcodeRoutingForProject(String projectId) {
