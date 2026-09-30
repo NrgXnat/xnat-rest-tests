@@ -251,7 +251,6 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                                 .withSetup(() -> {
                                     dicomTransformation.build();
                                     mainAdminInterface().setProjectAnonScript(project, XnatObjectUtils.anonScriptFromFile(DicomEditVersion.DE_6, SIMPLISTIC_ANON_SCRIPT));
-                                    mainAdminInterface().enableProjectAnonScript(project);
                                     cstoreDicomFromTransformation(dicomTransformation).accept(mainAdminInterface(), null);
                                 })
                                 .asUser(mainAdminUser)
