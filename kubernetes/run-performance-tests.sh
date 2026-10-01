@@ -136,7 +136,7 @@ until "${K[@]}" exec "$POD" -c tests -- test -f /work/.exit 2>/dev/null; do slee
 kill "$LOGS" 2>/dev/null || true
 
 mkdir -p "$OUT"
-put 'cd /work && tar -cf - $(ls -d target/surefire-reports src/test/resources/data/performance xnat_test.log* 2>/dev/null)' | tar -xf - -C "$OUT"
+put 'cd /work && tar -cf - $(ls -d target/surefire-reports target/xnat-logs src/test/resources/data/performance xnat_test.log* 2>/dev/null)' | tar -xf - -C "$OUT"
 EXIT=$("${K[@]}" exec "$POD" -c tests -- cat /work/.exit)
 put 'touch /work/.collected'
 COLLECTED=1

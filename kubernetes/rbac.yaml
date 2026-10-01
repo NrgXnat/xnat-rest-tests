@@ -14,16 +14,20 @@ rules:
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list", "watch"]
-  # Empty the data directories, copy plugins and recreate the database.
+  # Save the XNAT container's log before each stop.
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  # Empty the data directories, copy plugins, save XNAT's logs directory and recreate the database.
   - apiGroups: [""]
     resources: ["pods/exec"]
     verbs: ["create"]
-  # Scale the XNAT workload down and up, and switch its image.
+  # Read the XNAT StatefulSet's pod template, switch its image, and scale it down and up.
   - apiGroups: ["apps"]
-    resources: ["statefulsets", "deployments"]
+    resources: ["statefulsets"]
     verbs: ["get", "patch"]
   - apiGroups: ["apps"]
-    resources: ["statefulsets/scale", "deployments/scale"]
+    resources: ["statefulsets/scale"]
     verbs: ["get", "patch", "update"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
