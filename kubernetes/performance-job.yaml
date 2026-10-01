@@ -17,6 +17,16 @@ spec:
     spec:
       serviceAccountName: xnat-performance-tests
       restartPolicy: Never
+      # The kubectl the script uploads is built for this architecture.
+      nodeSelector:
+        kubernetes.io/arch: ${ARCH}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       # Keep the tests off the XNAT pod's node, so they don't compete with it for CPU.
       affinity:
         podAntiAffinity:
@@ -29,6 +39,10 @@ spec:
         - name: tests
           image: ${IMAGE}
           workingDir: /work
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           command: ["sh", "-c"]
           args:
             - |
