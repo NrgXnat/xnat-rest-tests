@@ -13,7 +13,8 @@
 # `mvn test` from a stock Maven image, as uid 1000 on a node of --arch, so it needs to reach the Maven repositories in
 # pom.xml and the test data server. nrg_test is pom.xml's version unless --nrg-test-version names another; a copy in
 # the local Maven repository is uploaded, and Maven doesn't update snapshots it already has, so a locally built
-# nrg_test is what runs; any other version is downloaded.
+# nrg_test is what runs; any other version is downloaded. The pod keeps off the node of --avoid-pod, by default the
+# config's xnat.k8s.pod or its StatefulSet's <name>-0.
 # --fresh-history starts the run without the performance history in the repository, so results are judged against
 # this run's own earlier deployments rather than past runs elsewhere. The Job keeps running if this script loses its
 # connection; --attach picks it up again, follows it and collects the results.
@@ -21,8 +22,8 @@ set -euo pipefail
 
 usage() { sed -n '2,/^[^#]/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 
-NAMESPACE= CONTEXT= CONFIG= TESTS= IMAGE=maven:3.9-eclipse-temurin-8 KUBECTL_VERSION= ARCH=amd64 ATTACH=
-NRG_TEST_VERSION= OUT= DEADLINE=129600 KEEP=0 FRESH_HISTORY=0 AVOID_POD=xnat-0 MVN_ARGS=()
+NAMESPACE='' CONTEXT='' CONFIG='' TESTS='' IMAGE=maven:3.9-eclipse-temurin-8 KUBECTL_VERSION='' ARCH=amd64 ATTACH=''
+NRG_TEST_VERSION='' OUT='' DEADLINE=129600 KEEP=0 FRESH_HISTORY=0 AVOID_POD='' MVN_ARGS=()
 while [ $# -gt 0 ]; do
     case "$1" in
         --namespace) NAMESPACE=$2; shift 2 ;;
@@ -82,6 +83,11 @@ find_pod() {
 }
 put() { "${K[@]}" exec -i "$POD" -c tests -- sh -c "$1"; }
 
+# The last value the run's properties file gives a key, or nothing.
+config_value() {
+    sed -n "s/^[[:space:]]*${1//./\\.}[[:space:]]*=[[:space:]]*//p" "$CONFIG" | tail -1 | tr -d '\r' | sed 's/[[:space:]]*$//'
+}
+
 start_job() {
     # kubectl for the pod, matching the cluster's version unless one is given.
     if [ -z "$KUBECTL_VERSION" ]; then
@@ -94,7 +100,17 @@ start_job() {
         chmod +x "$kubectl_binary.part" && mv "$kubectl_binary.part" "$kubectl_binary"
     fi
 
-    echo "Starting Job $JOB in $NAMESPACE"
+    if [ -z "$AVOID_POD" ]; then
+        AVOID_POD=$(config_value xnat.k8s.pod)
+    fi
+    if [ -z "$AVOID_POD" ]; then
+        local workload
+        workload=$(config_value xnat.k8s.workload)
+        AVOID_POD=${workload:+${workload#*/}-0}
+        AVOID_POD=${AVOID_POD:-xnat-0}
+    fi
+
+    echo "Starting Job $JOB in $NAMESPACE, away from the node of $AVOID_POD"
     "${K[@]}" apply -f "$REPO/kubernetes/rbac.yaml" >/dev/null
     sed -e "s|\${JOB_NAME}|$JOB|g" -e "s|\${IMAGE}|$IMAGE|g" -e "s|\${DEADLINE_SECONDS}|$DEADLINE|g" \
         -e "s|\${AVOID_POD}|$AVOID_POD|g" -e "s|\${ARCH}|$ARCH|g" "$REPO/kubernetes/performance-job.yaml" | "${K[@]}" apply -f - >/dev/null
