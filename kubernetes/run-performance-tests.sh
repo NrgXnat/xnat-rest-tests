@@ -12,8 +12,8 @@
 # FILE is a properties file for the run (see src/test/resources/config/kubernetes.properties.example). The pod runs
 # `mvn test` from a stock Maven image, as uid 1000 on a node of --arch, so it needs to reach the Maven repositories in
 # pom.xml and the test data server. nrg_test is pom.xml's version unless --nrg-test-version names another; a copy in
-# the local Maven repository is uploaded, so a locally built nrg_test is what runs, and any other version is
-# downloaded.
+# the local Maven repository is uploaded, and Maven doesn't update snapshots it already has, so a locally built
+# nrg_test is what runs; any other version is downloaded.
 # --fresh-history starts the run without the performance history in the repository, so results are judged against
 # this run's own earlier deployments rather than past runs elsewhere. The Job keeps running if this script loses its
 # connection; --attach picks it up again, follows it and collects the results.
@@ -114,7 +114,7 @@ start_job() {
     {
         echo 'export PATH=/work/bin:$PATH'
         echo 'cd /work'
-        printf 'mvn -B'
+        printf 'mvn -B -nsu'
         printf ' %q' "-Dmaven.repo.local=/work/.m2/repository" "-Dnrg_test.version=$NRG_TEST_VERSION" "-Dxnat.config=kubernetes-run.properties"
         [ -n "$TESTS" ] && printf ' %q' "-Dtest=$TESTS"
         [ ${#MVN_ARGS[@]} -gt 0 ] && printf ' %q' "${MVN_ARGS[@]}"

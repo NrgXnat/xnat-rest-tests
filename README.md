@@ -89,7 +89,7 @@ $ kubernetes/run-performance-tests.sh --context my-cluster --namespace my-xnat -
       --tests TestPerformanceDicom#testLargeSeriesCountPerformance
 ```
 
-The script applies the RBAC, starts the Job from a stock Maven image, uploads the tracked sources, the config, a Linux kubectl matching the cluster and, if your local Maven repository has it, nrg_test at the version in `pom.xml` (or `--nrg-test-version`), so a locally built nrg_test is what runs, and then runs `mvn test` in the pod while following its log. When the tests finish it copies `target/surefire-reports`, the performance history and charts in `src/test/resources/data/performance`, and the test log into `target/kubernetes-runs/<job>`, then deletes the Job (`--keep` leaves it). The pod needs to reach the Maven repositories in `pom.xml` and the test data server.
+The script applies the RBAC, starts the Job from a stock Maven image, uploads the tracked sources, the config, a Linux kubectl matching the cluster and, if your local Maven repository has it, nrg_test at the version in `pom.xml` (or `--nrg-test-version`), and then runs `mvn test` in the pod while following its log. Maven doesn't update snapshots it already has, so a locally built nrg_test is what runs. When the tests finish it copies `target/surefire-reports`, the performance history and charts in `src/test/resources/data/performance`, and the test log into `target/kubernetes-runs/<job>`, then deletes the Job (`--keep` leaves it). The pod needs to reach the Maven repositories in `pom.xml` and the test data server.
 
 The pod runs as uid 1000 with the restricted Pod Security Standard's settings, on a node of `--arch` (`amd64` by default), the architecture of the kubectl it is given.
 
