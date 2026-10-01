@@ -83,6 +83,41 @@ find_pod() {
 }
 put() { "${K[@]}" exec -i "$POD" -c tests -- sh -c "$1"; }
 
+# Copies the results out of the pod a few MB at a time: one long exec stream can break partway, and the same stream
+# breaks the same way on every retry. Each batch is checked before it is unpacked and tried three times; a batch that
+# never arrives fails the collection, and the Job keeps the results for --attach.
+collect() {
+    local listing bytes path size=0 batch=()
+    listing=$(put 'cd /work && { find target/surefire-reports target/xnat-logs src/test/resources/data/performance -type f -printf "%s %p\n"; find . -maxdepth 1 -type f -name "xnat_test.log*" -printf "%s %P\n"; } 2>/dev/null || true')
+    while read -r bytes path; do
+        [ -n "$path" ] || continue
+        if [ ${#batch[@]} -gt 0 ] && [ $((size + bytes)) -gt 4000000 ]; then
+            copy_batch "${batch[@]}"
+            batch=() size=0
+        fi
+        batch+=("$path") size=$((size + bytes))
+    done <<< "$listing"
+    if [ ${#batch[@]} -gt 0 ]; then
+        copy_batch "${batch[@]}"
+    fi
+}
+
+copy_batch() {
+    local part
+    part=$(mktemp)
+    for _ in 1 2 3; do
+        if printf '%s\n' "$@" | put 'cd /work && tar -czf - -T -' > "$part" && gzip -t "$part" 2>/dev/null; then
+            tar -xzf "$part" -C "$OUT"
+            rm -f "$part"
+            return 0
+        fi
+        sleep 5
+    done
+    rm -f "$part"
+    echo "Could not copy a batch of result files from the pod ($#, starting with $1)" >&2
+    return 1
+}
+
 # The last value the run's properties file gives a key, or nothing.
 config_value() {
     sed -n "s/^[[:space:]]*${1//./\\.}[[:space:]]*=[[:space:]]*//p" "$CONFIG" | tail -1 | tr -d '\r' | sed 's/[[:space:]]*$//'
@@ -152,7 +187,7 @@ until "${K[@]}" exec "$POD" -c tests -- test -f /work/.exit 2>/dev/null; do slee
 kill "$LOGS" 2>/dev/null || true
 
 mkdir -p "$OUT"
-put 'cd /work && tar -cf - $(ls -d target/surefire-reports target/xnat-logs src/test/resources/data/performance xnat_test.log* 2>/dev/null)' | tar -xf - -C "$OUT"
+collect
 EXIT=$("${K[@]}" exec "$POD" -c tests -- cat /work/.exit)
 put 'touch /work/.collected'
 COLLECTED=1
