@@ -53,9 +53,8 @@ public class TestContainerServicePermissions extends BaseContainerTest {
     private static final DataType PROJECT_ASSET = new DataType().xsiType("sets:definition");
     private static final String DATASETS_PLUGIN = "datasetsPlugin";
     private static final Image DEBUG_IMG = new Image("xnat", "debug-command", "latest");
-    private static final Image QC_IMG = new Image("xnat", "generate-test-qc-assessor", "latest");
     private static final Image SCAN_IMG = new Image("xnat", "generatescan", "1.0");
-    private static final List<Image> TEST_IMAGES = Arrays.asList(DEBUG_IMG, QC_IMG, SCAN_IMG);
+    private static final List<Image> TEST_IMAGES = Arrays.asList(DEBUG_IMG, SCAN_IMG);
     private static final Map<String, String> BASE_DEBUG_LAUNCH_PARAMS = makeContainerLaunchReqBody();
 
     private final List<Project> projects = new ArrayList<>();

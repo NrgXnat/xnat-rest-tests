@@ -40,7 +40,7 @@ import static org.testng.AssertJUnit.assertNull;
 public class TestContainerOrchestration extends BaseContainerTest {
     private static final Image DEBUG_IMG = new Image("xnat", "debug-command", "latest");
     private static final String DEBUG_WRAPPER_NAME = "debug-session";
-    private static final Image ALT_IMG = new Image("xnat", "generate-test-qc-assessor", "latest");
+    private static final Image ALT_IMG = new Image("xnat", "generatescan", "1.0");
     private static final String ALT_WRAPPER_NAME = "generate-test-qc-assessor-from-session";
     private static final String IMAGES_WITH_COMMANDS_JSON_PATH = "findAll { it.commands.size() > 0 }";
 
