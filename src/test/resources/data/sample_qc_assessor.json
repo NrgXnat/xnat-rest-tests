@@ -3,7 +3,7 @@
   "description": "Generate a bogus QC assessor for testing",
   "version": "1.1",
   "schema-version": "1.0",
-  "image": "xnat/debug-command:latest",
+  "image": "xnat/generatescan:1.0",
   "type": "docker",
   "command-line": "d=$(date +%Y%m%d%H%M%S) && echo \"<xnat:QCManualAssessment xmlns:xnat='http://nrg.wustl.edu/xnat' ID='#SESSION_ID#_qc_$d' project='#PROJECT#' label='#SESSION_LABEL#_qc_$d'><xnat:imageSession_ID>#SESSION_ID#</xnat:imageSession_ID><xnat:pass>1</xnat:pass></xnat:QCManualAssessment>\" > /mount/out.xml && mkdir -p /mount/dir0/dir1/dir2 && echo file1 > /mount/dir0/file1.txt && echo file2 > /mount/dir0/dir1/file2.txt && echo file3 > /mount/dir0/dir1/dir2/file3.txt",
   "override-entrypoint": true,

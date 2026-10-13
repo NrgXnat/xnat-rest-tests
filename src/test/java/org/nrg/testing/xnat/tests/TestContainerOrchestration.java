@@ -40,6 +40,7 @@ import static org.testng.AssertJUnit.assertNull;
 public class TestContainerOrchestration extends BaseContainerTest {
     private static final Image DEBUG_IMG = new Image("xnat", "debug-command", "latest");
     private static final String DEBUG_WRAPPER_NAME = "debug-session";
+    private static final Image ALT_IMG = new Image("xnat", "generatescan", "1.0");
     private static final String ALT_WRAPPER_NAME = "generate-test-qc-assessor-from-session";
     private static final String IMAGES_WITH_COMMANDS_JSON_PATH = "findAll { it.commands.size() > 0 }";
 
@@ -70,6 +71,7 @@ public class TestContainerOrchestration extends BaseContainerTest {
         // Add images and commands
         deleteAllImages();
         ContainerTestUtils.installFreshImageIfNecessary(this, DEBUG_IMG, Settings.CS_PREFERRED_BACKEND, containerManagerInterface);
+        ContainerTestUtils.installFreshImageIfNecessary(this, ALT_IMG, Settings.CS_PREFERRED_BACKEND, containerManagerInterface);
         containerManagerInterface.addCommand(getDataFile("debug_command.json"));
         containerManagerInterface.addCommand(getDataFile("sample_qc_assessor.json"));
 
