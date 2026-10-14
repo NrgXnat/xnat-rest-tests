@@ -128,9 +128,9 @@ public class TestDirectArchive extends BaseXnatRestTest {
     }
 
     /**
-     * A direct-archive upload cut off partway must not be archived as though it had finished: its session moves to
-     * the prearchive in ERROR, as one whose build or archive failed does, and a direct-archive upload of the whole
-     * study then archives it.
+     * A direct-archive upload cut off partway must not be archived as though it had finished: once its session has
+     * been idle, it moves to the prearchive in ERROR, as one whose build or archive failed does, and a direct-archive
+     * upload of the whole study then archives it.
      */
     @Test
     @AddedIn(Xnat_1_10_3.class)
@@ -142,12 +142,15 @@ public class TestDirectArchive extends BaseXnatRestTest {
         } catch (ImportException importException) {
             assertEquals(400, importException.getStatusCode());
         }
-        assertTrue(mainInterface().getDirectArchiveEntriesForProject(project).isEmpty(), "the cut-off upload's session should have left direct archive");
+        // Another upload may still be sending into the session, so it moves only once it has been idle.
+        restDriver.waitForDirectArchiveEmpty(mainUser, project, 300);
         assertEquals("the cut-off upload's session should be in the prearchive in ERROR", PrearchiveStatus.ERROR,
                      mainInterface().expectSinglePrearchiveResultForProject(project).getStatus());
 
         mainInterface().callImporter(new DicomZipRequest().directArchive().project(project).file(testZip));
-        waitForDirectArchive(apiSession);
+        archiveNow();
+        restDriver.waitForDirectArchiveEmpty(mainUser, project, 300);
+        verifyImport(apiSession);
         CutOffUpload.assertWholeObjects(restDriver.downloadAllDicomFromSession(mainUser, project, apiSubject, apiSession), CutOffUpload.objectsIn(testZip));
     }
 
@@ -230,6 +233,17 @@ public class TestDirectArchive extends BaseXnatRestTest {
             hdr.put(Tag.StudyDescription, project.getId());
         }
         new XnatCStore(directArchiveReceiver).data(TestData.SAMPLE_1_SCAN_4).overwrittenHeaders(hdr).sendDICOM();
+    }
+
+    /**
+     * Archives the project's one direct-archive session now, instead of waiting out the idle time that
+     * {@link #waitForDirectArchive} waits for.
+     */
+    private void archiveNow() {
+        final List<SessionData> sessions = mainInterface().getDirectArchiveEntriesForProject(project);
+        assertEquals(1, sessions.size());
+        final SessionData session = sessions.get(0);
+        mainQueryBase().post(formatXapiUrl("direct-archive", project.getId(), session.getTag(), session.getName())).then().assertThat().statusCode(200);
     }
 
     private void waitForDirectArchive(ImagingSession session) {
