@@ -21,6 +21,7 @@ import org.nrg.xnat.enums.PrearchiveCode;
 import org.nrg.xnat.enums.PrearchiveStatus;
 import org.nrg.xnat.enums.XnatRecursionLevel;
 import org.nrg.xnat.interfaces.XnatInterface;
+import org.nrg.xnat.pogo.ArchiveParams;
 import org.nrg.xnat.pogo.DataType;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -43,6 +44,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.testng.annotations.Test;
 
 import static org.testng.AssertJUnit.assertEquals;
@@ -58,6 +60,11 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
     private static final String MANY_SERIES_PROJECT_ID = "MANY_SERIES";
     private static final String PROJECT_ANON_PROJECT_ID = "PROJECT_ANON";
     private static final String MULTIFRAME_PROJECT_ID = "MULTIFRAME";
+    private static final String MERGE_PROJECT_ID = "MERGE_INTO_SESSION";
+    private static final int MERGE_SERIES_PER_HALF = 250;
+    // Both halves of the merge case belong to this study, so the second half merges into the session the first one
+    // archived. Fixed rather than generated, so the halves agree even when only one of them is in the local data cache.
+    private static final String MERGE_STUDY_INSTANCE_UID = "2.25.6220714990505635034049334952980808729";
     private static final int MULTIFRAME_OBJECT_COUNT = 16;
     private static final int MULTIFRAME_FRAME_COUNT = 100;
     private static final String SIMPLISTIC_ANON_SCRIPT = "simplisticDelete.das";
@@ -267,6 +274,46 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
     }
 
     /**
+     * Merging into an archived session: the first half of a study is archived, the second half arrives later and is
+     * archived into the same session with overwrite=append. That saves an existing session with new scans, where the
+     * other cases only create sessions. Only the rebuild and merge are timed; sending both halves and archiving the
+     * first are setup.
+     */
+    @TestRequires(data = TestData.SAMPLE_1_SCAN_4)
+    public void testMergeIntoArchivedSession(XnatDeployment deployment) {
+        final Project project = new Project(MERGE_PROJECT_ID).prearchiveCode(PrearchiveCode.MANUAL);
+        final LocallyCacheableDicomTransformation firstHalf = manySeriesStudy("merge-first-half", MERGE_STUDY_INSTANCE_UID, 0, MERGE_SERIES_PER_HALF, project);
+        final LocallyCacheableDicomTransformation secondHalf = manySeriesStudy("merge-second-half", MERGE_STUDY_INSTANCE_UID, MERGE_SERIES_PER_HALF, MERGE_SERIES_PER_HALF, project);
+        final AtomicBoolean merged = new AtomicBoolean();
+
+        performanceScenario(deployment)
+                .setup(setupForCStoreToProject(project))
+                .tests(
+                        new SimpleTimedAction("merge-many-series-into-archived-session")
+                                .title(String.format("Rebuild and merge of %d small series into an archived session of %d", MERGE_SERIES_PER_HALF, MERGE_SERIES_PER_HALF))
+                                .withSetup(() -> {
+                                    firstHalf.build();
+                                    secondHalf.build();
+                                    cstoreDicomFromTransformation(firstHalf).accept(mainAdminInterface(), null);
+                                    archiveActionForSingleSession(project).accept(mainAdminInterface(), null);
+                                    cstoreDicomFromTransformation(secondHalf).accept(mainAdminInterface(), null);
+                                })
+                                .asUser(mainAdminUser)
+                                .performanceTestAction((xnatInterface, actionMonitor) -> {
+                                    archiveActionForSingleSession(project, new ArchiveParams().append()).accept(xnatInterface, actionMonitor);
+                                    merged.set(true);
+                                })
+                ).run();
+
+        if (merged.get()) {
+            // An archive that made a second session, or kept only one half, would time something other than a merge.
+            final Subject subject = mainAdminInterface().readProject(project.getId(), XnatRecursionLevel.SCANS_WITH_METADATA).getSubjects().get(0);
+            assertEquals("the study should be one session", 1, subject.getSessions().size());
+            assertEquals("the session should hold the scans of both halves", 2 * MERGE_SERIES_PER_HALF, subject.getSessions().get(0).getScans().size());
+        }
+    }
+
+    /**
      * Large objects through receive-time pixel anonymization: the site script redacts each object as it arrives.
      * The objects are generated once into the local data cache (see {@link SyntheticEnhancedMr}).
      */
@@ -340,11 +387,15 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
     }
 
     private BiConsumer<XnatInterface, ActionMonitor> archiveActionForSingleSession(Project project) {
+        return archiveActionForSingleSession(project, new ArchiveParams());
+    }
+
+    private BiConsumer<XnatInterface, ActionMonitor> archiveActionForSingleSession(Project project, ArchiveParams archiveParams) {
         return (xnatInterface, actionMonitor) -> {
             final SessionData incomingSession = xnatInterface.getPrearchiveEntriesForProject(project).get(0);
             xnatInterface
                     .rebuildSession(incomingSession, false)
-                    .archiveSession(incomingSession);
+                    .archiveSession(incomingSession, archiveParams);
             xnatInterface.queryPrearchive(
                     new PrearchiveQuery()
                             .scope(PrearchiveQueryScope.forProject(project))
@@ -355,6 +406,15 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
 
     /** One study of numSeries single-image series, routed to the project. */
     private static LocallyCacheableDicomTransformation manySeriesStudy(String name, int numSeries, Project project) {
+        return manySeriesStudy(name, UIDUtils::createUID, 0, numSeries, project);
+    }
+
+    /** As above, for the study whose UID studyInstanceUid supplies, with series numbered from firstSeriesNumber. */
+    private static LocallyCacheableDicomTransformation manySeriesStudy(String name, String studyInstanceUid, int firstSeriesNumber, int numSeries, Project project) {
+        return manySeriesStudy(name, () -> studyInstanceUid, firstSeriesNumber, numSeries, project);
+    }
+
+    private static LocallyCacheableDicomTransformation manySeriesStudy(String name, Supplier<String> studyInstanceUid, int firstSeriesNumber, int numSeries, Project project) {
         return new LocallyCacheableDicomTransformation(name)
                 .data(TestData.SAMPLE_1_SCAN_4)
                 .transformations(
@@ -364,12 +424,12 @@ public class TestPerformanceDicom extends XnatPerformanceTests {
                                         TransformFunction.composition(
                                                 DicomTransforms.duplicateInstance(numSeries),
                                                 TransformFunction.strictlyTransformative(listOfDicom -> {
-                                                    final String newStudyInstanceUid = UIDUtils.createUID();
+                                                    final String newStudyInstanceUid = studyInstanceUid.get();
                                                     for (int i = 0; i < numSeries; i++) {
                                                         final Attributes dicom = listOfDicom.get(i);
                                                         dicom.setString(Tag.StudyInstanceUID, VR.UI, newStudyInstanceUid);
                                                         dicom.setString(Tag.SeriesInstanceUID, VR.UI, UIDUtils.createUID());
-                                                        dicom.setInt(Tag.SeriesNumber, VR.IS, i);
+                                                        dicom.setInt(Tag.SeriesNumber, VR.IS, firstSeriesNumber + i);
                                                     }
                                                 }),
                                                 hardcodeRoutingForProject(project.getId())
