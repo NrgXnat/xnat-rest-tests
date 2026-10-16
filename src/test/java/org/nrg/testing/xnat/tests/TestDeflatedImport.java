@@ -28,7 +28,7 @@ import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.prearchive.SessionData;
-import org.nrg.xnat.versions.Xnat_1_10_3;
+import org.nrg.xnat.versions.Xnat_1_11_0;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -53,14 +53,14 @@ import static org.testng.AssertJUnit.assertNotNull;
 
 /**
  * Objects in Deflated Explicit VR Little Endian must archive whole from a DICOM-zip upload, whether or not a site-wide
- * anonymization script applies. Before 1.10.3, an object with no script to apply was written from a partial read
+ * anonymization script applies. Before 1.11.0, an object with no script to apply was written from a partial read
  * followed by a raw copy of the rest of the stream, which a deflated dataset can't survive, so it was refused.
  * <p>
  * There is no C-STORE counterpart: XNAT's DICOM receiver doesn't accept this transfer syntax, so a C-STORE client
  * sends such objects as Explicit VR Little Endian, and nothing Deflated reaches XNAT that way.
  */
 @Test(groups = IMPORTER)
-@AddedIn(Xnat_1_10_3.class)
+@AddedIn(Xnat_1_11_0.class)
 public class TestDeflatedImport extends BaseXnatRestTest {
     private static final Logger LOGGER = Logger.getLogger(TestDeflatedImport.class);
     private static final int OBJECT_COUNT = 3;
