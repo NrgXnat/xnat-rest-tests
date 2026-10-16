@@ -1,5 +1,6 @@
 package org.nrg.testing.xnat.tests;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.restassured.path.json.JsonPath;
 
 import net.lingala.zip4j.ZipFile;
@@ -16,9 +17,11 @@ import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.CutOffUpload;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.versions.*;
 import org.nrg.xnat.enums.MergeBehavior;
+import org.nrg.xnat.enums.PrearchiveStatus;
 import org.nrg.xnat.enums.PrearchiveCode;
 import org.nrg.xnat.importer.ImportException;
 import org.nrg.xnat.importer.importers.DefaultImporterRequest;
@@ -748,6 +751,120 @@ public class TestImport extends BaseXnatRestTest {
     @AddedIn(Xnat_1_8_3.class)
     public void testUploadIgnoreUnparsableTrue() {
         runUnparsableTest(true, true);
+    }
+
+    /**
+     * An upload cut off partway must not leave a session that looks complete: its session goes to ERROR with the
+     * reason in its log, where the idle-timeout rebuild leaves it alone, and uploading the study again reopens it.
+     */
+    @Test(groups = PREARCHIVE)
+    @AddedIn(Xnat_1_11_0.class)
+    public void testCutOffUploadLeavesItsSessionInError() throws IOException {
+        final DicomZipRequest request = new DicomZipRequest().project(project).ignoreUnparsable();
+        try {
+            mainInterface().callImporter(request.file(CutOffUpload.firstHalfOf(testZip, Paths.get(Settings.TEMP_SUBDIR))));
+            failOnImproperSuccess();
+        } catch (ImportException importException) {
+            assertEquals(400, importException.getStatusCode());
+        }
+        final SessionData failed = mainInterface().expectSinglePrearchiveResultForProject(project);
+        assertEquals("the cut-off upload's session should be in ERROR", PrearchiveStatus.ERROR, failed.getStatus());
+        assertTrue("the session's log should say why",
+                   mainInterface().getPrearchiveLogMessages(project, failed).stream().anyMatch(message -> message.contains("failed partway")));
+
+        mainInterface().callImporter(request.file(testZip));
+        final SessionData reopened = mainInterface().expectSinglePrearchiveResultForProject(project);
+        assertEquals("the whole study must reopen the failed session", failed.getTimestamp(), reopened.getTimestamp());
+        mainInterface().rebuildSession(reopened, false);
+        mainInterface().archiveSession(reopened);
+
+        final Subject subject = new Subject(project, subjectFromTestZip);
+        final ImagingSession session = new MRSession(project, subject, sessionFromTestZip);
+        CutOffUpload.assertWholeObjects(restDriver.downloadAllDicomFromSession(mainUser, project, subject, session), CutOffUpload.objectsIn(testZip));
+    }
+
+    /**
+     * An upload of two studies that breaks in the second study's first object leaves both studies' sessions in ERROR.
+     * Nothing of the second study arrived whole, but the object that failed created its session.
+     */
+    @Test(groups = PREARCHIVE)
+    @AddedIn(Xnat_1_11_0.class)
+    public void testCutOffInASecondStudyLeavesBothSessionsInError() throws IOException {
+        try {
+            mainInterface().callImporter(new DicomZipRequest().project(project).ignoreUnparsable()
+                                                             .file(CutOffUpload.withSecondStudyCutInItsFirstObject(testZip, Paths.get(Settings.TEMP_SUBDIR), "CutOffSecondStudy")));
+            failOnImproperSuccess();
+        } catch (ImportException importException) {
+            assertEquals(400, importException.getStatusCode());
+        }
+        final List<SessionData> sessions = mainInterface().getPrearchiveEntriesForProject(project);
+        assertEquals("each study should have its own session", 2, sessions.size());
+        for (final SessionData session : sessions) {
+            assertEquals(session.getFolderName() + " should be in ERROR", PrearchiveStatus.ERROR, session.getStatus());
+        }
+    }
+
+    /**
+     * An inline anonymization script that can't be parsed is the uploader's mistake: the upload fails with a 400 that
+     * names the script, and nothing is left in the prearchive.
+     */
+    @Test(groups = PREARCHIVE)
+    @AddedIn(Xnat_1_11_0.class)
+    public void testUnparsableInlineScriptIsTheUploadersError() {
+        try {
+            mainInterface().callImporter(new DicomZipRequestWithScript("version \"6.6\"\n(0010,0010 := \"not a script").project(project).file(testZip));
+            failOnImproperSuccess();
+        } catch (ImportException importException) {
+            assertEquals(400, importException.getStatusCode());
+            assertTrue("the message should name the inline script: " + importException.getMessage(),
+                       importException.getMessage().contains("The supplied inline anonymization script could not be applied"));
+        }
+        assertTrue("nothing should be left in the prearchive", mainInterface().getPrearchiveEntriesForProject(project).isEmpty());
+    }
+
+    /**
+     * A failed upload's session stays in ERROR when the prearchive table is rebuilt from disk. Its folder has no session
+     * XML, which on its own reads as a session still receiving: read that way, it would be built and, in a project that
+     * archives automatically, archived with only part of the study.
+     */
+    @Test(groups = PREARCHIVE)
+    @AddedIn(Xnat_1_11_0.class)
+    public void testFailedUploadStaysInErrorThroughAPrearchiveRebuild() throws IOException {
+        mainAdminInterface().setSessionXmlRebuilderTimes(1, 10000);
+        final Project autoArchiving = new Project().prearchiveCode(PrearchiveCode.AUTO_ARCHIVE);
+        mainInterface().createProject(autoArchiving);
+        try {
+            try {
+                mainInterface().callImporter(new DicomZipRequest().project(autoArchiving).ignoreUnparsable()
+                                                                 .file(CutOffUpload.firstHalfOf(testZip, Paths.get(Settings.TEMP_SUBDIR))));
+                failOnImproperSuccess();
+            } catch (ImportException importException) {
+                assertEquals(400, importException.getStatusCode());
+            }
+            assertEquals(PrearchiveStatus.ERROR, mainInterface().expectSinglePrearchiveResultForProject(autoArchiving).getStatus());
+
+            mainAdminInterface().queryBase().put(formatRestUrl("prearchive")).then().assertThat().statusCode(200);
+            // Long enough for the idle-timeout rebuild to build the session, and archive it, were it RECEIVING.
+            TimeUtils.sleep(120000);
+
+            assertEquals("the failed upload's session should still be in ERROR", PrearchiveStatus.ERROR,
+                         mainInterface().expectSinglePrearchiveResultForProject(autoArchiving).getStatus());
+            assertTrue("nothing should be archived",
+                       mainInterface().jsonQuery().get(formatRestUrl("projects", autoArchiving.getId(), "experiments"))
+                                      .then().assertThat().statusCode(200).and().extract().jsonPath().getList("ResultSet.Result").isEmpty());
+        } finally {
+            restDriver.deleteProjectSilently(mainAdminUser, autoArchiving);
+        }
+    }
+
+    /** A DICOM-zip upload with an inline anonymization script. */
+    private static class DicomZipRequestWithScript extends DicomZipRequest {
+        @JsonProperty("Anon-Script")
+        private final String anonScript;
+
+        DicomZipRequestWithScript(final String anonScript) {
+            this.anonScript = anonScript;
+        }
     }
 
     private void testPrearcDodgyUidMerge(Runnable importWorkflow, boolean acceptableForImporter) {

@@ -11,8 +11,10 @@ import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.util.RandomHelper;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.CutOffUpload;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.xnat.enums.PrearchiveStatus;
+import org.nrg.xnat.importer.ImportException;
 import org.nrg.xnat.importer.importers.DicomZipRequest;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
@@ -22,6 +24,7 @@ import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.SubjectAssessor;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.prearchive.SessionData;
+import org.nrg.xnat.versions.Xnat_1_11_0;
 import org.nrg.xnat.versions.Xnat_1_8_3;
 import org.nrg.xnat.versions.Xnat_1_8_4;
 import org.testng.annotations.AfterClass;
@@ -30,6 +33,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +43,7 @@ import java.util.Map;
 import static org.nrg.testing.TestGroups.*;
 import static org.nrg.testing.TestGroups.IMPORTER;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 import static org.testng.AssertJUnit.assertEquals;
 
 @AddedIn(Xnat_1_8_3.class)
@@ -121,6 +127,33 @@ public class TestDirectArchive extends BaseXnatRestTest {
         waitForDirectArchive(scpSession);
     }
 
+    /**
+     * A direct-archive upload cut off partway must not be archived as though it had finished: once its session has
+     * been idle, it moves to the prearchive in ERROR, as one whose build or archive failed does, and a direct-archive
+     * upload of the whole study then archives it.
+     */
+    @Test
+    @AddedIn(Xnat_1_11_0.class)
+    public void testCutOffUploadMovesItsSessionToThePrearchive() throws IOException {
+        try {
+            mainInterface().callImporter(new DicomZipRequest().directArchive().project(project)
+                                                             .file(CutOffUpload.firstHalfOf(testZip, Paths.get(Settings.TEMP_SUBDIR))));
+            fail("Attempted import invocation should have failed");
+        } catch (ImportException importException) {
+            assertEquals(400, importException.getStatusCode());
+        }
+        // Another upload may still be sending into the session, so it moves only once it has been idle.
+        restDriver.waitForDirectArchiveEmpty(mainUser, project, 300);
+        assertEquals("the cut-off upload's session should be in the prearchive in ERROR", PrearchiveStatus.ERROR,
+                     mainInterface().expectSinglePrearchiveResultForProject(project).getStatus());
+
+        mainInterface().callImporter(new DicomZipRequest().directArchive().project(project).file(testZip));
+        archiveNow();
+        restDriver.waitForDirectArchiveEmpty(mainUser, project, 300);
+        verifyImport(apiSession);
+        CutOffUpload.assertWholeObjects(restDriver.downloadAllDicomFromSession(mainUser, project, apiSubject, apiSession), CutOffUpload.objectsIn(testZip));
+    }
+
     @Test
     public void testDirectArchiveConflict() {
         uploadViaCStore();
@@ -200,6 +233,17 @@ public class TestDirectArchive extends BaseXnatRestTest {
             hdr.put(Tag.StudyDescription, project.getId());
         }
         new XnatCStore(directArchiveReceiver).data(TestData.SAMPLE_1_SCAN_4).overwrittenHeaders(hdr).sendDICOM();
+    }
+
+    /**
+     * Archives the project's one direct-archive session now, instead of waiting out the idle time that
+     * {@link #waitForDirectArchive} waits for.
+     */
+    private void archiveNow() {
+        final List<SessionData> sessions = mainInterface().getDirectArchiveEntriesForProject(project);
+        assertEquals(1, sessions.size());
+        final SessionData session = sessions.get(0);
+        mainQueryBase().post(formatXapiUrl("direct-archive", project.getId(), session.getTag(), session.getName())).then().assertThat().statusCode(200);
     }
 
     private void waitForDirectArchive(ImagingSession session) {
