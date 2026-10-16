@@ -24,7 +24,7 @@ import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.SubjectAssessor;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.prearchive.SessionData;
-import org.nrg.xnat.versions.Xnat_1_10_3;
+import org.nrg.xnat.versions.Xnat_1_11_0;
 import org.nrg.xnat.versions.Xnat_1_8_3;
 import org.nrg.xnat.versions.Xnat_1_8_4;
 import org.testng.annotations.AfterClass;
@@ -133,7 +133,7 @@ public class TestDirectArchive extends BaseXnatRestTest {
      * upload of the whole study then archives it.
      */
     @Test
-    @AddedIn(Xnat_1_10_3.class)
+    @AddedIn(Xnat_1_11_0.class)
     public void testCutOffUploadMovesItsSessionToThePrearchive() throws IOException {
         try {
             mainInterface().callImporter(new DicomZipRequest().directArchive().project(project)

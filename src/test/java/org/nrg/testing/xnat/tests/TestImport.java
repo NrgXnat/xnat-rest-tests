@@ -758,7 +758,7 @@ public class TestImport extends BaseXnatRestTest {
      * reason in its log, where the idle-timeout rebuild leaves it alone, and uploading the study again reopens it.
      */
     @Test(groups = PREARCHIVE)
-    @AddedIn(Xnat_1_10_3.class)
+    @AddedIn(Xnat_1_11_0.class)
     public void testCutOffUploadLeavesItsSessionInError() throws IOException {
         final DicomZipRequest request = new DicomZipRequest().project(project).ignoreUnparsable();
         try {
@@ -788,7 +788,7 @@ public class TestImport extends BaseXnatRestTest {
      * Nothing of the second study arrived whole, but the object that failed created its session.
      */
     @Test(groups = PREARCHIVE)
-    @AddedIn(Xnat_1_10_3.class)
+    @AddedIn(Xnat_1_11_0.class)
     public void testCutOffInASecondStudyLeavesBothSessionsInError() throws IOException {
         try {
             mainInterface().callImporter(new DicomZipRequest().project(project).ignoreUnparsable()
@@ -809,7 +809,7 @@ public class TestImport extends BaseXnatRestTest {
      * names the script, and nothing is left in the prearchive.
      */
     @Test(groups = PREARCHIVE)
-    @AddedIn(Xnat_1_10_3.class)
+    @AddedIn(Xnat_1_11_0.class)
     public void testUnparsableInlineScriptIsTheUploadersError() {
         try {
             mainInterface().callImporter(new DicomZipRequestWithScript("version \"6.6\"\n(0010,0010 := \"not a script").project(project).file(testZip));
@@ -828,7 +828,7 @@ public class TestImport extends BaseXnatRestTest {
      * archives automatically, archived with only part of the study.
      */
     @Test(groups = PREARCHIVE)
-    @AddedIn(Xnat_1_10_3.class)
+    @AddedIn(Xnat_1_11_0.class)
     public void testFailedUploadStaysInErrorThroughAPrearchiveRebuild() throws IOException {
         mainAdminInterface().setSessionXmlRebuilderTimes(1, 10000);
         final Project autoArchiving = new Project().prearchiveCode(PrearchiveCode.AUTO_ARCHIVE);
