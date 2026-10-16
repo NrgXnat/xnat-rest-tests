@@ -4,22 +4,33 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
+import org.nrg.testing.DicomUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.ExpectedFailure;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.DicomObject;
+import org.nrg.testing.dicom.InterfileDicomValidation;
 import org.nrg.testing.dicom.RemoveAllPrivateTags;
 import org.nrg.testing.dicom.RootDicomObject;
+import org.nrg.testing.dicom.ScriptValidation;
 import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
 import org.nrg.testing.enums.TestData;
 import org.nrg.xnat.versions.Xnat_1_10_1;
+import org.nrg.xnat.versions.Xnat_1_10_3;
 import org.nrg.xnat.versions.Xnat_1_7_7;
 import org.nrg.xnat.versions.Xnat_1_8_10;
 import org.nrg.xnat.versions.Xnat_1_8_7;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static org.nrg.xnat.enums.DicomEditVersion.DE_4;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 
 @TestRequires(admin = true, data = TestData.ANON_2)
 public class TestAnonymizationPrivateElements extends BaseAnonymizationTest {
@@ -64,6 +75,56 @@ public class TestAnonymizationPrivateElements extends BaseAnonymizationTest {
                         dicom.setString(HIGH_GROUP_ELEMENT, VR.LT, "retained");
                         dicom.setString(OTHER_HIGH_GROUP_ID_TAG, VR.LO, OTHER_HIGH_GROUP_CREATOR_ID);
                         dicom.setString(OTHER_HIGH_GROUP_ELEMENT, VR.LT, "removed");
+                    }
+            );
+    private static final String BINARY_CREATOR_ID = "XNAT QA BINARY";
+    private static final int BINARY_ID_TAG = 0x00710010;
+    private static final int BINARY_ELEMENT = 0x00711010;
+    private static final int BINARY_SEQUENCE = 0x00711020;
+    private static final byte[] EVERY_BYTE_VALUE = everyByteValue();
+    private static final LocallyCacheableDicomTransformation BINARY_PRIVATE_DATA = new LocallyCacheableDicomTransformation("anon2_binary_private_values")
+            .data(TestData.ANON_2)
+            .createZip()
+            .simpleTransform(
+                    (dicom) -> {
+                        dicom.setString(BINARY_ID_TAG, VR.LO, BINARY_CREATOR_ID);
+                        dicom.setBytes(BINARY_ELEMENT, VR.OB, EVERY_BYTE_VALUE);
+                        final Attributes item = new Attributes();
+                        item.setString(BINARY_ID_TAG, VR.LO, BINARY_CREATOR_ID);
+                        item.setBytes(BINARY_ELEMENT, VR.OB, EVERY_BYTE_VALUE);
+                        dicom.newSequence(BINARY_SEQUENCE, 1).add(item);
+                    }
+            );
+    private static final String PARTIAL_CREATOR_ID = "XNAT QA PARTIAL";
+    private static final int PARTIAL_ID_TAG = 0x00730010;
+    private static final int PARTIAL_UNNAMED_ELEMENT = 0x00731010;
+    private static final int PARTIAL_NAMED_ELEMENT = 0x00731020;
+    private static final LocallyCacheableDicomTransformation PARTIAL_PRIVATE_BLOCK_DATA = new LocallyCacheableDicomTransformation("anon2_partial_private_block")
+            .data(TestData.ANON_2)
+            .createZip()
+            .simpleTransform(
+                    (dicom) -> {
+                        dicom.setString(PARTIAL_ID_TAG, VR.LO, PARTIAL_CREATOR_ID);
+                        dicom.setString(PARTIAL_UNNAMED_ELEMENT, VR.LT, "not named");
+                        dicom.setString(PARTIAL_NAMED_ELEMENT, VR.LT, "named");
+                    }
+            );
+    private static final String MEDCOM_CREATOR_ID = "SIEMENS MEDCOM HEADER";
+    private static final int MEDCOM_ID_TAG = 0x00290010;
+    private static final int APPLICATION_HEADER_SEQUENCE = 0x00291040;
+    private static final int APPLICATION_HEADER_TYPE = 0x00291041;
+    private static final int APPLICATION_HEADER_INFO = 0x00291044;
+    private static final LocallyCacheableDicomTransformation EMPTY_PRIVATE_BINARY_DATA = new LocallyCacheableDicomTransformation("anon2_empty_private_binary_value")
+            .data(TestData.ANON_2)
+            .createZip()
+            .simpleTransform(
+                    (dicom) -> {
+                        dicom.setString(MEDCOM_ID_TAG, VR.LO, MEDCOM_CREATOR_ID);
+                        final Attributes item = new Attributes();
+                        item.setString(MEDCOM_ID_TAG, VR.LO, MEDCOM_CREATOR_ID);
+                        item.setString(APPLICATION_HEADER_TYPE, VR.CS, "SOM 5 TIMESTAMPS");
+                        item.setNull(APPLICATION_HEADER_INFO, VR.OB);
+                        dicom.newSequence(APPLICATION_HEADER_SEQUENCE, 1).add(item);
                     }
             );
 
@@ -261,12 +322,112 @@ public class TestAnonymizationPrivateElements extends BaseAnonymizationTest {
                 }).run();
     }
 
+    /**
+     * Retained binary values keep their bytes, at the root and in a private sequence item. The value holds every
+     * byte value, so it is not valid UTF-8.
+     */
+    @AddedIn(Xnat_1_10_3.class)
+    public void testRetainPrivateTagsKeepsBinaryValues() {
+        new BasicAnonymizationTest(RETAIN_PRIVATE_TAGS, "binaryValues.das")
+                .withData(BINARY_PRIVATE_DATA)
+                .withValidation(new RetainedBinaryValues())
+                .run();
+    }
+
+    /**
+     * Keeping part of a private block deletes the rest of it. The script names neither (0073,1010) nor (2001,1010):
+     * each is the element in block 0x10 whose element number repeats the block number. (2001,1010) is in the block
+     * of (2001,105F), the sequence that holds the retained (2005) elements.
+     */
+    @AddedIn(Xnat_1_10_3.class)
+    public void testRetainPrivateTagsKeepsOnlyNamedElements() {
+        new BasicAnonymizationTest(RETAIN_PRIVATE_TAGS, "partialBlock.das")
+                .withData(PARTIAL_PRIVATE_BLOCK_DATA)
+                .withValidation((root) -> {
+                    root.putValueEqualCheck(PARTIAL_ID_TAG, PARTIAL_CREATOR_ID, VR.LO);
+                    root.putValueEqualCheck(PARTIAL_NAMED_ELEMENT, "named", VR.LT);
+                    root.putNonexistenceChecks(PARTIAL_UNNAMED_ELEMENT);
+
+                    root.putValueEqualCheck("(2001,0010)", "Philips Imaging DD 001", VR.LO);
+                    root.putSequenceCheck("(2001,105f)", (privateSeqItem) -> {
+                        privateSeqItem.putValueEqualCheck("(2005,0010)", "Philips MR Imaging DD 001", VR.LO);
+                        privateSeqItem.putValueEqualCheck("(2005,1072)", "0");
+                    });
+                    root.putNonexistenceChecks("(2001,1010)");
+                }).run();
+    }
+
+    /**
+     * An empty private OB does not stop the script. The item is like a Siemens MEDCOM Application Header Sequence
+     * item with an empty Application Header Info.
+     */
+    @AddedIn(Xnat_1_10_3.class)
+    public void testRetainPrivateTagsWithEmptyBinaryValue() {
+        new BasicAnonymizationTest(RETAIN_PRIVATE_TAGS, "emptyBinaryValue.das")
+                .withData(EMPTY_PRIVATE_BINARY_DATA)
+                .withValidation((root) -> {
+                    root.putValueEqualCheck(MEDCOM_ID_TAG, MEDCOM_CREATOR_ID, VR.LO);
+                    root.putSequenceCheck(APPLICATION_HEADER_SEQUENCE, (item) -> {
+                        item.putValueEqualCheck(MEDCOM_ID_TAG, MEDCOM_CREATOR_ID, VR.LO);
+                        item.putValueEqualCheck(APPLICATION_HEADER_TYPE, "SOM 5 TIMESTAMPS", VR.CS);
+                        item.putValueEqualCheck(APPLICATION_HEADER_INFO, "", VR.OB);
+                    });
+                }).run();
+    }
+
+    private static byte[] everyByteValue() {
+        final byte[] value = new byte[256];
+        for (int i = 0; i < value.length; i++) {
+            value[i] = (byte) i;
+        }
+        return value;
+    }
+
     private class StandardRetainPrivateTagsTest extends BasicAnonymizationTest {
 
         StandardRetainPrivateTagsTest(String scriptName) {
             super(RETAIN_PRIVATE_TAGS, scriptName);
             withData(RETAIN_PRIVATE_TAGS_CUSTOM_DATA);
             withValidation(RETAIN_PRIVATE_TAGS_CUSTOM_VALIDATION);
+        }
+
+    }
+
+    /**
+     * Compares the retained binary values byte for byte. RootDicomObject compares values as strings.
+     */
+    private static class RetainedBinaryValues extends ScriptValidation {
+
+        @Override
+        public void validateScriptRan(List<File> dicomFiles) {
+            assertEquals(dicomFiles.size(), 2);
+            for (File dicomFile : dicomFiles) {
+                final Attributes root = DicomUtils.readDicom(dicomFile);
+                checkBinaryValue(root);
+                final Attributes item = root.getNestedDataset(BINARY_SEQUENCE);
+                assertNotNull(item);
+                checkBinaryValue(item);
+            }
+        }
+
+        @Override
+        public void validateScriptDidntRun(List<File> dicomFiles) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected List<InterfileDicomValidation> interfileChecksWhen(boolean scriptRan) {
+            return new ArrayList<>();
+        }
+
+        private void checkBinaryValue(Attributes dataset) {
+            assertEquals(dataset.getString(BINARY_ID_TAG), BINARY_CREATOR_ID);
+            assertEquals(dataset.getVR(BINARY_ELEMENT), VR.OB);
+            try {
+                assertEquals(dataset.getBytes(BINARY_ELEMENT), EVERY_BYTE_VALUE);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
 
     }
