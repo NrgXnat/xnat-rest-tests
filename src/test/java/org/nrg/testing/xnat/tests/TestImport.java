@@ -88,7 +88,9 @@ public class TestImport extends BaseXnatRestTest {
     private void setupImportEnvironment() {
         mainInterface().createProject(project);
         mainAdminInterface().disableSiteAnonScript();
-        if ("DICOM-zip".equals(mainAdminInterface().readSiteConfig().getUiDefaultCompressedUploaderImporter())) {
+        // Before 1.11.0 the DICOM-zip importer reported an archive conflict as a 400; it now keeps the archiver's 409 (XNAT-7143)
+        if ("DICOM-zip".equals(mainAdminInterface().readSiteConfig().getUiDefaultCompressedUploaderImporter())
+                && XnatTestingVersionManager.testedVersionPrecedes(Xnat_1_11_0.class)) {
             conflictStatus = 400;
         }
     }
