@@ -3,6 +3,7 @@ package org.nrg.testing.xnat.tests;
 import io.restassured.response.Response;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
+import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.xnat.enums.Accessibility;
@@ -13,6 +14,7 @@ import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.users.User;
 import org.nrg.xnat.pogo.users.UserGroups;
+import org.nrg.xnat.versions.Xnat_1_11_0;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
@@ -36,6 +38,7 @@ import static org.testng.AssertJUnit.*;
  * disagree, so keep that ordering in mind when adding checks.</p>
  */
 @Test(groups = PERMISSIONS)
+@AddedIn(Xnat_1_11_0.class)
 public class TestMembershipTransitions extends BaseXnatRestTest {
 
     private static final Matcher<Integer> DENIED = Matchers.oneOf(403, 404);
