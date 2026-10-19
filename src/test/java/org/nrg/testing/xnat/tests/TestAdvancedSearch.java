@@ -136,9 +136,16 @@ public class TestAdvancedSearch extends BaseXnatRestTest {
     public void testScanSearch() throws IOException {
         List<Map<String, Object>> results = getRestCallResults("mrscan_search.xml");
 
-        final int expectedScanCount = getScanCountFromDataApi();
-        assertTrue((Objects.equals(expectedScanCount, results.size())) || (Objects.equals(scanIds.size(), results.size())));
-        assertContainsAll("scan IDs", scanIds, getValuesByField(results, ID));
+        // The xnat:mrScanData advanced search enforces read permission at the SCAN level, while the
+        // data API's session listing (getScanCountFromDataApi) enforces it at the SESSION level. On a
+        // shared or long-lived server the two therefore return different scan sets -- e.g. leftover
+        // projects that grant session-read but not scan-read, or non-MR scans inside MR sessions -- so
+        // comparing their global counts is not reliable. Instead verify that, restricted to the scans
+        // this test created, the search returns exactly them (robust to unrelated pre-existing data).
+        final List<String> ownScansInResults = getValuesByField(results, ID).stream()
+                .filter(scanIdsSet::contains)
+                .collect(Collectors.toList());
+        assertEquals("scan search should return exactly this test's own scans", scanIds, ownScansInResults);
     }
 
     @Test(groups = {SEARCH, PERMISSIONS})
