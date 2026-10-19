@@ -193,6 +193,20 @@ public class TestMembershipTransitions extends BaseXnatRestTest {
 
     @Test
     @TestRequires(users = 1)
+    public void testPublicProjectMadePrivate() {
+        final User user = getGenericUser();
+        final ProjectData data = createProjectWithData(Accessibility.PUBLIC);
+
+        final String before = "non-member on a public project";
+        assertStatus(before + ": GET project record", readProjectRecord(user, data.project), Matchers.is(200));
+        assertStatus(before + ": GET subjects", readSubjects(user, data.project), Matchers.is(200));
+
+        mainAdminInterface().updateAccessibility(data.project, Accessibility.PRIVATE);
+        assertNoAccess(user, data, "after the public project was made private");
+    }
+
+    @Test
+    @TestRequires(users = 1)
     public void testBurstOfMembershipChanges() {
         final User user = getGenericUser();
         final List<Project> projects = new ArrayList<>();
