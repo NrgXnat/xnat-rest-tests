@@ -1,5 +1,7 @@
 package org.nrg.testing.xnat.tests.eventservice;
 
+import org.apache.commons.lang3.time.StopWatch;
+import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.util.RandomHelper;
 import org.nrg.xnat.pogo.Project;
@@ -65,9 +67,22 @@ public class TestEventServiceHistorySortingFiltering extends BaseEventServiceTes
         for (int index = 0; index < subjects.size(); index++) {
             (index < 3 ? mainInterface() : mainAdminInterface()).createSubject(subjects.get(index));
             mainAdminInterface().queryDeliveredEvents(buildDeliveredEventQueryForSubscription(sessionSubscription), index + 1);
+            waitForSubjectEvent(subjects.get(index));
         }
         extractSubjectEvents();
         matchEvents();
+    }
+
+    // Subject and session events are delivered independently, so a session's delivery doesn't mean its subject's is done.
+    // Waiting for each subject's own delivery also keeps them in creation order. Matched by label rather than count
+    // because of the PIXI Hotel subjects (below).
+    private void waitForSubjectEvent(Subject subject) {
+        final StopWatch stopWatch = TimeUtils.launchStopWatch();
+        while (mainAdminInterface().queryDeliveredEvents(buildDeliveredEventQueryForSubscription(subjectSubscription)).stream()
+                .noneMatch(event -> subject.getLabel().equals(event.getTrigger().getLabel()))) {
+            TimeUtils.checkStopWatch(stopWatch, 120, "No delivered event for subject " + subject.getLabel());
+            TimeUtils.sleep(1000);
+        }
     }
 
     //PIXI-238: If PIXI plugin is deployed, it auto generates a Hotel Subject and that creates a count more than expected
