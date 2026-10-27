@@ -80,6 +80,7 @@ public class TestImport extends BaseXnatRestTest {
     private final File scan2DiffUID = getDataFile("scan2_diffUID.zip"); // same as scan2, but with different study instance UID
     private final File zipContainingNonDicom = getDataFile("mr_1_with_txt.zip");
     private final String nonDicomFilename = "non_dicom_text_file.dcm";
+    private final String failedUploadNote = "The import failed while processing a file";
     private int mrCount = 0;
     private int conflictStatus = 409;
     private static final Logger LOGGER = Logger.getLogger(TestImport.class);
@@ -756,8 +757,8 @@ public class TestImport extends BaseXnatRestTest {
     }
 
     /**
-     * An upload cut off partway must not leave a session that looks complete: its session goes to ERROR with the
-     * reason in its log, where the idle-timeout rebuild leaves it alone, and uploading the study again reopens it.
+     * An upload cut off partway must not leave a session that looks complete: its session goes to ERROR with a
+     * note in its log, where the idle-timeout rebuild leaves it alone, and uploading the study again reopens it.
      */
     @Test(groups = PREARCHIVE)
     @AddedIn(Xnat_1_11_0.class)
@@ -771,8 +772,8 @@ public class TestImport extends BaseXnatRestTest {
         }
         final SessionData failed = mainInterface().expectSinglePrearchiveResultForProject(project);
         assertEquals("the cut-off upload's session should be in ERROR", PrearchiveStatus.ERROR, failed.getStatus());
-        assertTrue("the session's log should say why",
-                   mainInterface().getPrearchiveLogMessages(project, failed).stream().anyMatch(message -> message.contains("failed partway")));
+        assertTrue("the session's log should have the note",
+                   mainInterface().getPrearchiveLogMessages(project, failed).stream().anyMatch(message -> message.contains(failedUploadNote)));
 
         mainInterface().callImporter(request.file(testZip));
         final SessionData reopened = mainInterface().expectSinglePrearchiveResultForProject(project);
@@ -804,6 +805,27 @@ public class TestImport extends BaseXnatRestTest {
         for (final SessionData session : sessions) {
             assertEquals(session.getFolderName() + " should be in ERROR", PrearchiveStatus.ERROR, session.getStatus());
         }
+    }
+
+    /**
+     * A failed upload's session note leaves out why the upload failed. The reason can name the uploader's file, which
+     * no anonymization script sees. The uploader still gets the reason in the response.
+     */
+    @Test(groups = PREARCHIVE)
+    @AddedIn(Xnat_1_11_0.class)
+    public void testFailedUploadNoteLeavesOutTheFileName() {
+        try {
+            mainInterface().callImporter(new DicomZipRequest().project(project).ignoreUnparsable(false).file(zipContainingNonDicom));
+            failOnImproperSuccess();
+        } catch (ImportException importException) {
+            assertEquals(400, importException.getStatusCode());
+            assertTrue("the response should name the file: " + importException.getMessage(), importException.getMessage().contains(nonDicomFilename));
+        }
+        final SessionData failed = mainInterface().expectSinglePrearchiveResultForProject(project);
+        assertEquals("the failed upload's session should be in ERROR", PrearchiveStatus.ERROR, failed.getStatus());
+        final List<String> logs = mainInterface().getPrearchiveLogMessages(project, failed);
+        assertTrue("the session's log should have the note: " + logs, logs.stream().anyMatch(message -> message.contains(failedUploadNote)));
+        assertTrue("the session's log should not name the file: " + logs, logs.stream().noneMatch(message -> message.contains(nonDicomFilename)));
     }
 
     /**
