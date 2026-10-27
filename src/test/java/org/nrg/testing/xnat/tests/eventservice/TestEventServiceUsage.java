@@ -172,6 +172,7 @@ public class TestEventServiceUsage extends BaseEventServiceTest {
         final Subject subject2 = new Subject(project);
         mainInterface().createSubject(subject2);
 
+        waitForDroppedEvents();
         mainAdminInterface().enableEventService();
 
         final Subject subject3 = new Subject(project);
@@ -315,6 +316,7 @@ public class TestEventServiceUsage extends BaseEventServiceTest {
         final Subject subject2 = new Subject(project2);
         mainInterface().createSubject(subject2);
 
+        waitForDroppedEvents();
         mainAdminInterface().enableEventService();
 
         final Subject subject3 = new Subject(project1);
@@ -378,6 +380,15 @@ public class TestEventServiceUsage extends BaseEventServiceTest {
                 Sets.newHashSet("4 - t1_mpr_1mm_p2_pos50", "5 - t1_mpr_1mm_p2_pos50", "6 - t2_spc_1mm_p2"),
                 events.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet())
         );
+    }
+
+    // XNAT checks whether the event service is enabled on a background thread shortly after an event fires. An event
+    // that fires while the service is off is still delivered if the service is re-enabled before that check runs.
+    // Technically that's an XNAT bug, but it's within reasonable expectations to allow the switch some time to take
+    // effect. These tests check that the switch works, so they wait out the check. Nothing is delivered while the
+    // service is off, so there is no event to wait for.
+    private void waitForDroppedEvents() {
+        TimeUtils.sleep(5000);
     }
 
     private void performFilterTest(String filter) {
