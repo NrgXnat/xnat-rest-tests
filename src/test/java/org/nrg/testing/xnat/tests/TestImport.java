@@ -43,6 +43,7 @@ import org.nrg.xnat.pogo.resources.Resource;
 import org.nrg.xnat.pogo.resources.ResourceFile;
 import org.nrg.xnat.pogo.resources.ScanResource;
 import org.nrg.xnat.pogo.resources.SubjectAssessorResource;
+import org.nrg.xnat.pogo.users.UserGroups;
 import org.nrg.xnat.prearchive.SessionData;
 import org.nrg.xnat.rest.NotFoundException;
 import org.nrg.xnat.versions.*;
@@ -826,6 +827,40 @@ public class TestImport extends BaseXnatRestTest {
         final List<String> logs = mainInterface().getPrearchiveLogMessages(project, failed);
         assertTrue("the session's log should have the note: " + logs, logs.stream().anyMatch(message -> message.contains(failedUploadNote)));
         assertTrue("the session's log should not name the file: " + logs, logs.stream().noneMatch(message -> message.contains(nonDicomFilename)));
+    }
+
+    /**
+     * A project member can rebuild a failed upload's session from the prearchive without the project's owner. A
+     * collaborator can't.
+     */
+    @Test(groups = {PREARCHIVE, PERMISSIONS})
+    @AddedIn(Xnat_1_11_0.class)
+    public void testMemberCanRebuildAFailedUpload() {
+        final Project memberProject = registerTempProject().prearchiveCode(PrearchiveCode.MANUAL);
+        mainAdminInterface().createProject(memberProject);
+        mainAdminInterface().addUserToProject(mainUser, memberProject, UserGroups.MEMBER);
+        try {
+            mainInterface().callImporter(new DicomZipRequest().project(memberProject).ignoreUnparsable(false).file(zipContainingNonDicom));
+            failOnImproperSuccess();
+        } catch (ImportException importException) {
+            assertEquals(400, importException.getStatusCode());
+        }
+        final SessionData failed = mainInterface().expectSinglePrearchiveResultForProject(memberProject);
+        assertEquals("the failed upload's session should be in ERROR", PrearchiveStatus.ERROR, failed.getStatus());
+
+        mainAdminInterface().addUserToProject(mainUser, memberProject, UserGroups.COLLABORATOR);
+        TimeUtils.sleep(1000); // let cache update
+        mainQueryBase().formParam("src", failed.getUrl()).post(formatRestUrl("services/prearchive/rebuild")).then().assertThat().statusCode(403);
+
+        mainAdminInterface().addUserToProject(mainUser, memberProject, UserGroups.MEMBER);
+        TimeUtils.sleep(1000); // let cache update
+        mainInterface().rebuildSession(failed, true);
+        SessionData rebuilt = failed;
+        for (int attempt = 0; attempt < 60 && rebuilt.getStatus() != PrearchiveStatus.READY; attempt++) {
+            TimeUtils.sleep(1000);
+            rebuilt = mainInterface().expectSinglePrearchiveResultForProject(memberProject);
+        }
+        assertEquals("the member's rebuild should leave the session READY", PrearchiveStatus.READY, rebuilt.getStatus());
     }
 
     /**
