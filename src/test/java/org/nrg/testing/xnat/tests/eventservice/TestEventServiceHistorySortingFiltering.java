@@ -12,7 +12,6 @@ import org.nrg.xnat.pogo.events.Event;
 import org.nrg.xnat.pogo.events.EventStatus;
 import org.nrg.xnat.pogo.events.Subscription;
 import org.nrg.xnat.pogo.events.SubscriptionBuilder;
-import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.paginated_api.HibernateFilter;
 import org.nrg.xnat.pogo.paginated_api.PaginatedRequest;
 import org.nrg.xnat.versions.Xnat_1_8_0;
@@ -23,7 +22,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.testng.AssertJUnit.assertEquals;
 
 @AddedIn(Xnat_1_8_0.class)
@@ -32,9 +33,7 @@ public class TestEventServiceHistorySortingFiltering extends BaseEventServiceTes
     final Project project1 = new Project();
     final Project project2 = new Project();
     Subject subject1, subject2, subject3, subject4;
-    MRSession session1, session2, session3, session4;
     final Subscription subjectSubscription = prepareLoggingSubscription(Event.SUBJECT_EVENT_TYPE);
-    final Subscription sessionSubscription = prepareLoggingSubscription(Event.SESSION_EVENT_TYPE);
     List<DeliveredEvent> subjectEvents;
     List<DeliveredEvent> allSubjectEvents;
     final String SUBJECT_CREATED = "Subject : CREATED";
@@ -47,27 +46,30 @@ public class TestEventServiceHistorySortingFiltering extends BaseEventServiceTes
     private void addData() {
         mainAdminInterface().createSubscription(subjectSubscription);
         subscriptionsToCleanup.add(subjectSubscription);
-        mainAdminInterface().createSubscription(sessionSubscription);
-        subscriptionsToCleanup.add(sessionSubscription);
         mainInterface().createProject(project1);
         projectsToCleanup.add(project1);
         mainInterface().createProject(project2);
         projectsToCleanup.add(project2);
         subject1 = new Subject(project1, "C");
-        session1 = new MRSession(project1, subject1, "C_MR");
         subject2 = new Subject(project1, "B");
-        session2 = new MRSession(project1, subject2, "B_MR");
         subject3 = new Subject(project2, "A");
-        session3 = new MRSession(project2, subject3, "A_MR");
         subject4 = new Subject(project2, "D");
-        session4 = new MRSession(project2, subject4, "D_MR");
         final List<Subject> subjects = Arrays.asList(subject1, subject2, subject3, subject4);
         for (int index = 0; index < subjects.size(); index++) {
             (index < 3 ? mainInterface() : mainAdminInterface()).createSubject(subjects.get(index));
-            mainAdminInterface().queryDeliveredEvents(buildDeliveredEventQueryForSubscription(sessionSubscription), index + 1);
+            waitForSubjectEvent(subjects.get(index));
         }
         extractSubjectEvents();
         matchEvents();
+    }
+
+    // Delivered events are sorted by delivery, so waiting for each subject's delivery before creating the next keeps them
+    // in creation order. Matched by label rather than count because of the PIXI Hotel subjects (below).
+    private void waitForSubjectEvent(Subject subject) {
+        await("Delivered event for subject " + subject.getLabel()).atMost(120, TimeUnit.SECONDS)
+                .pollInterval(1, TimeUnit.SECONDS)
+                .until(() -> mainAdminInterface().queryDeliveredEvents(buildDeliveredEventQueryForSubscription(subjectSubscription)).stream()
+                        .anyMatch(event -> subject.getLabel().equals(event.getTrigger().getLabel())));
     }
 
     //PIXI-238: If PIXI plugin is deployed, it auto generates a Hotel Subject and that creates a count more than expected

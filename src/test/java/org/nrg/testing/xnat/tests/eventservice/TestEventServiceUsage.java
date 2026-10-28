@@ -5,6 +5,7 @@ import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.enums.TestData;
+import org.nrg.testing.util.RandomHelper;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.events.*;
@@ -76,7 +77,7 @@ public class TestEventServiceUsage extends BaseEventServiceTest {
         projectsToCleanup.add(project);
 
         mainAdminInterface().queryDeliveredEvents(
-                buildDeliveredEventQueryForSubscription(subscription), 1
+                buildDeliveredEventQueryForSubscription(subscription, project), 1
         );
 
         subscription.getEventFilter().setEventType(Event.SESSION_EVENT_TYPE);
@@ -87,7 +88,7 @@ public class TestEventServiceUsage extends BaseEventServiceTest {
         mainInterface().createSubject(subject2);
 
         final List<DeliveredEvent> events = mainAdminInterface().queryDeliveredEvents(
-                buildDeliveredEventQueryForSubscription(subscription), 2
+                buildDeliveredEventQueryForSubscription(subscription, project), 2
         );
 
         assertEquals(session.getLabel(), events.get(0).getTrigger().getLabel());
@@ -109,18 +110,39 @@ public class TestEventServiceUsage extends BaseEventServiceTest {
         mainInterface().createProject(project);
         projectsToCleanup.add(project);
 
+        // Delivery is asynchronous and looks the subscription up when it runs: deactivating before subject1's event
+        // is delivered drops it.
+        mainAdminInterface().queryDeliveredEvents(
+                buildDeliveredEventQueryForSubscription(subscription, project), 1
+        );
+
+        // Stays active on this project. The event bus matches an event against every subscription at once, so when
+        // the witness has subject2's event, the subscription under test was matched against it too, while deactivated.
+        final Subscription witness = new SubscriptionBuilder().
+                name(RandomHelper.randomID()).
+                event(Event.SUBJECT_EVENT_TYPE, EventStatus.CREATED).
+                actionKey(Action.LOGGING_ACTION).
+                projects(Arrays.asList(project)).
+                build();
+        mainAdminInterface().createSubscription(witness);
+        subscriptionsToCleanup.add(witness);
+
         mainAdminInterface().deactivateSubscription(subscription);
 
         final Subject subject2 = new Subject(project);
         mainInterface().createSubject(subject2);
 
+        // Reactivating before subject2's event is matched would deliver it.
+        mainAdminInterface().queryDeliveredEvents(
+                buildDeliveredEventQueryForSubscription(witness), 1
+        );
         mainAdminInterface().activateSubscription(subscription);
 
         final Subject subject3 = new Subject(project);
         mainInterface().createSubject(subject3);
 
         final List<DeliveredEvent> events = mainAdminInterface().queryDeliveredEvents(
-                buildDeliveredEventQueryForSubscription(subscription), 2
+                buildDeliveredEventQueryForSubscription(subscription, project), 2
         );
 
         assertEquals(subject3.getLabel(), events.get(0).getTrigger().getLabel());
@@ -143,20 +165,21 @@ public class TestEventServiceUsage extends BaseEventServiceTest {
         projectsToCleanup.add(project);
 
         mainAdminInterface().queryDeliveredEvents(
-                buildDeliveredEventQueryForSubscription(subscription), 1
+                buildDeliveredEventQueryForSubscription(subscription, project), 1
         );
         mainAdminInterface().disableEventService();
 
         final Subject subject2 = new Subject(project);
         mainInterface().createSubject(subject2);
 
+        waitForDroppedEvents();
         mainAdminInterface().enableEventService();
 
         final Subject subject3 = new Subject(project);
         mainInterface().createSubject(subject3);
 
         final List<DeliveredEvent> events = mainAdminInterface().queryDeliveredEvents(
-                buildDeliveredEventQueryForSubscription(subscription), 2
+                buildDeliveredEventQueryForSubscription(subscription, project), 2
         );
 
         assertEquals(subject3.getLabel(), events.get(0).getTrigger().getLabel());
@@ -293,6 +316,7 @@ public class TestEventServiceUsage extends BaseEventServiceTest {
         final Subject subject2 = new Subject(project2);
         mainInterface().createSubject(subject2);
 
+        waitForDroppedEvents();
         mainAdminInterface().enableEventService();
 
         final Subject subject3 = new Subject(project1);
@@ -349,13 +373,22 @@ public class TestEventServiceUsage extends BaseEventServiceTest {
         restDriver.uploadToSessionZipImporter(TestData.SAMPLE_1, project);
 
         final List<DeliveredEvent> events = mainAdminInterface().queryDeliveredEvents(
-                buildDeliveredEventQueryForSubscription(subscription), 3
+                buildDeliveredEventQueryForSubscription(subscription, project), 3
         );
 
         assertEquals(
                 Sets.newHashSet("4 - t1_mpr_1mm_p2_pos50", "5 - t1_mpr_1mm_p2_pos50", "6 - t2_spc_1mm_p2"),
                 events.stream().map(event -> event.getTrigger().getLabel()).collect(Collectors.toSet())
         );
+    }
+
+    // XNAT checks whether the event service is enabled on a background thread shortly after an event fires. An event
+    // that fires while the service is off is still delivered if the service is re-enabled before that check runs.
+    // Technically that's an XNAT bug, but it's within reasonable expectations to allow the switch some time to take
+    // effect. These tests check that the switch works, so they wait out the check. Nothing is delivered while the
+    // service is off, so there is no event to wait for.
+    private void waitForDroppedEvents() {
+        TimeUtils.sleep(5000);
     }
 
     private void performFilterTest(String filter) {
@@ -376,7 +409,7 @@ public class TestEventServiceUsage extends BaseEventServiceTest {
         projectsToCleanup.add(project);
 
         final List<DeliveredEvent> events = mainAdminInterface().queryDeliveredEvents(
-                buildDeliveredEventQueryForSubscription(subscription), 1
+                buildDeliveredEventQueryForSubscription(subscription, project), 1
         );
 
         assertEquals(mr.getLabel(), events.get(0).getTrigger().getLabel());

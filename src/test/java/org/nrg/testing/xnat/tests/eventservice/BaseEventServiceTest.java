@@ -59,4 +59,10 @@ public abstract class BaseEventServiceTest extends BaseXnatRestTest {
         return new PaginatedRequest().filter(DeliveredEventQueryFilterKey.SUBSCRIPTION,
                 new HibernateFilter(subscription.getName()));
     }
+
+    // A site-wide subscription also delivers events from other projects: count only the test's own.
+    protected PaginatedRequest buildDeliveredEventQueryForSubscription(Subscription subscription, Project project) {
+        return buildDeliveredEventQueryForSubscription(subscription).filter(DeliveredEventQueryFilterKey.PROJECT,
+                new HibernateFilter(project.getId()));
+    }
 }
