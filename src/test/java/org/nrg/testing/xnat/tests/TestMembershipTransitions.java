@@ -1,6 +1,7 @@
 package org.nrg.testing.xnat.tests;
 
 import io.restassured.response.Response;
+import org.awaitility.core.ThrowingRunnable;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.nrg.testing.annotations.AddedIn;
@@ -13,6 +14,7 @@ import org.nrg.xnat.pogo.Subject;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
 import org.nrg.xnat.pogo.users.User;
+import org.nrg.xnat.pogo.users.UserGroup;
 import org.nrg.xnat.pogo.users.UserGroups;
 import org.nrg.xnat.versions.Xnat_1_11_0;
 import org.testng.annotations.Test;
@@ -21,17 +23,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.nrg.testing.TestGroups.PERMISSIONS;
 import static org.testng.AssertJUnit.*;
 
 /**
- * Checks what a user can do immediately after their project membership changes. XNAT keeps permissions in caches that
- * are updated from asynchronous group events, and a role change (e.g. member to owner) implicitly removes the user from
- * the project's other groups without a removal event of its own. Every check here is made once, straight after the
- * change, with no waiting: a failure means the user was served stale permissions.
+ * Checks what a user can do right after their project membership changes. XNAT keeps permissions in caches that are
+ * cleared by group events on a background thread, so a membership call can return before the user's entries are
+ * cleared. A role change (e.g. member to owner) implicitly removes the user from the project's other groups without a
+ * removal event of its own. Each check after a change is retried for up to 30 seconds before it fails. An entry that is
+ * never cleared lasts until it expires, up to 10 minutes, so the wait doesn't hide one.
  *
  * <p>Unless a test checks access before adding the user, the user's first request comes after they were added, so
  * XNAT builds their per-project cache entry from the database rather than from the add event. The two paths can
@@ -70,7 +75,9 @@ public class TestMembershipTransitions extends BaseXnatRestTest {
         assertStatus("as a member: DELETE own MR session", deleteSession(user, created), Matchers.is(403));
 
         mainAdminInterface().setUserProjectRole(user, data.project, UserGroups.OWNER);
-        assertStatus("after member -> owner: DELETE MR session", deleteSession(user, created), Matchers.is(200));
+        final String promoted = "after member -> owner";
+        awaitProjectGroup(user, data.project, UserGroups.OWNER, promoted);
+        assertStatus(promoted + ": DELETE MR session", deleteSession(user, created), Matchers.is(200));
     }
 
     @Test
@@ -114,6 +121,7 @@ public class TestMembershipTransitions extends BaseXnatRestTest {
         mainAdminInterface().setUserProjectRole(user, data.project, UserGroups.MEMBER);
         final String demoted = "after owner -> member";
         assertCanRead(user, data, demoted);
+        awaitProjectGroup(user, data.project, UserGroups.MEMBER, demoted);
         assertStatus(demoted + ": DELETE MR session", deleteSession(user, data.session), Matchers.is(403));
 
         mainAdminInterface().removeUserFromProject(user, data.project, UserGroups.MEMBER);
@@ -128,13 +136,14 @@ public class TestMembershipTransitions extends BaseXnatRestTest {
 
         mainAdminInterface().setUserProjectRole(user, data.project, UserGroups.MEMBER);
         assertCanRead(user, data, "as a member");
-        assertTrue("as a member: " + MR + " should be createable", readCreateable(user).contains(MR));
+        eventually("as a member", () -> assertTrue("as a member: " + MR + " should be createable", readCreateable(user).contains(MR)));
 
         mainAdminInterface().setUserProjectRole(user, data.project, UserGroups.COLLABORATOR);
         final String collaborator = "after member -> collaborator";
         assertCanRead(user, data, collaborator);
+        awaitProjectGroup(user, data.project, UserGroups.COLLABORATOR, collaborator);
         assertStatus(collaborator + ": PUT subject", putSubject(user, new Subject(data.project)), Matchers.is(403));
-        assertFalse(collaborator + ": " + MR + " should no longer be createable", readCreateable(user).contains(MR));
+        eventually(collaborator, () -> assertFalse(collaborator + ": " + MR + " should no longer be createable", readCreateable(user).contains(MR)));
 
         mainAdminInterface().removeUserFromProject(user, data.project, UserGroups.COLLABORATOR);
         assertNoAccess(user, data, "after member -> collaborator -> removed");
@@ -168,9 +177,11 @@ public class TestMembershipTransitions extends BaseXnatRestTest {
 
         mainAdminInterface().deleteProject(data.project);
         final String when = "after the project was deleted";
-        assertStatus(when + ": GET project record", readProjectRecord(user, data.project), Matchers.is(404));
-        assertFalse(when + ": project should not be in the user's project list", listProjectIds(user).contains(data.project.getId()));
-        assertFalse(when + ": " + MR + " should not be createable", readCreateable(user).contains(MR));
+        eventually(when, () -> {
+            assertStatus(when + ": GET project record", readProjectRecord(user, data.project), Matchers.is(404));
+            assertFalse(when + ": project should not be in the user's project list", listProjectIds(user).contains(data.project.getId()));
+            assertFalse(when + ": " + MR + " should not be createable", readCreateable(user).contains(MR));
+        });
     }
 
     @Test
@@ -219,7 +230,8 @@ public class TestMembershipTransitions extends BaseXnatRestTest {
         for (Project project : projects) {
             mainAdminInterface().setUserProjectRole(user, project, UserGroups.MEMBER);
         }
-        assertEquals("after " + BURST_PROJECTS + " adds: burst projects in the user's project list", allIds, listedAmong(user, allIds));
+        final String added = "after " + BURST_PROJECTS + " adds";
+        eventually(added, () -> assertEquals(added + ": burst projects in the user's project list", allIds, listedAmong(user, allIds)));
 
         final List<Project> kept = new ArrayList<>();
         final List<Project> removed = new ArrayList<>();
@@ -232,19 +244,21 @@ public class TestMembershipTransitions extends BaseXnatRestTest {
 
         final String when = "after " + BURST_PROJECTS + " adds and " + removed.size() + " removals";
         final Set<String> keptIds = kept.stream().map(Project::getId).collect(Collectors.toSet());
-        assertEquals(when + ": burst projects in the user's project list", keptIds, listedAmong(user, allIds));
+        eventually(when, () -> {
+            assertEquals(when + ": burst projects in the user's project list", keptIds, listedAmong(user, allIds));
 
-        final List<String> mismatches = new ArrayList<>();
-        for (Project project : kept) {
-            collectMismatch(mismatches, "kept " + project.getId() + " GET project record", readProjectRecord(user, project), Matchers.is(200));
-            collectMismatch(mismatches, "kept " + project.getId() + " GET subjects", readSubjects(user, project), Matchers.is(200));
-        }
-        for (Project project : removed) {
-            collectMismatch(mismatches, "removed " + project.getId() + " GET project record", readProjectRecord(user, project), DENIED);
-            collectMismatch(mismatches, "removed " + project.getId() + " GET subjects", readSubjects(user, project), DENIED);
-        }
-        assertTrue(when + ": unexpected status codes: " + mismatches, mismatches.isEmpty());
-        assertTrue(when + ": " + MR + " should still be createable", readCreateable(user).contains(MR));
+            final List<String> mismatches = new ArrayList<>();
+            for (Project project : kept) {
+                collectMismatch(mismatches, "kept " + project.getId() + " GET project record", readProjectRecord(user, project), Matchers.is(200));
+                collectMismatch(mismatches, "kept " + project.getId() + " GET subjects", readSubjects(user, project), Matchers.is(200));
+            }
+            for (Project project : removed) {
+                collectMismatch(mismatches, "removed " + project.getId() + " GET project record", readProjectRecord(user, project), DENIED);
+                collectMismatch(mismatches, "removed " + project.getId() + " GET subjects", readSubjects(user, project), DENIED);
+            }
+            assertTrue(when + ": unexpected status codes: " + mismatches, mismatches.isEmpty());
+            assertTrue(when + ": " + MR + " should still be createable", readCreateable(user).contains(MR));
+        });
     }
 
     private static class ProjectData {
@@ -273,38 +287,72 @@ public class TestMembershipTransitions extends BaseXnatRestTest {
         return new ProjectData(project, subject, session);
     }
 
-    // Both run every check before failing, so one stale cache doesn't hide the state of the others.
-    private void assertCanRead(User user, ProjectData data, String when) {
-        final List<String> mismatches = new ArrayList<>();
-        collectMismatch(mismatches, "GET project record", readProjectRecord(user, data.project), Matchers.is(200));
-        collectMismatch(mismatches, "GET subjects", readSubjects(user, data.project), Matchers.is(200));
-        collectMismatch(mismatches, "GET MR session", readSession(user, data.session), Matchers.is(200));
-        if (!listProjectIds(user).contains(data.project.getId())) {
-            mismatches.add("project missing from the user's project list");
-        }
-        assertTrue(when + ": expected read access, but: " + mismatches, mismatches.isEmpty());
-    }
-
-    private void assertNoAccess(User user, ProjectData data, String when) {
-        final List<String> mismatches = new ArrayList<>();
-        collectMismatch(mismatches, "GET project record", readProjectRecord(user, data.project), DENIED);
-        collectMismatch(mismatches, "GET subjects", readSubjects(user, data.project), DENIED);
-        collectMismatch(mismatches, "GET MR session", readSession(user, data.session), DENIED);
-        if (listProjectIds(user).contains(data.project.getId())) {
-            mismatches.add("project still in the user's project list");
-        }
-        if (readCreateable(user).contains(MR)) {
-            mismatches.add(MR + " still createable");
-        }
-        assertTrue(when + ": expected no access, but: " + mismatches, mismatches.isEmpty());
+    /**
+     * Retries the check until it passes, for up to 30 seconds. XNAT clears a user's cached permissions on a background
+     * thread, so a check made right after a change can still see the old ones.
+     */
+    private static void eventually(String when, ThrowingRunnable check) {
+        await(when).atMost(30, TimeUnit.SECONDS)
+                .pollDelay(0, TimeUnit.MILLISECONDS)
+                .pollInterval(250, TimeUnit.MILLISECONDS)
+                .untilAsserted(check);
     }
 
     /**
-     * Checks that MR sessions are createable for the user, then creates a subject and MR session in the project as the user.
+     * Waits until the user's own list of groups shows them in the given group of the project and no other. A write
+     * can't be retried like a read, since one made with the old role could succeed, so write checks wait for this
+     * first. XNAT serves the list from the cache that decides what the user may write.
+     */
+    private void awaitProjectGroup(User user, Project project, UserGroup group, String when) {
+        final List<String> projectGroupIds = UserGroups.STANDARD_GROUPS.stream().map(g -> groupId(project, g)).collect(Collectors.toList());
+        eventually(when, () -> {
+            final Response response = restDriver.queryBaseFor(user).get(formatXapiUrl("users", user.getUsername(), "groups"));
+            assertStatus(when + ": GET own groups", response, Matchers.is(200));
+            final Set<String> inProject = response.jsonPath().getList("$", String.class).stream().filter(projectGroupIds::contains).collect(Collectors.toSet());
+            assertEquals(when + ": the user's groups in the project", Collections.singleton(groupId(project, group)), inProject);
+        });
+    }
+
+    private static String groupId(Project project, UserGroup group) {
+        return project.getId() + "_" + group.groupIdSuffix();
+    }
+
+    // Both run every check before failing, so one stale cache doesn't hide the state of the others.
+    private void assertCanRead(User user, ProjectData data, String when) {
+        eventually(when, () -> {
+            final List<String> mismatches = new ArrayList<>();
+            collectMismatch(mismatches, "GET project record", readProjectRecord(user, data.project), Matchers.is(200));
+            collectMismatch(mismatches, "GET subjects", readSubjects(user, data.project), Matchers.is(200));
+            collectMismatch(mismatches, "GET MR session", readSession(user, data.session), Matchers.is(200));
+            if (!listProjectIds(user).contains(data.project.getId())) {
+                mismatches.add("project missing from the user's project list");
+            }
+            assertTrue(when + ": expected read access, but: " + mismatches, mismatches.isEmpty());
+        });
+    }
+
+    private void assertNoAccess(User user, ProjectData data, String when) {
+        eventually(when, () -> {
+            final List<String> mismatches = new ArrayList<>();
+            collectMismatch(mismatches, "GET project record", readProjectRecord(user, data.project), DENIED);
+            collectMismatch(mismatches, "GET subjects", readSubjects(user, data.project), DENIED);
+            collectMismatch(mismatches, "GET MR session", readSession(user, data.session), DENIED);
+            if (listProjectIds(user).contains(data.project.getId())) {
+                mismatches.add("project still in the user's project list");
+            }
+            if (readCreateable(user).contains(MR)) {
+                mismatches.add(MR + " still createable");
+            }
+            assertTrue(when + ": expected no access, but: " + mismatches, mismatches.isEmpty());
+        });
+    }
+
+    /**
+     * Waits for MR sessions to be createable for the user, then creates a subject and MR session in the project as the user.
      * @return the created session
      */
     private ImagingSession assertCanCreate(User user, Project project, String when) {
-        assertTrue(when + ": " + MR + " should be createable", readCreateable(user).contains(MR));
+        eventually(when, () -> assertTrue(when + ": " + MR + " should be createable", readCreateable(user).contains(MR)));
         final Subject subject = new Subject(project);
         final ImagingSession session = new MRSession(project, subject);
         try {
