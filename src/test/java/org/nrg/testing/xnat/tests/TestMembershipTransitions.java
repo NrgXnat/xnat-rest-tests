@@ -259,6 +259,15 @@ public class TestMembershipTransitions extends BaseXnatRestTest {
             assertTrue(when + ": unexpected status codes: " + mismatches, mismatches.isEmpty());
             assertTrue(when + ": " + MR + " should still be createable", readCreateable(user).contains(MR));
         });
+
+        for (Project project : kept) {
+            mainAdminInterface().removeUserFromProject(user, project, UserGroups.MEMBER);
+        }
+        final String allRemoved = "after removal from all " + BURST_PROJECTS;
+        eventually(allRemoved, () -> {
+            assertEquals(allRemoved + ": burst projects in the user's project list", Collections.emptySet(), listedAmong(user, allIds));
+            assertFalse(allRemoved + ": " + MR + " should no longer be createable", readCreateable(user).contains(MR));
+        });
     }
 
     private static class ProjectData {
