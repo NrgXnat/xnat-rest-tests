@@ -142,6 +142,22 @@ public class TestBackgroundImport extends BaseXnatRestTest {
     }
 
     @Test
+    public void testMissingCachedUploadLeavesNoFolder() {
+        final String cachedFile = String.format("/user/cache/resources/%s/files/%s", newKey(), testZip.getName());
+
+        try {
+            mainInterface().callImporter(new DicomZipRequest().project(project).param("src", cachedFile));
+            fail("An import of a cached file that doesn't exist should have failed");
+        } catch (ImportException e) {
+            assertEquals(404, e.getStatusCode());
+        }
+
+        // Looking the file up creates its folder, which the import removes again. While the folder is there, a GET of
+        // the file answers with the folder's listing.
+        assertCachedFileGone(cachedFile);
+    }
+
+    @Test
     public void testAsyncImportWithFileInBody() {
         final Response response = importInBody(testZip, params());
 
@@ -200,6 +216,20 @@ public class TestBackgroundImport extends BaseXnatRestTest {
         assertEquals(202, response.statusCode());
         assertThat(mainInterface().waitForTrackedEventSuccessful(response.asString().trim()).getFinalMessage(), Matchers.startsWith("Prearchive:"));
         assertCachedFileGone(cachedFile);
+    }
+
+    @Test
+    public void testAsyncGradualDicomImport() {
+        final Response response = mainQueryBase().contentType("application/dicom").body(getDataFile("scan1/000000.dcm"))
+                .queryParam("import-handler", "gradual-DICOM")
+                .queryParam("dest", "/prearchive/projects/" + project.getId())
+                .queryParam("async", true)
+                .queryParam("inbody", true)
+                .post(formatRestUrl("services/import"));
+
+        assertEquals(202, response.statusCode());
+        assertThat(mainInterface().waitForTrackedEventSuccessful(response.asString().trim()).getFinalMessage(),
+                Matchers.startsWith("Prearchive:/prearchive/projects/" + project.getId() + "/"));
     }
 
     @Test
