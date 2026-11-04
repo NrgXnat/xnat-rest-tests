@@ -102,6 +102,23 @@ public class TestBackgroundImport extends BaseXnatRestTest {
     }
 
     @Test
+    public void testQueuedImportFromCacheAnswers202() {
+        final String cachedFile = uploadToUserCache(testZip);
+        final String key = newKey();
+        final Map<String, Object> params = params();
+        params.put("src", cachedFile);
+        params.put("http-session-listener", key);
+
+        final Response response = mainQueryBase().multiPart(new MultiPartSpecBuilder("").build()).queryParams(params)
+                .post(formatRestUrl("services/import"));
+
+        assertEquals(202, response.statusCode());
+        assertEquals("Submitted for prearchival", response.asString().trim());
+        assertTrue(response.getHeader("Location").endsWith("/xapi/event_tracking/" + key));
+        mainInterface().waitForTrackedEventSuccessful(key);
+    }
+
+    @Test
     public void testCachedUploadDeletedAfterImportWithinRequest() {
         final String cachedFile = uploadToUserCache(testZip);
 
