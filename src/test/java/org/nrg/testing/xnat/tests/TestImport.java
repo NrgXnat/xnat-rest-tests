@@ -564,6 +564,40 @@ public class TestImport extends BaseXnatRestTest {
     }
 
     @Test
+    @AddedIn(Xnat_1_11_0.class)
+    public void testArchiveDestinationAcceptsOverwrite() {
+        // The parameters the Compressed Uploader sends to add scans to an archived session (Upload Scans)
+        final Subject subject = new Subject(project, "SUBJ_0011");
+        mainInterface().createSubject(subject);
+        final ImagingSession session = new MRSession(project, subject, newLabel());
+        final DicomZipRequest request = new DicomZipRequest().project(project)
+                .param("subject", subject.getLabel())
+                .param("session", session.getLabel())
+                .param("prearchive_code", 1)
+                .param("action", "commit")
+                .param("auto-archive", true);
+
+        mainInterface().callImporter(request.file(scan1));
+        mainInterface().callImporter(request.overwrite(MergeBehavior.APPEND).file(scan2));
+        mainInterface().jsonQuery().get(mainInterface().sessionScansUrl(session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
+        mainInterface().callImporter(request.overwrite(MergeBehavior.DELETE).file(scan2));
+        mainInterface().jsonQuery().get(mainInterface().sessionScansUrl(session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
+
+        try {
+            mainInterface().callImporter(new DicomZipRequest().project(project)
+                    .param("subject", subject.getLabel())
+                    .param("session", session.getLabel())
+                    .param("prearchive_code", 1)
+                    .param("overwrite", "none")
+                    .file(scan2));
+            failOnImproperSuccess();
+        } catch (ImportException importException) {
+            assertEquals(400, importException.getStatusCode());
+            assertTrue(importException.getMessage().contains("Overwrite flag was not set to a valid option"));
+        }
+    }
+
+    @Test
     public void testNonPathBasedImport() {
         final String transactionId = "s" + Calendar.getInstance().getTimeInMillis();
 
