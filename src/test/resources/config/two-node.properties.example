@@ -1,0 +1,20 @@
+# Settings for the two-node test environment in compose/two-node. Copy this file to
+# two-node.properties (git ignores it) and run, for example:
+#
+#   mvn test -Dxnat.config=two-node.properties -Dtest=TestUserAccess
+#
+# xnat.baseurl picks what the tests talk to:
+#   http://localhost:8081  node A alone, as a single-node XNAT
+#   http://localhost:8080  the load balancer, which alternates nodes with no session affinity
+xnat.baseurl=http://localhost:8081
+
+xnat.admin.user=admin
+xnat.admin.password=admin
+xnat.mainAdmin.user=admin
+xnat.mainAdmin.password=admin
+xnat.main.user=unitTest
+xnat.main.password=unitTest234
+xnat.users.email=xnat-tests@example.org
+xnat.version=1.11.0
+xnat.setupMrscan=true
+xnat.testBehavior.expectedFailures=ignore
