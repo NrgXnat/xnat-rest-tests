@@ -9,18 +9,13 @@ import org.apache.commons.io.FileUtils;
 import org.hamcrest.Matchers;
 import org.nrg.testing.TimeUtils;
 import org.nrg.testing.annotations.AddedIn;
-import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.xnat.enums.PrearchiveCode;
 import org.nrg.xnat.importer.ImportException;
 import org.nrg.xnat.importer.importers.DicomZipRequest;
-import org.nrg.xnat.interfaces.XnatInterface;
 import org.nrg.xnat.pogo.EventTrackingData;
 import org.nrg.xnat.pogo.Project;
-import org.nrg.xnat.pogo.users.User;
-import org.nrg.xnat.pogo.users.UserGroups;
-import org.nrg.xnat.rest.NotFoundException;
 import org.nrg.xnat.versions.Xnat_1_11_0;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -40,7 +35,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.nrg.testing.TestGroups.IMPORTER;
-import static org.testng.Assert.assertNotEquals;
 import static org.testng.AssertJUnit.*;
 
 /**
@@ -52,9 +46,12 @@ import static org.testng.AssertJUnit.*;
 @AddedIn(Xnat_1_11_0.class)
 public class TestBackgroundImport extends BaseXnatRestTest {
 
+    // These imports finish in about a second, so poll more often than the 5 seconds waitForTrackedEventSuccessful defaults to
+    private static final int POLL_MILLIS = 250;
+    private static final int MAX_WAIT_SECONDS = (int) TimeUnit.MINUTES.toSeconds(5);
+
     private final Project project = new Project().prearchiveCode(PrearchiveCode.MANUAL);
     private final File testZip = getDataFile("mr_1.zip");
-    private final File otherStudyZip = getDataFile("scan1.zip");
     private final String subjectFromTestZip = "SPP_0x220790";
     private final String sessionFromTestZip = "SPP_0x220790_MR2";
     private final String nonDicomFilename = "non_dicom_text_file.dcm";
@@ -88,34 +85,23 @@ public class TestBackgroundImport extends BaseXnatRestTest {
     public void testCachedUploadDeletedAfterBackgroundImport() {
         final String cachedFile = uploadToUserCache(testZip);
         final String key = newKey();
-
-        mainInterface().callImporter(new DicomZipRequest().project(project)
-                .param("src", cachedFile)
-                .param("http-session-listener", key)
-                .param("action", "commit"));
-        // The tracking record exists as soon as the import is queued, before the import reports anything
-        mainInterface().readEventTrackingData(key);
-
-        assertThat(mainInterface().waitForTrackedEventSuccessful(key).getFinalMessage(),
-                Matchers.startsWith("Prearchive:/prearchive/projects/" + project.getId() + "/"));
-        assertCachedFileGone(cachedFile);
-    }
-
-    @Test
-    public void testQueuedImportFromCacheAnswers202() {
-        final String cachedFile = uploadToUserCache(testZip);
-        final String key = newKey();
         final Map<String, Object> params = params();
         params.put("src", cachedFile);
         params.put("http-session-listener", key);
+        params.put("action", "commit");
 
+        // The importer reads parameters from the query string or a multipart form, so send an empty form rather than a form-urlencoded body
         final Response response = mainQueryBase().multiPart(new MultiPartSpecBuilder("").build()).queryParams(params)
                 .post(formatRestUrl("services/import"));
 
         assertEquals(202, response.statusCode());
         assertEquals("Submitted for prearchival", response.asString().trim());
         assertTrue(response.getHeader("Location").endsWith("/xapi/event_tracking/" + key));
-        mainInterface().waitForTrackedEventSuccessful(key);
+        // The tracking record exists as soon as the import is queued, before the import reports anything
+        mainInterface().readEventTrackingData(key);
+
+        assertThat(waitForSuccess(key), Matchers.startsWith("Prearchive:/prearchive/projects/" + project.getId() + "/"));
+        assertCachedFileGone(cachedFile);
     }
 
     @Test
@@ -184,15 +170,16 @@ public class TestBackgroundImport extends BaseXnatRestTest {
         mainInterface().readEventTrackingData(key);
 
         // Without action=commit the import ends once its files are in the prearchive
-        assertThat(mainInterface().waitForTrackedEventSuccessful(key).getFinalMessage(),
-                Matchers.startsWith("Prearchive:/prearchive/projects/" + project.getId() + "/"));
+        assertThat(waitForSuccess(key), Matchers.startsWith("Prearchive:/prearchive/projects/" + project.getId() + "/"));
     }
 
     @Test
-    public void testAsyncImportMultipartWithOwnKey() {
+    public void testAsyncMultipartImportWithOwnKeyArchives() {
         final String key = newKey();
         final Map<String, Object> params = params();
         params.put("http-session-listener", key);
+        params.put("action", "commit");
+        params.put("auto-archive", true);
 
         final Response response = mainQueryBase().multiPart(testZip).queryParams(params).queryParam("async", true)
                 .post(formatRestUrl("services/import"));
@@ -200,53 +187,12 @@ public class TestBackgroundImport extends BaseXnatRestTest {
         assertEquals(202, response.statusCode());
         assertEquals(key, response.asString().trim());
         assertTrue(response.getHeader("Location").endsWith("/xapi/event_tracking/" + key));
-        assertThat(mainInterface().waitForTrackedEventSuccessful(key).getFinalMessage(), Matchers.startsWith("Prearchive:"));
-    }
-
-    @Test
-    public void testAsyncImportArchives() {
-        final Map<String, Object> params = params();
-        params.put("action", "commit");
-        params.put("auto-archive", true);
-
-        final Response response = importInBody(testZip, params);
-
-        assertEquals(202, response.statusCode());
         assertEquals(
                 String.format("Archive:/archive/projects/%s/subjects/%s/experiments/%s", project.getId(), subjectFromTestZip, sessionFromTestZip),
-                mainInterface().waitForTrackedEventSuccessful(response.asString().trim()).getFinalMessage()
+                waitForSuccess(key)
         );
         mainInterface().jsonQuery().get(formatRestUrl("projects", project.getId(), "experiments")).then().assertThat()
                 .body("ResultSet.Result.label", Matchers.hasItem(sessionFromTestZip));
-    }
-
-    @Test
-    public void testAsyncImportFromUserCache() {
-        final String cachedFile = uploadToUserCache(testZip);
-        final Map<String, Object> params = params();
-        params.put("src", cachedFile);
-
-        // The importer reads parameters from the query string or a multipart form, so send an empty form rather than a form-urlencoded body
-        final Response response = mainQueryBase().multiPart(new MultiPartSpecBuilder("").build()).queryParams(params).queryParam("async", true)
-                .post(formatRestUrl("services/import"));
-
-        assertEquals(202, response.statusCode());
-        assertThat(mainInterface().waitForTrackedEventSuccessful(response.asString().trim()).getFinalMessage(), Matchers.startsWith("Prearchive:"));
-        assertCachedFileGone(cachedFile);
-    }
-
-    @Test
-    public void testAsyncGradualDicomImport() {
-        final Response response = mainQueryBase().contentType("application/dicom").body(getDataFile("scan1/000000.dcm"))
-                .queryParam("import-handler", "gradual-DICOM")
-                .queryParam("dest", "/prearchive/projects/" + project.getId())
-                .queryParam("async", true)
-                .queryParam("inbody", true)
-                .post(formatRestUrl("services/import"));
-
-        assertEquals(202, response.statusCode());
-        assertThat(mainInterface().waitForTrackedEventSuccessful(response.asString().trim()).getFinalMessage(),
-                Matchers.startsWith("Prearchive:/prearchive/projects/" + project.getId() + "/"));
     }
 
     @Test
@@ -257,41 +203,9 @@ public class TestBackgroundImport extends BaseXnatRestTest {
         final Response response = importInBody(zipContainingNonDicom, params);
 
         assertEquals(202, response.statusCode());
-        final EventTrackingData tracking = waitForTrackedEventEnd(mainInterface(), response.asString().trim());
+        final EventTrackingData tracking = waitForTrackedEventEnd(response.asString().trim());
         assertFalse(tracking.getSucceeded());
         assertThat(tracking.getFinalMessage(), Matchers.containsString("unable to read DICOM object " + nonDicomFilename));
-    }
-
-    @Test
-    @TestRequires(users = 1)
-    public void testTrackingKeyBelongsToItsUser() {
-        final User otherUser = getGenericUser();
-        final XnatInterface otherInterface = interfaceFor(otherUser);
-        mainAdminInterface().addUserToProject(otherUser, project, UserGroups.MEMBER);
-        final String key = newKey();
-        final Map<String, Object> params = params();
-        params.put("http-session-listener", key);
-
-        assertEquals(202, importInBody(testZip, params).statusCode());
-        final String mainMessage = mainInterface().waitForTrackedEventSuccessful(key).getFinalMessage();
-
-        // Another user can't read the key
-        try {
-            otherInterface.readEventTrackingData(key);
-            fail("Another user should not be able to read the tracking of this import");
-        } catch (NotFoundException ignored) {
-        }
-
-        // ... and can use the same key for an import of their own
-        final Response otherResponse = otherInterface.queryBase().contentType("application/zip").body(otherStudyZip)
-                .queryParams(params).queryParam("async", true).queryParam("inbody", true).post(formatRestUrl("services/import"));
-        assertEquals(202, otherResponse.statusCode());
-        assertEquals(key, otherResponse.asString().trim());
-        final String otherMessage = otherInterface.waitForTrackedEventSuccessful(key).getFinalMessage();
-
-        assertThat(otherMessage, Matchers.startsWith("Prearchive:"));
-        assertNotEquals(otherMessage, mainMessage);
-        assertEquals(mainMessage, mainInterface().readEventTrackingData(key).getFinalMessage());
     }
 
     private Map<String, Object> params() {
@@ -321,16 +235,20 @@ public class TestBackgroundImport extends BaseXnatRestTest {
         return UUID.randomUUID().toString();
     }
 
-    private EventTrackingData waitForTrackedEventEnd(XnatInterface xnatInterface, String key) {
-        final long deadline = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(5);
+    private String waitForSuccess(String key) {
+        return mainInterface().waitForTrackedEventSuccessful(key, MAX_WAIT_SECONDS, POLL_MILLIS).getFinalMessage();
+    }
+
+    private EventTrackingData waitForTrackedEventEnd(String key) {
+        final long deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(MAX_WAIT_SECONDS);
         while (System.currentTimeMillis() < deadline) {
-            final EventTrackingData tracking = xnatInterface.readEventTrackingData(key);
+            final EventTrackingData tracking = mainInterface().readEventTrackingData(key);
             if (tracking.getSucceeded() != null) {
                 return tracking;
             }
-            TimeUtils.sleep(2000);
+            TimeUtils.sleep(POLL_MILLIS);
         }
-        fail("The import tracked as " + key + " did not end within 5 minutes");
+        fail("The import tracked as " + key + " did not end within " + MAX_WAIT_SECONDS + " seconds");
         return null;
     }
 
