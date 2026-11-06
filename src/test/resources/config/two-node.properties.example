@@ -8,6 +8,10 @@
 #   http://localhost:8080  the load balancer, which alternates nodes with no session affinity
 xnat.baseurl=http://localhost:8081
 
+# A second node of the same XNAT, reached directly. The cross-node session tests (tests/sessions) run only when
+# this is set, and xnat.baseurl must then be node A, not the load balancer.
+xnat.nodeB.baseurl=http://localhost:8082
+
 xnat.admin.user=admin
 xnat.admin.password=admin
 xnat.mainAdmin.user=admin
