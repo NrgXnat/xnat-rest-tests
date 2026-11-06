@@ -28,6 +28,7 @@ public class TestGroups {
     public static final String SCHEDULED_EVENTS = "scheduled-events";
     public static final String SCHEMAS = "schemas";
     public static final String SEARCH = "search";
+    public static final String SESSIONS = "sessions";
     public static final String SHARING = "sharing";
     public static final String SMOKE = "smoke";
     public static final String USERS = "users";

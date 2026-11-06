@@ -1,0 +1,3 @@
+# Plugin jars for both nodes. up.sh downloads dist-events here; see README.md.
+*
+!.gitignore
