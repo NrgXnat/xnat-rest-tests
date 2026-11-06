@@ -86,6 +86,23 @@ mvn test -Dxnat.config=two-node.properties -Dtest=TestUserAccess
   different nodes. So until a login works on any node, the suite fails in its setup with "Provided
   credentials don't appear to be valid."
 
+### The session tests
+
+The tests in `org.nrg.testing.xnat.tests.sessions` (group `sessions`) send bare session IDs and never log in
+again, so a lost session fails them. Keep `xnat.baseurl` on node A for these:
+
+- `TestSessionLifecycle` and `TestSessionLoginPaths` test one node. They work against any single XNAT.
+  `testSessionTimeoutSettingIsHonoured` waits 75 seconds.
+- `TestSessionsCrossNode` uses `xnat.nodeB.baseurl` (node B, `http://localhost:8082`) and is skipped without
+  it. Most of its tests describe what a login should do on a multi-node XNAT but doesn't yet, so they're
+  marked as expected failures. The example config ignores those. To see them fail, add
+  `-Dxnat.testBehavior.expectedFailures=run`.
+
+```bash
+mvn test -Dxnat.config=two-node.properties -Dtest='TestSessionLifecycle,TestSessionLoginPaths,TestSessionsCrossNode' \
+    -Dxnat.testBehavior.expectedFailures=run
+```
+
 ## Inspecting it
 
 ```bash
