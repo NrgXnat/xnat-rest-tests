@@ -94,7 +94,8 @@ public class TestBackgroundImport extends BaseXnatRestTest {
         final Response response = mainQueryBase().multiPart(new MultiPartSpecBuilder("").build()).queryParams(params)
                 .post(formatRestUrl("services/import"));
 
-        assertEquals(202, response.statusCode());
+        // 200 as before 1.11, since clients check for it. Only async=true answers 202.
+        assertEquals(200, response.statusCode());
         assertEquals("Submitted for prearchival", response.asString().trim());
         assertTrue(response.getHeader("Location").endsWith("/xapi/event_tracking/" + key));
         // The tracking record exists as soon as the import is queued, before the import reports anything
