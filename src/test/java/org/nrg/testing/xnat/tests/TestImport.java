@@ -571,9 +571,12 @@ public class TestImport extends BaseXnatRestTest {
         final ImagingSession session = new MRSession(project, subject, newLabel());
 
         mainInterface().callImporter(uploadScansRequestFor(session).file(scan1));
+        // A session per mode, so each pass shows that its upload adds a scan
         for (MergeBehavior overwrite : new MergeBehavior[]{MergeBehavior.APPEND, MergeBehavior.DELETE}) {
-            mainInterface().callImporter(uploadScansRequestFor(session).overwrite(overwrite).file(scan2));
-            mainInterface().jsonQuery().get(mainInterface().sessionScansUrl(session)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
+            final ImagingSession sessionForMode = new MRSession(project, subject, newLabel());
+            mainInterface().callImporter(uploadScansRequestFor(sessionForMode).file(scan1));
+            mainInterface().callImporter(uploadScansRequestFor(sessionForMode).overwrite(overwrite).file(scan2));
+            mainInterface().jsonQuery().get(mainInterface().sessionScansUrl(sessionForMode)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
         }
 
         try {

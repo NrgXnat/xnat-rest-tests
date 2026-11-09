@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.nrg.testing.TestGroups.IMPORTER;
 import static org.testng.Assert.expectThrows;
@@ -82,7 +83,9 @@ public class TestBackgroundImport extends BaseXnatRestTest {
         mainInterface().readEventTrackingData(key);
 
         assertThat(waitForSuccess(key), Matchers.startsWith("Prearchive:/prearchive/projects/" + project.getId() + "/"));
-        assertCachedFileGone(cachedFile);
+        // With action=commit the importer ends the event itself, just before the cached file is deleted
+        await().atMost(30, TimeUnit.SECONDS).pollInterval(POLL_MILLIS, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> assertCachedFileGone(cachedFile));
     }
 
     @Test
