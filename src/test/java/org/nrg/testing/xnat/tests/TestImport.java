@@ -564,6 +564,31 @@ public class TestImport extends BaseXnatRestTest {
     }
 
     @Test
+    @AddedIn(Xnat_1_11_0.class)
+    public void testArchiveDestinationAcceptsOverwrite() {
+        final Subject subject = new Subject(project, "SUBJ_0011");
+        mainInterface().createSubject(subject);
+        final ImagingSession session = new MRSession(project, subject, newLabel());
+
+        mainInterface().callImporter(uploadScansRequestFor(session).file(scan1));
+        // A session per mode, so each pass shows that its upload adds a scan
+        for (MergeBehavior overwrite : new MergeBehavior[]{MergeBehavior.APPEND, MergeBehavior.DELETE}) {
+            final ImagingSession sessionForMode = new MRSession(project, subject, newLabel());
+            mainInterface().callImporter(uploadScansRequestFor(sessionForMode).file(scan1));
+            mainInterface().callImporter(uploadScansRequestFor(sessionForMode).overwrite(overwrite).file(scan2));
+            mainInterface().jsonQuery().get(mainInterface().sessionScansUrl(sessionForMode)).then().assertThat().body("ResultSet.Result", Matchers.hasSize(2));
+        }
+
+        try {
+            mainInterface().callImporter(uploadScansRequestFor(session).param("overwrite", "none").file(scan2));
+            failOnImproperSuccess();
+        } catch (ImportException importException) {
+            assertEquals(400, importException.getStatusCode());
+            assertTrue(importException.getMessage().contains("Overwrite flag was not set to a valid option"));
+        }
+    }
+
+    @Test
     public void testNonPathBasedImport() {
         final String transactionId = "s" + Calendar.getInstance().getTimeInMillis();
 
@@ -1013,6 +1038,16 @@ public class TestImport extends BaseXnatRestTest {
 
     private void failOnImproperSuccess() {
         fail("Attempted import invocation should have failed");
+    }
+
+    // What the Compressed Uploader sends to add scans to an archived session (Upload Scans)
+    private DicomZipRequest uploadScansRequestFor(ImagingSession session) {
+        return new DicomZipRequest().project(session.getPrimaryProject())
+                .param("subject", session.getSubject().getLabel())
+                .param("session", session.getLabel())
+                .param("prearchive_code", 1)
+                .param("action", "commit")
+                .param("auto-archive", true);
     }
 
     private SessionImporterRequest defaultRequestFor(ImagingSession session) {
