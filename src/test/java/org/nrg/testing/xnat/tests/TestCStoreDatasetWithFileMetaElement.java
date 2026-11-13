@@ -29,7 +29,7 @@ import org.nrg.xnat.pogo.dicom.DicomObjectIdentifier;
 import org.nrg.xnat.pogo.dicom.DicomScpReceiver;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
-import org.nrg.xnat.versions.Xnat_1_11_0;
+import org.nrg.xnat.versions.Xnat_1_10_2_2;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -56,15 +56,15 @@ import static org.testng.AssertJUnit.assertNotNull;
 
 /**
  * A C-STORE dataset is encoded in the transfer syntax the association negotiated. Some archives send datasets that
- * still carry a file meta element, such as the Source Application Entity Title, ahead of everything else. Before
- * 1.11.0 XNAT took such a dataset for one that starts with file meta information, read the rest of it as Explicit VR
- * Little Endian whatever had been negotiated, and refused the object when the dataset was Implicit VR.
+ * still carry a file meta element, such as the Source Application Entity Title, ahead of everything else. From 1.10.0
+ * until 1.10.2.2, XNAT took such a dataset for one that starts with file meta information, read the rest of it as
+ * Explicit VR Little Endian whatever had been negotiated, and refused the object when the dataset was Implicit VR.
  * <p>
  * Each object is sent as it was written, without header changes, so the leading element reaches XNAT as it would
  * from such an archive. The objects route themselves to the project, and auto-archive, through their Patient Comments.
  */
 @Test(groups = {DICOM_SCP, IMPORTER})
-@AddedIn(Xnat_1_11_0.class)
+@AddedIn(Xnat_1_10_2_2.class)
 @TestRequires(admin = true, dicomScp = true, data = TestData.SAMPLE_1_SCAN_4)
 public class TestCStoreDatasetWithFileMetaElement extends BaseXnatRestTest {
     private static final Logger LOGGER = Logger.getLogger(TestCStoreDatasetWithFileMetaElement.class);
