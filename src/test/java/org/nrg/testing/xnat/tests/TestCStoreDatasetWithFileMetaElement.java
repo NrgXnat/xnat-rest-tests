@@ -219,7 +219,7 @@ public class TestCStoreDatasetWithFileMetaElement extends BaseXnatRestTest {
         };
     }
 
-    /** The pixel data of each object the transformation wrote, which may be from an earlier run, by SOP Instance UID. */
+    /** The pixel data of each object the transformation wrote, by SOP Instance UID. */
     private static Map<String, byte[]> pixelDataBySopInstanceUid(Path transformedData) {
         final Map<String, byte[]> pixelData = new HashMap<>();
         try (Stream<Path> files = Files.walk(transformedData)) {
