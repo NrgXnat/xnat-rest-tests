@@ -11,7 +11,7 @@ import org.dcm4che3.util.TagUtils;
 import org.dcm4che3.util.UIDUtils;
 import org.nrg.testing.DicomUtils;
 import org.nrg.testing.TimeUtils;
-import org.nrg.testing.annotations.AddedIn;
+import org.nrg.testing.annotations.DisallowXnatVersion;
 import org.nrg.testing.annotations.TestRequires;
 import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.dicom.transform.DicomFileWriter;
@@ -29,7 +29,10 @@ import org.nrg.xnat.pogo.dicom.DicomObjectIdentifier;
 import org.nrg.xnat.pogo.dicom.DicomScpReceiver;
 import org.nrg.xnat.pogo.experiments.ImagingSession;
 import org.nrg.xnat.pogo.experiments.sessions.MRSession;
-import org.nrg.xnat.versions.Xnat_1_10_2_2;
+import org.nrg.xnat.versions.Xnat_1_10_0;
+import org.nrg.xnat.versions.Xnat_1_10_1;
+import org.nrg.xnat.versions.Xnat_1_10_2;
+import org.nrg.xnat.versions.Xnat_1_10_2_1;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -64,7 +67,6 @@ import static org.testng.AssertJUnit.assertNotNull;
  * from such an archive. The objects route themselves to the project, and auto-archive, through their Patient Comments.
  */
 @Test(groups = {DICOM_SCP, IMPORTER})
-@AddedIn(Xnat_1_10_2_2.class)
 @TestRequires(admin = true, dicomScp = true, data = TestData.SAMPLE_1_SCAN_4)
 public class TestCStoreDatasetWithFileMetaElement extends BaseXnatRestTest {
     private static final Logger LOGGER = Logger.getLogger(TestCStoreDatasetWithFileMetaElement.class);
@@ -124,8 +126,12 @@ public class TestCStoreDatasetWithFileMetaElement extends BaseXnatRestTest {
         }
     }
 
-    /** The case that used to fail: an Implicit VR dataset, which XNAT read as Explicit VR from the leading element on. */
+    /**
+     * The case that fails from 1.10.0 until 1.10.2.2: an Implicit VR dataset, which XNAT read as Explicit VR from the
+     * leading element on.
+     */
     @Test
+    @DisallowXnatVersion(disallowedVersions = {Xnat_1_10_0.class, Xnat_1_10_1.class, Xnat_1_10_2.class, Xnat_1_10_2_1.class})
     public void testImplicitVrDatasetThatStartsWithAFileMetaElement() {
         sendAndCheck(IMPLICIT_SESSION, UID.ImplicitVRLittleEndian);
     }
