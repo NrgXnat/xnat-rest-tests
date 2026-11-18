@@ -3,7 +3,6 @@ package org.nrg.testing.xnat.tests.customforms;
 import org.apache.commons.io.FileUtils;
 import org.nrg.testing.annotations.AddedIn;
 import org.nrg.testing.annotations.TestRequires;
-import org.nrg.testing.xnat.customforms.pojo.CustomFormPojo;
 import org.nrg.xnat.interfaces.XnatInterface;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.users.User;
@@ -12,11 +11,12 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.nrg.testing.TestGroups.CUSTOM_FORMS;
 import static org.nrg.testing.TestGroups.PERMISSIONS;
 import static org.testng.AssertJUnit.assertEquals;
-import static org.testng.AssertJUnit.assertFalse;
 
 
 @AddedIn(Xnat_1_8_8.class)
@@ -77,11 +77,13 @@ public class TestCustomFormCreation extends BaseCustomFormRestTest {
         mainAdminInterface.createProject(project1);
         generatedProjectFormUUIDs.addAll(createProjectSpecificForms(mainAdminInterface, project1, 201));
         mainAdminInterface.deleteProject(project1);
-        //Only the Site forms should exist
-        List<CustomFormPojo> formsOnSite = fetchForms(mainAdminInterface);
-        for (CustomFormPojo form : formsOnSite) {
-            assertFalse(generatedProjectFormUUIDs.contains(form.getFormUUID()));
-        }
+        // A listener on the project's delete event removes its forms after the DELETE returns, so wait for that
+        // instead of reading the list once. Only the site forms should remain.
+        await().alias("forms of the deleted project are still listed")
+                .atMost(60, TimeUnit.SECONDS)
+                .pollInterval(500, TimeUnit.MILLISECONDS)
+                .until(() -> fetchForms(mainAdminInterface).stream()
+                        .noneMatch(form -> generatedProjectFormUUIDs.contains(form.getFormUUID())));
         deleteForms(mainAdminInterface(), generatedSiteFormUUIDs, 200);
     }
 
