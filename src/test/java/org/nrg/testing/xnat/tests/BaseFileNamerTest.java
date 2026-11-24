@@ -135,6 +135,7 @@ public class BaseFileNamerTest extends BaseXnatRestTest {
         private final File data;
         private final boolean rename;
         private final boolean archive;
+        private String anonScript;
 
         public DicomZipStep(TestData data, boolean rename) {
             this(data.toFile(), rename);
@@ -150,6 +151,12 @@ public class BaseFileNamerTest extends BaseXnatRestTest {
             this.archive = archive;
         }
 
+        /** Sends an inline anonymization script with the upload, as the importer's {@code Anon-Script} parameter. */
+        public DicomZipStep anonScript(String anonScript) {
+            this.anonScript = anonScript;
+            return this;
+        }
+
         @Override
         public void perform(BaseXnatRestTest xnatRestTest, Project project) {
             final DicomZipRequest request = new DicomZipRequest()
@@ -158,6 +165,9 @@ public class BaseFileNamerTest extends BaseXnatRestTest {
                     .rename(rename);
             if (archive) {
                 request.destArchive();
+            }
+            if (anonScript != null) {
+                request.param("Anon-Script", anonScript);
             }
             mainInterface().callImporter(request);
         }

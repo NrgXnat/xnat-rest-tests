@@ -907,6 +907,31 @@ public class TestImport extends BaseXnatRestTest {
     }
 
     /**
+     * An inline anonymization script that parses but fails on the data is also the uploader's mistake: the upload fails
+     * with a 400 that names the script, and the session it started is removed from the prearchive. Unlike a script that
+     * won't parse, this has been a 400 since the importer first took an inline script.
+     */
+    @Test(groups = PREARCHIVE)
+    @AddedIn(Xnat_1_10_1.class)
+    public void testInlineScriptThatFailsOnTheDataIsTheUploadersError() {
+        // Parses, but every file fails: the substring runs past the end of the patient's name.
+        final String failsOnTheData = "version \"6.3\"\n(0008,0080) := substring[(0010,0010), 0, 999]\n";
+        try {
+            mainInterface().callImporter(new DicomZipRequestWithScript(failsOnTheData).project(project).file(testZip));
+            failOnImproperSuccess();
+        } catch (ImportException importException) {
+            assertEquals(400, importException.getStatusCode());
+            assertTrue("the message should name the inline script: " + importException.getMessage(),
+                       importException.getMessage().contains("The supplied inline anonymization script could not be applied"));
+        }
+        // The project's listing also returns Unassigned sessions, which another upload may have left.
+        final List<SessionData> left = mainInterface().getPrearchiveEntriesForProject(project).stream()
+                .filter(session -> project.getId().equals(session.getProject()))
+                .collect(Collectors.toList());
+        assertTrue("nothing should be left in the prearchive: " + left, left.isEmpty());
+    }
+
+    /**
      * A failed upload's session stays in ERROR when the prearchive table is rebuilt from disk. Its folder has no session
      * XML, which on its own reads as a session still receiving: read that way, it would be built and, in a project that
      * archives automatically, archived with only part of the study.
