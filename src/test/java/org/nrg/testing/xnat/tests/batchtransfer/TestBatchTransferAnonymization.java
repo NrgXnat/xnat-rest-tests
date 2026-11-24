@@ -103,13 +103,9 @@ public class TestBatchTransferAnonymization extends BaseBatchTransferTest {
     private Map<String, Attributes> anonSourceHeaders;     // by SOPInstanceUID
     private boolean perImportAnon;
 
-    private AnonScript originalSiteScript;
-    private Boolean originalSiteScriptEnabled;
-
     @BeforeClass
     public void setUpProjectsAndSiteScript() {
-        originalSiteScript = mainAdminInterface().readSiteAnonScript();
-        originalSiteScriptEnabled = mainAdminInterface().readSiteConfig().getEnableSiteAnonScript();
+        saveSiteAnonSettings();
         perImportAnon = mainInterface().readTransferCapabilities().isPerImportAnon();
 
         member = getGenericUser();
@@ -149,10 +145,7 @@ public class TestBatchTransferAnonymization extends BaseBatchTransferTest {
     @AfterClass(alwaysRun = true)
     public void restoreSiteScriptAndDeleteProjects() {
         try {
-            if (originalSiteScript != null) {
-                mainAdminInterface().setSiteAnonScript(originalSiteScript);
-                mainAdminInterface().setSiteAnonScriptStatus(Boolean.TRUE.equals(originalSiteScriptEnabled));
-            }
+            restoreSiteAnonSettings();
         } finally {
             for (Project project : Arrays.asList(anonDestination, plainDestination, untouchedDestination, source)) {
                 restDriver.deleteProjectSilently(mainAdminUser, project);
@@ -169,6 +162,15 @@ public class TestBatchTransferAnonymization extends BaseBatchTransferTest {
         new ProjectScript().validateScriptRan(dicomFiles(copyId));
         assertProbes(copyId, PROJECT, SITE, null);
         assertSourceUnchanged();
+    }
+
+    /** AN-02: a Reimport into a project without a project script runs only the site-wide script. */
+    @Test
+    public void testReimportWithoutAProjectScriptRunsOnlyTheSiteScript() {
+        final String copyId = reimportAndCheck(plainDestination, "AN02", null, null);
+        new SiteScript().validateScriptRan(dicomFiles(copyId));
+        new ProjectScript().validateScriptDidntRun(dicomFiles(copyId));
+        assertProbes(copyId, SITE, SITE, null);
     }
 
     /** AN-03: a custom script runs after the site-wide script and before the project script. */
