@@ -2,6 +2,7 @@ package org.nrg.testing.xnat.tests.batchtransfer;
 
 import org.apache.commons.io.IOUtils;
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
@@ -36,7 +37,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -122,16 +125,25 @@ public abstract class BaseBatchTransferTest extends BaseXnatRestTest {
     }
 
     private List<String> ownPrearchiveUrls(Project project) {
+        final List<String> urls = new ArrayList<>();
+        for (Map<String, Object> row : ownPrearchiveRows(project)) {
+            urls.add(String.valueOf(row.get("url")));
+        }
+        return urls;
+    }
+
+    /** The project's own rows of the prearchive listing, with their {@code url}, {@code status} and labels. */
+    protected List<Map<String, Object>> ownPrearchiveRows(Project project) {
         final List<Map<String, Object>> rows = mainAdminQueryBase().queryParam("format", "json").get(formatRestUrl("prearchive", "projects", project.getId())).
                 then().assertThat().statusCode(200).
                 extract().jsonPath().getList("ResultSet.Result");
-        final List<String> urls = new ArrayList<>();
+        final List<Map<String, Object>> own = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             if (project.getId().equals(row.get("project"))) {
-                urls.add(String.valueOf(row.get("url")));
+                own.add(row);
             }
         }
-        return urls;
+        return own;
     }
 
     /** Saves the site-wide anonymization script and whether it's enabled, for {@link #restoreSiteAnonSettings()}. */
@@ -259,6 +271,74 @@ public abstract class BaseBatchTransferTest extends BaseXnatRestTest {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    /** The parsed header of each DICOM file among a session's files. */
+    protected static List<Attributes> dicomOnly(Map<String, byte[]> files) {
+        final List<Attributes> headers = new ArrayList<>();
+        for (byte[] file : files.values()) {
+            if (isDicom(file)) {
+                headers.add(DicomUtils.readDicom(new ByteArrayInputStream(file)));
+            }
+        }
+        return headers;
+    }
+
+    protected static boolean isDicom(byte[] file) {
+        return file.length > 132 && file[128] == 'D' && file[129] == 'I' && file[130] == 'C' && file[131] == 'M';
+    }
+
+    protected static byte[] pixelData(Attributes header) {
+        try {
+            return header.getBytes(Tag.PixelData);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    protected static Map<String, Attributes> bySopInstanceUid(List<Attributes> headers) {
+        final Map<String, Attributes> byUid = new TreeMap<>();
+        for (Attributes header : headers) {
+            byUid.put(header.getString(Tag.SOPInstanceUID), header);
+        }
+        return byUid;
+    }
+
+    /** The tags whose values differ between two datasets, other than the pixel data, which is compared on its own. */
+    protected static List<String> headerDifferences(Attributes expected, Attributes actual) {
+        final Set<Integer> tags = new TreeSet<>();
+        for (int tag : expected.tags()) {
+            tags.add(tag);
+        }
+        for (int tag : actual.tags()) {
+            tags.add(tag);
+        }
+        tags.remove(Tag.PixelData);
+        final List<String> differences = new ArrayList<>();
+        for (int tag : tags) {
+            final String before = describe(expected, tag);
+            final String after = describe(actual, tag);
+            if (!before.equals(after)) {
+                differences.add(String.format("(%04X,%04X) %s -> %s", tag >>> 16, tag & 0xFFFF, before, after));
+            }
+        }
+        return differences;
+    }
+
+    /** A comparable description of one element: absent, a sequence and its items, or its values. */
+    private static String describe(Attributes dataset, int tag) {
+        if (!dataset.contains(tag)) {
+            return "absent";
+        }
+        final Sequence sequence = dataset.getSequence(tag);
+        if (sequence != null) {
+            final List<String> items = new ArrayList<>();
+            for (Attributes item : sequence) {
+                items.add(item.toString().replace('\n', ' ').trim());
+            }
+            return "sequence " + items;
+        }
+        return Arrays.toString(dataset.getStrings(tag));
     }
 
     protected byte[] fileNamed(Map<String, byte[]> files, String name) {

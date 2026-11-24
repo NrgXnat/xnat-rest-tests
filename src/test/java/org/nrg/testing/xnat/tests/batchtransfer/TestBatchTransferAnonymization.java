@@ -431,12 +431,4 @@ public class TestBatchTransferAnonymization extends BaseBatchTransferTest {
         throw new AssertionError("no manifest row for " + session.getLabel());
     }
 
-    private static Map<String, Attributes> bySopInstanceUid(List<Attributes> headers) {
-        final Map<String, Attributes> byUid = new HashMap<>();
-        for (Attributes header : headers) {
-            byUid.put(header.getString(Tag.SOPInstanceUID), header);
-        }
-        return byUid;
-    }
-
 }
