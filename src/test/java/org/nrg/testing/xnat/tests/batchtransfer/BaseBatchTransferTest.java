@@ -51,6 +51,12 @@ import static org.testng.Assert.assertNotNull;
 /**
  * Helpers for the Batch Transfer test classes (NrgXnat/batch-transfer-plugin#38): running a batch and waiting for it,
  * reading projects through XNAT's own API, and reading a session's files.
+ *
+ * <p><b>A server with more than one web node needs dist-events with the fix in NrgXnat/dist-events#8.</b> Clone and
+ * Reimport run on JMS listeners, so any node can pick up an item. Without the fix, the other nodes never learn that
+ * the test user owns the private projects the tests create. An item picked up there fails with "You do not have
+ * permission to read ...", which makes most Clone and Reimport tests fail at random. Share runs in the web request and
+ * isn't affected, and a single-node server doesn't need dist-events at all.
  */
 public abstract class BaseBatchTransferTest extends BaseXnatRestTest {
 
