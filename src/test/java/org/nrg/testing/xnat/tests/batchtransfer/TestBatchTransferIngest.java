@@ -279,9 +279,9 @@ public class TestBatchTransferIngest extends BaseBatchTransferTest {
         assertNull(subjectItem.getDestinationId(), "a subject isn't copied: " + run.summary());
         assertFalse(subjectIds(destination).containsKey(sessionlessSubject.getLabel()), "no subject in the destination");
         final TransferRunItem assessorItem = assertItem(run, assessorId, TransferItemStatus.FAILED, null);
-        assertTrue(assessorItem.getMessage().contains("not supported for assessors"), assessorItem.getMessage());
+        assertTrue(assessorItem.getMessage() != null && assessorItem.getMessage().contains("not supported for assessors"), run.summary());
         final TransferRunItem sameProject = assertItem(run, id(fidelitySession), TransferItemStatus.FAILED, null);
-        assertTrue(sameProject.getMessage().contains("cannot be the same as the source project"), sameProject.getMessage());
+        assertTrue(sameProject.getMessage() != null && sameProject.getMessage().contains("cannot be the same as the source project"), run.summary());
     }
 
     /**

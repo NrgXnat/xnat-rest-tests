@@ -1,8 +1,8 @@
 package org.nrg.testing.xnat.tests.batchtransfer;
 
 import lombok.extern.slf4j.Slf4j;
+import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
-import org.nrg.testing.DicomUtils;
 import org.nrg.testing.annotations.Basic;
 import org.nrg.testing.annotations.HardDependency;
 import org.nrg.testing.annotations.PluginRequirement;
@@ -29,7 +29,6 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.List;
@@ -169,8 +168,10 @@ public class TestBatchTransferShareClone extends BaseBatchTransferTest {
         final MRSession session = new MRSession(cloneDestination, subject);
         new SessionImportExtension(session, sessionZip);
         mainInterface().createSubject(subject);
-        for (Map.Entry<String, byte[]> file : scanFiles(mainInterface().getAccessionNumber(session)).entrySet()) {
-            assertEquals(DicomUtils.readDicom(new ByteArrayInputStream(file.getValue())).getString(Tag.StationName), PROJECT_PROBE_VALUE, file.getKey());
+        final List<Attributes> headers = headers(mainInterface().getAccessionNumber(session));
+        assertFalse(headers.isEmpty(), "the upload has DICOM files");
+        for (Attributes header : headers) {
+            assertEquals(header.getString(Tag.StationName), PROJECT_PROBE_VALUE, header.getString(Tag.SOPInstanceUID));
         }
     }
 
@@ -236,7 +237,7 @@ public class TestBatchTransferShareClone extends BaseBatchTransferTest {
         final TransferRunDetail run = transfer(TransferMode.SHARE, id(shareConflictSession), shareDestination);
         assertRunStatus(run, TransferRunStatus.FAILED);
         final TransferRunItem item = assertItem(run, id(shareConflictSession), TransferItemStatus.FAILED, null);
-        assertTrue(item.getMessage().contains("same label (" + shareConflictSession.getLabel() + ") already exists"), item.getMessage());
+        assertTrue(item.getMessage() != null && item.getMessage().contains("same label (" + shareConflictSession.getLabel() + ") already exists"), run.summary());
         assertEquals(experimentIds(shareDestination).get(shareConflictSession.getLabel()), unrelatedSessionId, "the unrelated session keeps the label");
     }
 
@@ -336,7 +337,7 @@ public class TestBatchTransferShareClone extends BaseBatchTransferTest {
         final TransferRunDetail run = transfer(TransferMode.CLONE, id(cloneConflictSession), cloneDestination);
         assertRunStatus(run, TransferRunStatus.FAILED);
         final TransferRunItem item = assertItem(run, id(cloneConflictSession), TransferItemStatus.FAILED, null);
-        assertTrue(item.getMessage().contains("A subject with the same label (" + cloneConflictSubject.getLabel() + ") already exists"), item.getMessage());
+        assertTrue(item.getMessage() != null && item.getMessage().contains("A subject with the same label (" + cloneConflictSubject.getLabel() + ") already exists"), run.summary());
         assertEquals(subjectIds(cloneDestination).get(cloneConflictSubject.getLabel()), unrelatedSubjectId, "the unrelated subject keeps the label");
         assertFalse(experimentIds(cloneDestination).containsKey(cloneConflictSession.getLabel()), "nothing is cloned");
     }
@@ -378,9 +379,11 @@ public class TestBatchTransferShareClone extends BaseBatchTransferTest {
     }
 
     private void assertProbeDidNotRun(Map<String, byte[]> files) {
-        for (Map.Entry<String, byte[]> file : files.entrySet()) {
-            assertNotEquals(DicomUtils.readDicom(new ByteArrayInputStream(file.getValue())).getString(Tag.StationName), PROJECT_PROBE_VALUE,
-                    "the destination's project script ran on " + file.getKey());
+        final List<Attributes> headers = dicomOnly(files);
+        assertFalse(headers.isEmpty(), "the session has DICOM files");
+        for (Attributes header : headers) {
+            assertNotEquals(header.getString(Tag.StationName), PROJECT_PROBE_VALUE,
+                    "the destination's project script ran on " + header.getString(Tag.SOPInstanceUID));
         }
     }
 

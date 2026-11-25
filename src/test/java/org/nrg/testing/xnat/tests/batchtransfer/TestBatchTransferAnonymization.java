@@ -74,14 +74,14 @@ public class TestBatchTransferAnonymization extends BaseBatchTransferTest {
     private static final String SITE = "BT site";
     private static final String CUSTOM = "BT custom";
     private static final String PROJECT = "BT project";
-    /** Passes the plugin's checks, then fails on any PatientName shorter than 999 characters. */
-    private static final String DATA_ERROR_SCRIPT = "version \"6.3\"\n(0008,0080) := substring[(0010,0010), 0, 999]\n";
     private static final String MAP_UID_SCRIPT = "version \"6.3\"\n(0020,000D) := mapUID[(0020,000D)]\n";
 
     private final AnonScript siteScript = XnatObjectUtils.anonScriptFromFile(DE_6, "bt_site_anon_probe.das");
     private final AnonScript projectScript = XnatObjectUtils.anonScriptFromFile(DE_6, "bt_project_anon_probe.das");
     private final String customScript = XnatObjectUtils.anonScriptFromFile(DE_6, "bt_custom_probe.das").getContents();
     private final String valuesScript = XnatObjectUtils.anonScriptFromFile(DE_6, "bt_values.das").getContents();
+    /** Passes the plugin's checks, then fails on any PatientName shorter than 999 characters. */
+    private final String dataErrorScript = XnatObjectUtils.anonScriptFromFile(DE_6, "fails_on_the_data.das").getContents();
     private final File mrSessionZip = getDataFile("mr_1.zip");
 
     private final Project source = new Project();
@@ -336,7 +336,7 @@ public class TestBatchTransferAnonymization extends BaseBatchTransferTest {
         requirePerImportAnon();
         final TransferRunDetail run = runTransfer(new BatchTransferPayload().
                 sourceProject(source.getId()).
-                anonScript(DATA_ERROR_SCRIPT).
+                anonScript(dataErrorScript).
                 addRequest(reimportRequest(id(anonSession), untouchedDestination, "AN12")));
         assertRunStatus(run, TransferRunStatus.FAILED);
         final TransferRunItem item = assertItem(run, id(anonSession), TransferItemStatus.FAILED, null);

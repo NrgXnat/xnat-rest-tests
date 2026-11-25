@@ -169,14 +169,26 @@ public abstract class BaseBatchTransferTest extends BaseXnatRestTest {
 
     /** Saves the site-wide anonymization script and whether it's enabled, for {@link #restoreSiteAnonSettings()}. */
     protected void saveSiteAnonSettings() {
-        savedSiteScript = mainAdminInterface().readSiteAnonScript();
-        savedSiteScriptEnabled = mainAdminInterface().readSiteConfig().getEnableSiteAnonScript();
+        final AnonScript script = mainAdminInterface().readSiteAnonScript();
+        final Boolean enabled = mainAdminInterface().readSiteConfig().getEnableSiteAnonScript();
+        savedSiteScript = script;
+        savedSiteScriptEnabled = enabled;
     }
 
-    /** Puts back the site-wide anonymization script and its on/off setting as {@link #saveSiteAnonSettings()} found them. */
+    /**
+     * Puts back the site-wide anonymization script and its on/off setting as {@link #saveSiteAnonSettings()} found them.
+     * The setting is put back even if the script can't be, so a test's script is never left switched on. A site without
+     * a script keeps the test's, switched off or on as before.
+     */
     protected void restoreSiteAnonSettings() {
-        if (savedSiteScript != null) {
-            mainAdminInterface().setSiteAnonScript(savedSiteScript);
+        if (savedSiteScript == null) {
+            return; // nothing was saved
+        }
+        try {
+            if (savedSiteScript.getContents() != null) {
+                mainAdminInterface().setSiteAnonScript(savedSiteScript);
+            }
+        } finally {
             mainAdminInterface().setSiteAnonScriptStatus(Boolean.TRUE.equals(savedSiteScriptEnabled));
         }
     }
@@ -270,27 +282,29 @@ public abstract class BaseBatchTransferTest extends BaseXnatRestTest {
         return files;
     }
 
-    /** The parsed header of each of a session's files. */
+    /** The parsed header of each DICOM file in a session's scans. Other files, such as snapshots, are skipped. */
     protected List<Attributes> headers(String sessionId) {
-        final List<Attributes> headers = new ArrayList<>();
-        for (byte[] file : scanFiles(sessionId).values()) {
-            headers.add(DicomUtils.readDicom(new ByteArrayInputStream(file)));
-        }
-        return headers;
+        return dicomOnly(scanFiles(sessionId));
     }
 
-    /** A session's files written to the test run's temp folder, for the suite's file-based DICOM validators. */
+    /** A session's DICOM files written to the test run's temp folder, for the suite's file-based DICOM validators. */
     protected List<File> dicomFiles(String sessionId) {
         return dicomFiles(sessionId, scanFiles(sessionId));
     }
 
-    /** A session's files, already read with {@link #scanFiles}, written to the test run's temp folder. */
+    /**
+     * The DICOM files among a session's files, already read with {@link #scanFiles}, written to the test run's temp
+     * folder. Other files, such as snapshots, are skipped.
+     */
     protected List<File> dicomFiles(String sessionId, Map<String, byte[]> scanFiles) {
         try {
             final Path folder = Files.createDirectories(Paths.get(Settings.TEMP_SUBDIR, "batch_transfer", sessionId));
             final List<File> files = new ArrayList<>();
             int index = 0;
             for (byte[] contents : scanFiles.values()) {
+                if (!isDicom(contents)) {
+                    continue;
+                }
                 files.add(Files.write(folder.resolve("file" + index++ + ".dcm"), contents).toFile());
             }
             return files;

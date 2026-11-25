@@ -17,8 +17,10 @@ import org.nrg.testing.dicom.XnatCStore;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
 import org.nrg.testing.xnat.CutOffUpload;
+import org.nrg.testing.xnat.XnatObjectUtils;
 import org.nrg.testing.xnat.conf.Settings;
 import org.nrg.testing.xnat.versions.*;
+import org.nrg.xnat.enums.DicomEditVersion;
 import org.nrg.xnat.enums.MergeBehavior;
 import org.nrg.xnat.enums.PrearchiveStatus;
 import org.nrg.xnat.enums.PrearchiveCode;
@@ -914,7 +916,7 @@ public class TestImport extends BaseXnatRestTest {
     @AddedIn(Xnat_1_10_1.class)
     public void testInlineScriptThatFailsOnTheDataIsTheUploadersError() {
         // Parses, but every file fails: the substring runs past the end of the patient's name.
-        final String failsOnTheData = "version \"6.3\"\n(0008,0080) := substring[(0010,0010), 0, 999]\n";
+        final String failsOnTheData = XnatObjectUtils.anonScriptFromFile(DicomEditVersion.DE_6, "fails_on_the_data.das").getContents();
         try {
             mainInterface().callImporter(new DicomZipRequestWithScript(failsOnTheData).project(project).file(testZip));
             failOnImproperSuccess();

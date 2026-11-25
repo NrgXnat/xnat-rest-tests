@@ -417,23 +417,30 @@ public class TestBatchTransferParity extends BaseBatchTransferTest {
         return codes;
     }
 
-    /** Each scan's type and series description, and each of its resources' label, format and file count, by scan ID. */
+    /**
+     * Each scan's type and series description, and each of its resources' label, format and file count, by scan ID. Two
+     * requests: the scans, and every scan's resources, which XNAT lists with the scan's ID as {@code cat_id}.
+     */
     private Map<String, String> scans(String sessionId) {
-        final List<Map<String, Object>> rows = mainQueryBase().queryParam("format", "json").get(formatRestUrl("experiments", sessionId, "scans")).
-                then().assertThat().statusCode(200).
-                extract().jsonPath().getList("ResultSet.Result");
+        final Map<String, Set<String>> resourcesByScan = new TreeMap<>();
+        for (Map<String, Object> resource : listing(formatRestUrl("experiments", sessionId, "scans", "ALL", "resources"))) {
+            resourcesByScan.computeIfAbsent(String.valueOf(resource.get("cat_id")), scanId -> new TreeSet<>()).
+                    add(resource.get("label") + "/" + resource.get("format") + "/" + resource.get("file_count"));
+        }
         final Map<String, String> scans = new TreeMap<>();
-        for (Map<String, Object> row : rows) {
+        for (Map<String, Object> row : listing(formatRestUrl("experiments", sessionId, "scans"))) {
             final String scanId = String.valueOf(row.get("ID"));
-            final Set<String> resources = new TreeSet<>();
-            for (Map<String, Object> resource : mainQueryBase().queryParam("format", "json").get(formatRestUrl("experiments", sessionId, "scans", scanId, "resources")).
-                    then().assertThat().statusCode(200).
-                    extract().jsonPath().<Map<String, Object>>getList("ResultSet.Result")) {
-                resources.add(resource.get("label") + "/" + resource.get("format") + "/" + resource.get("file_count"));
-            }
-            scans.put(scanId, row.get("type") + " | " + row.get("series_description") + " | " + resources);
+            // Every scan has at least its DICOM resource, so an empty list means the resources weren't matched to it.
+            assertTrue(resourcesByScan.containsKey(scanId), "no resources listed for scan " + scanId + " of " + sessionId + ": " + resourcesByScan);
+            scans.put(scanId, row.get("type") + " | " + row.get("series_description") + " | " + resourcesByScan.get(scanId));
         }
         return scans;
+    }
+
+    private List<Map<String, Object>> listing(String url) {
+        return mainQueryBase().queryParam("format", "json").get(url).
+                then().assertThat().statusCode(200).
+                extract().jsonPath().getList("ResultSet.Result");
     }
 
     private Map<String, Object> sessionFields(String sessionId) {
