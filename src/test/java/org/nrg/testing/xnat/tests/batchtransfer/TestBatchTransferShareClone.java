@@ -43,7 +43,7 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
 /**
- * Batch Transfer's Share and Clone modes (NrgXnat/batch-transfer-plugin#38, SC-01 to SC-13).
+ * Batch Transfer's Share and Clone modes (SC-01 to SC-13).
  *
  * <p>Neither mode anonymizes. Share links the source's own session into the destination; Clone makes a new session
  * whose files are hard links to the source's. Each destination carries a probe project script that writes

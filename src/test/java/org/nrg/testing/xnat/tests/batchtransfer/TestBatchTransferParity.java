@@ -53,9 +53,8 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
 /**
- * Batch Transfer's Reimport compared with XNAT's own upload of the same data (NrgXnat/batch-transfer-plugin#38,
- * section 7.2). For each case, the reference is a DICOM zip import into a project set up like the destination, with the
- * importer parameters the plugin's Reimport sends. The two sessions are compared file by file, paired by SOP Instance
+ * Batch Transfer's Reimport compared with XNAT's own upload of the same data. For each case, the reference is a DICOM
+ * zip import into a project set up like the destination, with the importer parameters the plugin's Reimport sends. The two sessions are compared file by file, paired by SOP Instance
  * UID, and by their scans, resources, session fields and labels. Any difference fails the test.
  *
  * <p>The source is {@code ANON_2}, uploaded with the site-wide script off. The destinations' project script is

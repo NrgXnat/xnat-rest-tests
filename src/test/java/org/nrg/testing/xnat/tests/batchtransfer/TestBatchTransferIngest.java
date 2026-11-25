@@ -50,9 +50,8 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
 /**
- * What Batch Transfer's Reimport puts in the destination when no anonymization script runs
- * (NrgXnat/batch-transfer-plugin#38, section 7.3): the sessions, labels, files and headers, what it leaves behind, and
- * how failures are reported.
+ * What Batch Transfer's Reimport puts in the destination when no anonymization script runs: the sessions, labels, files
+ * and headers, what it leaves behind, and how failures are reported.
  *
  * <p>The site-wide anonymization script is off for the class, so a Reimport has nothing to change and the copy's
  * headers can be compared with the source's. The class puts back the script and its on/off setting it found when it

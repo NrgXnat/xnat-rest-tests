@@ -48,8 +48,7 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
 /**
- * Anonymization on Batch Transfer's Reimport (NrgXnat/batch-transfer-plugin#38, section 7.1): which scripts run, in
- * what order, and on which copy.
+ * Anonymization on Batch Transfer's Reimport: which scripts run, in what order, and on which copy.
  *
  * <p>The source session is {@code ANON_2}, uploaded with the site-wide script off, so it keeps two planted tags: the
  * site script removes {@code (0044,0001)=CHOCOLATE} and the anonymizing destination's project script removes

@@ -50,8 +50,8 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 
 /**
- * Helpers for the Batch Transfer test classes (NrgXnat/batch-transfer-plugin#38): running a batch and waiting for it,
- * reading projects through XNAT's own API, and reading a session's files.
+ * Helpers for the Batch Transfer test classes: running a batch and waiting for it, reading projects through XNAT's own
+ * API, and reading a session's files.
  *
  * <p><b>A server with more than one web node needs dist-events with the fix in NrgXnat/dist-events#8.</b> Clone and
  * Reimport run on JMS listeners, so any node can pick up an item. Without the fix, the other nodes never learn that
