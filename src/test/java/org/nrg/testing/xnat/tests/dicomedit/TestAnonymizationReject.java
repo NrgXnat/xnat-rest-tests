@@ -11,19 +11,23 @@ import org.nrg.testing.dicom.transform.LocallyCacheableDicomTransformation;
 import org.nrg.testing.dicom.transform.TransformFunction;
 import org.nrg.testing.enums.TestData;
 import org.nrg.testing.xnat.BaseXnatRestTest;
+import org.nrg.testing.xnat.XnatObjectUtils;
 import org.nrg.testing.xnat.components.ComponentizedTest;
 import org.nrg.testing.xnat.components.ProjectAnon;
 import org.nrg.testing.xnat.components.SiteAnon;
 import org.nrg.testing.xnat.components.TestComponent;
 import org.nrg.testing.xnat.tests.BaseFileNamerTest;
+import org.nrg.xnat.enums.DicomEditVersion;
 import org.nrg.xnat.pogo.Project;
 import org.nrg.xnat.pogo.dicom.DicomScpReceiver;
 import org.nrg.xnat.pogo.experiments.Scan;
 import org.nrg.xnat.prearchive.SessionData;
+import org.nrg.xnat.versions.Xnat_1_10_1;
 import org.nrg.xnat.versions.Xnat_1_8_10;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
@@ -235,6 +239,23 @@ public class TestAnonymizationReject extends BaseFileNamerTest {
         ));
     }
 
+    /**
+     * An inline script sent with a DICOM-zip upload can reject files too. The importer runs it on receipt, after the
+     * site-wide script, so series 5 never reaches the prearchive. The project script still runs later, at archive.
+     */
+    @AddedIn(Xnat_1_10_1.class)
+    public void testDicomEditRejectEntireSeriesDicomZipInlineAnon() {
+        run(new ComponentizedTest(
+                SITE_ANON_REJECT_INSTANCE_80,
+                PROJECT_ANON_REJECT_INSTANCE_81,
+                new DicomZipStep(LocalTestDicom.SAMPLE1_SMALL_SUBSET.locateOverallZip().toFile(), true).anonScript(scriptContents("rejectSeries5.das")),
+                REBUILD,
+                new ValidateNamesInPrearc("sample1_instances_81_82_no_series_5.json"),
+                ARCHIVE,
+                new ValidateNamesInArchive("sample1_instance_82_no_series_5.json")
+        ));
+    }
+
     public void testDicomEditRejectResourceDicomZipSiteAnon() {
         run(new ComponentizedTest(
                 SITE_ANON_REJECT_MR_IMAGE_SOP_CLASS,
@@ -257,6 +278,10 @@ public class TestAnonymizationReject extends BaseFileNamerTest {
 
     private ProjectAnon projectAnon(String scriptName) {
         return new ProjectAnon().fromFile(REJECT, scriptName);
+    }
+
+    private String scriptContents(String scriptName) {
+        return XnatObjectUtils.anonScriptFromFile(DicomEditVersion.DE_6, Paths.get(REJECT, scriptName).toString()).getContents();
     }
 
     private class RebuildOnlyUnassignedSession implements TestComponent {
