@@ -30,7 +30,6 @@ import org.nrg.xnat.pogo.transfer.TransferRunItem;
 import org.nrg.xnat.pogo.transfer.TransferRunStatus;
 import org.nrg.xnat.pogo.users.User;
 import org.nrg.xnat.versions.Xnat_1_10_1;
-import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -101,12 +100,10 @@ public class TestBatchTransferAnonymization extends BaseBatchTransferTest {
 
     private Map<String, String> anonSourceDigests;
     private Map<String, Attributes> anonSourceHeaders;     // by SOPInstanceUID
-    private boolean perImportAnon;
 
     @BeforeClass
     public void setUpProjectsAndSiteScript() {
         saveSiteAnonSettings();
-        perImportAnon = mainInterface().readTransferCapabilities().isPerImportAnon();
 
         member = getGenericUser();
         collaborator = getGenericUser();
@@ -138,8 +135,9 @@ public class TestBatchTransferAnonymization extends BaseBatchTransferTest {
         new SessionImportExtension(siteAnonSession, mrSessionZip);
         mainInterface().createSubject(siteAnonSubject);
 
-        anonSourceDigests = digests(scanFiles(id(anonSession)));
-        anonSourceHeaders = bySopInstanceUid(headers(id(anonSession)));
+        final Map<String, byte[]> anonSourceFiles = scanFiles(id(anonSession));
+        anonSourceDigests = digests(anonSourceFiles);
+        anonSourceHeaders = bySopInstanceUid(dicomOnly(anonSourceFiles));
     }
 
     @AfterClass(alwaysRun = true)
@@ -158,9 +156,7 @@ public class TestBatchTransferAnonymization extends BaseBatchTransferTest {
     @Basic
     public void testReimportRunsTheSiteAndProjectScripts() {
         final String copyId = reimportAndCheck(anonDestination, "AN01", null, null);
-        new SiteScript().validateScriptRan(dicomFiles(copyId));
-        new ProjectScript().validateScriptRan(dicomFiles(copyId));
-        assertProbes(copyId, PROJECT, SITE, null);
+        assertCopy(copyId, true, true, PROJECT, SITE, null);
         assertSourceUnchanged();
     }
 
@@ -168,9 +164,7 @@ public class TestBatchTransferAnonymization extends BaseBatchTransferTest {
     @Test
     public void testReimportWithoutAProjectScriptRunsOnlyTheSiteScript() {
         final String copyId = reimportAndCheck(plainDestination, "AN02", null, null);
-        new SiteScript().validateScriptRan(dicomFiles(copyId));
-        new ProjectScript().validateScriptDidntRun(dicomFiles(copyId));
-        assertProbes(copyId, SITE, SITE, null);
+        assertCopy(copyId, true, false, SITE, SITE, null);
     }
 
     /** AN-03: a custom script runs after the site-wide script and before the project script. */
@@ -178,9 +172,7 @@ public class TestBatchTransferAnonymization extends BaseBatchTransferTest {
     public void testCustomScriptRunsBetweenTheSiteAndProjectScripts() {
         requirePerImportAnon();
         final String copyId = reimportAndCheck(anonDestination, "AN03", customScript, null);
-        new SiteScript().validateScriptRan(dicomFiles(copyId));
-        new ProjectScript().validateScriptRan(dicomFiles(copyId));
-        assertProbes(copyId, PROJECT, CUSTOM, CUSTOM);
+        assertCopy(copyId, true, true, PROJECT, CUSTOM, CUSTOM);
         assertSourceUnchanged();
     }
 
@@ -189,18 +181,15 @@ public class TestBatchTransferAnonymization extends BaseBatchTransferTest {
     public void testReplaceModeRunsOnlyTheCustomScript() {
         requirePerImportAnon();
         final String copyId = reimportAndCheck(anonDestination, "AN04", customScript, true);
-        new SiteScript().validateScriptDidntRun(dicomFiles(copyId));
-        new ProjectScript().validateScriptDidntRun(dicomFiles(copyId));
-        assertProbes(copyId, CUSTOM, CUSTOM, CUSTOM);
+        assertCopy(copyId, false, false, CUSTOM, CUSTOM, CUSTOM);
     }
 
     /** AN-11: replace mode without a custom script is ignored, so the site-wide and project scripts still run. */
     @Test
     public void testReplaceModeWithoutAScriptIsIgnored() {
+        requirePerImportAnon();
         final String copyId = reimportAndCheck(anonDestination, "AN11", null, true);
-        new SiteScript().validateScriptRan(dicomFiles(copyId));
-        new ProjectScript().validateScriptRan(dicomFiles(copyId));
-        assertProbes(copyId, PROJECT, SITE, null);
+        assertCopy(copyId, true, true, PROJECT, SITE, null);
     }
 
     /**
@@ -338,7 +327,7 @@ public class TestBatchTransferAnonymization extends BaseBatchTransferTest {
         assertRunStatus(run, TransferRunStatus.COMPLETED);
         final String copyId = copyId(plainDestination, "PERM03");
         assertItem(run, id(anonSession), TransferItemStatus.DONE, copyId);
-        assertProbes(copyId, CUSTOM, CUSTOM, CUSTOM);
+        assertProbes(headers(copyId), CUSTOM, CUSTOM, CUSTOM);
     }
 
     /** AN-12: a script that passes the plugin's checks but fails on the data fails the item and leaves nothing behind. */
@@ -357,12 +346,6 @@ public class TestBatchTransferAnonymization extends BaseBatchTransferTest {
 
     private List<Project> allProjects() {
         return Arrays.asList(source, anonDestination, plainDestination, untouchedDestination);
-    }
-
-    private void requirePerImportAnon() {
-        if (!perImportAnon) {
-            throw new SkipException("This XNAT build doesn't take a custom Reimport script (capabilities.per_import_anon is false).");
-        }
     }
 
     private TransferRequest reimportRequest(String itemId, Project destination, String label) {
@@ -394,9 +377,29 @@ public class TestBatchTransferAnonymization extends BaseBatchTransferTest {
         return copyId;
     }
 
+    /**
+     * Checks a copy from one download of its files: whether the site-wide and project scripts ran, by the planted tags,
+     * and the probe tags.
+     */
+    private void assertCopy(String copyId, boolean siteScriptRan, boolean projectScriptRan, String stationName, String departmentName, String protocolName) {
+        final Map<String, byte[]> files = scanFiles(copyId);
+        final List<File> written = dicomFiles(copyId, files);
+        if (siteScriptRan) {
+            new SiteScript().validateScriptRan(written);
+        } else {
+            new SiteScript().validateScriptDidntRun(written);
+        }
+        if (projectScriptRan) {
+            new ProjectScript().validateScriptRan(written);
+        } else {
+            new ProjectScript().validateScriptDidntRun(written);
+        }
+        assertProbes(dicomOnly(files), stationName, departmentName, protocolName);
+    }
+
     /** Checks the probe tags in every file of a copy. A null expectation means the value the source has. */
-    private void assertProbes(String copyId, String stationName, String departmentName, String protocolName) {
-        for (Attributes copy : headers(copyId)) {
+    private void assertProbes(List<Attributes> copyHeaders, String stationName, String departmentName, String protocolName) {
+        for (Attributes copy : copyHeaders) {
             final Attributes original = anonSourceHeaders.get(copy.getString(Tag.SOPInstanceUID));
             assertNotNull(original, "the copy's instances are the source's");
             assertEquals(copy.getString(Tag.StationName), expected(stationName, original, Tag.StationName), "StationName (0008,1010)");
@@ -411,9 +414,11 @@ public class TestBatchTransferAnonymization extends BaseBatchTransferTest {
 
     /** The source keeps its planted tags and its files, byte for byte. */
     private void assertSourceUnchanged() {
-        assertEquals(digests(scanFiles(id(anonSession))), anonSourceDigests, "the source's files are unchanged");
-        new SiteScript().validateScriptDidntRun(dicomFiles(id(anonSession)));
-        new ProjectScript().validateScriptDidntRun(dicomFiles(id(anonSession)));
+        final Map<String, byte[]> files = scanFiles(id(anonSession));
+        assertEquals(digests(files), anonSourceDigests, "the source's files are unchanged");
+        final List<File> written = dicomFiles(id(anonSession), files);
+        new SiteScript().validateScriptDidntRun(written);
+        new ProjectScript().validateScriptDidntRun(written);
     }
 
     private void assertUntouched() {

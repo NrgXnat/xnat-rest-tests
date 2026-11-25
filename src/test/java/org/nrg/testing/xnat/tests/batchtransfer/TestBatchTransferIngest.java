@@ -327,7 +327,9 @@ public class TestBatchTransferIngest extends BaseBatchTransferTest {
         assertRunStatus(run, TransferRunStatus.WARNINGS);
         assertEquals(run.getRun().getPassedCount(), 1, run.summary());
         assertEquals(run.getRun().getFailedCount(), 1, run.summary());
-        assertItem(run, id(goodSession), TransferItemStatus.DONE, experimentIds(destination).get(goodSession.getLabel()));
+        final String goodCopyId = experimentIds(destination).get(goodSession.getLabel());
+        assertNotNull(goodCopyId, "the good session should be in " + destination.getId() + ": " + run.summary());
+        assertItem(run, id(goodSession), TransferItemStatus.DONE, goodCopyId);
         assertItem(run, id(labelSessions.get(0)), TransferItemStatus.FAILED, null);
     }
 

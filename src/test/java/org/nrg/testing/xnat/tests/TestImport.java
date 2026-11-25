@@ -1,6 +1,5 @@
 package org.nrg.testing.xnat.tests;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.restassured.path.json.JsonPath;
 
 import net.lingala.zip4j.ZipFile;
@@ -963,16 +962,6 @@ public class TestImport extends BaseXnatRestTest {
                                       .then().assertThat().statusCode(200).and().extract().jsonPath().getList("ResultSet.Result").isEmpty());
         } finally {
             restDriver.deleteProjectSilently(mainAdminUser, autoArchiving);
-        }
-    }
-
-    /** A DICOM-zip upload with an inline anonymization script. */
-    private static class DicomZipRequestWithScript extends DicomZipRequest {
-        @JsonProperty("Anon-Script")
-        private final String anonScript;
-
-        DicomZipRequestWithScript(final String anonScript) {
-            this.anonScript = anonScript;
         }
     }
 

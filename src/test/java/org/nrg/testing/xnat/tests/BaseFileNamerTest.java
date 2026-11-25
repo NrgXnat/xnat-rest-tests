@@ -159,15 +159,12 @@ public class BaseFileNamerTest extends BaseXnatRestTest {
 
         @Override
         public void perform(BaseXnatRestTest xnatRestTest, Project project) {
-            final DicomZipRequest request = new DicomZipRequest()
+            final DicomZipRequest request = (anonScript != null ? new DicomZipRequestWithScript(anonScript) : new DicomZipRequest())
                     .file(data)
                     .project(project)
                     .rename(rename);
             if (archive) {
                 request.destArchive();
-            }
-            if (anonScript != null) {
-                request.param("Anon-Script", anonScript);
             }
             mainInterface().callImporter(request);
         }

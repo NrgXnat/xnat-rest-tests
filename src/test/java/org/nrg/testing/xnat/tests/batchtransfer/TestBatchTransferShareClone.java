@@ -1,5 +1,6 @@
 package org.nrg.testing.xnat.tests.batchtransfer;
 
+import lombok.extern.slf4j.Slf4j;
 import org.dcm4che3.data.Tag;
 import org.nrg.testing.DicomUtils;
 import org.nrg.testing.annotations.Basic;
@@ -53,6 +54,7 @@ import static org.testng.Assert.assertTrue;
  * transfer is its own test; checks that rely on an earlier transfer name it with {@link HardDependency}. Shares are
  * removed before the projects are deleted.
  */
+@Slf4j
 @TestRequires(specificPluginRequirements = @PluginRequirement(pluginId = PluginRegistry.BATCH_TRANSFER_ID, minimumSupportedVersion = "2.0.0"))
 @Test(groups = SHARING)
 public class TestBatchTransferShareClone extends BaseBatchTransferTest {
@@ -389,11 +391,15 @@ public class TestBatchTransferShareClone extends BaseBatchTransferTest {
                 extract().jsonPath().getList("ResultSet.Result.ID", String.class);
     }
 
+    /** Removes a share during cleanup. A failure is logged rather than thrown, so the project deletes that follow still run. */
     private void removeShareQuietly(String shareUrl) {
         try {
-            mainQueryBase().delete(shareUrl);
-        } catch (Exception | Error ignored) {
-            // Cleanup only: the project deletes that follow still run.
+            final int status = mainQueryBase().delete(shareUrl).getStatusCode();
+            if (status / 100 != 2) {
+                log.warn("Couldn't remove the share {}: HTTP {}", shareUrl, status);
+            }
+        } catch (Exception | Error e) {
+            log.warn("Couldn't remove the share {}", shareUrl, e);
         }
     }
 

@@ -72,11 +72,6 @@ import static org.testng.Assert.assertTrue;
 public class TestBatchTransferParity extends BaseBatchTransferTest {
 
     private static final int ARCHIVE_WAIT_SECONDS = 120;
-    /**
-     * Header tags left out of the comparison, each with the reason it may differ between the two paths. Empty: the one
-     * tag that differs by design, (0012,0064), is handled in {@link #normalizeRecords}.
-     */
-    private static final Map<Integer, String> HEADER_EXCLUSIONS = Collections.emptyMap();
     private static final String RECORDED_SCRIPT = "<script ID>";
     private static final List<String> SESSION_FIELDS = Arrays.asList("modality", "date", "time", "UID", "scanner", "dcmPatientName", "dcmPatientId", "dcmPatientBirthDate");
 
@@ -154,6 +149,7 @@ public class TestBatchTransferParity extends BaseBatchTransferTest {
      */
     @Test
     public void testCustomScriptMatchesTheSameProjectScript() {
+        requirePerImportAnon();
         mainAdminInterface().disableSiteAnonScript();
         final String referenceId = uploadReference("PA03", "PA03", true);
         final String copyId = reimport("PA03", "PA03", projectScript.getContents(), null);
@@ -166,6 +162,7 @@ public class TestBatchTransferParity extends BaseBatchTransferTest {
      */
     @Test
     public void testReplaceModeRunsOnlyTheCustomScript() {
+        requirePerImportAnon();
         mainAdminInterface().disableSiteAnonScript();
         final String referenceId = uploadReference("PA04", "PA04", true);
         useSiteScript();
@@ -284,13 +281,13 @@ public class TestBatchTransferParity extends BaseBatchTransferTest {
     private String archiveTheOnlyPrearchiveSession(Project project, String label) {
         final StopWatch stopWatch = TimeUtils.launchStopWatch();
         while (true) {
-            TimeUtils.checkStopWatch(stopWatch, ARCHIVE_WAIT_SECONDS, "No READY prearchive session in " + project.getId() + ": " + ownPrearchiveRows(project));
             final List<Map<String, Object>> rows = ownPrearchiveRows(project);
             if (rows.size() == 1 && "READY".equals(rows.get(0).get("status"))) {
                 mainInterface().archiveSession(String.valueOf(rows.get(0).get("url")));
                 return awaitExperiment(project, label);
             }
             assertTrue(rows.size() <= 1, "at most one prearchive session in " + project.getId() + ": " + rows);
+            TimeUtils.checkStopWatch(stopWatch, ARCHIVE_WAIT_SECONDS, "No READY prearchive session in " + project.getId() + ": " + rows);
             TimeUtils.sleep(1000);
         }
     }
@@ -339,7 +336,11 @@ public class TestBatchTransferParity extends BaseBatchTransferTest {
         assertTrue(differences.isEmpty(), "differences between the reference " + referenceId + " and the copy " + copyId + ":\n  " + String.join("\n  ", differences));
     }
 
-    /** Every difference between the reference session and the copy: files, scans and their resources, and session fields. */
+    /**
+     * Every difference between the reference session and the copy: files, scans and their resources, and session fields.
+     * No header tag is left out. The one that differs by design, (0012,0064), is prepared first by
+     * {@link #normalizeRecords}.
+     */
     private List<String> differences(String referenceId, String copyId, boolean inlineScriptOnCopy) {
         final List<String> differences = new ArrayList<>();
 
@@ -358,9 +359,7 @@ public class TestBatchTransferParity extends BaseBatchTransferTest {
                 continue;
             }
             for (String difference : headerDifferences(reference.getValue(), copy)) {
-                if (!isExcluded(difference)) {
-                    differences.add(reference.getKey() + " " + difference);
-                }
+                differences.add(reference.getKey() + " " + difference);
             }
             if (!Arrays.equals(pixelData(reference.getValue()), pixelData(copy))) {
                 differences.add(reference.getKey() + " pixel data");
@@ -416,15 +415,6 @@ public class TestBatchTransferParity extends BaseBatchTransferTest {
             }
         }
         return codes;
-    }
-
-    private static boolean isExcluded(String headerDifference) {
-        for (int tag : HEADER_EXCLUSIONS.keySet()) {
-            if (headerDifference.startsWith(String.format("(%04X,%04X)", tag >>> 16, tag & 0xFFFF))) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /** Each scan's type and series description, and each of its resources' label, format and file count, by scan ID. */

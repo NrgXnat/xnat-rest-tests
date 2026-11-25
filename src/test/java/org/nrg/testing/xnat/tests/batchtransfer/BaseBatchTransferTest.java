@@ -21,6 +21,7 @@ import org.nrg.xnat.pogo.transfer.TransferItemStatus;
 import org.nrg.xnat.pogo.transfer.TransferRunDetail;
 import org.nrg.xnat.pogo.transfer.TransferRunItem;
 import org.nrg.xnat.pogo.transfer.TransferRunStatus;
+import org.testng.SkipException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -65,6 +66,7 @@ public abstract class BaseBatchTransferTest extends BaseXnatRestTest {
 
     private AnonScript savedSiteScript;
     private Boolean savedSiteScriptEnabled;
+    private Boolean perImportAnon;
 
     /** Submits a batch as the given user, waits for it to finish and returns it, whatever its final status. */
     protected TransferRunDetail runTransfer(XnatInterface asUser, BatchTransferPayload payload) {
@@ -74,6 +76,19 @@ public abstract class BaseBatchTransferTest extends BaseXnatRestTest {
 
     protected TransferRunDetail runTransfer(BatchTransferPayload payload) {
         return runTransfer(mainInterface(), payload);
+    }
+
+    /**
+     * Skips the test when the plugin says it can't apply a custom Reimport script ({@code capabilities.per_import_anon} is
+     * false). Use it in every test that sends {@code anon_script} or {@code anon_replace_pipeline}.
+     */
+    protected void requirePerImportAnon() {
+        if (perImportAnon == null) {
+            perImportAnon = mainInterface().readTransferCapabilities().isPerImportAnon();
+        }
+        if (!perImportAnon) {
+            throw new SkipException("This XNAT build doesn't take a custom Reimport script (capabilities.per_import_anon is false).");
+        }
     }
 
     protected String id(SubjectAssessor experiment) {
@@ -266,11 +281,16 @@ public abstract class BaseBatchTransferTest extends BaseXnatRestTest {
 
     /** A session's files written to the test run's temp folder, for the suite's file-based DICOM validators. */
     protected List<File> dicomFiles(String sessionId) {
+        return dicomFiles(sessionId, scanFiles(sessionId));
+    }
+
+    /** A session's files, already read with {@link #scanFiles}, written to the test run's temp folder. */
+    protected List<File> dicomFiles(String sessionId, Map<String, byte[]> scanFiles) {
         try {
             final Path folder = Files.createDirectories(Paths.get(Settings.TEMP_SUBDIR, "batch_transfer", sessionId));
             final List<File> files = new ArrayList<>();
             int index = 0;
-            for (byte[] contents : scanFiles(sessionId).values()) {
+            for (byte[] contents : scanFiles.values()) {
                 files.add(Files.write(folder.resolve("file" + index++ + ".dcm"), contents).toFile());
             }
             return files;
@@ -340,11 +360,23 @@ public abstract class BaseBatchTransferTest extends BaseXnatRestTest {
         if (sequence != null) {
             final List<String> items = new ArrayList<>();
             for (Attributes item : sequence) {
-                items.add(item.toString().replace('\n', ' ').trim());
+                items.add(describeItem(item));
             }
             return "sequence " + items;
         }
         return Arrays.toString(dataset.getStrings(tag));
+    }
+
+    /**
+     * Every element of a sequence item, nested sequences included, in full. Not {@link Attributes#toString()}, which
+     * stops after 50 lines and cuts each line at 78 characters, so a long value such as a UID could differ unseen.
+     */
+    private static String describeItem(Attributes item) {
+        final List<String> elements = new ArrayList<>();
+        for (int tag : item.tags()) {
+            elements.add(String.format("(%04X,%04X) %s", tag >>> 16, tag & 0xFFFF, describe(item, tag)));
+        }
+        return "{" + String.join(", ", elements) + "}";
     }
 
     protected byte[] fileNamed(Map<String, byte[]> files, String name) {
